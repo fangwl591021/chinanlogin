@@ -6,63 +6,37 @@
   <title>穿山甲專車會員註冊</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
-    body {
-      background:#000;
-      color:#fff;
-      text-align:center;
-      font-family:"Microsoft JhengHei";
-      margin:0; padding:0;
-    }
-    h1 { color:gold; margin:24px 0; letter-spacing:1px; }
+    body { background:#000; color:#fff; text-align:center; font-family:"Microsoft JhengHei"; margin:0; padding:0; }
+    h1 { color:gold; margin:24px 0; }
     input, select, button {
-      width:80%; max-width:320px;
-      margin:12px auto;
-      display:block;
-      padding:10px;
-      font-size:1em;
-      border:none;
-      border-radius:6px;
+      width:80%; max-width:320px; margin:12px auto; display:block;
+      padding:10px; font-size:1em; border:none; border-radius:6px;
     }
     input, select { background:#222; color:#fff; }
-    select optgroup {
-      color:#00ff99; /* 綠色學院標題 */
-      font-weight:bold;
-      font-style:normal;
-    }
-    button {
-      background:#28a745;
-      color:#fff;
-      cursor:pointer;
-      font-size:1.1em;
-    }
+    select optgroup { color:#00ff99; font-weight:bold; font-style:normal; }
+    button { background:#28a745; color:#fff; cursor:pointer; font-size:1.1em; }
     button:hover { background:#2ecc71; }
     #msg { margin:16px 0; font-size:1.2em; }
-    .success { color:#00ff99; }
-    .warning { color:#ffcc00; }
-    .error { color:#ff4444; }
+    .success { color:#00ff99; } .warning { color:#ffcc00; } .error { color:#ff4444; }
   </style>
 </head>
 <body>
   <h1>穿山甲專車會員註冊</h1>
-
   <button id="loginBtn" style="display:none">LINE 登入</button>
 
   <div id="form" style="display:none">
     <input id="name" placeholder="姓名">
     <input id="phone" placeholder="電話">
     <input id="schoolId" placeholder="學號">
-
     <select id="dept">
       <option value="">請選擇科系</option>
       <option value="學校職員">學校職員</option>
-
       <optgroup label="人文學院">
         <option>中國語文學系</option>
         <option>歷史學系</option>
         <option>哲學系</option>
         <option>外國語文學系</option>
       </optgroup>
-
       <optgroup label="管理學院">
         <option>國際企業學系</option>
         <option>企業管理學系</option>
@@ -71,38 +45,7 @@
         <option>資訊管理學系</option>
         <option>觀光休閒與餐旅管理學系</option>
       </optgroup>
-
-      <optgroup label="教育學院">
-        <option>教育政策與行政學系</option>
-        <option>輔導與諮商學系</option>
-        <option>教育心理與諮商研究所</option>
-      </optgroup>
-
-      <optgroup label="科技學院">
-        <option>應用材料及光電工程學系</option>
-        <option>電機工程學系</option>
-        <option>資訊工程學系</option>
-      </optgroup>
-
-      <optgroup label="社會科學院">
-        <option>公共行政與政策學系</option>
-        <option>社會政策與社會工作學系</option>
-        <option>應用經濟與社會研究學系</option>
-      </optgroup>
-
-      <optgroup label="國際學院">
-        <option>國際經營與貿易學系</option>
-        <option>國際文教與比較教育學系</option>
-        <option>東南亞學系</option>
-      </optgroup>
-
-      <optgroup label="藝術學院">
-        <option>音樂學系</option>
-        <option>美術學系</option>
-        <option>設計學系</option>
-      </optgroup>
     </select>
-
     <button id="submitBtn">送出註冊</button>
   </div>
 
@@ -117,11 +60,10 @@
     const MAIN_URL = 'https://script.google.com/macros/s/AKfycbwfCAzgXUiLIQsVe8L_4cTeeiQT2in3D5uVdQLJKUL6KVFe1EzWeBY37HvXfp36q2j-Fg/exec';
     const LIFF_ID = '2008231249-yv8294Jp';
 
-    let USER_ID = '';
-    let USER_NAME = '';
+    let USER_ID = '', USER_NAME = '';
 
     /*********************************************
-     * 🚀 初始化 LIFF 登入 + 檢查是否註冊
+     * 🚀 初始化 LIFF 登入流程
      *********************************************/
     async function init() {
       try {
@@ -137,38 +79,47 @@
         USER_ID = profile.userId;
         USER_NAME = profile.displayName;
 
-        showMsg(`👋 歡迎 ${USER_NAME}，正在檢查註冊狀態...`, 'warning');
+        showMsg(`👋 歡迎 ${USER_NAME}`, 'success');
 
-        // 🔍 向 GAS 查是否已註冊
-        const check = await fetch(`${CHECK_URL}?action=checkUserLogin&lineUserId=${USER_ID}`)
-          .then(r => r.json())
-          .catch(() => ({ isRegistered: false }));
-
-        if (check.isRegistered) {
-          showMsg(`⚠️ 您已註冊過，歡迎回來 ${check.user.name}！<br>即將導向預約系統...`, 'warning');
-          setTimeout(() => { window.location.href = MAIN_URL; }, 3000);
-          return;
-        }
-
-        // 若未註冊才顯示表單
-        document.getElementById('form').style.display = 'block';
-        showMsg(`👋 歡迎 ${USER_NAME}，請完成註冊`, 'success');
+        // 👇 登入後先檢查是否已註冊
+        checkUserStatus(USER_ID);
 
       } catch (err) {
         console.error('init error:', err);
-        showMsg('❌ 初始化失敗，請稍後再試', 'error');
+        showMsg('❌ 初始化失敗，請重新整理頁面', 'error');
       }
     }
 
     /*********************************************
-     * ✏️ 提交註冊資料
+     * 🔍 檢查是否已註冊
+     *********************************************/
+    async function checkUserStatus(lineUserId) {
+      try {
+        const res = await fetch(`${CHECK_URL}?action=checkUserLogin&lineUserId=${encodeURIComponent(lineUserId)}`)
+          .then(r => r.json());
+
+        if (res.isRegistered) {
+          showMsg(`✅ 歡迎回來，${res.user.name}！正在導向預約頁...`, 'success');
+          setTimeout(() => { window.location.href = MAIN_URL; }, 3000);
+        } else {
+          showMsg(`📝 您尚未註冊，請填寫資料完成註冊`, 'warning');
+          document.getElementById('form').style.display = 'block';
+        }
+
+      } catch (e) {
+        console.error('Check Error:', e);
+        showMsg('⚠️ 無法連線伺服器，請稍後再試', 'error');
+      }
+    }
+
+    /*********************************************
+     * ✏️ 送出註冊
      *********************************************/
     async function submitRegister() {
       const name = document.getElementById('name').value.trim();
       const phone = document.getElementById('phone').value.trim();
       const schoolId = document.getElementById('schoolId').value.trim();
       const dept = document.getElementById('dept').value.trim();
-
       if (!name || !phone || !schoolId || !dept) {
         alert('請完整填寫所有欄位');
         return;
@@ -176,8 +127,6 @@
 
       const data = {
         action: 'registerUser',
-        sheetId: '19zDueZCpq-qJsZsMVq4hSZh2BZrZv7pfQxMk5PTy4s4',
-        sheetName: '用戶資料',
         lineUserId: USER_ID,
         name, phone, schoolId, dept
       };
@@ -189,25 +138,23 @@
         }).then(r => r.json());
 
         if (res.success) {
-          showMsg(`✅ ${USER_NAME}，註冊成功！<br>3 秒後將導向專車預約頁...`, 'success');
-          document.getElementById('form').style.display = 'none';
-          setTimeout(() => { window.location.href = MAIN_URL; }, 3000);
+          showMsg('✅ 註冊成功，3秒後自動導向預約頁...', 'success');
+          setTimeout(() => window.location.href = MAIN_URL, 3000);
         } else {
-          showMsg(`❌ 註冊失敗：${res.error || '未知錯誤'}`, 'error');
+          showMsg(`❌ 註冊失敗：${res.message || '未知錯誤'}`, 'error');
         }
 
       } catch (e) {
         console.error('Fetch Error:', e);
-        showMsg('❌ 無法連線到伺服器，請稍後再試', 'error');
+        showMsg('❌ 無法連線伺服器，請稍後再試', 'error');
       }
     }
 
     /*********************************************
-     * 🧩 共用訊息顯示函式
+     * 🧩 顯示訊息
      *********************************************/
     function showMsg(text, type) {
-      const el = document.getElementById('msg');
-      el.innerHTML = `<span class="${type}">${text}</span>`;
+      document.getElementById('msg').innerHTML = `<span class="${type}">${text}</span>`;
     }
 
     document.getElementById('submitBtn').onclick = submitRegister;
