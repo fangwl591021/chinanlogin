@@ -45,10 +45,8 @@
 <body>
   <h1>穿山甲專車會員註冊</h1>
 
-  <!-- LINE 登入按鈕 -->
   <button id="loginBtn" style="display:none">LINE 登入</button>
 
-  <!-- 註冊表單 -->
   <div id="form" style="display:none">
     <input id="name" placeholder="姓名">
     <input id="phone" placeholder="電話">
@@ -112,18 +110,18 @@
 
   <script>
     /*********************************************
-     * 🔧【參數集中設定】
+     * 🔧【參數設定區】
      *********************************************/
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwzV2t-w-jXsgpAFBQR7sGEP4ycpO9ML2bXs-IEutNkIoYJ6Qsf69mihgJMTKVnqVMk5g/exec';
-    const SHEET_ID = '19zDueZCpq-qJsZsMVq4hSZh2BZrZv7pfQxMk5PTy4s4';
-    const SHEET_NAME = '用戶資料';
+    const CHECK_URL = 'https://script.google.com/macros/s/AKfycbx8u9-yTOhCiS-PoQJJj-JVG86LGc9SX7G9TBAyuVXXPUNKsoGre-LOntkT-v-1EztOBQ/exec';
+    const MAIN_URL = 'https://script.google.com/macros/s/AKfycbwfCAzgXUiLIQsVe8L_4cTeeiQT2in3D5uVdQLJKUL6KVFe1EzWeBY37HvXfp36q2j-Fg/exec';
     const LIFF_ID = '2008231249-yv8294Jp';
 
     let USER_ID = '';
     let USER_NAME = '';
 
     /*********************************************
-     * 🚀 初始化 LIFF 登入流程
+     * 🚀 初始化 LIFF 登入 + 檢查是否註冊
      *********************************************/
     async function init() {
       try {
@@ -138,8 +136,23 @@
         const profile = await liff.getProfile();
         USER_ID = profile.userId;
         USER_NAME = profile.displayName;
+
+        showMsg(`👋 歡迎 ${USER_NAME}，正在檢查註冊狀態...`, 'warning');
+
+        // 🔍 向 GAS 查是否已註冊
+        const check = await fetch(`${CHECK_URL}?action=checkUserLogin&lineUserId=${USER_ID}`)
+          .then(r => r.json())
+          .catch(() => ({ isRegistered: false }));
+
+        if (check.isRegistered) {
+          showMsg(`⚠️ 您已註冊過，歡迎回來 ${check.user.name}！<br>即將導向預約系統...`, 'warning');
+          setTimeout(() => { window.location.href = MAIN_URL; }, 3000);
+          return;
+        }
+
+        // 若未註冊才顯示表單
         document.getElementById('form').style.display = 'block';
-        showMsg(`👋 歡迎 ${USER_NAME}`, 'success');
+        showMsg(`👋 歡迎 ${USER_NAME}，請完成註冊`, 'success');
 
       } catch (err) {
         console.error('init error:', err);
@@ -163,8 +176,8 @@
 
       const data = {
         action: 'registerUser',
-        sheetId: SHEET_ID,
-        sheetName: SHEET_NAME,
+        sheetId: '19zDueZCpq-qJsZsMVq4hSZh2BZrZv7pfQxMk5PTy4s4',
+        sheetName: '用戶資料',
         lineUserId: USER_ID,
         name, phone, schoolId, dept
       };
@@ -175,12 +188,10 @@
           body: JSON.stringify(data)
         }).then(r => r.json());
 
-        if (res.success && res.message) {
-          showMsg(`⚠️ ${res.message}`, 'warning');
+        if (res.success) {
+          showMsg(`✅ ${USER_NAME}，註冊成功！<br>3 秒後將導向專車預約頁...`, 'success');
           document.getElementById('form').style.display = 'none';
-        } else if (res.success) {
-          showMsg(`✅ ${USER_NAME}，您已完成註冊！`, 'success');
-          document.getElementById('form').style.display = 'none';
+          setTimeout(() => { window.location.href = MAIN_URL; }, 3000);
         } else {
           showMsg(`❌ 註冊失敗：${res.error || '未知錯誤'}`, 'error');
         }
