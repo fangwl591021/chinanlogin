@@ -14,7 +14,7 @@
       margin:0; padding:0;
     }
     h1 { color:gold; margin:24px 0; }
-    input, button {
+    input, select, button {
       width:80%; max-width:320px;
       margin:12px auto;
       display:block;
@@ -23,12 +23,13 @@
       border:none;
       border-radius:6px;
     }
-    input { background:#222; color:#fff; }
+    input, select { background:#222; color:#fff; }
+    option.group { color:#00ff99; font-weight:bold; } /* 綠色學院 */
     button { background:#28a745; color:#fff; cursor:pointer; }
     #msg { margin:16px 0; font-size:1.2em; }
-    .success { color: #00ff99; }
-    .warning { color: #ffcc00; }
-    .error { color: #ff4444; }
+    .success { color:#00ff99; }
+    .warning { color:#ffcc00; }
+    .error { color:#ff4444; }
   </style>
 </head>
 <body>
@@ -38,7 +39,49 @@
     <input id="name" placeholder="姓名">
     <input id="phone" placeholder="電話">
     <input id="schoolId" placeholder="學號">
-    <input id="dept" placeholder="科系">
+    <select id="dept">
+      <option value="">請選擇科系</option>
+      <option value="學校職員">學校職員</option>
+
+      <option class="group" disabled>人文學院</option>
+      <option>中國語文學系</option>
+      <option>歷史學系</option>
+      <option>哲學系</option>
+      <option>外國語文學系</option>
+
+      <option class="group" disabled>管理學院</option>
+      <option>國際企業學系</option>
+      <option>企業管理學系</option>
+      <option>會計學系</option>
+      <option>財務金融學系</option>
+      <option>資訊管理學系</option>
+      <option>觀光休閒與餐旅管理學系</option>
+
+      <option class="group" disabled>教育學院</option>
+      <option>教育政策與行政學系</option>
+      <option>輔導與諮商學系</option>
+      <option>教育心理與諮商研究所</option>
+
+      <option class="group" disabled>科技學院</option>
+      <option>應用材料及光電工程學系</option>
+      <option>電機工程學系</option>
+      <option>資訊工程學系</option>
+
+      <option class="group" disabled>社會科學院</option>
+      <option>公共行政與政策學系</option>
+      <option>社會政策與社會工作學系</option>
+      <option>應用經濟與社會研究學系</option>
+
+      <option class="group" disabled>國際學院</option>
+      <option>國際經營與貿易學系</option>
+      <option>國際文教與比較教育學系</option>
+      <option>東南亞學系</option>
+
+      <option class="group" disabled>藝術學院</option>
+      <option>音樂學系</option>
+      <option>美術學系</option>
+      <option>設計學系</option>
+    </select>
     <button id="submitBtn">送出註冊</button>
   </div>
   <div id="msg"></div>
@@ -61,15 +104,15 @@
           return;
         }
 
-        // 抓取使用者資料
         const profile = await liff.getProfile();
         USER_ID = profile.userId;
         USER_NAME = profile.displayName;
         document.getElementById('form').style.display = 'block';
+        showMsg(`👋 歡迎 ${USER_NAME}`, 'success');
 
       } catch (err) {
         console.error('init error:', err);
-        document.getElementById('msg').innerHTML = '<span class="error">初始化失敗，請稍後再試</span>';
+        showMsg('❌ 初始化失敗，請稍後再試', 'error');
       }
     }
 
@@ -99,18 +142,24 @@
         }).then(r => r.json());
 
         if (res.success && res.message) {
-          document.getElementById('msg').innerHTML = `<span class="warning">⚠️ ${res.message}</span>`;
+          showMsg(`⚠️ ${res.message}`, 'warning');
+          document.getElementById('form').style.display = 'none';
         } else if (res.success) {
-          document.getElementById('msg').innerHTML = `<span class="success">✅ ${USER_NAME}，您已完成註冊！</span>`;
+          showMsg(`✅ ${USER_NAME}，您已完成註冊！`, 'success');
           document.getElementById('form').style.display = 'none';
         } else {
-          document.getElementById('msg').innerHTML = `<span class="error">❌ 註冊失敗：${res.error || '未知錯誤'}</span>`;
+          showMsg(`❌ 註冊失敗：${res.error || '未知錯誤'}`, 'error');
         }
 
       } catch (e) {
-        console.error(e);
-        document.getElementById('msg').innerHTML = '<span class="error">連線錯誤，請稍後再試</span>';
+        console.error('Fetch Error:', e);
+        showMsg('❌ 無法連線到伺服器，請稍後再試', 'error');
       }
+    }
+
+    function showMsg(text, type) {
+      const el = document.getElementById('msg');
+      el.innerHTML = `<span class="${type}">${text}</span>`;
     }
 
     document.getElementById('submitBtn').onclick = submitRegister;
