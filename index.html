@@ -16,8 +16,18 @@
         const LIFF_ID = '2008231249-yv8294Jp';
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbxgLRcFkyj9huPKqldaEendFC1YiGkdMSJvWi8qjvUAvbZgEs3OLjz9J5ZZCVvLW03gtw/exec';
 
+        // 等待 LIFF SDK 完全載入
+        window.addEventListener('load', function() {
+            initializeApp();
+        });
+
         async function initializeApp() {
             try {
+                // 檢查 liff 物件是否存在
+                if (typeof liff === 'undefined') {
+                    throw new Error('LIFF SDK 載入失敗');
+                }
+
                 await liff.init({ liffId: LIFF_ID });
                 
                 if (!liff.isLoggedIn()) {
@@ -43,13 +53,11 @@
                 console.error('初始化失敗:', error);
                 document.getElementById('app').innerHTML = `
                     <h1>錯誤</h1>
-                    <p>系統初始化失敗，請重新整理</p>
+                    <p>系統初始化失敗: ${error.message}</p>
                     <button onclick="location.reload()">重新整理</button>
                 `;
             }
         }
-
-        document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
 </html>
