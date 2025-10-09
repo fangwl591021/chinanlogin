@@ -14,7 +14,7 @@
       margin:0; padding:0;
     }
     h1 { color:gold; margin:24px 0; }
-    input, button {
+    input, select, button {
       width:80%; max-width:320px;
       margin:12px auto;
       display:block;
@@ -23,7 +23,7 @@
       border:none;
       border-radius:6px;
     }
-    input { background:#222; color:#fff; }
+    input, select { background:#222; color:#fff; }
     button { background:#28a745; color:#fff; cursor:pointer; }
     #msg { margin:16px 0; font-size:1.2em; }
     .success { color:#00ff99; }
@@ -42,7 +42,58 @@
     <input id="name" placeholder="姓名">
     <input id="phone" placeholder="電話">
     <input id="schoolId" placeholder="學號">
-    <input id="dept" placeholder="科系">
+
+    <!-- 科系下拉選單 -->
+    <select id="dept">
+      <option value="">請選擇科系</option>
+      <option value="學校職員">學校職員</option>
+      <optgroup label="人文學院">
+        <option value="中國語文學系">中國語文學系</option>
+        <option value="歷史學系">歷史學系</option>
+        <option value="哲學系">哲學系</option>
+        <option value="外國語文學系">外國語文學系</option>
+      </optgroup>
+      <optgroup label="管理學院">
+        <option value="國際企業學系">國際企業學系</option>
+        <option value="企業管理學系">企業管理學系</option>
+        <option value="會計學系">會計學系</option>
+        <option value="財務金融學系">財務金融學系</option>
+        <option value="資訊管理學系">資訊管理學系</option>
+        <option value="觀光休閒與餐旅管理學系">觀光休閒與餐旅管理學系</option>
+      </optgroup>
+      <optgroup label="科技學院">
+        <option value="資訊工程學系">資訊工程學系</option>
+        <option value="應用材料與光電工程學系">應用材料與光電工程學系</option>
+        <option value="電機工程學系">電機工程學系</option>
+        <option value="土木工程學系">土木工程學系</option>
+        <option value="機械與機電工程學系">機械與機電工程學系</option>
+      </optgroup>
+      <optgroup label="教育學院">
+        <option value="教育政策與行政學系">教育政策與行政學系</option>
+        <option value="輔導與諮商學系">輔導與諮商學系</option>
+        <option value="華語文教學學系">華語文教學學系</option>
+        <option value="幼兒教育學系">幼兒教育學系</option>
+      </optgroup>
+      <optgroup label="社會科學學院">
+        <option value="公共行政與政策學系">公共行政與政策學系</option>
+        <option value="社會政策與社會工作學系">社會政策與社會工作學系</option>
+        <option value="經濟學系">經濟學系</option>
+        <option value="心理學系">心理學系</option>
+        <option value="傳播學系">傳播學系</option>
+      </optgroup>
+      <optgroup label="理學院">
+        <option value="應用化學系">應用化學系</option>
+        <option value="應用數學系">應用數學系</option>
+        <option value="生物醫學暨農業生物科技學系">生物醫學暨農業生物科技學系</option>
+        <option value="物理學系">物理學系</option>
+      </optgroup>
+      <optgroup label="國際事務學院">
+        <option value="國際經營與貿易學系">國際經營與貿易學系</option>
+        <option value="國際文教與比較教育學系">國際文教與比較教育學系</option>
+        <option value="東南亞學系">東南亞學系</option>
+      </optgroup>
+    </select>
+
     <button id="submitBtn" type="button">送出註冊</button>
   </div>
 
@@ -142,7 +193,6 @@
       el.innerHTML = `<span class="${type}">${text}</span>`;
     }
 
-    // 綁定事件與啟動 LIFF
     document.getElementById('submitBtn').onclick = submitRegister;
     window.addEventListener('DOMContentLoaded', init);
   </script>
