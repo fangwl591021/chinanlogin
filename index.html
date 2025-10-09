@@ -34,11 +34,8 @@
 <body>
   <h1>校園巴士註冊</h1>
 
-  <!-- 測試連線按鈕 -->
-  <button id="testBtn">🧭 測試連線</button>
-
-  <!-- LINE 登入 -->
-  <button id="loginBtn" style="display:none">LINE 登入</button>
+  <!-- LINE 登入按鈕 -->
+  <button id="loginBtn" style="display:none" type="button">LINE 登入</button>
 
   <!-- 註冊表單 -->
   <div id="form" style="display:none">
@@ -46,7 +43,7 @@
     <input id="phone" placeholder="電話">
     <input id="schoolId" placeholder="學號">
     <input id="dept" placeholder="科系">
-    <button id="submitBtn">送出註冊</button>
+    <button id="submitBtn" type="button">送出註冊</button>
   </div>
 
   <div id="msg"></div>
@@ -56,19 +53,17 @@
      * 🔧【參數集中設定區】
      *********************************************/
     const CONFIG = {
-      SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyuwAF9X0bNd0Lz5mYnovoF54mAwcDe5tOef8JDmEMxhxmkx_EXGipjReDGv9FJ64wWLQ/exec',
+      SCRIPT_URL: 'https://script.google.com/macros/s/AKfycby2mc-JVO6SUCozKO3l3tJwPcN-F_2yPQpd1E-nGyr5NWC6RGpuGGpHXQPMp2XP2Ez8zg/exec',
       SHEET_ID: '19zDueZCpq-qJsZsMVq4hSZh2BZrZv7pfQxMk5PTy4s4',
       SHEET_NAME: '用戶資料',
       LIFF_ID: '2008231249-yv8294Jp'
     };
 
-    /*********************************************
-     * 🚀【主程式】
-     *********************************************/
-    let USER_ID = '';
-    let USER_NAME = '';
+    let USER_ID = '', USER_NAME = '';
 
-    // 初始化 LIFF
+    /*********************************************
+     * 🚀 初始化 LIFF 登入流程
+     *********************************************/
     async function init() {
       try {
         await liff.init({ liffId: CONFIG.LIFF_ID });
@@ -83,15 +78,16 @@
         USER_ID = profile.userId;
         USER_NAME = profile.displayName;
         document.getElementById('form').style.display = 'block';
-        showMsg('LINE 登入成功，歡迎 ' + USER_NAME, 'success');
-
+        showMsg(`👋 歡迎 ${USER_NAME}`, 'success');
       } catch (err) {
-        console.error('init error:', err);
-        showMsg('初始化失敗，請稍後再試', 'error');
+        console.error(err);
+        showMsg('❌ 初始化失敗，請重新整理頁面', 'error');
       }
     }
 
-    // 提交註冊資料
+    /*********************************************
+     * ✏️ 提交註冊資料
+     *********************************************/
     async function submitRegister() {
       const name = document.getElementById('name').value.trim();
       const phone = document.getElementById('phone').value.trim();
@@ -102,6 +98,8 @@
         alert('請完整填寫所有欄位');
         return;
       }
+
+      showMsg('⏳ 註冊中，請稍候...', 'warning');
 
       const data = {
         action: 'registerUser',
@@ -114,53 +112,38 @@
       try {
         const res = await fetch(CONFIG.SCRIPT_URL, {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         }).then(r => r.json());
 
-        if (res.success && res.message === '註冊成功') {
-          showMsg(`✅ ${USER_NAME}，您已完成註冊！`, 'success');
+        console.log('response:', res);
+
+        if (res.success && res.message.includes('註冊成功')) {
+          showMsg(`✅ ${USER_NAME}，註冊成功！`, 'success');
           document.getElementById('form').style.display = 'none';
-        } else if (res.success && res.message) {
-          showMsg(`⚠️ ${res.message}`, 'warning');
+        } else if (res.success && res.message.includes('已註冊過')) {
+          showMsg(`⚠️ 您已註冊過，系統已更新登入時間`, 'warning');
+          document.getElementById('form').style.display = 'none';
         } else {
-          showMsg(`❌ 註冊失敗：${res.error || '未知錯誤'}`, 'error');
+          showMsg(`❌ 註冊失敗：${res.message || '未知錯誤'}`, 'error');
         }
 
       } catch (e) {
-        console.error(e);
-        showMsg('連線錯誤，請稍後再試', 'error');
+        console.error('Fetch Error:', e);
+        showMsg('❌ 無法連線到伺服器，請稍後再試', 'error');
       }
     }
 
-    // ✳️ 一鍵測試連線功能
-    async function testConnection() {
-      showMsg('測試中，請稍候...', 'warning');
-      try {
-        const response = await fetch(CONFIG.SCRIPT_URL, {
-          method: 'POST',
-          body: JSON.stringify({ action: 'getLiffId' })
-        }).then(r => r.json());
-
-        if (response.liffId) {
-          showMsg(`✅ 後端連線成功，LIFF ID：${response.liffId}`, 'success');
-        } else {
-          showMsg('⚠️ 後端回應異常，請檢查 GAS 程式', 'warning');
-        }
-      } catch (error) {
-        console.error(error);
-        showMsg('❌ 無法連線至後端，請檢查 SCRIPT_URL 是否正確', 'error');
-      }
-    }
-
-    // 顯示訊息
+    /*********************************************
+     * 🧩 共用訊息顯示函式
+     *********************************************/
     function showMsg(text, type) {
       const el = document.getElementById('msg');
       el.innerHTML = `<span class="${type}">${text}</span>`;
     }
 
-    // 綁定事件
+    // 綁定事件與啟動 LIFF
     document.getElementById('submitBtn').onclick = submitRegister;
-    document.getElementById('testBtn').onclick = testConnection;
     window.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
