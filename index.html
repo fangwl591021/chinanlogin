@@ -7,13 +7,14 @@
     <script src="https://static.line-scdn.net/liff/edge/versions/2.1/sdk.js"></script>
 </head>
 <body>
-    <div id="app">
+    <div id="app" style="text-align: center; padding: 50px 20px;">
         <h1>🚐 穿山甲專車</h1>
         <p>載入中...</p>
     </div>
 
     <script>
         const LIFF_ID = '2008231249-yv8294Jp';
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzKZNfyLWWIKCEe_yzlZZP8KcWcjREeHAb36-X2HbIflXh0kCTxFJxkO8KIEv4Z6_3Pew/exec';
 
         async function initializeApp() {
             try {
@@ -26,17 +27,16 @@
 
                 // 取得使用者資料並檢查註冊狀態
                 const profile = await liff.getProfile();
-                const GAS_URL = 'https://script.google.com/macros/s/AKfycbzKZNfyLWWIKCEe_yzlZZP8KcWcjREeHAb36-X2HbIflXh0kCTxFJxkO8KIEv4Z6_3Pew/exec';
                 
                 const response = await fetch(`${GAS_URL}?action=register&userId=${profile.userId}&name=${encodeURIComponent(profile.displayName)}`);
                 const data = await response.json();
                 
                 if (data.status === 'existing_user') {
                     // 已註冊，跳轉到預約頁面
-                    window.location.href = 'booking/';
+                    window.location.href = 'booking.html';
                 } else {
                     // 未註冊，跳轉到註冊頁面
-                    window.location.href = 'register/';
+                    window.location.href = 'register.html';
                 }
                 
             } catch (error) {
