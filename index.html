@@ -33,7 +33,14 @@
 </head>
 <body>
   <h1>校園巴士註冊</h1>
+
+  <!-- 測試連線按鈕 -->
+  <button id="testBtn">🧭 測試連線</button>
+
+  <!-- LINE 登入 -->
   <button id="loginBtn" style="display:none">LINE 登入</button>
+
+  <!-- 註冊表單 -->
   <div id="form" style="display:none">
     <input id="name" placeholder="姓名">
     <input id="phone" placeholder="電話">
@@ -41,6 +48,7 @@
     <input id="dept" placeholder="科系">
     <button id="submitBtn">送出註冊</button>
   </div>
+
   <div id="msg"></div>
 
   <script>
@@ -48,10 +56,10 @@
      * 🔧【參數集中設定區】
      *********************************************/
     const CONFIG = {
-      SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwnqfRvmF8AUuyiVoD-Ks-jUkWuHVji5XFD4Zet4RC9gwd5A3E-utKnzo5Rj36vHrVj/exec', // GAS 部署網址
-      SHEET_ID: '19zDueZCpq-qJsZsMVq4hSZh2BZrZv7pfQxMk5PTy4s4',  // 試算表 ID
-      SHEET_NAME: '用戶資料',                                     // 工作表名稱
-      LIFF_ID: '2008231249-yv8294Jp'                             // LIFF ID（正確的）
+      SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwj83VtOV1aST7_aAFHqHMNGFvhcbTGfHnl5rauES0_7xGe0lnyDrzz5nnz-bUOQcbkGw/exec',
+      SHEET_ID: '19zDueZCpq-qJsZsMVq4hSZh2BZrZv7pfQxMk5PTy4s4',
+      SHEET_NAME: '用戶資料',
+      LIFF_ID: '2008231249-yv8294Jp'
     };
 
     /*********************************************
@@ -60,23 +68,22 @@
     let USER_ID = '';
     let USER_NAME = '';
 
+    // 初始化 LIFF
     async function init() {
       try {
         await liff.init({ liffId: CONFIG.LIFF_ID });
 
-        // 尚未登入 → 顯示登入按鈕
         if (!liff.isLoggedIn()) {
-          const btn = document.getElementById('loginBtn');
-          btn.style.display = 'block';
-          btn.onclick = () => liff.login();
+          document.getElementById('loginBtn').style.display = 'block';
+          document.getElementById('loginBtn').onclick = () => liff.login();
           return;
         }
 
-        // 已登入 → 取得使用者資訊
         const profile = await liff.getProfile();
         USER_ID = profile.userId;
         USER_NAME = profile.displayName;
         document.getElementById('form').style.display = 'block';
+        showMsg('LINE 登入成功，歡迎 ' + USER_NAME, 'success');
 
       } catch (err) {
         console.error('init error:', err);
@@ -84,6 +91,7 @@
       }
     }
 
+    // 提交註冊資料
     async function submitRegister() {
       const name = document.getElementById('name').value.trim();
       const phone = document.getElementById('phone').value.trim();
@@ -109,7 +117,6 @@
           body: JSON.stringify(data)
         }).then(r => r.json());
 
-        // 分類顯示回應
         if (res.success && res.message === '註冊成功') {
           showMsg(`✅ ${USER_NAME}，您已完成註冊！`, 'success');
           document.getElementById('form').style.display = 'none';
@@ -125,7 +132,27 @@
       }
     }
 
-    // ✨ 統一訊息顯示
+    // ✳️ 一鍵測試連線功能
+    async function testConnection() {
+      showMsg('測試中，請稍候...', 'warning');
+      try {
+        const response = await fetch(CONFIG.SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'getLiffId' })
+        }).then(r => r.json());
+
+        if (response.liffId) {
+          showMsg(`✅ 後端連線成功，LIFF ID：${response.liffId}`, 'success');
+        } else {
+          showMsg('⚠️ 後端回應異常，請檢查 GAS 程式', 'warning');
+        }
+      } catch (error) {
+        console.error(error);
+        showMsg('❌ 無法連線至後端，請檢查 SCRIPT_URL 是否正確', 'error');
+      }
+    }
+
+    // 顯示訊息
     function showMsg(text, type) {
       const el = document.getElementById('msg');
       el.innerHTML = `<span class="${type}">${text}</span>`;
@@ -133,6 +160,7 @@
 
     // 綁定事件
     document.getElementById('submitBtn').onclick = submitRegister;
+    document.getElementById('testBtn').onclick = testConnection;
     window.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
