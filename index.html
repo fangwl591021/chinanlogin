@@ -26,9 +26,9 @@
     input { background:#222; color:#fff; }
     button { background:#28a745; color:#fff; cursor:pointer; }
     #msg { margin:16px 0; font-size:1.2em; }
-    .success { color: #00ff99; }
-    .warning { color: #ffcc00; }
-    .error { color: #ff4444; }
+    .success { color:#00ff99; }
+    .warning { color:#ffcc00; }
+    .error { color:#ff4444; }
   </style>
 </head>
 <body>
@@ -44,16 +44,27 @@
   <div id="msg"></div>
 
   <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby2mc-JVO6SUCozKO3l3tJwPcN-F_2yPQpd1E-nGyr5NWC6RGpuGGpHXQPMp2XP2Ez8zg/exec';
-    const SHEET_ID = '19zDueZCpq-qJsZsMVq4hSZh2BZrZv7pfQxMk5PTy4s4';
-    const SHEET_NAME = '用戶資料';
+    /*********************************************
+     * 🔧【參數集中設定區】
+     *********************************************/
+    const CONFIG = {
+      SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwgiwo6Jj3W7-Gl6p4mHhmiKknyDmFgwl8luzzBhzfGEBhEpw0uSO_sy_hgUlPHjvKIdA/exec', // GAS 部署網址
+      SHEET_ID: '19zDueZCpq-qJsZsMVq4hSZh2BZrZv7pfQxMk5PTy4s4',  // 試算表 ID
+      SHEET_NAME: '用戶資料',                                     // 工作表名稱
+      LIFF_ID: '2008231249-yv8294Jp'                             // LIFF ID（正確的）
+    };
+
+    /*********************************************
+     * 🚀【主程式】
+     *********************************************/
     let USER_ID = '';
     let USER_NAME = '';
 
     async function init() {
       try {
-        await liff.init({ liffId: '2008231249-yv8294Jp' });
+        await liff.init({ liffId: CONFIG.LIFF_ID });
 
+        // 尚未登入 → 顯示登入按鈕
         if (!liff.isLoggedIn()) {
           const btn = document.getElementById('loginBtn');
           btn.style.display = 'block';
@@ -61,7 +72,7 @@
           return;
         }
 
-        // 抓取使用者資料
+        // 已登入 → 取得使用者資訊
         const profile = await liff.getProfile();
         USER_ID = profile.userId;
         USER_NAME = profile.displayName;
@@ -69,7 +80,7 @@
 
       } catch (err) {
         console.error('init error:', err);
-        document.getElementById('msg').innerHTML = '<span class="error">初始化失敗，請稍後再試</span>';
+        showMsg('初始化失敗，請稍後再試', 'error');
       }
     }
 
@@ -86,33 +97,41 @@
 
       const data = {
         action: 'registerUser',
-        sheetId: SHEET_ID,
-        sheetName: SHEET_NAME,
+        sheetId: CONFIG.SHEET_ID,
+        sheetName: CONFIG.SHEET_NAME,
         lineUserId: USER_ID,
         name, phone, schoolId, dept
       };
 
       try {
-        const res = await fetch(SCRIPT_URL, {
+        const res = await fetch(CONFIG.SCRIPT_URL, {
           method: 'POST',
           body: JSON.stringify(data)
         }).then(r => r.json());
 
-        if (res.success && res.message) {
-          document.getElementById('msg').innerHTML = `<span class="warning">⚠️ ${res.message}</span>`;
-        } else if (res.success) {
-          document.getElementById('msg').innerHTML = `<span class="success">✅ ${USER_NAME}，您已完成註冊！</span>`;
+        // 分類顯示回應
+        if (res.success && res.message === '註冊成功') {
+          showMsg(`✅ ${USER_NAME}，您已完成註冊！`, 'success');
           document.getElementById('form').style.display = 'none';
+        } else if (res.success && res.message) {
+          showMsg(`⚠️ ${res.message}`, 'warning');
         } else {
-          document.getElementById('msg').innerHTML = `<span class="error">❌ 註冊失敗：${res.error || '未知錯誤'}</span>`;
+          showMsg(`❌ 註冊失敗：${res.error || '未知錯誤'}`, 'error');
         }
 
       } catch (e) {
         console.error(e);
-        document.getElementById('msg').innerHTML = '<span class="error">連線錯誤，請稍後再試</span>';
+        showMsg('連線錯誤，請稍後再試', 'error');
       }
     }
 
+    // ✨ 統一訊息顯示
+    function showMsg(text, type) {
+      const el = document.getElementById('msg');
+      el.innerHTML = `<span class="${type}">${text}</span>`;
+    }
+
+    // 綁定事件
     document.getElementById('submitBtn').onclick = submitRegister;
     window.addEventListener('DOMContentLoaded', init);
   </script>
