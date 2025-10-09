@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>註冊 - 穿山甲專車</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://static.line-scdn.net/liff/edge/versions/2.1/sdk.js"></script>
+    <!-- 移除原本的 liff SDK 引用 -->
 </head>
 <body>
     <div class="container">
@@ -62,6 +62,12 @@
                 <p><strong>科系：</strong><span id="infoDepartment"></span></p>
             </div>
             <button onclick="goToBooking()" class="btn-primary">開始預約專車</button>
+        </div>
+
+        <div id="errorMessage" class="error-container" style="display: none;">
+            <h2>系統錯誤</h2>
+            <p id="errorText"></p>
+            <button onclick="location.reload()" class="btn-primary">重新整理</button>
         </div>
     </div>
 
