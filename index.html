@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>校園巴士註冊</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    body {
+      background:#000;
+      color:#fff;
+      text-align:center;
+      font-family:"Microsoft JhengHei";
+      margin:0; padding:0;
+    }
+    h1 { color:gold; margin:24px 0; }
+    input, button {
+      width:80%; max-width:320px;
+      margin:12px auto;
+      display:block;
+      padding:10px;
+      font-size:1em;
+      border:none;
+      border-radius:6px;
+    }
+    input { background:#222; color:#fff; }
+    button { background:#28a745; color:#fff; cursor:pointer; }
+    #msg { margin:16px 0; font-size:1.2em; }
+  </style>
+</head>
+<body>
+  <h1>校園巴士註冊</h1>
+  <button id="loginBtn" style="display:none">LINE 登入</button>
+  <div id="form" style="display:none">
+    <input id="name" placeholder="姓名">
+    <input id="phone" placeholder="電話">
+    <input id="schoolId" placeholder="學號">
+    <input id="dept" placeholder="科系">
+    <button id="submitBtn">送出註冊</button>
+  </div>
+  <div id="msg"></div>
+
+  <script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyEEFZTLpsJEqSkDZcCjoqWSPkbNysd6t5ZRNJiYq4g4YI2SvPBHa9_1XBSapRWXS10/exec';
+    const SHEET_ID = '19zDueZCpq-qJsZsMVq4hSZh2BZrZv7pfQxMk5PTy4s4';
+    const SHEET_NAME = '用戶資料';
+    let USER_ID = '';
+
+    async function init() {
+      try {
+        // 從 GAS 取得 LIFF ID
+        const resp = await fetch(`${SCRIPT_URL}?action=getLiffId&storeId=BUS`);
+        let { liffId } = await resp.json();
+        if (!liffId) liffId = '2007161529-w3nJZpm0'; // 預設測試用
+
+        await liff.init({ liffId });
+
+        // 如果尚未登入，顯示登入按鈕
+        if (!liff.isLoggedIn()) {
+          const btn = document.getElementById('loginBtn');
+          btn.style.display = 'block';
+          btn.onclick = () => liff.login();
+          return;
+        }
+
+        // 取得使用者資訊
+        const profile = await liff.getProfile();
+        USER_ID = profile.userId;
+        document.getElementById('form').style.display = 'block';
+
+      } catch (err) {
+        console.error('init error:', err);
+        document.getElementById('msg').textContent = '初始化失敗，請稍後再試';
+      }
+    }
+
+    async function submitRegister() {
+      const name = document.getElementById('name').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const schoolId = document.getElementById('schoolId').value.trim();
+      const dept = document.getElementById('dept').value.trim();
+
+      if (!name || !phone || !schoolId || !dept) {
+        alert('請完整填寫所有欄位');
+        return;
+      }
+
+      const data = {
+        action: 'registerUser',
+        sheetId: SHEET_ID,
+        sheetName: SHEET_NAME,
+        lineUserId: USER_ID,
+        name, phone, schoolId, dept
+      };
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify(data)
+        }).then(r => r.json());
+
+        if (res.success) {
+          document.getElementById('msg').textContent = '✅ 註冊成功！';
+          document.getElementById('form').style.display = 'none';
+        } else {
+          document.getElementById('msg').textContent = '❌ 註冊失敗：' + res.error;
+        }
+      } catch (e) {
+        console.error(e);
+        document.getElementById('msg').textContent = '連線錯誤，請稍後再試';
+      }
+    }
+
+    document.getElementById('submitBtn').onclick = submitRegister;
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
