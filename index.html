@@ -3,32 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>穿山甲專車</title>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <title>穿山甲專車登入</title>
+  <!-- ✅ 使用明確版本號，避免 ORB -->
+  <script src="https://static.line-scdn.net/liff/edge/2.20.2/sdk.js"></script>
   <style>
     body {
-      background:#000;
-      color:#fff;
-      text-align:center;
-      font-family:"Microsoft JhengHei";
-      margin:0; padding:0;
+      font-family:"Microsoft JhengHei",system-ui;
+      background:#000; color:#fff; text-align:center;
+      margin:0; padding:40px 20px;
     }
-    h1 { color:gold; margin:24px 0; }
+    h1 { color:gold; margin-bottom:24px; }
     button {
-      width:80%; max-width:320px;
-      margin:12px auto;
-      display:block;
-      padding:10px;
-      font-size:1em;
-      border:none;
-      border-radius:6px;
-      background:#28a745; color:#fff;
-      cursor:pointer;
+      background:#28a745; color:#fff; border:none;
+      border-radius:6px; padding:10px 24px;
+      font-size:16px; cursor:pointer;
+      margin-top:10px;
     }
-    #msg { margin:16px 0; font-size:1.1em; }
+    #msg { margin:16px auto; font-size:1.1em; width:90%; max-width:400px; }
+    .error { color:#ff4444; }
     .success { color:#00ff99; }
     .warning { color:#ffcc00; }
-    .error { color:#ff4444; }
   </style>
 </head>
 <body>
@@ -41,20 +35,18 @@
       GAS_URL: 'https://script.google.com/macros/s/AKfycbxgLRcFkyj9huPKqldaEendFC1YiGkdMSJvWi8qjvUAvbZgEs3OLjz9J5ZZCVvLW03gtw/exec'
     };
 
-    // 🧩 共用訊息顯示
     function showMsg(text, type='') {
       const el = document.getElementById('msg');
-      el.innerHTML = `<span class="${type}">${text}</span>`;
+      el.innerHTML = `<div class="${type}">${text}</div>`;
     }
 
-    // 🚀 初始化流程
-    async function init() {
+    async function initLiff() {
       try {
-        showMsg('⚙️ 準備初始化 LIFF...', 'warning');
+        showMsg('⚙️ 初始化 LIFF 中...', 'warning');
         await liff.init({ liffId: CONFIG.LIFF_ID });
 
         if (!liff.isLoggedIn()) {
-          showMsg('🔑 導向 LINE 登入中...', 'warning');
+          showMsg('🔑 前往 LINE 登入頁面...', 'warning');
           liff.login({ redirectUri: window.location.href });
           return;
         }
@@ -62,12 +54,11 @@
         const profile = await liff.getProfile();
         showMsg(`👋 歡迎 ${profile.displayName}`, 'success');
 
-        // 呼叫後端確認註冊狀態
         const url = `${CONFIG.GAS_URL}?action=register&userId=${profile.userId}&name=${encodeURIComponent(profile.displayName)}`;
         const res = await fetch(url).then(r => r.json());
 
         if (res.status === 'existing_user') {
-          showMsg('✅ 已註冊，用戶登入成功！', 'success');
+          showMsg('✅ 已註冊，導向預約頁...', 'success');
           window.location.href = 'booking.html';
         } else {
           showMsg('📝 尚未註冊，導向註冊頁...', 'warning');
@@ -75,13 +66,12 @@
         }
 
       } catch (err) {
-        console.error(err);
-        showMsg('❌ 初始化失敗，請重新整理頁面<br>' + err.message, 'error');
+        console.error('LIFF 初始化錯誤:', err);
+        showMsg(`❌ LIFF 初始化失敗：${err.message}`, 'error');
       }
     }
 
-    // 等待 DOM 準備完成再初始化（確保 SDK 載入成功）
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', initLiff);
   </script>
 </body>
 </html>
