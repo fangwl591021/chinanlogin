@@ -41,7 +41,7 @@
   <div id="msg"></div>
 
   <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyaXw09WSsoB1XrEroU-_jsKF59M_vYP7SwMEIWlxiOMKXej7VLP-zAyB-ccwFMPDosqg/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyymPfZTKEUXUJGrnzM141geaFj1yBZvhW4R0KmUA76LVSvE39t8Zw4FVcgUhXNDkBXaQ/exec';
     const SHEET_ID = '19zDueZCpq-qJsZsMVq4hSZh2BZrZv7pfQxMk5PTy4s4';
     const SHEET_NAME = '用戶資料';
     let USER_ID = '';
@@ -51,7 +51,7 @@
         // 從 GAS 取得 LIFF ID
         const resp = await fetch(`${SCRIPT_URL}?action=getLiffId&storeId=BUS`);
         let { liffId } = await resp.json();
-        if (!liffId) liffId = '2007161529-w3nJZpm0'; // 預設測試用
+        if (!liffId) liffId = '2008231249-yv8294Jp'; // 預設測試用
 
         await liff.init({ liffId });
 
