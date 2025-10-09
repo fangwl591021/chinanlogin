@@ -3,20 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>穿山甲專車會員註冊</title>
+<title>穿山甲專車會員登入</title>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
-body{background:#000;color:#fff;text-align:center;font-family:"Microsoft JhengHei";margin:0;padding:20px}
-input,button{width:80%;max-width:320px;margin:12px auto;display:block;padding:10px;border:none;border-radius:6px;font-size:1em}
-input{background:#222;color:#fff}
-button{background:#28a745;color:#fff;cursor:pointer;font-weight:bold}
-#msg{margin:16px 0;font-size:1.1em}
-.success{color:#00ff99}.warning{color:#ffcc00}.error{color:#ff4444}
+body { background:#000; color:#fff; text-align:center; font-family:"Microsoft JhengHei"; margin:0; padding:20px; }
+h2 { color: gold; }
+input, button { width:80%; max-width:320px; margin:10px auto; display:block; padding:12px; border:none; border-radius:6px; font-size:1em; }
+input { background:#222; color:#fff; }
+button { background:#28a745; color:#fff; font-weight:bold; cursor:pointer; }
+#msg { margin:16px 0; font-size:1.1em; }
+.success { color:#00ff99; } .warning { color:#ffcc00; } .error { color:#ff4444; }
 </style>
 </head>
 <body>
-<h2>🚌 穿山甲專車會員註冊</h2>
-<div id="msg"></div>
+<h2>🚌 穿山甲專車會員登入</h2>
+<div id="msg">登入中...</div>
 <div id="form" style="display:none">
   <input id="name" placeholder="姓名">
   <input id="phone" placeholder="電話">
@@ -26,44 +27,59 @@ button{background:#28a745;color:#fff;cursor:pointer;font-weight:bold}
 </div>
 
 <script>
-const LIFF_ID = '2008231249-yv8294Jp';
-let UID='',NAME='';
+const LIFF_ID = '2008231249-yv8294Jp'; // 你的 LIFF ID
+const API_URL = 'https://script.google.com/macros/s/AKfycbwzV2t-w-jXsgpAFBQR7sGEP4ycpO9ML2bXs-IEutNkIoYJ6Qsf69mihgJMTKVnqVMk5g/exec';
+const MAIN_URL = 'https://fangwl591021.github.io/chinanlogin/main.html'; // 預約主頁 (GitHub)
 
-window.onload = async()=>{
-  await liff.init({liffId:LIFF_ID});
-  if(!liff.isLoggedIn()) return liff.login();
-  const profile=await liff.getProfile();
-  UID=profile.userId; NAME=profile.displayName;
-  showMsg(`👋 歡迎 ${NAME}，正在檢查身分...`,'warning');
-  google.script.run.withSuccessHandler(res=>{
-    if(res.isRegistered){
-      showMsg(`✅ 歡迎回來 ${res.user.name}，前往預約頁...`,'success');
-      setTimeout(()=>location.href=`?uid=${UID}`,1500);
-    }else{
-      document.getElementById('form').style.display='block';
-      showMsg('請完成註冊','warning');
-    }
-  }).checkUserLogin(UID);
+let UID='', NAME='';
+
+window.onload = async ()=>{
+  await liff.init({ liffId: LIFF_ID });
+  if (!liff.isLoggedIn()) return liff.login();
+  const profile = await liff.getProfile();
+  UID = profile.userId; NAME = profile.displayName;
+  showMsg(`👋 歡迎 ${NAME}，正在檢查身分...`, 'warning');
+
+  const res = await fetch(`${API_URL}?action=checkUser&lineUserId=${UID}`);
+  const data = await res.json();
+
+  if (data.isRegistered) {
+    showMsg(`✅ 歡迎回來 ${data.userName}，前往預約頁...`, 'success');
+    setTimeout(()=>location.href = `${MAIN_URL}?uid=${UID}`, 1500);
+  } else {
+    document.getElementById('form').style.display = 'block';
+    showMsg('請完成註冊', 'warning');
+  }
 };
 
-document.getElementById('submitBtn').onclick=()=>{
-  const d={
-    action:'registerUser',
-    lineUserId:UID,
-    name:val('name'),
-    phone:val('phone'),
-    schoolId:val('schoolId'),
-    dept:val('dept')
+document.getElementById('submitBtn').onclick = async ()=>{
+  const d = {
+    action: 'registerUser',
+    lineUserId: UID,
+    name: val('name'),
+    phone: val('phone'),
+    schoolId: val('schoolId'),
+    dept: val('dept')
   };
-  if(!d.name||!d.phone||!d.schoolId||!d.dept){alert('請完整填寫');return;}
-  google.script.run.withSuccessHandler(r=>{
-    showMsg('✅ 註冊成功！前往預約頁','success');
-    setTimeout(()=>location.href=`?uid=${UID}`,1500);
-  }).registerUser(d);
+  if (!d.name || !d.phone || !d.schoolId || !d.dept) return alert('請完整填寫');
+
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(d)
+  });
+  const data = await res.json();
+
+  if (data.success) {
+    showMsg('✅ 註冊成功，前往預約頁...', 'success');
+    setTimeout(()=>location.href = `${MAIN_URL}?uid=${UID}`, 1500);
+  } else {
+    showMsg('❌ 註冊失敗：' + data.message, 'error');
+  }
 };
 
-function val(id){return document.getElementById(id).value.trim();}
-function showMsg(t,c){document.getElementById('msg').innerHTML=`<span class="${c}">${t}</span>`;}
+function val(id){ return document.getElementById(id).value.trim(); }
+function showMsg(t,c){ document.getElementById('msg').innerHTML=`<span class="${c}">${t}</span>`; }
 </script>
 </body>
 </html>
