@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>校園巴士註冊</title>
+  <title>穿山甲專車會員註冊</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     body {
@@ -13,7 +13,7 @@
       font-family:"Microsoft JhengHei";
       margin:0; padding:0;
     }
-    h1 { color:gold; margin:24px 0; }
+    h1 { color:gold; margin:24px 0; letter-spacing:1px; }
     input, select, button {
       width:80%; max-width:320px;
       margin:12px auto;
@@ -24,8 +24,18 @@
       border-radius:6px;
     }
     input, select { background:#222; color:#fff; }
-    option.group { color:#00ff99; font-weight:bold; } /* 綠色學院 */
-    button { background:#28a745; color:#fff; cursor:pointer; }
+    select optgroup {
+      color:#00ff99; /* 綠色學院標題 */
+      font-weight:bold;
+      font-style:normal;
+    }
+    button {
+      background:#28a745;
+      color:#fff;
+      cursor:pointer;
+      font-size:1.1em;
+    }
+    button:hover { background:#2ecc71; }
     #msg { margin:16px 0; font-size:1.2em; }
     .success { color:#00ff99; }
     .warning { color:#ffcc00; }
@@ -33,74 +43,95 @@
   </style>
 </head>
 <body>
-  <h1>校園巴士註冊</h1>
+  <h1>穿山甲專車會員註冊</h1>
+
+  <!-- LINE 登入按鈕 -->
   <button id="loginBtn" style="display:none">LINE 登入</button>
+
+  <!-- 註冊表單 -->
   <div id="form" style="display:none">
     <input id="name" placeholder="姓名">
     <input id="phone" placeholder="電話">
     <input id="schoolId" placeholder="學號">
+
     <select id="dept">
       <option value="">請選擇科系</option>
       <option value="學校職員">學校職員</option>
 
-      <option class="group" disabled>人文學院</option>
-      <option>中國語文學系</option>
-      <option>歷史學系</option>
-      <option>哲學系</option>
-      <option>外國語文學系</option>
+      <optgroup label="人文學院">
+        <option>中國語文學系</option>
+        <option>歷史學系</option>
+        <option>哲學系</option>
+        <option>外國語文學系</option>
+      </optgroup>
 
-      <option class="group" disabled>管理學院</option>
-      <option>國際企業學系</option>
-      <option>企業管理學系</option>
-      <option>會計學系</option>
-      <option>財務金融學系</option>
-      <option>資訊管理學系</option>
-      <option>觀光休閒與餐旅管理學系</option>
+      <optgroup label="管理學院">
+        <option>國際企業學系</option>
+        <option>企業管理學系</option>
+        <option>會計學系</option>
+        <option>財務金融學系</option>
+        <option>資訊管理學系</option>
+        <option>觀光休閒與餐旅管理學系</option>
+      </optgroup>
 
-      <option class="group" disabled>教育學院</option>
-      <option>教育政策與行政學系</option>
-      <option>輔導與諮商學系</option>
-      <option>教育心理與諮商研究所</option>
+      <optgroup label="教育學院">
+        <option>教育政策與行政學系</option>
+        <option>輔導與諮商學系</option>
+        <option>教育心理與諮商研究所</option>
+      </optgroup>
 
-      <option class="group" disabled>科技學院</option>
-      <option>應用材料及光電工程學系</option>
-      <option>電機工程學系</option>
-      <option>資訊工程學系</option>
+      <optgroup label="科技學院">
+        <option>應用材料及光電工程學系</option>
+        <option>電機工程學系</option>
+        <option>資訊工程學系</option>
+      </optgroup>
 
-      <option class="group" disabled>社會科學院</option>
-      <option>公共行政與政策學系</option>
-      <option>社會政策與社會工作學系</option>
-      <option>應用經濟與社會研究學系</option>
+      <optgroup label="社會科學院">
+        <option>公共行政與政策學系</option>
+        <option>社會政策與社會工作學系</option>
+        <option>應用經濟與社會研究學系</option>
+      </optgroup>
 
-      <option class="group" disabled>國際學院</option>
-      <option>國際經營與貿易學系</option>
-      <option>國際文教與比較教育學系</option>
-      <option>東南亞學系</option>
+      <optgroup label="國際學院">
+        <option>國際經營與貿易學系</option>
+        <option>國際文教與比較教育學系</option>
+        <option>東南亞學系</option>
+      </optgroup>
 
-      <option class="group" disabled>藝術學院</option>
-      <option>音樂學系</option>
-      <option>美術學系</option>
-      <option>設計學系</option>
+      <optgroup label="藝術學院">
+        <option>音樂學系</option>
+        <option>美術學系</option>
+        <option>設計學系</option>
+      </optgroup>
     </select>
+
     <button id="submitBtn">送出註冊</button>
   </div>
+
   <div id="msg"></div>
 
   <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyX6YmGCEr5m1IFhtQuVKQZcnvHHkCj7OA4wfkPzhCASTSgX6FaW67H9aLjyr31LlSsDQ/exec';
+    /*********************************************
+     * 🔧【參數集中設定】
+     *********************************************/
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyydeesBs4rUvq8sAgDJXNwM_BN8zIhd2rMGHS9SJnNQSZjZQ58v18K8KJGHbrJWMY4zQ/exec';
     const SHEET_ID = '19zDueZCpq-qJsZsMVq4hSZh2BZrZv7pfQxMk5PTy4s4';
     const SHEET_NAME = '用戶資料';
+    const LIFF_ID = '2008231249-yv8294Jp';
+
     let USER_ID = '';
     let USER_NAME = '';
 
+    /*********************************************
+     * 🚀 初始化 LIFF 登入流程
+     *********************************************/
     async function init() {
       try {
-        await liff.init({ liffId: '2008231249-yv8294Jp' });
+        await liff.init({ liffId: LIFF_ID });
 
         if (!liff.isLoggedIn()) {
-          const btn = document.getElementById('loginBtn');
-          btn.style.display = 'block';
-          btn.onclick = () => liff.login();
+          document.getElementById('loginBtn').style.display = 'block';
+          document.getElementById('loginBtn').onclick = () => liff.login();
           return;
         }
 
@@ -116,6 +147,9 @@
       }
     }
 
+    /*********************************************
+     * ✏️ 提交註冊資料
+     *********************************************/
     async function submitRegister() {
       const name = document.getElementById('name').value.trim();
       const phone = document.getElementById('phone').value.trim();
@@ -157,6 +191,9 @@
       }
     }
 
+    /*********************************************
+     * 🧩 共用訊息顯示函式
+     *********************************************/
     function showMsg(text, type) {
       const el = document.getElementById('msg');
       el.innerHTML = `<span class="${type}">${text}</span>`;
