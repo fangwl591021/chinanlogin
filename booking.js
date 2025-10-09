@@ -1,4 +1,4 @@
-const GAS_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxgLRcFkyj9huPKqldaEendFC1YiGkdMSJvWi8qjvUAvbZgEs3OLjz9J5ZZCVvLW03gtw/exec';
 let userProfile = null;
 
 async function initializeBooking() {
