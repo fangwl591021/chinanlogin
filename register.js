@@ -1,8 +1,18 @@
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxgLRcFkyj9huPKqldaEendFC1YiGkdMSJvWi8qjvUAvbZgEs3OLjz9J5ZZCVvLW03gtw/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzKZNfyLWWIKCEe_yzlZZP8KcWcjREeHAb36-X2HbIflXh0kCTxFJxkO8KIEv4Z6_3Pew/exec';
 let userProfile = null;
+
+// 等待頁面完全載入
+window.addEventListener('load', function() {
+    initializeLiff();
+});
 
 async function initializeLiff() {
     try {
+        // 檢查 liff 物件是否存在
+        if (typeof liff === 'undefined') {
+            throw new Error('LIFF SDK 載入失敗');
+        }
+
         await liff.init({ liffId: '2008231249-yv8294Jp' });
         
         if (!liff.isLoggedIn()) {
@@ -15,10 +25,11 @@ async function initializeLiff() {
         
     } catch (error) {
         console.error('LIFF 初始化失敗:', error);
-        showError('系統初始化失敗，請重新整理頁面');
+        showError('系統初始化失敗: ' + error.message);
     }
 }
 
+// 其餘函數保持不變...
 function showRegisterForm() {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('registerForm').style.display = 'block';
@@ -112,5 +123,3 @@ async function submitRegistration(formData) {
         document.getElementById('submitBtn').disabled = false;
     }
 }
-
-document.addEventListener('DOMContentLoaded', initializeLiff);
