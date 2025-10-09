@@ -3,37 +3,55 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>校園巴士註冊</title>
+  <title>穿山甲專車註冊</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     body {
       background:#000;
       color:#fff;
-      text-align:center;
       font-family:"Microsoft JhengHei";
-      margin:0; padding:0;
+      text-align:center;
+      margin:0;
+      padding:30px 20px;
     }
-    h1 { color:gold; margin:24px 0; }
+    h1 {
+      color:#ffd700;
+      font-size:1.6em;
+      margin-bottom:20px;
+    }
     input, button {
-      width:80%; max-width:320px;
-      margin:12px auto;
-      display:block;
-      padding:10px;
-      font-size:1em;
+      width:80%;
+      max-width:320px;
+      margin:10px auto;
+      padding:12px;
       border:none;
       border-radius:6px;
+      font-size:1em;
+      display:block;
     }
-    input { background:#222; color:#fff; }
-    button { background:#28a745; color:#fff; cursor:pointer; }
-    #msg { margin:16px 0; font-size:1.2em; }
-    .success { color: #00ff99; }
-    .warning { color: #ffcc00; }
-    .error { color: #ff4444; }
+    input {
+      background:#222;
+      color:#fff;
+    }
+    button {
+      background:#28a745;
+      color:#fff;
+      font-weight:bold;
+      cursor:pointer;
+    }
+    #msg {
+      margin-top:16px;
+      font-size:1.1em;
+    }
+    .success { color:#00ff99; }
+    .warning { color:#ffcc00; }
+    .error { color:#ff4444; }
   </style>
 </head>
 <body>
-  <h1>校園巴士註冊</h1>
-  <button id="loginBtn" style="display:none">LINE 登入</button>
+  <h1>穿山甲專車註冊</h1>
+  <p id="msg">系統初始化中...</p>
+
   <div id="form" style="display:none">
     <input id="name" placeholder="姓名">
     <input id="phone" placeholder="電話">
@@ -41,81 +59,100 @@
     <input id="dept" placeholder="科系">
     <button id="submitBtn">送出註冊</button>
   </div>
-  <div id="msg"></div>
 
   <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyymPfZTKEUXUJGrnzM141geaFj1yBZvhW4R0KmUA76LVSvE39t8Zw4FVcgUhXNDkBXaQ/exec';
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby2mc-JVO6SUCozKO3l3tJwPcN-F_2yPQpd1E-nGyr5NWC6RGpuGGpHXQPMp2XP2Ez8zg/exec';
-    const SHEET_ID = '19zDueZCpq-qJsZsMVq4hSZh2BZrZv7pfQxMk5PTy4s4';
-    const SHEET_NAME = '用戶資料';
-    let USER_ID = '';
-    let USER_NAME = '';
+    /**************************************************
+     * 🔧 設定區
+     **************************************************/
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyX6YmGCEr5m1IFhtQuVKQZcnvHHkCj7OA4wfkPzhCASTSgX6FaW67H9aLjyr31LlSsDQ/exec";
+    const LIFF_ID = "2008231249-yv8294Jp";
 
-    async function init() {
+    let USER_ID = "";
+    let USER_NAME = "";
+
+    /**************************************************
+     * 🚀 初始化 LIFF
+     **************************************************/
+    window.onload = async function() {
       try {
-        await liff.init({ liffId: '2008231249-yv8294Jp' });
+        showMsg("⚙️ 初始化中...", "warning");
+        await liff.init({ liffId: LIFF_ID });
 
         if (!liff.isLoggedIn()) {
-          const btn = document.getElementById('loginBtn');
-          btn.style.display = 'block';
-          btn.onclick = () => liff.login();
+          showMsg("🔑 導向 LINE 登入中...", "warning");
+          liff.login({ redirectUri: window.location.href });
           return;
         }
 
-        // 抓取使用者資料
         const profile = await liff.getProfile();
         USER_ID = profile.userId;
         USER_NAME = profile.displayName;
-        document.getElementById('form').style.display = 'block';
+        showMsg(`👋 歡迎 ${USER_NAME}`, "success");
+
+        // 顯示表單
+        document.getElementById("form").style.display = "block";
+        document.getElementById("name").value = USER_NAME;
 
       } catch (err) {
-        console.error('init error:', err);
-        document.getElementById('msg').innerHTML = '<span class="error">初始化失敗，請稍後再試</span>';
+        console.error(err);
+        showMsg("❌ LIFF 初始化失敗：" + err.message, "error");
       }
-    }
+    };
 
-    async function submitRegister() {
-      const name = document.getElementById('name').value.trim();
-      const phone = document.getElementById('phone').value.trim();
-      const schoolId = document.getElementById('schoolId').value.trim();
-      const dept = document.getElementById('dept').value.trim();
+    /**************************************************
+     * 📝 提交註冊
+     **************************************************/
+    document.getElementById("submitBtn").addEventListener("click", async () => {
+      const name = document.getElementById("name").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const schoolId = document.getElementById("schoolId").value.trim();
+      const dept = document.getElementById("dept").value.trim();
 
       if (!name || !phone || !schoolId || !dept) {
-        alert('請完整填寫所有欄位');
+        showMsg("⚠️ 請完整填寫所有欄位", "warning");
         return;
       }
 
-      const data = {
-        action: 'registerUser',
-        sheetId: SHEET_ID,
-        sheetName: SHEET_NAME,
+      const payload = {
+        action: "registerUser",
         lineUserId: USER_ID,
         name, phone, schoolId, dept
       };
 
+      showMsg("⏳ 資料送出中...", "warning");
+
       try {
-        const res = await fetch(SCRIPT_URL, {
-          method: 'POST',
-          body: JSON.stringify(data)
-        }).then(r => r.json());
+        const res = await fetch(GAS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
 
-        if (res.success && res.message) {
-          document.getElementById('msg').innerHTML = `<span class="warning">⚠️ ${res.message}</span>`;
-        } else if (res.success) {
-          document.getElementById('msg').innerHTML = `<span class="success">✅ ${USER_NAME}，您已完成註冊！</span>`;
-          document.getElementById('form').style.display = 'none';
+        const data = await res.json();
+        console.log("📦 後端回應:", data);
+
+        if (data.success && data.message.includes("註冊成功")) {
+          showMsg(`✅ ${USER_NAME}，註冊成功！`, "success");
+          document.getElementById("form").style.display = "none";
+        } else if (data.success && data.message.includes("已註冊")) {
+          showMsg(`⚠️ ${USER_NAME} 已註冊，登入時間已更新`, "warning");
+          document.getElementById("form").style.display = "none";
         } else {
-          document.getElementById('msg').innerHTML = `<span class="error">❌ 註冊失敗：${res.error || '未知錯誤'}</span>`;
+          showMsg(`❌ 註冊失敗：${data.message}`, "error");
         }
-
-      } catch (e) {
-        console.error(e);
-        document.getElementById('msg').innerHTML = '<span class="error">連線錯誤，請稍後再試</span>';
+      } catch (err) {
+        console.error("❌ Fetch 錯誤:", err);
+        showMsg("❌ 系統連線失敗，請稍後再試", "error");
       }
-    }
+    });
 
-    document.getElementById('submitBtn').onclick = submitRegister;
-    window.addEventListener('DOMContentLoaded', init);
+    /**************************************************
+     * 💬 共用訊息顯示
+     **************************************************/
+    function showMsg(text, type) {
+      const el = document.getElementById("msg");
+      el.innerHTML = `<span class="${type}">${text}</span>`;
+    }
   </script>
 </body>
 </html>
