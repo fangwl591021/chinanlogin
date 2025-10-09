@@ -1,4 +1,4 @@
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzKZNfyLWWIKCEe_yzlZZP8KcWcjREeHAb36-X2HbIflXh0kCTxFJxkO8KIEv4Z6_3Pew/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwkcw58SxvxRyHb1sRrxxIUM-L76L-Idnbv0gKh_W3M3t8P86h7X0TtIHyMrwtGWb3Jfg/exec';
 let userProfile = null;
 
 // 動態載入 LIFF SDK
