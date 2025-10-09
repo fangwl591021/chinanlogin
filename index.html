@@ -6,44 +6,149 @@
   <title>穿山甲專車會員註冊</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
-    body { background:#000; color:#fff; text-align:center; font-family:"Microsoft JhengHei"; margin:0; padding:0; }
-    h1 { color:gold; margin:24px 0; }
-    input, select, button {
-      width:80%; max-width:320px; margin:12px auto; display:block;
-      padding:10px; font-size:1em; border:none; border-radius:6px;
+    body { 
+      background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+      color: #fff; 
+      text-align: center; 
+      font-family: "Microsoft JhengHei"; 
+      margin: 0; 
+      padding: 20px; 
+      min-height: 100vh;
     }
-    input, select { background:#222; color:#fff; }
-    select optgroup { color:#00ff99; font-weight:bold; font-style:normal; }
-    button { background:#28a745; color:#fff; cursor:pointer; font-size:1.1em; }
-    button:hover { background:#2ecc71; }
-    #msg { margin:16px 0; font-size:1.2em; }
-    .success { color:#00ff99; } .warning { color:#ffcc00; } .error { color:#ff4444; }
+    h1 { 
+      color: gold; 
+      margin: 24px 0;
+      font-size: 2em;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+    input, select, button {
+      width: 80%; 
+      max-width: 320px; 
+      margin: 12px auto; 
+      display: block;
+      padding: 12px; 
+      font-size: 1em; 
+      border: none; 
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+    input, select { 
+      background: #222; 
+      color: #fff; 
+      border: 1px solid #444;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: gold;
+    }
+    select optgroup { 
+      color: #00ff99; 
+      font-weight: bold; 
+      font-style: normal;
+      background: #111;
+    }
+    select option {
+      background: #000;
+      color: #fff;
+    }
+    button { 
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: #fff; 
+      cursor: pointer; 
+      font-size: 1.1em;
+      font-weight: bold;
+      transition: transform 0.2s;
+    }
+    button:hover { 
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+    }
+    button:disabled {
+      background: #666;
+      cursor: not-allowed;
+      transform: none;
+    }
+    #msg { 
+      margin: 20px auto; 
+      font-size: 1.1em;
+      max-width: 400px;
+      padding: 15px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .success { color: #00ff99; }
+    .warning { color: #ffcc00; }
+    .error { color: #ff4444; }
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
-  <h1>穿山甲專車會員註冊</h1>
+  <h1>🚌 穿山甲專車會員註冊</h1>
+  
   <button id="loginBtn" style="display:none">LINE 登入</button>
 
   <div id="form" style="display:none">
-    <input id="name" placeholder="姓名">
-    <input id="phone" placeholder="電話">
-    <input id="schoolId" placeholder="學號">
-    <select id="dept">
+    <input id="name" placeholder="姓名" required>
+    <input id="phone" placeholder="電話" type="tel" required>
+    <input id="schoolId" placeholder="學號" required>
+    <select id="dept" required>
       <option value="">請選擇科系</option>
       <option value="學校職員">學校職員</option>
       <optgroup label="人文學院">
-        <option>中國語文學系</option>
-        <option>歷史學系</option>
-        <option>哲學系</option>
-        <option>外國語文學系</option>
+        <option value="中國語文學系">中國語文學系</option>
+        <option value="歷史學系">歷史學系</option>
+        <option value="哲學系">哲學系</option>
+        <option value="外國語文學系">外國語文學系</option>
       </optgroup>
       <optgroup label="管理學院">
-        <option>國際企業學系</option>
-        <option>企業管理學系</option>
-        <option>會計學系</option>
-        <option>財務金融學系</option>
-        <option>資訊管理學系</option>
-        <option>觀光休閒與餐旅管理學系</option>
+        <option value="國際企業學系">國際企業學系</option>
+        <option value="企業管理學系">企業管理學系</option>
+        <option value="會計學系">會計學系</option>
+        <option value="財務金融學系">財務金融學系</option>
+        <option value="資訊管理學系">資訊管理學系</option>
+        <option value="觀光休閒與餐旅管理學系">觀光休閒與餐旅管理學系</option>
+      </optgroup>
+      <optgroup label="科技學院">
+        <option value="資訊工程學系">資訊工程學系</option>
+        <option value="應用材料與光電工程學系">應用材料與光電工程學系</option>
+        <option value="電機工程學系">電機工程學系</option>
+        <option value="土木工程學系">土木工程學系</option>
+        <option value="機械與機電工程學系">機械與機電工程學系</option>
+      </optgroup>
+      <optgroup label="教育學院">
+        <option value="教育政策與行政學系">教育政策與行政學系</option>
+        <option value="輔導與諮商學系">輔導與諮商學系</option>
+        <option value="華語文教學學系">華語文教學學系</option>
+        <option value="幼兒教育學系">幼兒教育學系</option>
+      </optgroup>
+      <optgroup label="社會科學學院">
+        <option value="公共行政與政策學系">公共行政與政策學系</option>
+        <option value="社會政策與社會工作學系">社會政策與社會工作學系</option>
+        <option value="經濟學系">經濟學系</option>
+        <option value="心理學系">心理學系</option>
+        <option value="傳播學系">傳播學系</option>
+      </optgroup>
+      <optgroup label="理學院">
+        <option value="應用化學系">應用化學系</option>
+        <option value="應用數學系">應用數學系</option>
+        <option value="生物醫學暨農業生物科技學系">生物醫學暨農業生物科技學系</option>
+        <option value="物理學系">物理學系</option>
+      </optgroup>
+      <optgroup label="國際事務學院">
+        <option value="國際經營與貿易學系">國際經營與貿易學系</option>
+        <option value="國際文教與比較教育學系">國際文教與比較教育學系</option>
+        <option value="東南亞學系">東南亞學系</option>
       </optgroup>
     </select>
     <button id="submitBtn">送出註冊</button>
@@ -53,21 +158,24 @@
 
   <script>
     /*********************************************
-     * 🔧【參數設定區】
+     * 🔧 配置參數
      *********************************************/
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwzV2t-w-jXsgpAFBQR7sGEP4ycpO9ML2bXs-IEutNkIoYJ6Qsf69mihgJMTKVnqVMk5g/exec';
-    const CHECK_URL = 'https://script.google.com/macros/s/AKfycbx8u9-yTOhCiS-PoQJJj-JVG86LGc9SX7G9TBAyuVXXPUNKsoGre-LOntkT-v-1EztOBQ/exec';
-    const MAIN_URL = 'https://script.google.com/macros/s/AKfycbwfCAzgXUiLIQsVe8L_4cTeeiQT2in3D5uVdQLJKUL6KVFe1EzWeBY37HvXfp36q2j-Fg/exec';
-    const LIFF_ID = '2008231249-yv8294Jp';
+    const CONFIG = {
+      // 統一使用一個 Apps Script 處理所有請求
+      API_URL: 'https://script.google.com/macros/s/AKfycbwzV2t-w-jXsgpAFBQR7sGEP4ycpO9ML2bXs-IEutNkIoYJ6Qsf69mihgJMTKVnqVMk5g/exec',
+      MAIN_URL: 'https://script.google.com/macros/s/AKfycbwfCAzgXUiLIQsVe8L_4cTeeiQT2in3D5uVdQLJKUL6KVFe1EzWeBY37HvXfp36q2j-Fg/exec',
+      LIFF_ID: '2008231249-yv8294Jp',
+      TIMEOUT: 10000
+    };
 
     let USER_ID = '', USER_NAME = '';
 
     /*********************************************
-     * 🚀 初始化 LIFF 登入流程
+     * 🚀 初始化
      *********************************************/
     async function init() {
       try {
-        await liff.init({ liffId: LIFF_ID });
+        await liff.init({ liffId: CONFIG.LIFF_ID });
 
         if (!liff.isLoggedIn()) {
           document.getElementById('loginBtn').style.display = 'block';
@@ -79,51 +187,73 @@
         USER_ID = profile.userId;
         USER_NAME = profile.displayName;
 
-        showMsg(`👋 歡迎 ${USER_NAME}`, 'success');
-
-        // 👇 登入後先檢查是否已註冊
-        checkUserStatus(USER_ID);
+        showMsg(`<div class="loading"></div> 正在檢查註冊狀態...`, 'warning');
+        await checkUserStatus(USER_ID);
 
       } catch (err) {
-        console.error('init error:', err);
+        console.error('初始化錯誤:', err);
         showMsg('❌ 初始化失敗，請重新整理頁面', 'error');
       }
     }
 
     /*********************************************
-     * 🔍 檢查是否已註冊
+     * 🔍 檢查註冊狀態
      *********************************************/
     async function checkUserStatus(lineUserId) {
       try {
-        const res = await fetch(`${CHECK_URL}?action=checkUserLogin&lineUserId=${encodeURIComponent(lineUserId)}`)
-          .then(r => r.json());
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), CONFIG.TIMEOUT);
+
+        const response = await fetch(
+          `${CONFIG.API_URL}?action=checkUser&lineUserId=${encodeURIComponent(lineUserId)}`,
+          { signal: controller.signal }
+        );
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const res = await response.json();
+        console.log('檢查結果:', res);
 
         if (res.isRegistered) {
-          showMsg(`✅ 歡迎回來，${res.user.name}！正在導向預約頁...`, 'success');
-          setTimeout(() => { window.location.href = MAIN_URL; }, 3000);
+          showMsg(`✅ 歡迎回來，${res.userName}！<br>正在導向預約頁...`, 'success');
+          setTimeout(() => {
+            window.location.href = CONFIG.MAIN_URL;
+          }, 2000);
         } else {
-          showMsg(`📝 您尚未註冊，請填寫資料完成註冊`, 'warning');
+          showMsg(`👋 歡迎 ${USER_NAME}<br>請填寫資料完成註冊`, 'success');
           document.getElementById('form').style.display = 'block';
         }
 
-      } catch (e) {
-        console.error('Check Error:', e);
-        showMsg('⚠️ 無法連線伺服器，請稍後再試', 'error');
+      } catch (err) {
+        console.error('檢查錯誤:', err);
+        
+        // 如果檢查失敗，直接顯示註冊表單
+        showMsg(`👋 歡迎 ${USER_NAME}<br>請填寫資料`, 'warning');
+        document.getElementById('form').style.display = 'block';
       }
     }
 
     /*********************************************
-     * ✏️ 送出註冊
+     * ✏️ 提交註冊
      *********************************************/
     async function submitRegister() {
       const name = document.getElementById('name').value.trim();
       const phone = document.getElementById('phone').value.trim();
       const schoolId = document.getElementById('schoolId').value.trim();
-      const dept = document.getElementById('dept').value.trim();
+      const dept = document.getElementById('dept').value;
+
       if (!name || !phone || !schoolId || !dept) {
-        alert('請完整填寫所有欄位');
+        alert('❌ 請完整填寫所有欄位');
         return;
       }
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = '處理中...';
+      
+      showMsg(`<div class="loading"></div> 註冊中，請稍候...`, 'warning');
 
       const data = {
         action: 'registerUser',
@@ -132,21 +262,45 @@
       };
 
       try {
-        const res = await fetch(SCRIPT_URL, {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), CONFIG.TIMEOUT);
+
+        const response = await fetch(CONFIG.API_URL, {
           method: 'POST',
-          body: JSON.stringify(data)
-        }).then(r => r.json());
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const res = await response.json();
+        console.log('註冊結果:', res);
 
         if (res.success) {
-          showMsg('✅ 註冊成功，3秒後自動導向預約頁...', 'success');
-          setTimeout(() => window.location.href = MAIN_URL, 3000);
+          showMsg(`✅ 註冊成功！<br>正在導向預約頁...`, 'success');
+          setTimeout(() => {
+            window.location.href = CONFIG.MAIN_URL;
+          }, 2000);
         } else {
           showMsg(`❌ 註冊失敗：${res.message || '未知錯誤'}`, 'error');
+          submitBtn.disabled = false;
+          submitBtn.textContent = '送出註冊';
         }
 
-      } catch (e) {
-        console.error('Fetch Error:', e);
-        showMsg('❌ 無法連線伺服器，請稍後再試', 'error');
+      } catch (err) {
+        console.error('提交錯誤:', err);
+        
+        if (err.name === 'AbortError') {
+          showMsg('❌ 連線逾時，請檢查網路後重試', 'error');
+        } else {
+          showMsg('❌ 無法連線到伺服器，請稍後再試', 'error');
+        }
+        
+        submitBtn.disabled = false;
+        submitBtn.textContent = '送出註冊';
       }
     }
 
@@ -154,7 +308,8 @@
      * 🧩 顯示訊息
      *********************************************/
     function showMsg(text, type) {
-      document.getElementById('msg').innerHTML = `<span class="${type}">${text}</span>`;
+      const msgEl = document.getElementById('msg');
+      msgEl.innerHTML = `<span class="${type}">${text}</span>`;
     }
 
     document.getElementById('submitBtn').onclick = submitRegister;
