@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>穿山甲專車</title>
-    <script src="https://static.line-scdn.net/liff/edge/versions/2.1/sdk.js"></script>
+    <!-- 移除原本的 liff SDK 引用 -->
 </head>
 <body>
     <div id="app" style="text-align: center; padding: 50px 20px;">
@@ -14,20 +14,30 @@
 
     <script>
         const LIFF_ID = '2008231249-yv8294Jp';
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbxgLRcFkyj9huPKqldaEendFC1YiGkdMSJvWi8qjvUAvbZgEs3OLjz9J5ZZCVvLW03gtw/exec';
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzKZNfyLWWIKCEe_yzlZZP8KcWcjREeHAb36-X2HbIflXh0kCTxFJxkO8KIEv4Z6_3Pew/exec';
 
-        // 等待 LIFF SDK 完全載入
-        window.addEventListener('load', function() {
-            initializeApp();
-        });
+        // 動態載入 LIFF SDK
+        function loadLiffSDK() {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://static.line-scdn.net/liff/edge/versions/2.1/sdk.js';
+                script.onload = () => {
+                    console.log('LIFF SDK 載入成功');
+                    resolve();
+                };
+                script.onerror = () => {
+                    reject(new Error('LIFF SDK 載入失敗'));
+                };
+                document.head.appendChild(script);
+            });
+        }
 
         async function initializeApp() {
             try {
-                // 檢查 liff 物件是否存在
-                if (typeof liff === 'undefined') {
-                    throw new Error('LIFF SDK 載入失敗');
-                }
-
+                // 先載入 LIFF SDK
+                await loadLiffSDK();
+                
+                // 初始化 LIFF
                 await liff.init({ liffId: LIFF_ID });
                 
                 if (!liff.isLoggedIn()) {
@@ -52,12 +62,17 @@
             } catch (error) {
                 console.error('初始化失敗:', error);
                 document.getElementById('app').innerHTML = `
-                    <h1>錯誤</h1>
+                    <h1>🚐 穿山甲專車</h1>
                     <p>系統初始化失敗: ${error.message}</p>
-                    <button onclick="location.reload()">重新整理</button>
+                    <p>請確認您在 LINE App 中開啟此連結</p>
+                    <button onclick="location.reload()" style="padding: 10px 20px; margin: 10px; background: #06c755; color: white; border: none; border-radius: 5px; cursor: pointer;">重新整理</button>
+                    <p style="font-size: 12px; color: #666; margin-top: 20px;">如果持續出現錯誤，請聯繫管理員</p>
                 `;
             }
         }
+
+        // 頁面載入後開始初始化
+        window.addEventListener('load', initializeApp);
     </script>
 </body>
 </html>
