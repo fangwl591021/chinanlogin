@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>穿山甲專車預約</title>
+<style>
+body { font-family:'Microsoft JhengHei'; background:#f5f6f7; color:#333; padding:20px; }
+.container { max-width:600px; margin:auto; background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+h2 { text-align:center; color:#2e7d32; }
+#userInfo { background:#e8f5e9; border:1px solid #81c784; padding:10px; border-radius:8px; margin-bottom:10px; }
+button { width:100%; padding:12px; border:none; border-radius:8px; font-size:16px; font-weight:bold; cursor:pointer; margin-top:10px; }
+#submitBtn { background:#2e7d32; color:white; }
+.success { color:#2e7d32; background:#e8f5e9; padding:10px; border-radius:8px; }
+.error { color:#c62828; background:#ffebee; padding:10px; border-radius:8px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>🚌 穿山甲專車預約</h2>
+  <div id="userInfo">載入中...</div>
+
+  <label>選擇日期</label>
+  <input type="date" id="date">
+
+  <label>選擇班次</label>
+  <select id="route">
+    <option value="">請選擇</option>
+    <option value="A1">A1｜22:00–23:00 暨大→埔里總站</option>
+    <option value="B1">B1｜22:30–23:30 埔里總站→暨大</option>
+  </select>
+
+  <label>下車站</label>
+  <input id="stop" placeholder="請輸入下車站">
+
+  <button id="submitBtn">送出預約</button>
+  <div id="msg"></div>
+</div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbwzV2t-w-jXsgpAFBQR7sGEP4ycpO9ML2bXs-IEutNkIoYJ6Qsf69mihgJMTKVnqVMk5g/exec';
+const url = new URL(window.location.href);
+const UID = url.searchParams.get('uid');
+
+if (!UID) {
+  document.body.innerHTML = '<h3 style="color:red;text-align:center;">請先登入再進入預約頁</h3>';
+} else {
+  loadUserInfo();
+}
+
+async function loadUserInfo(){
+  const res = await fetch(`${API_URL}?action=checkUser&lineUserId=${UID}`);
+  const data = await res.json();
+  if (data.isRegistered) {
+    document.getElementById('userInfo').innerHTML = `👤 ${data.userName}`;
+  } else {
+    document.getElementById('userInfo').innerHTML = `<span class="error">查無會員資料</span>`;
+  }
+}
+
+document.getElementById('submitBtn').onclick = async ()=>{
+  const d = {
+    action:'submitReservation',
+    lineUserId: UID,
+    date: document.getElementById('date').value,
+    route: document.getElementById('route').value,
+    stop: document.getElementById('stop').value
+  };
+  if (!d.date || !d.route || !d.stop) {
+    showMsg('❌ 請完整填寫預約資料','error'); return;
+  }
+  const res = await fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(d)
+  });
+  const data = await res.json();
+  if (data.success) showMsg('✅ 預約成功','success');
+  else showMsg('❌ 預約失敗：' + data.message,'error');
+};
+
+function showMsg(t,c){document.getElementById('msg').innerHTML=`<div class="${c}">${t}</div>`;}
+</script>
+</body>
+</html>
