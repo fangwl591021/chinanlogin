@@ -1,117 +1,72 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>店家註冊申請</title>
-  <link rel="stylesheet" href="static/css/style.css">
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js" defer></script>
-  <style>
-    body { background:#000; color:#fff; text-align:center; font-family:"Microsoft JhengHei"; margin:0; padding:0; }
-    h1 { color:gold; margin:24px 0; }
-    input, button { width:80%; max-width:320px; margin:12px auto; display:block; padding:10px; font-size:1em; border:none; border-radius:6px; }
-    input { background:#222; color:#fff; }
-    button { background:#28a745; color:#fff; cursor:pointer; }
-    #msg { margin:16px 0; font-size:1.2em; }
-    #pending button { width:auto; margin-left:8px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>註冊 - 穿山甲專車</title>
+    <link rel="stylesheet" href="../assets/common.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://static.line-scdn.net/liff/edge/versions/2.1/sdk.js"></script>
 </head>
 <body>
-  <h1>店家註冊申請</h1>
-  <button id="loginBtn" style="display:none">LINE 登入</button>
-  <div id="form" style="display:none">
-    <!-- 非管理員只顯示提交按鈕，管理員多一個「查看待審核」按鈕 -->
-    <input id="storeName" placeholder="店家名稱">
-    <input id="name" placeholder="姓名">
-    <input id="phone" placeholder="電話">
-    <button id="submitBtn">送出註冊申請</button>
-    <button id="viewPendingBtn" style="display:none; margin-top:8px;">查看待審核列表</button>
-  </div>
-  <div id="pending" style="display:none">
-    <h2>待審核列表</h2>
-    <ul id="pendingList"></ul>
-  </div>
-  <div id="msg"></div>
-  <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyEEFZTLpsJEqSkDZcCjoqWSPkbNysd6t5ZRNJiYq4g4YI2SvPBHa9_1XBSapRWXS10/exec';
-    let USER_ID;
-    const ADMINS = ['Udb7c5578b402bf6f1e0f7065fc57c17b','Uee955167d0b18f84a66906b550c9b292'];
+    <div class="container">
+        <div class="header">
+            <h1>🚐 穿山甲專車</h1>
+            <p>會員註冊</p>
+        </div>
 
-    async function init() {
-      // 取得管理用 LIFF ID
-      const resp = await fetch(`${SCRIPT_URL}?action=getLiffId&storeId=ADMIN`);
-      let { liffId } = await resp.json();
-      if (!liffId) {
-        console.warn('後端未回傳 ADMIN LIFF ID，使用預設值');
-        liffId = '2007161529-w3nJZpm0';
-      }
-      await liff.init({ liffId });
+        <div id="loading" class="loading">
+            <p>載入中...</p>
+        </div>
 
-      // 登入
-      if (!liff.isLoggedIn()) {
-        const btn = document.getElementById('loginBtn');
-        btn.style.display = 'block';
-        btn.onclick = () => liff.login();
-        return;
-      }
-      document.getElementById('loginBtn').style.display = 'none';
-      const profile = await liff.getProfile();
-      USER_ID = profile.userId;
-      document.getElementById('form').style.display = 'block';
-      // 如果是管理員，顯示查看待審核按鈕
-      if (ADMINS.includes(USER_ID)) {
-        const viewBtn = document.getElementById('viewPendingBtn');
-        viewBtn.style.display = 'block';
-        viewBtn.onclick = loadPending;
-      }
+        <div id="registerForm" class="form-container" style="display: none;">
+            <h2>填寫基本資料</h2>
+            <form id="userForm">
+                <div class="form-group">
+                    <label for="name">姓名 *</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
 
-      // 管理員直接載入待審核列表
-      if (ADMINS.includes(USER_ID)) loadPending();
-    }
+                <div class="form-group">
+                    <label for="phone">手機號碼 *</label>
+                    <input type="tel" id="phone" name="phone" pattern="09[0-9]{8}" required>
+                    <small>格式：0912345678</small>
+                </div>
 
-    async function submitRequest() {
-      const storeName = document.getElementById('storeName').value.trim();
-      const name = document.getElementById('name').value.trim();
-      const phone = document.getElementById('phone').value.trim();
-      if (!storeName || !name || !phone) return alert('請填完整');
-      // 送出申請
-      const res = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action:'registerRequest', storeId: storeName, userId: USER_ID, name, phone })
-      }).then(r => r.json());
-      console.log('registerRequest response:', res);
-      document.getElementById('msg').textContent = res.success ? '申請已送出，請等待核准' : `錯誤：${res.error}`;
-      // 如果是管理員，送出後重新載入待審核列表
-      if (ADMINS.includes(USER_ID)) loadPending();
-    }
+                <div class="form-group">
+                    <label for="studentId">學號</label>
+                    <input type="text" id="studentId" name="studentId">
+                </div>
 
-    async function loadPending() {
-      const list = await fetch(`${SCRIPT_URL}?action=listRequests`).then(r => r.json());
-      const ul = document.getElementById('pendingList');
-      ul.innerHTML = '';
-      list.forEach(req => {
-        const li = document.createElement('li');
-        li.textContent = `${req.storeId} ${req.name} (${req.phone})`;
-        const btn = document.createElement('button');
-        btn.textContent = '核准';
-        btn.onclick = () => approve(req.storeId, req.userId);
-        li.appendChild(btn);
-        ul.appendChild(li);
-      });
-      document.getElementById('pending').style.display = 'block';
-    }
+                <div class="form-group">
+                    <label for="department">科系</label>
+                    <input type="text" id="department" name="department">
+                </div>
 
-    async function approve(storeId, userId) {
-      const res = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action:'approve', storeId, userId })
-      }).then(r => r.json());
-      console.log('approve response:', res);
-      loadPending();
-    }
+                <div class="form-group">
+                    <label for="agreement">
+                        <input type="checkbox" id="agreement" name="agreement" required>
+                        我同意服務條款及隱私權政策
+                    </label>
+                </div>
 
-    document.getElementById('submitBtn').onclick = submitRequest;
-    window.addEventListener('DOMContentLoaded', init);
-  </script>
+                <button type="submit" class="btn-primary" id="submitBtn">完成註冊</button>
+            </form>
+        </div>
+
+        <div id="userInfo" class="user-info" style="display: none;">
+            <h2>🎉 註冊成功！</h2>
+            <div class="info-card">
+                <p><strong>姓名：</strong><span id="infoName"></span></p>
+                <p><strong>手機：</strong><span id="infoPhone"></span></p>
+                <p><strong>學號：</strong><span id="infoStudentId"></span></p>
+                <p><strong>科系：</strong><span id="infoDepartment"></span></p>
+            </div>
+            <button onclick="goToBooking()" class="btn-primary">開始預約專車</button>
+        </div>
+    </div>
+
+    <script src="liff.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
