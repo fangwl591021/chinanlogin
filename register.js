@@ -1,18 +1,28 @@
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzKZNfyLWWIKCEe_yzlZZP8KcWcjREeHAb36-X2HbIflXh0kCTxFJxkO8KIEv4Z6_3Pew/exec';
 let userProfile = null;
 
-// 等待頁面完全載入
-window.addEventListener('load', function() {
-    initializeLiff();
-});
+// 動態載入 LIFF SDK
+function loadLiffSDK() {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://static.line-scdn.net/liff/edge/versions/2.1/sdk.js';
+        script.onload = () => {
+            console.log('LIFF SDK 載入成功');
+            resolve();
+        };
+        script.onerror = () => {
+            reject(new Error('LIFF SDK 載入失敗'));
+        };
+        document.head.appendChild(script);
+    });
+}
 
 async function initializeLiff() {
     try {
-        // 檢查 liff 物件是否存在
-        if (typeof liff === 'undefined') {
-            throw new Error('LIFF SDK 載入失敗');
-        }
-
+        // 先載入 LIFF SDK
+        await loadLiffSDK();
+        
+        // 初始化 LIFF
         await liff.init({ liffId: '2008231249-yv8294Jp' });
         
         if (!liff.isLoggedIn()) {
@@ -58,7 +68,12 @@ function showLoading(show) {
 }
 
 function showError(message) {
-    alert('錯誤: ' + message);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('userInfo').style.display = 'none';
+    
+    document.getElementById('errorMessage').style.display = 'block';
+    document.getElementById('errorText').textContent = message;
 }
 
 // 表單提交處理
@@ -84,17 +99,17 @@ document.getElementById('userForm').addEventListener('submit', async function(e)
 
 function validateForm(data) {
     if (!data.name) {
-        showError('請填寫姓名');
+        alert('請填寫姓名');
         return false;
     }
     
     if (!data.phone || !/^09[0-9]{8}$/.test(data.phone)) {
-        showError('請填寫正確的手機號碼');
+        alert('請填寫正確的手機號碼');
         return false;
     }
     
     if (!document.getElementById('agreement').checked) {
-        showError('請同意服務條款及隱私權政策');
+        alert('請同意服務條款及隱私權政策');
         return false;
     }
     
@@ -117,9 +132,12 @@ async function submitRegistration(formData) {
         
     } catch (error) {
         console.error('註冊失敗:', error);
-        showError('註冊失敗: ' + error.message);
+        alert('註冊失敗: ' + error.message);
     } finally {
         showLoading(false);
         document.getElementById('submitBtn').disabled = false;
     }
 }
+
+// 頁面載入後開始初始化
+window.addEventListener('load', initializeLiff);
