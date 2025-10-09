@@ -1,158 +1,34 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>穿山甲專車註冊</title>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <style>
-    body {
-      background:#000;
-      color:#fff;
-      font-family:"Microsoft JhengHei";
-      text-align:center;
-      margin:0;
-      padding:30px 20px;
-    }
-    h1 {
-      color:#ffd700;
-      font-size:1.6em;
-      margin-bottom:20px;
-    }
-    input, button {
-      width:80%;
-      max-width:320px;
-      margin:10px auto;
-      padding:12px;
-      border:none;
-      border-radius:6px;
-      font-size:1em;
-      display:block;
-    }
-    input {
-      background:#222;
-      color:#fff;
-    }
-    button {
-      background:#28a745;
-      color:#fff;
-      font-weight:bold;
-      cursor:pointer;
-    }
-    #msg {
-      margin-top:16px;
-      font-size:1.1em;
-    }
-    .success { color:#00ff99; }
-    .warning { color:#ffcc00; }
-    .error { color:#ff4444; }
-  </style>
+    <title>測試頁面</title>
 </head>
 <body>
-  <h1>穿山甲專車註冊</h1>
-  <p id="msg">系統初始化中...</p>
+    <h1>測試穿山甲專車系統</h1>
+    <p>如果這個頁面能正常顯示，表示 GitHub Pages 運作正常</p>
+    
+    <h2>測試連結：</h2>
+    <ul>
+        <li><a href="index.html">主頁面 (LIFF)</a></li>
+        <li><a href="register.html">註冊頁面</a></li>
+        <li><a href="booking.html">預約頁面</a></li>
+    </ul>
+    
+    <h2>測試 GAS API：</h2>
+    <button onclick="testGAS()">測試後端 API</button>
+    <div id="result"></div>
 
-  <div id="form" style="display:none">
-    <input id="name" placeholder="姓名">
-    <input id="phone" placeholder="電話">
-    <input id="schoolId" placeholder="學號">
-    <input id="dept" placeholder="科系">
-    <button id="submitBtn">送出註冊</button>
-  </div>
-
-  <script>
-    /**************************************************
-     * 🔧 設定區
-     **************************************************/
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyX6YmGCEr5m1IFhtQuVKQZcnvHHkCj7OA4wfkPzhCASTSgX6FaW67H9aLjyr31LlSsDQ/exec";
-    const LIFF_ID = "2008231249-yv8294Jp";
-
-    let USER_ID = "";
-    let USER_NAME = "";
-
-    /**************************************************
-     * 🚀 初始化 LIFF
-     **************************************************/
-    window.onload = async function() {
-      try {
-        showMsg("⚙️ 初始化中...", "warning");
-        await liff.init({ liffId: LIFF_ID });
-
-        if (!liff.isLoggedIn()) {
-          showMsg("🔑 導向 LINE 登入中...", "warning");
-          liff.login({ redirectUri: window.location.href });
-          return;
+    <script>
+        async function testGAS() {
+            const GAS_URL = 'https://script.google.com/macros/s/AKfycbycNAkQfoG7YS2L1gSfB-8lrGUN1N918Gfx3LcNJwxgEoUFrby6WX9bzzcLx0OZLNHIGw/exec';
+            try {
+                const response = await fetch(`${GAS_URL}?action=getSchedules`);
+                const data = await response.json();
+                document.getElementById('result').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `錯誤: ${error.message}`;
+            }
         }
-
-        const profile = await liff.getProfile();
-        USER_ID = profile.userId;
-        USER_NAME = profile.displayName;
-        showMsg(`👋 歡迎 ${USER_NAME}`, "success");
-
-        // 顯示表單
-        document.getElementById("form").style.display = "block";
-        document.getElementById("name").value = USER_NAME;
-
-      } catch (err) {
-        console.error(err);
-        showMsg("❌ LIFF 初始化失敗：" + err.message, "error");
-      }
-    };
-
-    /**************************************************
-     * 📝 提交註冊
-     **************************************************/
-    document.getElementById("submitBtn").addEventListener("click", async () => {
-      const name = document.getElementById("name").value.trim();
-      const phone = document.getElementById("phone").value.trim();
-      const schoolId = document.getElementById("schoolId").value.trim();
-      const dept = document.getElementById("dept").value.trim();
-
-      if (!name || !phone || !schoolId || !dept) {
-        showMsg("⚠️ 請完整填寫所有欄位", "warning");
-        return;
-      }
-
-      const payload = {
-        action: "registerUser",
-        lineUserId: USER_ID,
-        name, phone, schoolId, dept
-      };
-
-      showMsg("⏳ 資料送出中...", "warning");
-
-      try {
-        const res = await fetch(GAS_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await res.json();
-        console.log("📦 後端回應:", data);
-
-        if (data.success && data.message.includes("註冊成功")) {
-          showMsg(`✅ ${USER_NAME}，註冊成功！`, "success");
-          document.getElementById("form").style.display = "none";
-        } else if (data.success && data.message.includes("已註冊")) {
-          showMsg(`⚠️ ${USER_NAME} 已註冊，登入時間已更新`, "warning");
-          document.getElementById("form").style.display = "none";
-        } else {
-          showMsg(`❌ 註冊失敗：${data.message}`, "error");
-        }
-      } catch (err) {
-        console.error("❌ Fetch 錯誤:", err);
-        showMsg("❌ 系統連線失敗，請稍後再試", "error");
-      }
-    });
-
-    /**************************************************
-     * 💬 共用訊息顯示
-     **************************************************/
-    function showMsg(text, type) {
-      const el = document.getElementById("msg");
-      el.innerHTML = `<span class="${type}">${text}</span>`;
-    }
-  </script>
+    </script>
 </body>
 </html>
