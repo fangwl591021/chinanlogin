@@ -3,75 +3,119 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>穿山甲專車登入</title>
-  <!-- ✅ 使用明確版本號，避免 ORB -->
-  <script src="https://static.line-scdn.net/liff/edge/2.20.2/sdk.js"></script>
+  <title>校園巴士註冊</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     body {
-      font-family:"Microsoft JhengHei",system-ui;
-      background:#000; color:#fff; text-align:center;
-      margin:0; padding:40px 20px;
+      background:#000;
+      color:#fff;
+      text-align:center;
+      font-family:"Microsoft JhengHei";
+      margin:0; padding:0;
     }
-    h1 { color:gold; margin-bottom:24px; }
-    button {
-      background:#28a745; color:#fff; border:none;
-      border-radius:6px; padding:10px 24px;
-      font-size:16px; cursor:pointer;
-      margin-top:10px;
+    h1 { color:gold; margin:24px 0; }
+    input, button {
+      width:80%; max-width:320px;
+      margin:12px auto;
+      display:block;
+      padding:10px;
+      font-size:1em;
+      border:none;
+      border-radius:6px;
     }
-    #msg { margin:16px auto; font-size:1.1em; width:90%; max-width:400px; }
-    .error { color:#ff4444; }
-    .success { color:#00ff99; }
-    .warning { color:#ffcc00; }
+    input { background:#222; color:#fff; }
+    button { background:#28a745; color:#fff; cursor:pointer; }
+    #msg { margin:16px 0; font-size:1.2em; }
+    .success { color: #00ff99; }
+    .warning { color: #ffcc00; }
+    .error { color: #ff4444; }
   </style>
 </head>
 <body>
-  <h1>🚐 穿山甲專車</h1>
-  <div id="msg">系統初始化中...</div>
+  <h1>校園巴士註冊</h1>
+  <button id="loginBtn" style="display:none">LINE 登入</button>
+  <div id="form" style="display:none">
+    <input id="name" placeholder="姓名">
+    <input id="phone" placeholder="電話">
+    <input id="schoolId" placeholder="學號">
+    <input id="dept" placeholder="科系">
+    <button id="submitBtn">送出註冊</button>
+  </div>
+  <div id="msg"></div>
 
   <script>
-    const CONFIG = {
-      LIFF_ID: '2008231249-yv8294Jp',
-      GAS_URL: 'https://script.google.com/macros/s/AKfycbyX6YmGCEr5m1IFhtQuVKQZcnvHHkCj7OA4wfkPzhCASTSgX6FaW67H9aLjyr31LlSsDQ/exec'
-    };
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyymPfZTKEUXUJGrnzM141geaFj1yBZvhW4R0KmUA76LVSvE39t8Zw4FVcgUhXNDkBXaQ/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby2mc-JVO6SUCozKO3l3tJwPcN-F_2yPQpd1E-nGyr5NWC6RGpuGGpHXQPMp2XP2Ez8zg/exec';
+    const SHEET_ID = '19zDueZCpq-qJsZsMVq4hSZh2BZrZv7pfQxMk5PTy4s4';
+    const SHEET_NAME = '用戶資料';
+    let USER_ID = '';
+    let USER_NAME = '';
 
-    function showMsg(text, type='') {
-      const el = document.getElementById('msg');
-      el.innerHTML = `<div class="${type}">${text}</div>`;
-    }
-
-    async function initLiff() {
+    async function init() {
       try {
-        showMsg('⚙️ 初始化 LIFF 中...', 'warning');
-        await liff.init({ liffId: CONFIG.LIFF_ID });
+        await liff.init({ liffId: '2008231249-yv8294Jp' });
 
         if (!liff.isLoggedIn()) {
-          showMsg('🔑 前往 LINE 登入頁面...', 'warning');
-          liff.login({ redirectUri: window.location.href });
+          const btn = document.getElementById('loginBtn');
+          btn.style.display = 'block';
+          btn.onclick = () => liff.login();
           return;
         }
 
+        // 抓取使用者資料
         const profile = await liff.getProfile();
-        showMsg(`👋 歡迎 ${profile.displayName}`, 'success');
-
-        const url = `${CONFIG.GAS_URL}?action=register&userId=${profile.userId}&name=${encodeURIComponent(profile.displayName)}`;
-        const res = await fetch(url).then(r => r.json());
-
-        if (res.status === 'existing_user') {
-          showMsg('✅ 已註冊，導向預約頁...', 'success');
-          window.location.href = 'booking.html';
-        } else {
-          showMsg('📝 尚未註冊，導向註冊頁...', 'warning');
-          window.location.href = 'register.html';
-        }
+        USER_ID = profile.userId;
+        USER_NAME = profile.displayName;
+        document.getElementById('form').style.display = 'block';
 
       } catch (err) {
-        console.error('LIFF 初始化錯誤:', err);
-        showMsg(`❌ LIFF 初始化失敗：${err.message}`, 'error');
+        console.error('init error:', err);
+        document.getElementById('msg').innerHTML = '<span class="error">初始化失敗，請稍後再試</span>';
       }
     }
 
-    document.addEventListener('DOMContentLoaded', initLiff);
+    async function submitRegister() {
+      const name = document.getElementById('name').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const schoolId = document.getElementById('schoolId').value.trim();
+      const dept = document.getElementById('dept').value.trim();
+
+      if (!name || !phone || !schoolId || !dept) {
+        alert('請完整填寫所有欄位');
+        return;
+      }
+
+      const data = {
+        action: 'registerUser',
+        sheetId: SHEET_ID,
+        sheetName: SHEET_NAME,
+        lineUserId: USER_ID,
+        name, phone, schoolId, dept
+      };
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify(data)
+        }).then(r => r.json());
+
+        if (res.success && res.message) {
+          document.getElementById('msg').innerHTML = `<span class="warning">⚠️ ${res.message}</span>`;
+        } else if (res.success) {
+          document.getElementById('msg').innerHTML = `<span class="success">✅ ${USER_NAME}，您已完成註冊！</span>`;
+          document.getElementById('form').style.display = 'none';
+        } else {
+          document.getElementById('msg').innerHTML = `<span class="error">❌ 註冊失敗：${res.error || '未知錯誤'}</span>`;
+        }
+
+      } catch (e) {
+        console.error(e);
+        document.getElementById('msg').innerHTML = '<span class="error">連線錯誤，請稍後再試</span>';
+      }
+    }
+
+    document.getElementById('submitBtn').onclick = submitRegister;
+    window.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
 </html>
