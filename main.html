@@ -409,9 +409,15 @@
                     reservationItem.innerHTML = `
                         <div class="reservation-item p-4 flex justify-between items-center">
                             <div class="flex items-center space-x-3">
-                                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-bus text-green-600 text-sm"></i>
-                                </div>
+  <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-full flex items-center justify-center">
+      <i class="fas fa-user text-white text-sm"></i>
+  </div>
+  <div>
+      <h2 class="font-semibold text-gray-800 text-sm" id="userName">方</h2>
+      <p class="text-xs text-gray-600" id="userInfo">資訊工程學系 | 114230123</p>
+  </div>
+</div>
+
                                 <div>
                                     <div class="font-medium text-gray-800">${formattedDate} ${reservation.timeSlot.id}</div>
                                     <div class="text-sm text-gray-600">${reservation.timeSlot.time}</div>
