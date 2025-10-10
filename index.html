@@ -1,267 +1,155 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>暨大穿山甲專車預約系統 - 登入</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-    }
-    
-    .loading-spinner {
-      border: 2px solid #f3f3f3;
-      border-top: 2px solid #ffffff;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      animation: spin 1s linear infinite;
-      display: inline-block;
-      margin-right: 8px;
-    }
-    
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>暨大接駁車 - 首頁</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .hero-pattern {
+            background-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
 </head>
-<body>
-  <div class="min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
-      <!-- Logo 區域 -->
-      <div class="text-center mb-8">
-        <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden">
-          <img src="https://aiwe.cc/wp-content/uploads/2025/10/5d7b9adcbe1c629ec722529dd12e5129.png" 
-               alt="暨大接駁車" 
-               class="w-full h-full object-cover">
+<body class="min-h-screen bg-gray-50">
+    <!-- 導航欄 -->
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                        <i class="fas fa-bus text-white text-sm"></i>
+                    </div>
+                    <span class="font-bold text-gray-800">暨大接駁車</span>
+                </div>
+                <div class="text-sm text-gray-600">
+                    國立暨南國際大學
+                </div>
+            </div>
         </div>
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">暨大接駁車預約</h1>
-        <p class="text-gray-600">請使用 LINE 帳號登入</p>
-      </div>
+    </nav>
 
-      <!-- 登入按鈕 -->
-      <button 
-        id="loginButton"
-        onclick="lineLogin()"
-        class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-6 rounded-xl transition duration-200 flex items-center justify-center gap-3 shadow-lg mb-6"
-      >
-        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.240 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
-        </svg>
-        <span id="loginText">使用 LINE 登入</span>
-      </button>
+    <!-- 主要內容 -->
+    <main class="max-w-md mx-auto mt-10 px-4">
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <!-- 歡迎區 -->
+            <div class="hero-pattern text-white p-8 text-center">
+                <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-bus text-3xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold mb-2">暨大接駁車服務</h1>
+                <p class="text-purple-100">便捷的校園交通解決方案</p>
+            </div>
 
-      <!-- 說明文字 -->
-      <div class="text-center text-sm text-gray-500 space-y-2">
-        <p>🚌 提供埔里總站 ⇄ 暨大校區接駁服務</p>
-        <p>⏰ 每日 22:00-24:00 營運</p>
-        <p>👥 每車限額 6 人</p>
-      </div>
+            <!-- 功能選項 -->
+            <div class="p-8 space-y-6">
+                <div class="text-center mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-2">歡迎使用接駁車系統</h2>
+                    <p class="text-gray-600">請選擇以下選項開始使用</p>
+                </div>
 
-      <!-- 車次資訊 -->
-      <div class="mt-6 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4">
-        <p class="text-xs font-semibold text-gray-700 mb-2">📍 營運車次</p>
-        <div class="text-xs text-gray-600 space-y-1">
-          <p>A1｜22:00-22:30 暨大→埔里總站</p>
-          <p>B1｜22:30-23:00 埔里總站→暨大</p>
-          <p>A2｜23:00-23:30 暨大→埔里總站</p>
-          <p>B2｜23:30-24:00 埔里總站→暨大</p>
+                <!-- 註冊按鈕 -->
+                <a href="register.html" class="block w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition duration-200 shadow-lg text-center">
+                    <i class="fas fa-user-plus mr-2"></i>
+                    會員註冊
+                </a>
+
+                <!-- 登入按鈕 -->
+                <button id="loginBtn" class="w-full bg-white border border-purple-600 text-purple-600 hover:bg-purple-50 font-bold py-4 px-6 rounded-xl transition duration-200 text-center">
+                    <i class="fas fa-sign-in-alt mr-2"></i>
+                    LINE 快速登入
+                </button>
+
+                <!-- 說明 -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                        <div class="text-sm text-blue-800">
+                            <p class="font-medium">首次使用請先註冊</p>
+                            <p class="mt-1">註冊完成後即可預約接駁車服務</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  </div>
 
-  <script>
-    // 配置
-    const CONFIG = {
-      LIFF_ID: "2008231249-yv8294Jp",
-      GITHUB_TOKEN: "hhFVS+V7Fp4zIFZ0sv6vq1WuvKmIKzsK6RlZkAOftxr2Lob218VgP+/PK+wIhwhw8HTlOobneGQhxTllrjt8uAzwaCGgWZ5yokIKZSVID+ccNDJmKxElxNQatB6NUObNTtofnMdDZTOLx12X4QRRdwdB04t89/1O/w1cDnyilFU=",
-      GIST_ID: "C596050d1193b9b930ac25469c61ba12a"
-    };
+        <!-- 功能特色 -->
+        <div class="grid grid-cols-2 gap-4 mt-8">
+            <div class="bg-white rounded-xl p-4 text-center shadow-sm">
+                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i class="fas fa-calendar-check text-green-600"></i>
+                </div>
+                <p class="text-sm font-medium text-gray-700">線上預約</p>
+            </div>
+            <div class="bg-white rounded-xl p-4 text-center shadow-sm">
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i class="fas fa-bell text-blue-600"></i>
+                </div>
+                <p class="text-sm font-medium text-gray-700">即時通知</p>
+            </div>
+            <div class="bg-white rounded-xl p-4 text-center shadow-sm">
+                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i class="fas fa-map-marker-alt text-purple-600"></i>
+                </div>
+                <p class="text-sm font-medium text-gray-700">多站點選擇</p>
+            </div>
+            <div class="bg-white rounded-xl p-4 text-center shadow-sm">
+                <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i class="fas fa-clock text-orange-600"></i>
+                </div>
+                <p class="text-sm font-medium text-gray-700">時刻表查詢</p>
+            </div>
+        </div>
+    </main>
 
-    let isLoggingIn = false;
+    <script>
+        // 模擬 LINE 登入
+        document.getElementById('loginBtn').addEventListener('click', function() {
+            // 模擬 LINE 用戶資料
+            const mockUserId = 'U' + Math.random().toString(36).substr(2, 9);
+            const mockUserData = {
+                userId: mockUserId,
+                displayName: 'LINE用戶',
+                isRegistered: false
+            };
+            
+            // 儲存到 sessionStorage
+            sessionStorage.setItem('userData', JSON.stringify(mockUserData));
+            
+            // 檢查是否已註冊
+            const existingUsers = JSON.parse(localStorage.getItem('ncnu_shuttle_users') || '{"users": []}');
+            const userExists = existingUsers.users.find(user => user.lineUserId === mockUserId);
+            
+            if (userExists) {
+                // 用戶已註冊，導向主頁面
+                mockUserData.isRegistered = true;
+                mockUserData.displayName = userExists.displayName;
+                mockUserData.phone = userExists.phone;
+                mockUserData.studentId = userExists.studentId;
+                mockUserData.department = userExists.department;
+                sessionStorage.setItem('userData', JSON.stringify(mockUserData));
+                
+                window.location.href = 'main.html';
+            } else {
+                // 用戶未註冊，導向註冊頁面
+                alert('檢測到您尚未註冊，將導向註冊頁面');
+                window.location.href = 'register.html';
+            }
+        });
 
-    // 顯示載入狀態
-    function setLoginLoading(isLoading) {
-      const loginButton = document.getElementById('loginButton');
-      const loginText = document.getElementById('loginText');
-      
-      if (isLoading) {
-        loginButton.disabled = true;
-        loginButton.classList.add('opacity-75', 'cursor-not-allowed');
-        loginText.innerHTML = '<div class="loading-spinner"></div>登入中...';
-      } else {
-        loginButton.disabled = false;
-        loginButton.classList.remove('opacity-75', 'cursor-not-allowed');
-        loginText.textContent = '使用 LINE 登入';
-      }
-      
-      isLoggingIn = isLoading;
-    }
-
-    // LINE Login
-    async function lineLogin() {
-      if (isLoggingIn) return;
-      
-      console.log('開始 LINE 登入流程');
-      setLoginLoading(true);
-
-      try {
-        // 檢查 LIFF SDK 是否已載入
-        if (typeof liff === 'undefined') {
-          console.error('LIFF SDK 未載入');
-          throw new Error('LIFF_SDK_NOT_LOADED');
-        }
-
-        console.log('LIFF SDK 已載入，開始初始化...');
-        
-        // 初始化 LIFF
-        await liff.init({ liffId: CONFIG.LIFF_ID });
-        console.log('LIFF 初始化成功');
-
-        if (!liff.isLoggedIn()) {
-          console.log('用戶未登入，開始登入流程');
-          liff.login({ redirectUri: window.location.href });
-        } else {
-          console.log('用戶已登入，取得用戶資料');
-          await handleLoggedInUser();
-        }
-      } catch (error) {
-        console.error('登入流程錯誤:', error);
-        setLoginLoading(false);
-        
-        let errorMessage = '登入失敗，請稍後再試';
-        
-        if (error.message === 'LIFF_SDK_NOT_LOADED') {
-          errorMessage = 'LINE 服務載入失敗\n\n請檢查：\n• 網路連線是否正常\n• 是否在 LINE 內開啟';
-        } else if (error.message.includes('channel not found')) {
-          errorMessage = 'LINE 應用程式設定錯誤\n\n請確認 LIFF ID 正確無誤';
-        }
-        
-        alert(errorMessage);
-      }
-    }
-
-    // 處理已登入用戶
-    async function handleLoggedInUser() {
-      try {
-        const profile = await liff.getProfile();
-        console.log('用戶資料:', profile);
-        
-        // 儲存用戶資料到 sessionStorage
-        const userData = {
-          userId: profile.userId,
-          displayName: profile.displayName,
-          pictureUrl: profile.pictureUrl || '',
-          statusMessage: profile.statusMessage || '',
-          loginTime: new Date().toISOString(),
-          isRegistered: false
-        };
-        
-        sessionStorage.setItem('userData', JSON.stringify(userData));
-        console.log('用戶資料已儲存到 sessionStorage');
-
-        // 檢查是否已註冊
-        const isRegistered = await checkUserRegistration(profile.userId);
-        
-        if (isRegistered) {
-          // 已註冊，導向預約頁面
-          console.log('用戶已註冊，導向預約頁面');
-          window.location.href = 'main.html';
-        } else {
-          // 未註冊，導向註冊頁面
-          console.log('用戶未註冊，導向註冊頁面');
-          window.location.href = 'register.html';
-        }
-        
-      } catch (error) {
-        console.error('處理用戶資料失敗:', error);
-        throw error;
-      }
-    }
-
-    // 檢查用戶是否已註冊
-    async function checkUserRegistration(lineUserId) {
-      try {
-        const data = await getGistData();
-        const users = data.users || [];
-        
-        // 檢查是否有該 LINE UserId 的註冊記錄
-        const existingUser = users.find(user => user.lineUserId === lineUserId);
-        return !!existingUser;
-        
-      } catch (error) {
-        console.error('檢查註冊狀態失敗:', error);
-        return false;
-      }
-    }
-
-    // 從 GitHub Gist 取得資料
-    async function getGistData() {
-      const response = await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, {
-        headers: {
-          'Authorization': `token ${CONFIG.GITHUB_TOKEN}`
-        }
-      });
-      
-      const gist = await response.json();
-      return JSON.parse(gist.files['data.json'].content);
-    }
-
-    // 頁面載入完成後檢查
-    window.addEventListener('load', function() {
-      console.log('頁面載入完成');
-      
-      // 檢查是否已登入
-      const userData = sessionStorage.getItem('userData');
-      if (userData) {
-        console.log('偵測到已登入用戶，檢查註冊狀態');
-        const user = JSON.parse(userData);
-        
-        if (user.isRegistered) {
-          window.location.href = 'main.html';
-        } else {
-          window.location.href = 'register.html';
-        }
-        return;
-      }
-
-      // 檢查 URL 參數（LINE 登入回調）
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('liffState')) {
-        console.log('偵測到 LINE 登入回調');
-        // 讓 LINE 處理登入回調
-        return;
-      }
-
-      console.log('等待用戶操作登入');
-    });
-
-    // LIFF SDK 載入錯誤處理
-    window.addEventListener('error', function(e) {
-      if (e.filename && e.filename.includes('liff')) {
-        console.error('LIFF SDK 載入失敗:', e.error);
-      }
-    });
-
-    // 處理頁面可見性變化
-    document.addEventListener('visibilitychange', function() {
-      if (!document.hidden && isLoggingIn) {
-        // 頁面重新可見，檢查登入狀態
-        setTimeout(() => {
-          if (isLoggingIn) {
-            setLoginLoading(false);
-            alert('登入流程中斷，請重新嘗試');
-          }
-        }, 1000);
-      }
-    });
-  </script>
-
-  <!-- LIFF SDK -->
-  <script src="https://static.line-scdn.net/liff/edge/versions/2.22.3/sdk.js"></script>
+        // 檢查是否已有登入狀態
+        window.addEventListener('load', function() {
+            const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
+            
+            if (userData.userId && userData.isRegistered) {
+                // 如果已登入且已註冊，直接導向主頁面
+                window.location.href = 'main.html';
+            } else if (userData.userId && !userData.isRegistered) {
+                // 如果已登入但未註冊，導向註冊頁面
+                window.location.href = 'register.html';
+            }
+        });
+    </script>
 </body>
 </html>
