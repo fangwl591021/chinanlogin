@@ -3,32 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>暨大穿山甲專車預約系統 - 登入</title>
+  <title>暨大接駁車預約系統 - 登入</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
     }
-    .btn-loading {
-      position: relative;
-      color: transparent !important;
-    }
-    .btn-loading::after {
-      content: '';
-      position: absolute;
+    
+    /* 載入動畫 */
+    .loading-spinner {
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #ffffff;
+      border-radius: 50%;
       width: 20px;
       height: 20px;
-      top: 50%;
-      left: 50%;
-      margin: -10px 0 0 -10px;
-      border: 3px solid #ffffff;
-      border-radius: 50%;
-      border-top-color: transparent;
-      animation: spin 0.8s linear infinite;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      margin-right: 8px;
     }
+    
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .loading-button {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .loading-button:disabled {
+      opacity: 0.8;
+      cursor: not-allowed;
     }
   </style>
 </head>
@@ -48,225 +55,14 @@
 
       <!-- 登入按鈕 -->
       <button 
-        id="loginBtn"
+        id="loginButton"
         onclick="lineLogin()"
-        class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-6 rounded-xl transition duration-200 flex items-center justify-center gap-3 shadow-lg mb-6"
-      >
-        <svg id="lineIcon" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
-        </svg>
-        <span id="btnText">使用 LINE 登入</span>
-      </button>
-
-      <!-- 說明文字 -->
-      <div class="text-center text-sm text-gray-500 space-y-2">
-        <p>🚌 提供埔里總站 ⇄ 暨大校區接駁服務</p>
-        <p>⏰ 每日 22:00-24:00 營運</p>
-        <p>👥 每車限額 6 人</p>
-      </div>
-
-      <!-- 車次資訊 -->
-      <div class="mt-6 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4">
-        <p class="text-xs font-semibold text-gray-700 mb-2">📍 營運車次</p>
-        <div class="text-xs text-gray-600 space-y-1">
-          <p>A1｜22:00-22:30 暨大→埔里總站</p>
-          <p>B1｜22:30-23:00 埔里總站→暨大</p>
-          <p>A2｜23:00-23:30 暨大→埔里總站</p>
-          <p>B2｜23:30-24:00 埔里總站→暨大</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const CONFIG = {
-      LINE_GROUP_ID: 'C596050d1193b9b930ac25469c61ba12a',
-      LIFF_ID: '2008231249-yv8294Jp',
-      SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwN2PoJQBvmkzo1E5IdsbQSLCTg5y4QxshYfab9o2M-GfMl1YC_hO8RbHeVH8PcpCRI-w/exec'
-    };
-
-    function lineLogin() {
-      console.log('🖱️ 點擊登入按鈕');
-      
-      const btn = document.getElementById('loginBtn');
-      const btnText = document.getElementById('btnText');
-      const lineIcon = document.getElementById('lineIcon');
-      
-      btn.disabled = true;
-      btn.classList.add('btn-loading');
-      btnText.textContent = '登入中...';
-      lineIcon.style.display = 'none';
-      
-      if (typeof liff === 'undefined') {
-        console.log('⏳ LIFF SDK 尚未載入，等待中...');
-        
-        setTimeout(() => {
-          if (typeof liff !== 'undefined') {
-            initializeLIFF();
-          } else {
-            console.error('❌ LIFF SDK 載入失敗');
-            alert('❌ LINE Login SDK 載入失敗\n\n請檢查網路連線或重新整理頁面\n\n將切換到測試模式...');
-            window.location.href = 'main.html?test=true';
-          }
-        }, 1500);
-        return;
-      }
-      
-      initializeLIFF();
-    }
-
-    async function initializeLIFF() {
-      try {
-        console.log('🚀 開始初始化 LIFF...');
-        console.log('📝 LIFF ID:', CONFIG.LIFF_ID);
-        
-        await liff.init({ liffId: CONFIG.LIFF_ID });
-        
-        console.log('✅ LIFF 初始化成功');
-        console.log('📱 是否在 LINE 中開啟:', liff.isInClient());
-        console.log('🔐 是否已登入:', liff.isLoggedIn());
-        
-        if (!liff.isLoggedIn()) {
-          console.log('➡️ 導向 LINE 登入頁面...');
-          liff.login({ redirectUri: window.location.href });
-          return;
-        }
-        
-        console.log('✅ 已登入，取得用戶資料...');
-        const profile = await liff.getProfile();
-        console.log('👤 用戶資料:', profile);
-        
-        const userData = {
-          userId: profile.userId,
-          displayName: profile.displayName,
-          pictureUrl: profile.pictureUrl,
-          statusMessage: profile.statusMessage || '',
-          loginTime: new Date().toISOString()
-        };
-        
-        sessionStorage.setItem('userData', JSON.stringify(userData));
-        console.log('💾 用戶資料已儲存');
-        
-        await saveUserToSheet(userData);
-        
-        console.log('🔍 檢查用戶註冊狀態...');
-        const isRegistered = await checkUserRegistration(userData.userId);
-        
-        if (isRegistered) {
-          console.log('✅ 已註冊，跳轉到預約頁面');
-          window.location.href = 'main.html';
-        } else {
-          console.log('📝 尚未註冊，跳轉到註冊頁面');
-          window.location.href = 'register.html';
-        }
-        
-      } catch (error) {
-        console.error('❌ LIFF 初始化失敗:', error);
-        
-        let errorMsg = '登入失敗\n\n';
-        
-        if (error.message && error.message.includes('channel not found')) {
-          errorMsg += '❌ 找不到 LIFF Channel\n\n';
-          errorMsg += '可能原因：\n';
-          errorMsg += '1. LIFF ID 不正確\n';
-          errorMsg += '2. LIFF app 已被刪除\n';
-          errorMsg += '3. Channel 未啟用\n\n';
-          errorMsg += '目前 LIFF ID: ' + CONFIG.LIFF_ID;
-        } else if (error.message && error.message.includes('403')) {
-          errorMsg += '❌ 權限錯誤\n\n';
-          errorMsg += 'LIFF app 的 Endpoint URL 可能設定錯誤';
-        } else {
-          errorMsg += '錯誤：' + (error.message || error);
-        }
-        
-        alert(errorMsg + '\n\n將切換到測試模式...');
-        window.location.href = 'main.html?test=true';
-      }
-    }
-
-    async function saveUserToSheet(userData) {
-      try {
-        console.log('📤 儲存用戶資料到 Google Sheets...');
-        
-        await fetch(CONFIG.SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'saveUser',
-            data: userData
-          })
-        });
-        
-        console.log('✅ 用戶資料已發送');
-      } catch (error) {
-        console.error('❌ 儲存失敗:', error);
-      }
-    }
-
-    async function checkUserRegistration(userId) {
-      try {
-        const response = await fetch(`${CONFIG.SCRIPT_URL}?action=checkUserRegistration&userId=${encodeURIComponent(userId)}`);
-        const result = await response.json();
-        
-        if (result.success && result.isRegistered && result.user) {
-          const userData = JSON.parse(sessionStorage.getItem('userData'));
-          userData.schoolId = result.user.schoolId;
-          userData.dept = result.user.dept;
-          userData.phone = result.user.phone;
-          userData.isRegistered = true;
-          sessionStorage.setItem('userData', JSON.stringify(userData));
-          return true;
-        }
-        
-        return false;
-      } catch (error) {
-        console.error('❌ 檢查註冊狀態失敗:', error);
-        return false;
-      }
-    }
-
-    window.addEventListener('load', function() {
-      console.log('📄 頁面載入完成');
-      
-      const userData = sessionStorage.getItem('userData');
-      if (userData) {
-        const user = JSON.parse(userData);
-        if (user.isRegistered) {
-          console.log('✅ 已登入且已註冊，跳轉到預約頁面');
-          window.location.href = 'main.html';
-        } else {
-          console.log('📝 已登入但未註冊，跳轉到註冊頁面');
-          window.location.href = 'register.html';
-        }
-      }
-    });
-  </script>
-
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-</body>
-</html>
-  <div class="min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
-      <!-- Logo 區域 -->
-      <div class="text-center mb-8">
-        <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-          </svg>
-        </div>
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">暨大接駁車預約</h1>
-        <p class="text-gray-600">請使用 LINE 帳號登入</p>
-      </div>
-
-      <!-- 登入按鈕 -->
-      <button 
-        onclick="lineLogin()"
-        class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-6 rounded-xl transition duration-200 flex items-center justify-center gap-3 shadow-lg mb-6"
+        class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-6 rounded-xl transition duration-200 flex items-center justify-center gap-3 shadow-lg mb-6 loading-button"
       >
         <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
           <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
         </svg>
-        使用 LINE 登入
+        <span id="loginText">使用 LINE 登入</span>
       </button>
 
       <!-- 說明文字 -->
@@ -286,42 +82,107 @@
           <p>B2｜23:30-24:00 埔里總站→暨大</p>
         </div>
       </div>
+
+      <!-- 測試模式按鈕 -->
+      <div class="mt-6 text-center">
+        <button 
+          onclick="enterTestMode()"
+          class="text-sm text-gray-500 hover:text-gray-700 underline"
+        >
+          測試模式（LINE SDK 載入失敗時使用）
+        </button>
+      </div>
     </div>
   </div>
 
   <script>
-    // ⚠️ 配置
+    // 配置
     const CONFIG = {
       LINE_GROUP_ID: 'C596050d1193b9b930ac25469c61ba12a',
       LIFF_ID: '2008231249-yv8294Jp',
       SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwN2PoJQBvmkzo1E5IdsbQSLCTg5y4QxshYfab9o2M-GfMl1YC_hO8RbHeVH8PcpCRI-w/exec'
     };
 
-    // 等待 LIFF SDK 載入
-    let liffReady = false;
+    let isLoggingIn = false;
 
-    // LINE Login
-    function lineLogin() {
-      console.log('點擊登入按鈕');
+    // 顯示載入狀態
+    function setLoginLoading(isLoading) {
+      const loginButton = document.getElementById('loginButton');
+      const loginText = document.getElementById('loginText');
       
-      // 檢查 LIFF SDK 是否已載入
-      if (typeof liff === 'undefined') {
-        console.log('LIFF SDK 尚未載入，等待中...');
-        alert('正在載入 LINE Login SDK，請稍候...');
-        
-        // 等待 SDK 載入後再試
-        setTimeout(() => {
-          if (typeof liff !== 'undefined') {
-            initializeLIFF();
-          } else {
-            alert('❌ LIFF SDK 載入失敗\n\n請檢查網路連線\n或切換到測試模式');
-            window.location.href = 'main.html?test=true';
-          }
-        }, 1000);
-        return;
+      if (isLoading) {
+        loginButton.disabled = true;
+        loginText.innerHTML = '<div class="loading-spinner"></div>登入中...';
+      } else {
+        loginButton.disabled = false;
+        loginText.textContent = '使用 LINE 登入';
       }
       
-      initializeLIFF();
+      isLoggingIn = isLoading;
+    }
+
+    // LINE Login
+    async function lineLogin() {
+      if (isLoggingIn) return;
+      
+      console.log('點擊登入按鈕');
+      setLoginLoading(true);
+      
+      try {
+        // 檢查 LIFF SDK 是否已載入
+        if (typeof liff === 'undefined') {
+          console.log('LIFF SDK 尚未載入，等待中...');
+          
+          // 等待 SDK 載入
+          await waitForLIFF();
+        }
+        
+        // 初始化 LIFF
+        await initializeLIFF();
+        
+      } catch (error) {
+        console.error('登入失敗:', error);
+        setLoginLoading(false);
+        
+        let errorMsg = 'LINE 登入失敗\n\n';
+        
+        if (error.message && error.message.includes('channel not found')) {
+          errorMsg += '❌ LIFF Channel 設定錯誤\n\n';
+          errorMsg += '請檢查：\n';
+          errorMsg += '1. LIFF ID 是否正確\n';
+          errorMsg += '2. LIFF app 是否已啟用\n';
+          errorMsg += '3. Endpoint URL 設定是否正確\n\n';
+        } else if (error.message && error.message.includes('403')) {
+          errorMsg += '❌ 權限錯誤\n\n';
+          errorMsg += '請確認 LIFF app 設定正確\n\n';
+        } else {
+          errorMsg += '錯誤訊息：\n' + (error.message || error) + '\n\n';
+        }
+        
+        errorMsg += '請使用測試模式或聯繫管理員';
+        alert(errorMsg);
+      }
+    }
+
+    // 等待 LIFF SDK 載入
+    function waitForLIFF() {
+      return new Promise((resolve, reject) => {
+        let attempts = 0;
+        const maxAttempts = 10;
+        
+        const checkLIFF = setInterval(() => {
+          attempts++;
+          
+          if (typeof liff !== 'undefined') {
+            clearInterval(checkLIFF);
+            console.log('✅ LIFF SDK 已載入');
+            resolve();
+          } else if (attempts >= maxAttempts) {
+            clearInterval(checkLIFF);
+            reject(new Error('LIFF SDK 載入超時'));
+          }
+        }, 500);
+      });
     }
 
     // 初始化 LIFF
@@ -361,71 +222,13 @@
           // 寫入 Google Sheets
           await saveUserToSheet(userData);
           
-          // 檢查是否已註冊
-          const isRegistered = await checkUserRegistration(userData.userId);
-          
-          if (isRegistered) {
-            console.log('➡️ 已註冊，跳轉到預約頁面');
-            window.location.href = 'main.html';
-          } else {
-            console.log('➡️ 尚未註冊，跳轉到註冊頁面');
-            window.location.href = 'register.html';
-          }
+          // 跳轉到預約頁面
+          console.log('➡️ 跳轉到預約頁面');
+          window.location.href = 'main.html';
         }
       } catch (error) {
         console.error('❌ LIFF 初始化失敗:', error);
-        
-        let errorMsg = '登入失敗\n\n';
-        
-        if (error.message && error.message.includes('channel not found')) {
-          errorMsg += '❌ 找不到 LIFF Channel\n\n';
-          errorMsg += '可能原因：\n';
-          errorMsg += '1. LIFF ID 不正確\n';
-          errorMsg += '2. LIFF app 已被刪除\n';
-          errorMsg += '3. Channel 未啟用\n\n';
-          errorMsg += '目前 LIFF ID: ' + CONFIG.LIFF_ID + '\n\n';
-        } else if (error.message && error.message.includes('403')) {
-          errorMsg += '❌ 權限錯誤\n\n';
-          errorMsg += 'LIFF app 的 Endpoint URL 可能設定錯誤\n\n';
-          errorMsg += '請確認 Endpoint URL 設定為：\n' + window.location.origin + '/\n\n';
-        } else {
-          errorMsg += '錯誤訊息：\n' + (error.message || error) + '\n\n';
-        }
-        
-        errorMsg += '將切換到測試模式...';
-        alert(errorMsg);
-        window.location.href = 'main.html?test=true';
-      }
-    }
-
-    // 檢查用戶是否已註冊
-    async function checkUserRegistration(userId) {
-      try {
-        console.log('🔍 檢查用戶註冊狀態...');
-        
-        const response = await fetch(`${CONFIG.SCRIPT_URL}?action=checkUserRegistration&userId=${encodeURIComponent(userId)}`);
-        const result = await response.json();
-        
-        if (result.success) {
-          console.log('📋 註冊狀態:', result.isRegistered);
-          
-          if (result.isRegistered && result.user) {
-            // 更新 sessionStorage 加入註冊資料
-            const userData = JSON.parse(sessionStorage.getItem('userData'));
-            userData.schoolId = result.user.schoolId;
-            userData.dept = result.user.dept;
-            userData.phone = result.user.phone;
-            userData.isRegistered = true;
-            sessionStorage.setItem('userData', JSON.stringify(userData));
-          }
-          
-          return result.isRegistered;
-        }
-        
-        return false;
-      } catch (error) {
-        console.error('❌ 檢查註冊狀態失敗:', error);
-        return false;
+        throw error;
       }
     }
 
@@ -449,7 +252,25 @@
         console.log('✅ 用戶資料已發送');
       } catch (error) {
         console.error('❌ 儲存用戶資料失敗:', error);
+        // 不阻礙登入流程
       }
+    }
+
+    // 進入測試模式
+    function enterTestMode() {
+      console.log('進入測試模式');
+      
+      const testUser = {
+        userId: 'TEST_' + Date.now(),
+        displayName: '測試用戶',
+        pictureUrl: '',
+        statusMessage: '測試模式',
+        loginTime: new Date().toISOString()
+      };
+      
+      sessionStorage.setItem('userData', JSON.stringify(testUser));
+      alert('已進入測試模式\n用戶名稱：測試用戶');
+      window.location.href = 'main.html';
     }
 
     // 頁面載入時檢查是否已登入
@@ -462,119 +283,30 @@
         window.location.href = 'main.html';
       } else {
         console.log('ℹ️ 尚未登入');
+        
+        // 檢查是否有錯誤參數
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('error') === 'liff_failed') {
+          alert('LINE SDK 載入失敗，請使用測試模式');
+        }
+      }
+    });
+
+    // 處理頁面可見性變化
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden && isLoggingIn) {
+        // 頁面重新可見，檢查登入狀態
+        setTimeout(() => {
+          if (isLoggingIn) {
+            setLoginLoading(false);
+            alert('登入流程中斷，請重新嘗試');
+          }
+        }, 1000);
       }
     });
   </script>
 
-  <!-- ⚠️ 重要：LIFF SDK 必須放在最後載入 -->
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-
-    // 初始化 LIFF
-    async function initializeLIFF() {
-      try {
-        console.log('正在初始化 LIFF...', CONFIG.LIFF_ID);
-        
-        await liff.init({ liffId: CONFIG.LIFF_ID });
-        
-        console.log('LIFF 初始化成功');
-        console.log('是否在 LINE 中開啟:', liff.isInClient());
-        console.log('是否已登入:', liff.isLoggedIn());
-        
-        if (!liff.isLoggedIn()) {
-          console.log('尚未登入，導向登入頁面...');
-          liff.login({ redirectUri: window.location.href });
-        } else {
-          // 取得用戶資料
-          const profile = await liff.getProfile();
-          console.log('用戶資料:', profile);
-          
-          // 儲存用戶資料
-          const userData = {
-            userId: profile.userId,
-            displayName: profile.displayName,
-            pictureUrl: profile.pictureUrl,
-            statusMessage: profile.statusMessage || '',
-            loginTime: new Date().toISOString()
-          };
-          
-          sessionStorage.setItem('userData', JSON.stringify(userData));
-          
-          // 寫入 Google Sheets
-          await saveUserToSheet(userData);
-          
-          // 跳轉到預約頁面
-          console.log('登入成功，跳轉到預約頁面');
-          window.location.href = 'main.html';
-        }
-      } catch (error) {
-        console.error('LIFF 初始化失敗:', error);
-        
-        let errorMsg = 'LIFF 初始化失敗\n\n';
-        
-        if (error.message.includes('channel not found')) {
-          errorMsg += '❌ LIFF ID 不正確\n\n';
-          errorMsg += '請檢查：\n';
-          errorMsg += '1. LIFF ID 格式是否正確\n';
-          errorMsg += '   (格式: 1234567890-abcdefgh)\n\n';
-          errorMsg += '2. LIFF app 是否已建立\n\n';
-          errorMsg += '3. LIFF app 的 Endpoint URL 是否設定為此網站網址\n\n';
-          errorMsg += '目前 LIFF ID: ' + CONFIG.LIFF_ID;
-        } else if (error.message.includes('403')) {
-          errorMsg += '❌ 權限錯誤\n\n';
-          errorMsg += 'LIFF app 的 Channel 可能未啟用';
-        } else {
-          errorMsg += '錯誤訊息: ' + error.message;
-        }
-        
-        alert(errorMsg + '\n\n將切換到測試模式...');
-        window.location.href = 'main.html?test=true';
-      }
-    }
-          await saveUserToSheet(userData);
-          
-          // 跳轉到預約頁面
-          window.location.href = 'main.html';
-        }
-      } catch (error) {
-        console.error('LIFF 初始化失敗:', error);
-        alert('登入失敗，請重試');
-      }
-    }
-
-    // 儲存用戶資料到 Google Sheets
-    async function saveUserToSheet(userData) {
-      const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL'; // 需要部署 Google Apps Script
-      
-      try {
-        const response = await fetch(SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'saveUser',
-            data: userData
-          })
-        });
-        
-        console.log('用戶資料已儲存');
-      } catch (error) {
-        console.error('儲存用戶資料失敗:', error);
-      }
-    }
-
-    // 檢查是否已登入
-    window.addEventListener('load', function() {
-      const userData = sessionStorage.getItem('userData');
-      if (userData) {
-        // 已登入，直接跳轉
-        window.location.href = 'main.html';
-      }
-    });
-  </script>
-
-  <!-- 載入 LIFF SDK -->
+  <!-- LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </body>
 </html>
