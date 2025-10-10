@@ -6,14 +6,6 @@
     <title>暨大接駁車 - 會員註冊</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .college-humanities { color: #3B82F6; }
-        .college-education { color: #10B981; }
-        .college-technology { color: #F59E0B; }
-        .college-management { color: #8B5CF6; }
-        .college-watershalian { color: #EF4444; }
-        .college-nursing { color: #EC4899; }
-    </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
@@ -30,6 +22,17 @@
 
         <!-- 註冊表單 -->
         <form id="registerForm" class="space-y-4">
+            <!-- 從 LINE 獲取的用戶資訊 -->
+            <div id="lineUserInfo" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 hidden">
+                <div class="flex items-center space-x-3">
+                    <img id="lineUserPicture" src="" class="w-10 h-10 rounded-full" alt="LINE頭像">
+                    <div>
+                        <p class="font-medium text-green-800" id="lineUserName"></p>
+                        <p class="text-sm text-green-600" id="lineUserStatus"></p>
+                    </div>
+                </div>
+            </div>
+
             <!-- LINE UserID (隱藏欄位) -->
             <input type="hidden" id="lineUserId" name="lineUserId">
             
@@ -42,9 +45,10 @@
                     type="text" 
                     id="displayLineUserId" 
                     readonly 
-                    class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-500 cursor-not-allowed"
-                    placeholder="系統自動帶入"
+                    class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-500 cursor-not-allowed font-mono text-sm"
+                    placeholder="系統自動從 LINE 獲取"
                 >
+                <p class="text-xs text-gray-500 mt-1">此 ID 從您的 LINE 帳號自動獲取</p>
             </div>
 
             <!-- 姓名 -->
@@ -60,6 +64,7 @@
                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     placeholder="請填寫真實姓名"
                 >
+                <p class="text-xs text-gray-500 mt-1">請填寫與學生證相符的真實姓名</p>
             </div>
 
             <!-- 電話 -->
@@ -110,7 +115,15 @@
                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                 >
                     <option value="">請選擇所屬科系</option>
-                    <!-- 科系選項由 JavaScript 動態生成 -->
+                    <option value="資訊工程學系">資訊工程學系</option>
+                    <option value="電機工程學系">電機工程學系</option>
+                    <option value="土木工程學系">土木工程學系</option>
+                    <option value="應用化學系">應用化學系</option>
+                    <option value="中國語文學系">中國語文學系</option>
+                    <option value="外國語文學系">外國語文學系</option>
+                    <option value="經濟學系">經濟學系</option>
+                    <option value="財務金融學系">財務金融學系</option>
+                    <!-- 其他科系... -->
                 </select>
             </div>
 
@@ -135,113 +148,46 @@
     </div>
 
     <script>
-        // 國立暨南國際大學科系資料
-        const NCNU_DEPARTMENTS = [
-            // 人文學院
-            { name: "中國語文學系", college: "人文學院", color: "college-humanities" },
-            { name: "外國語文學系", college: "人文學院", color: "college-humanities" },
-            { name: "社會政策與社會工作學系", college: "人文學院", color: "college-humanities" },
-            { name: "公共行政與政策學系", college: "人文學院", color: "college-humanities" },
-            { name: "歷史學系", college: "人文學院", color: "college-humanities" },
-            { name: "東南亞學系", college: "人文學院", color: "college-humanities" },
-            { name: "華語文教學碩士學位學程", college: "人文學院", color: "college-humanities" },
-            { name: "非營利組織經營管理碩士學位學程", college: "人文學院", color: "college-humanities" },
-            { name: "長期照顧經營管理碩士在職學位學程", college: "人文學院", color: "college-humanities" },
-            { name: "文化創意與社會行銷碩士學位學程", college: "人文學院", color: "college-humanities" },
-            { name: "原鄉發展跨領域學士學位學程", college: "人文學院", color: "college-humanities" },
-
-            // 教育學院
-            { name: "國際文教與比較教育學系", college: "教育學院", color: "college-education" },
-            { name: "教育政策與行政學系", college: "教育學院", color: "college-education" },
-            { name: "諮商心理與人力資源發展學系", college: "教育學院", color: "college-education" },
-            { name: "教育學院學士班", college: "教育學院", color: "college-education" },
-            { name: "終身學習與人力資源發展碩士學位學程", college: "教育學院", color: "college-education" },
-            { name: "心理健康與諮詢碩士在職學位學程", college: "教育學院", color: "college-education" },
-
-            // 科技學院
-            { name: "資訊工程學系", college: "科技學院", color: "college-technology" },
-            { name: "土木工程學系", college: "科技學院", color: "college-technology" },
-            { name: "電機工程學系", college: "科技學院", color: "college-technology" },
-            { name: "應用化學系", college: "科技學院", color: "college-technology" },
-            { name: "應用材料及光電工程學系", college: "科技學院", color: "college-technology" },
-            { name: "光電科技碩士學位學程", college: "科技學院", color: "college-technology" },
-            { name: "智慧精準農業產學研發博士學位學程", college: "科技學院", color: "college-technology" },
-            { name: "科技學院學士班", college: "科技學院", color: "college-technology" },
-
-            // 管理學院
-            { name: "財務金融學系", college: "管理學院", color: "college-management" },
-            { name: "經濟學系", college: "管理學院", color: "college-management" },
-            { name: "國際企業學系", college: "管理學院", color: "college-management" },
-            { name: "資訊管理學系", college: "管理學院", color: "college-management" },
-            { name: "觀光休閒與餐旅管理學系", college: "管理學院", color: "college-management" },
-            { name: "經營管理碩士學位學程在職專班", college: "管理學院", color: "college-management" },
-            { name: "高階經營管理碩士學位學程", college: "管理學院", color: "college-management" },
-            { name: "新興產業策略與發展碩士學位學程", college: "管理學院", color: "college-management" },
-            { name: "新興產業策略與發展博士學位學程", college: "管理學院", color: "college-management" },
-
-            // 水沙連學院
-            { name: "地方創生與跨域治理碩士學位學程", college: "水沙連學院", color: "college-watershalian" },
-            { name: "R立方青年返鄉創新實務學程", college: "水沙連學院", color: "college-watershalian" },
-            { name: "運動教練專業知識學分學程", college: "水沙連學院", color: "college-watershalian" },
-
-            // 護理暨健康福祉學院
-            { name: "護理學系原住民族專班", college: "護理暨健康福祉學院", color: "college-nursing" },
-            { name: "高齡健康與長期照顧管理學士學位學程", college: "護理暨健康福祉學院", color: "college-nursing" }
-        ];
-
         // 初始化頁面
         window.addEventListener('load', function() {
             initializePage();
-            populateDepartments();
         });
 
         // 初始化頁面資料
         function initializePage() {
             // 從 sessionStorage 取得 LINE 用戶資料
+            const lineUserData = JSON.parse(sessionStorage.getItem('lineUserData') || '{}');
             const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
             
-            if (!userData.userId) {
+            if (!userData.userId && !lineUserData.userId) {
                 alert('請先完成 LINE 登入');
                 window.location.href = 'index.html';
                 return;
             }
 
-            // 填入 LINE UserID
-            document.getElementById('lineUserId').value = userData.userId;
-            document.getElementById('displayLineUserId').value = userData.userId;
+            // 使用 LINE 用戶資料
+            const lineUserId = userData.userId || lineUserData.userId;
+            
+            // 填入 LINE UserID (真正的 LINE ID)
+            document.getElementById('lineUserId').value = lineUserId;
+            document.getElementById('displayLineUserId').value = lineUserId;
+
+            // 顯示 LINE 用戶資訊
+            if (lineUserData.displayName) {
+                document.getElementById('lineUserInfo').classList.remove('hidden');
+                document.getElementById('lineUserName').textContent = lineUserData.displayName;
+                document.getElementById('lineUserStatus').textContent = lineUserData.statusMessage || '已連線到 LINE';
+                
+                if (lineUserData.pictureUrl) {
+                    document.getElementById('lineUserPicture').src = lineUserData.pictureUrl;
+                }
+                
+                // 自動填入姓名 (從 LINE 顯示名稱)
+                document.getElementById('displayName').value = lineUserData.displayName;
+            }
 
             // 檢查是否已註冊
-            checkIfRegistered(userData.userId);
-        }
-
-        // 填入科系選項
-        function populateDepartments() {
-            const departmentSelect = document.getElementById('department');
-            
-            // 按學院分組
-            const colleges = {};
-            NCNU_DEPARTMENTS.forEach(dept => {
-                if (!colleges[dept.college]) {
-                    colleges[dept.college] = [];
-                }
-                colleges[dept.college].push(dept);
-            });
-
-            // 建立 optgroup
-            Object.keys(colleges).forEach(college => {
-                const optgroup = document.createElement('optgroup');
-                optgroup.label = college;
-                
-                colleges[college].forEach(dept => {
-                    const option = document.createElement('option');
-                    option.value = dept.name;
-                    option.textContent = dept.name;
-                    option.className = dept.color;
-                    optgroup.appendChild(option);
-                });
-                
-                departmentSelect.appendChild(optgroup);
-            });
+            checkIfRegistered(lineUserId);
         }
 
         // 檢查是否已註冊
