@@ -17,8 +17,13 @@
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
-        <!-- 頁首 - 簡化版 -->
+        <!-- 頁首 -->
         <div class="text-center mb-6">
+            <div class="flex items-center justify-center mb-4">
+                <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                    <i class="fab fa-line text-white text-xl"></i>
+                </div>
+            </div>
             <h1 class="text-2xl font-bold text-gray-800 mb-2">會員註冊</h1>
             <p class="text-gray-600 text-sm">請填寫以下資料完成註冊</p>
         </div>
@@ -31,7 +36,7 @@
             <!-- 顯示 LINE UserID (唯讀) -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="fas fa-id-card text-purple-500 mr-2"></i>LINE 用戶 ID
+                    <i class="fab fa-line text-green-500 mr-2"></i>LINE 用戶 ID
                 </label>
                 <input 
                     type="text" 
@@ -113,24 +118,17 @@
             <button 
                 type="submit"
                 id="submitBtn"
-                class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition duration-200 shadow-lg mt-4"
+                class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold py-4 px-6 rounded-xl transition duration-200 shadow-lg mt-4"
             >
                 <i class="fas fa-check-circle mr-2"></i>
                 完成註冊
             </button>
         </form>
 
-        <!-- 返回首頁 -->
-        <div class="text-center mt-4">
-            <a href="index.html" class="text-purple-600 hover:text-purple-800 text-sm font-medium">
-                <i class="fas fa-arrow-left mr-1"></i>返回首頁
-            </a>
-        </div>
-
         <!-- 載入提示 -->
         <div id="loading" class="hidden text-center py-4">
-            <div class="flex items-center justify-center gap-3 text-purple-600">
-                <div class="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+            <div class="flex items-center justify-center gap-3 text-green-600">
+                <div class="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
                 <span>註冊中...</span>
             </div>
         </div>
@@ -203,31 +201,17 @@
             const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
             
             if (!userData.userId) {
-                // 如果沒有用戶資料，創建模擬資料
-                const mockUserId = 'U' + Math.random().toString(36).substr(2, 9);
-                const mockUserData = {
-                    userId: mockUserId,
-                    displayName: '',
-                    isRegistered: false
-                };
-                sessionStorage.setItem('userData', JSON.stringify(mockUserData));
-                
-                // 填入 LINE UserID
-                document.getElementById('lineUserId').value = mockUserId;
-                document.getElementById('displayLineUserId').value = mockUserId;
-            } else {
-                // 填入 LINE UserID
-                document.getElementById('lineUserId').value = userData.userId;
-                document.getElementById('displayLineUserId').value = userData.userId;
-
-                // 填入姓名（從 LINE 資料）
-                if (userData.displayName) {
-                    document.getElementById('displayName').value = userData.displayName;
-                }
-
-                // 檢查是否已註冊
-                checkIfRegistered(userData.userId);
+                alert('請先完成 LINE 登入');
+                window.location.href = 'index.html';
+                return;
             }
+
+            // 填入 LINE UserID
+            document.getElementById('lineUserId').value = userData.userId;
+            document.getElementById('displayLineUserId').value = userData.userId;
+
+            // 檢查是否已註冊
+            checkIfRegistered(userData.userId);
         }
 
         // 填入科系選項
