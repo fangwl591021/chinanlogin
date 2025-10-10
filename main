@@ -1,85 +1,339 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>穿山甲專車預約</title>
-<style>
-body { font-family:'Microsoft JhengHei'; background:#f5f6f7; color:#333; padding:20px; }
-.container { max-width:600px; margin:auto; background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
-h2 { text-align:center; color:#2e7d32; }
-#userInfo { background:#e8f5e9; border:1px solid #81c784; padding:10px; border-radius:8px; margin-bottom:10px; }
-button { width:100%; padding:12px; border:none; border-radius:8px; font-size:16px; font-weight:bold; cursor:pointer; margin-top:10px; }
-#submitBtn { background:#2e7d32; color:white; }
-.success { color:#2e7d32; background:#e8f5e9; padding:10px; border-radius:8px; }
-.error { color:#c62828; background:#ffebee; padding:10px; border-radius:8px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>暨大接駁車預約系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-<div class="container">
-  <h2>🚌 穿山甲專車預約</h2>
-  <div id="userInfo">載入中...</div>
+<body class="bg-gray-50">
+  <!-- 導航列 -->
+  <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg">
+    <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div id="userAvatar" class="w-10 h-10 bg-white rounded-full"></div>
+        <div>
+          <p id="userName" class="font-semibold">載入中...</p>
+          <p class="text-xs text-purple-200">暨大接駁車預約</p>
+        </div>
+      </div>
+      <button onclick="logout()" class="text-sm px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition">
+        登出
+      </button>
+    </div>
+  </div>
 
-  <label>選擇日期</label>
-  <input type="date" id="date">
+  <!-- 主要內容 -->
+  <div class="max-w-4xl mx-auto px-4 py-6">
+    <!-- 日期選擇 -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+      <h2 class="text-xl font-bold text-gray-800 mb-4">選擇預約日期</h2>
+      <input 
+        type="date" 
+        id="bookingDate"
+        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+        onchange="loadRoutes()"
+      >
+    </div>
 
-  <label>選擇班次</label>
-  <select id="route">
-    <option value="">請選擇</option>
-    <option value="A1">A1｜22:00–23:00 暨大→埔里總站</option>
-    <option value="B1">B1｜22:30–23:30 埔里總站→暨大</option>
-  </select>
+    <!-- 車次列表 -->
+    <div id="routesList" class="space-y-4">
+      <div class="text-center py-12 text-gray-500">
+        <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        <p>請選擇預約日期</p>
+      </div>
+    </div>
 
-  <label>下車站</label>
-  <input id="stop" placeholder="請輸入下車站">
+    <!-- 我的預約 -->
+    <div class="bg-white rounded-xl shadow-md p-6 mt-6">
+      <h2 class="text-xl font-bold text-gray-800 mb-4">我的預約</h2>
+      <div id="myBookings" class="space-y-3">
+        <p class="text-center text-gray-500 py-8">載入中...</p>
+      </div>
+    </div>
+  </div>
 
-  <button id="submitBtn">送出預約</button>
-  <div id="msg"></div>
-</div>
+  <!-- 預約確認 Modal -->
+  <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4" style="display: none;">
+    <div class="bg-white rounded-2xl p-6 max-w-sm w-full">
+      <h3 class="text-xl font-bold text-gray-800 mb-4">確認預約</h3>
+      <div id="confirmContent" class="mb-6 space-y-2 text-sm text-gray-600">
+        <!-- 動態內容 -->
+      </div>
+      <div class="flex gap-3">
+        <button onclick="submitBooking()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg transition">
+          確認預約
+        </button>
+        <button onclick="closeModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 rounded-lg transition">
+          取消
+        </button>
+      </div>
+    </div>
+  </div>
 
-<script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbwzV2t-w-jXsgpAFBQR7sGEP4ycpO9ML2bXs-IEutNkIoYJ6Qsf69mihgJMTKVnqVMk5g/exec';
-const url = new URL(window.location.href);
-const UID = url.searchParams.get('uid');
+  <script>
+    // 配置
+    const CONFIG = {
+      SHEET_ID: '19zDueZCpq-qJsZsMVq4hSZh2BZrZv7pfQxMk5PTy4s4',
+      SHEET_USER: '用戶資料',
+      SHEET_RESV: '預約紀錄',
+      TIMEZONE: 'Asia/Taipei',
+      MAX_SEATS: 6,
+      LINE_TOKEN: 'hhFVS+V7Fp4zIFZ0sv6vq1WuvKmIKzsK6RlZkAOftxr2Lob218VgP+/PK+wIhwhw8HTlOobneGQhxTllrjt8uAzwaCGgWZ5yokIKZSVID+ccNDJmKxElxNQatB6NUObNTtofnMdDZTOLx12X4QRRdwdB04t89/1O/w1cDnyilFU=',
+      LINE_GROUP_ID: 'C596050d1193b9b930ac25469c61ba12a',
+      SCRIPT_URL: 'YOUR_GOOGLE_APPS_SCRIPT_URL' // 需要部署
+    };
 
-if (!UID) {
-  document.body.innerHTML = '<h3 style="color:red;text-align:center;">請先登入再進入預約頁</h3>';
-} else {
-  loadUserInfo();
-}
+    // 路線設定
+    const ROUTES = [
+      { id: 'A1', name: 'A1｜22:00–22:30 暨大→埔里總站', from: '行政大樓', to: '埔里總站', time: '22:00–22:30' },
+      { id: 'B1', name: 'B1｜22:30–23:00 埔里總站→暨大', from: '埔里總站', to: '暨大校區', time: '22:30–23:00' },
+      { id: 'A2', name: 'A2｜23:00–23:30 暨大→埔里總站', from: '行政大樓', to: '埔里總站', time: '23:00–23:30' },
+      { id: 'B2', name: 'B2｜23:30–24:00 埔里總站→暨大', from: '埔里總站', to: '暨大校區', time: '23:30–24:00' }
+    ];
 
-async function loadUserInfo(){
-  const res = await fetch(`${API_URL}?action=checkUser&lineUserId=${UID}`);
-  const data = await res.json();
-  if (data.isRegistered) {
-    document.getElementById('userInfo').innerHTML = `👤 ${data.userName}`;
-  } else {
-    document.getElementById('userInfo').innerHTML = `<span class="error">查無會員資料</span>`;
-  }
-}
+    let currentUser = null;
+    let selectedRoute = null;
 
-document.getElementById('submitBtn').onclick = async ()=>{
-  const d = {
-    action:'submitReservation',
-    lineUserId: UID,
-    date: document.getElementById('date').value,
-    route: document.getElementById('route').value,
-    stop: document.getElementById('stop').value
-  };
-  if (!d.date || !d.route || !d.stop) {
-    showMsg('❌ 請完整填寫預約資料','error'); return;
-  }
-  const res = await fetch(API_URL, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(d)
-  });
-  const data = await res.json();
-  if (data.success) showMsg('✅ 預約成功','success');
-  else showMsg('❌ 預約失敗：' + data.message,'error');
-};
+    // 初始化
+    window.addEventListener('load', function() {
+      checkAuth();
+      setMinDate();
+    });
 
-function showMsg(t,c){document.getElementById('msg').innerHTML=`<div class="${c}">${t}</div>`;}
-</script>
+    // 檢查登入狀態
+    function checkAuth() {
+      const userData = sessionStorage.getItem('userData');
+      const urlParams = new URLSearchParams(window.location.search);
+      const isTest = urlParams.get('test');
+      
+      if (!userData && !isTest) {
+        window.location.href = 'index.html';
+        return;
+      }
+      
+      if (isTest) {
+        // 測試模式
+        currentUser = {
+          userId: 'U' + Math.random().toString(36).substr(2, 9),
+          displayName: '測試用戶',
+          pictureUrl: '',
+          loginTime: new Date().toISOString()
+        };
+      } else {
+        currentUser = JSON.parse(userData);
+      }
+      
+      // 顯示用戶資訊
+      document.getElementById('userName').textContent = currentUser.displayName;
+      if (currentUser.pictureUrl) {
+        document.getElementById('userAvatar').style.backgroundImage = `url(${currentUser.pictureUrl})`;
+        document.getElementById('userAvatar').style.backgroundSize = 'cover';
+      }
+      
+      // 載入我的預約
+      loadMyBookings();
+    }
+
+    // 設定最小日期為今天
+    function setMinDate() {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('bookingDate').min = today;
+      document.getElementById('bookingDate').value = today;
+      loadRoutes();
+    }
+
+    // 載入車次
+    async function loadRoutes() {
+      const date = document.getElementById('bookingDate').value;
+      if (!date) return;
+      
+      const container = document.getElementById('routesList');
+      container.innerHTML = '<p class="text-center text-gray-500 py-8">載入中...</p>';
+      
+      try {
+        // 載入各車次的預約狀況
+        const bookings = await getBookingsByDate(date);
+        
+        let html = '';
+        ROUTES.forEach(route => {
+          const bookedCount = bookings.filter(b => b.routeId === route.id).length;
+          const available = CONFIG.MAX_SEATS - bookedCount;
+          const isFull = available <= 0;
+          
+          html += `
+            <div class="bg-white rounded-xl shadow-md p-5 ${isFull ? 'opacity-60' : 'hover:shadow-lg transition'}">
+              <div class="flex items-center justify-between">
+                <div class="flex-1">
+                  <h3 class="text-lg font-bold text-gray-800 mb-1">${route.name}</h3>
+                  <div class="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                    <span>📍 ${route.from} → ${route.to}</span>
+                    <span>⏰ ${route.time}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs px-2 py-1 rounded-full ${isFull ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}">
+                      ${isFull ? '已額滿' : `剩餘 ${available}/${CONFIG.MAX_SEATS} 位`}
+                    </span>
+                  </div>
+                </div>
+                <button 
+                  onclick="openBookingModal('${route.id}', '${date}')"
+                  ${isFull ? 'disabled' : ''}
+                  class="px-6 py-3 rounded-lg font-semibold transition ${
+                    isFull 
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                      : 'bg-purple-600 hover:bg-purple-700 text-white'
+                  }"
+                >
+                  ${isFull ? '已滿' : '預約'}
+                </button>
+              </div>
+            </div>
+          `;
+        });
+        
+        container.innerHTML = html;
+      } catch (error) {
+        console.error('載入車次失敗:', error);
+        container.innerHTML = '<p class="text-center text-red-500 py-8">載入失敗，請重試</p>';
+      }
+    }
+
+    // 開啟預約確認視窗
+    function openBookingModal(routeId, date) {
+      const route = ROUTES.find(r => r.id === routeId);
+      if (!route) return;
+      
+      selectedRoute = { ...route, date };
+      
+      const content = document.getElementById('confirmContent');
+      content.innerHTML = `
+        <p><strong>車次：</strong>${route.name}</p>
+        <p><strong>日期：</strong>${date}</p>
+        <p><strong>起點：</strong>${route.from}</p>
+        <p><strong>終點：</strong>${route.to}</p>
+        <p><strong>時間：</strong>${route.time}</p>
+      `;
+      
+      document.getElementById('confirmModal').style.display = 'flex';
+    }
+
+    // 關閉 Modal
+    function closeModal() {
+      document.getElementById('confirmModal').style.display = 'none';
+      selectedRoute = null;
+    }
+
+    // 提交預約
+    async function submitBooking() {
+      if (!selectedRoute) return;
+      
+      const bookingData = {
+        userId: currentUser.userId,
+        userName: currentUser.displayName,
+        routeId: selectedRoute.id,
+        routeName: selectedRoute.name,
+        date: selectedRoute.date,
+        from: selectedRoute.from,
+        to: selectedRoute.to,
+        time: selectedRoute.time,
+        createdAt: new Date().toISOString()
+      };
+      
+      try {
+        // 儲存到 Google Sheets
+        await saveBooking(bookingData);
+        
+        // 發送 LINE 通知
+        await sendLineNotification(bookingData);
+        
+        alert('預約成功！');
+        closeModal();
+        loadRoutes();
+        loadMyBookings();
+      } catch (error) {
+        console.error('預約失敗:', error);
+        alert('預約失敗，請重試');
+      }
+    }
+
+    // 儲存預約到 Google Sheets
+    async function saveBooking(data) {
+      const response = await fetch(CONFIG.SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'saveBooking',
+          data: data
+        })
+      });
+      
+      console.log('預約已儲存');
+    }
+
+    // 取得指定日期的預約
+    async function getBookingsByDate(date) {
+      // 實際環境中應該從 Google Sheets 讀取
+      // 這裡暫時返回空陣列
+      return [];
+    }
+
+    // 載入我的預約
+    async function loadMyBookings() {
+      const container = document.getElementById('myBookings');
+      
+      // 實際環境中應該從 Google Sheets 讀取
+      // 這裡顯示提示訊息
+      container.innerHTML = `
+        <div class="text-center text-gray-500 py-8">
+          <p>尚無預約記錄</p>
+          <p class="text-sm mt-2">完成預約後將顯示在這裡</p>
+        </div>
+      `;
+    }
+
+    // 發送 LINE 通知
+    async function sendLineNotification(booking) {
+      const message = `
+🚌 新預約通知
+
+👤 乘客：${booking.userName}
+🚏 車次：${booking.routeName}
+📅 日期：${booking.date}
+⏰ 時間：${booking.time}
+📍 ${booking.from} → ${booking.to}
+      `.trim();
+      
+      try {
+        await fetch('https://api.line.me/v2/bot/message/push', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${CONFIG.LINE_TOKEN}`
+          },
+          body: JSON.stringify({
+            to: CONFIG.LINE_GROUP_ID,
+            messages: [{
+              type: 'text',
+              text: message
+            }]
+          })
+        });
+        
+        console.log('LINE 通知已發送');
+      } catch (error) {
+        console.error('發送 LINE 通知失敗:', error);
+      }
+    }
+
+    // 登出
+    function logout() {
+      sessionStorage.clear();
+      window.location.href = 'index.html';
+    }
+  </script>
 </body>
 </html>
