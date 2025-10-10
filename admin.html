@@ -210,14 +210,15 @@
 
     <script>
         // 系統配置 - 請替換為您的實際配置
-        const CONFIG = {
-            GITHUB_TOKEN: "hhFVS+V7Fp4zIFZ0sv6vq1WuvKmIKzsK6RlZkAOftxr2Lob218VgP+/PK+wIhwhw8HTlOobneGQhxTllrjt8uAzwaCGgWZ5yokIKZSVID+ccNDJmKxElxNQatB6NUObNTtofnMdDZTOLx12X4QRRdwdB04t89/1O/w1cDnyilFU=",
-            GIST_ID: "C596050d1193b9b930ac25469c61ba12a",
-            STOPS: {
-                outbound: ["行政大樓", "中餐廳", "科技學院", "學人會館", "中城", "下城", "坪頂", "愛蘭橋", "大成國小", "中山安七街口", "榮民診所", "埔里酒廠", "埔里總站"],
-                return: ["埔里總站", "埔里酒廠", "榮民診所", "中山安七街口", "大成國小", "愛蘭橋", "坪頂", "下城", "中城", "學人會館", "科技學院", "中餐廳", "行政大樓"]
-            }
-        };
+        // 在 admin.html 的 CONFIG 更新為：
+const CONFIG = {
+    GITHUB_TOKEN: "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",
+    GIST_ID: "802416482763775c3c17680ffea14e7e",
+    STOPS: {
+        outbound: ["行政大樓", "中餐廳", "科技學院", "學人會館", "中城", "下城", "坪頂", "愛蘭橋", "大成國小", "中山安七街口", "榮民診所", "埔里酒廠", "埔里總站"],
+        return: ["埔里總站", "埔里酒廠", "榮民診所", "中山安七街口", "大成國小", "愛蘭橋", "坪頂", "下城", "中城", "學人會館", "科技學院", "中餐廳", "行政大樓"]
+    }
+};
 
         // 顯示指定區塊
         function showSection(sectionName) {
