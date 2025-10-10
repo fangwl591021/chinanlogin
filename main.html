@@ -1,293 +1,215 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>穿山甲專車預約 - 暨大接駁車服務</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    .holiday { background-color: #fee2e2 !important; color: #dc2626 !important; cursor: not-allowed !important; }
-    .calendar-day { transition: all 0.2s ease; }
-    .calendar-day:not(.holiday):hover { background-color: #dbeafe; }
-    .calendar-container { display: none; }
-    .calendar-container.show { display: block; }
-    .selected { background-color: #3b82f6 !important; color: white !important; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>穿山甲專車預約</title>
+<style>
+body { font-family: system-ui, sans-serif; background:#f5f6f7; margin:0; padding:0; }
+header { background:#3c8050; color:#fff; text-align:center; padding:15px; font-size:22px; font-weight:bold; }
+.card { background:#fff; margin:16px; border-radius:8px; padding:16px; box-shadow:0 0 5px rgba(0,0,0,0.1); }
+
+/* 統一輸入區 */
+input, select { width:100%; padding:10px; margin-top:8px; border-radius:6px; border:1px solid #ccc; font-size:16px; }
+button { width:100%; background:#3c8050; color:#fff; border:none; padding:12px; border-radius:6px; font-size:18px; font-weight:bold; margin-top:12px; cursor:pointer; position: relative; }
+button:disabled { background:#aaa; cursor:not-allowed; }
+button.loading { background:#2d6140; color: transparent; }
+button.loading::after {
+  content: ''; position: absolute; width: 20px; height: 20px; top: 50%; left: 50%;
+  margin: -10px 0 0 -10px; border: 2px solid #ffffff; border-radius: 50%;
+  border-top-color: transparent; animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 提示訊息 */
+.notice { padding:10px; margin-top:10px; border-radius:6px; }
+.notice.error { background:#fdecea; color:#b71c1c; border:1px solid #f5c2c7; }
+.notice.success { background:#e8f5e9; color:#2e7d32; border:1px solid #81c784; }
+.notice.holiday { background:#f9f9f9; color:#b71c1c; border:1px dashed #e57373; }
+
+/* 標籤 */
+label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
+
+/* 月曆 */
+.calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap:6px; text-align:center; }
+.calendar div { padding:8px 0; border-radius:6px; background:#fff; border:1px solid #ccc; cursor:pointer; }
+.calendar div:hover { background:#e8f5e9; }
+.calendar .holiday { background:#fdecea; color:#b71c1c; cursor:not-allowed; }
+.calendar .selected { background:#3c8050; color:#fff; font-weight:bold; }
+
+/* 班次按鈕 */
+#routeButtons { display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; }
+.route-btn {
+  flex:0 0 calc(50% - 8px); padding:10px; border-radius:8px; text-align:center;
+  border:1px solid; font-size:15px; cursor:pointer; transition:0.2s;
+}
+.route-btn.A1, .route-btn.B1 { background:#e8f5e9; color:#2e7d32; border-color:#4caf50; }
+.route-btn.A2, .route-btn.B2 { background:#e8f0fe; color:#1a73e8; border-color:#4285f4; }
+.route-btn.full { background:#eee; color:#999; border-color:#ccc; cursor:not-allowed; }
+.route-btn.selected.A1, .route-btn.selected.B1 { background:#2e7d32; color:#fff; }
+.route-btn.selected.A2, .route-btn.selected.B2 { background:#1a73e8; color:#fff; }
+
+@media (max-width:480px){
+  .route-btn{flex:0 0 calc(50% - 6px);min-height:65px;padding:8px 4px;}
+}
+</style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen p-4">
+<body>
+<header>🚌 穿山甲專車預約</header>
 
-  <div class="max-w-md mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
-
-    <!-- 頁首 -->
-    <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold">穿山甲專車預約</h1>
-          <p class="text-purple-200 mt-1">暨大接駁車服務</p>
-        </div>
-        <div class="bg-white/20 p-3 rounded-full">
-          <i class="fas fa-bus text-xl"></i>
-        </div>
-      </div>
-    </div>
-
-    <!-- 用戶資訊 -->
-    <div class="p-4 border-b border-gray-200 bg-gray-50">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-full flex items-center justify-center">
-            <i class="fas fa-user text-white text-sm"></i>
-          </div>
-          <div>
-            <h2 class="font-semibold text-gray-800 text-sm" id="userName">方</h2>
-            <p class="text-xs text-gray-600" id="userInfo">資訊工程學系 | 114230123</p>
-          </div>
-        </div>
-        <button id="logoutBtn" class="text-xs text-gray-500 hover:text-gray-700">
-          <i class="fas fa-sign-out-alt mr-1"></i>登出
-        </button>
-      </div>
-    </div>
-
-    <!-- 主預約表單 -->
-    <form id="reservationForm" class="p-6 space-y-6">
-
-      <!-- 日期選擇 -->
-      <div>
-        <label class="block text-lg font-bold text-gray-800 mb-3">
-          <i class="fas fa-calendar-alt text-green-500 mr-2"></i>選擇搭乘日期 *
-        </label>
-        <button type="button" id="dateSelectBtn"
-          class="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 px-6 rounded-xl transition duration-200 shadow-lg flex items-center justify-center">
-          <i class="fas fa-calendar-plus mr-2"></i> 點我選擇搭乘日期
-        </button>
-
-        <div id="calendarContainer" class="calendar-container mt-4">
-          <div class="grid grid-cols-7 gap-2 mb-2 text-sm text-gray-500 text-center font-medium">
-            <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
-          </div>
-          <div class="grid grid-cols-7 gap-2" id="calendarDays"></div>
-        </div>
-
-        <div id="selectedDateDisplay" class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200 hidden">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-blue-800 font-medium">已選擇日期：</p>
-              <p class="text-lg font-bold text-blue-900" id="selectedDateText"></p>
-            </div>
-            <button type="button" id="changeDateBtn" class="text-blue-600 hover:text-blue-800 text-sm">
-              <i class="fas fa-edit mr-1"></i>變更
-            </button>
-          </div>
-        </div>
-
-        <!-- 無法預約提示 -->
-        <div id="unavailableMsg" class="hidden mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-          <i class="fas fa-ban mr-1"></i> 該日期為停駛或公休日，無法預約。
-        </div>
-      </div>
-
-      <!-- 下車站選擇 -->
-      <div id="stationSection" class="hidden">
-        <label class="block text-lg font-bold text-gray-800 mb-3">
-          <i class="fas fa-map-marker-alt text-red-500 mr-2"></i>下車站點 *
-        </label>
-        <select id="stationSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 transition">
-          <option value="">請選擇下車站</option>
-          <option>南投火車站</option>
-          <option>埔里交流道</option>
-          <option>暨大正門口</option>
-          <option>校園活動中心</option>
-        </select>
-      </div>
-
-      <!-- 時段選擇 -->
-      <div id="timeSection" class="hidden">
-        <label class="block text-lg font-bold text-gray-800 mb-3">
-          <i class="fas fa-clock text-blue-500 mr-2"></i>請選擇搭乘時段 *
-        </label>
-        <div id="timeSlotsContainer" class="grid grid-cols-2 gap-3">
-          <!-- 動態產生 -->
-        </div>
-      </div>
-
-      <!-- 送出按鈕 -->
-      <button type="submit" id="submitBtn"
-        class="hidden w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition duration-200 shadow-lg flex items-center justify-center">
-        <i class="fas fa-paper-plane mr-2"></i> 送出預約
-      </button>
-
-      <!-- 載入中 -->
-      <div id="loading" class="hidden text-center py-4">
-        <div class="flex items-center justify-center gap-3 text-purple-600">
-          <div class="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-          <span>送出中...</span>
-        </div>
-      </div>
-
-      <!-- 成功訊息 -->
-      <div id="successMessage" class="hidden bg-green-50 border border-green-200 rounded-xl p-5 text-center">
-        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-          <i class="fas fa-check text-green-500 text-xl"></i>
-        </div>
-        <h3 class="text-lg font-bold text-green-800 mb-2">預約成功！</h3>
-        <p class="text-green-700 mb-2" id="successDetails"></p>
-        <button id="newReservationBtn"
-          class="mt-3 w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition">
-          新預約
-        </button>
-      </div>
-    </form>
+<div class="card">
+  <div id="userInfo" style="margin-bottom:15px;line-height:1.5;color:#2e7d32;font-weight:bold;">
+    👤 王子齊 bit.ly/遊戲達人<br>🏫 電機工程學系｜114230145
   </div>
 
-  <script>
-    // === 初始化用戶 ===
-    function initializePage() {
-      const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
-      const nameEl = document.getElementById('userName');
-      const infoEl = document.getElementById('userInfo');
+  <!-- 日期選擇 -->
+  <label><center>選擇搭乘日期</center></label>
+  <button onclick="toggleCalendar()">📅 打開月曆</button>
+  <div id="calendarContainer" style="display:none;margin-top:10px;">
+    <div id="calendar" class="calendar"></div>
+  </div>
+  <div id="selectedDate" class="notice success" style="display:none;"></div>
+  <div id="holidayNotice" class="notice" style="display:none;"></div>
 
-      const defaultUser = {
-        userId: 'user001', displayName: '王子齊 bit.ly/遊戲達人',
-        department: '電機工程學系', studentId: '114230145',
-        phone: '0912345678', isRegistered: true
-      };
+  <!-- 班次 -->
+  <label>請選擇搭乘班次 *</label>
+  <div id="routeButtons"></div>
 
-      const data = userData.userId ? userData : defaultUser;
-      sessionStorage.setItem('userData', JSON.stringify(data));
+  <!-- 下車站 -->
+  <label>下車站 *</label>
+  <select id="toStop"><option value="">請先選擇班次</option></select>
 
-      nameEl.textContent = data.displayName;
-      infoEl.textContent = `${data.department} | ${data.studentId}`;
+  <button id="submitBtn" onclick="submitForm()">送出預約</button>
+  <div id="result"></div>
+</div>
+
+<script>
+let selectedDate = null;
+let selectedRoute = null;
+
+// 模擬使用者資料
+const userData = { name: "王子齊 bit.ly/遊戲達人", phone: "0912345678", dept: "電機工程學系", schoolId: "114230145" };
+
+// 停靠站（正向/返程）
+const stopsOutbound = ["行政大樓","中餐廳","科技學院","學人會館","中城","下城","坪頂","愛蘭橋","大成國小","中山安七街口","榮民診所","埔里酒廠","埔里總站"];
+const stopsReturn = ["埔里總站","埔里酒廠","榮民診所","中山安七街口","大成國小","愛蘭橋","坪頂","下城","中城","學人會館","科技學院","中餐廳","行政大樓"];
+
+// === 月曆 ===
+function toggleCalendar(){
+  const c = document.getElementById('calendarContainer');
+  c.style.display = c.style.display === 'none' ? 'block' : 'none';
+  if (c.style.display === 'block') renderCalendar();
+}
+
+function renderCalendar(){
+  const cal = document.getElementById('calendar');
+  cal.innerHTML = "";
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const totalDays = new Date(year, month+1, 0).getDate();
+  const startWeekday = firstDay.getDay();
+  const holidays = ['2025-10-12','2025-10-13']; // 模擬公休
+
+  for (let i=0;i<startWeekday;i++){ cal.appendChild(document.createElement('div')); }
+  for (let d=1;d<=totalDays;d++){
+    const date = new Date(year, month, d);
+    const formatted = date.toISOString().split('T')[0];
+    const cell = document.createElement('div');
+    cell.textContent = d;
+    if (holidays.includes(formatted) || date.getDay() === 0){
+      cell.classList.add('holiday');
+    } else {
+      cell.onclick = ()=>selectDate(formatted);
     }
+    cal.appendChild(cell);
+  }
+}
 
-    // === 事件綁定 ===
-    function setupEventListeners() {
-      document.getElementById('dateSelectBtn').addEventListener('click', () => {
-        document.getElementById('calendarContainer').classList.toggle('show');
-        generateCalendarDays();
-      });
+function selectDate(date){
+  selectedDate = date;
+  document.getElementById('calendarContainer').style.display='none';
+  const holidayNotice=document.getElementById('holidayNotice');
+  const sel=document.getElementById('selectedDate');
+  const holidays=['2025-10-12','2025-10-13'];
+  if(holidays.includes(date)){
+    holidayNotice.innerHTML='🚫 本日為停駛/公休，無法預約';
+    holidayNotice.style.display='block';
+    sel.style.display='none';
+    document.getElementById('routeButtons').innerHTML='';
+    return;
+  }
+  holidayNotice.style.display='none';
+  sel.innerHTML='✅ 已選擇日期：'+date;
+  sel.style.display='block';
+  loadSeatStatus(date);
+}
 
-      document.getElementById('changeDateBtn').addEventListener('click', () => {
-        document.getElementById('selectedDateDisplay').classList.add('hidden');
-        document.getElementById('calendarContainer').classList.add('show');
-      });
+// === 載入班次狀況 ===
+function loadSeatStatus(date){
+  const container=document.getElementById('routeButtons');
+  container.innerHTML='';
+  const routeData={
+    A1:{name:'A1 暨大→埔里總站',remain:3,full:false},
+    A2:{name:'A2 暨大→埔里總站',remain:0,full:true},
+    B1:{name:'B1 埔里總站→暨大',remain:2,full:false},
+    B2:{name:'B2 埔里總站→暨大',remain:5,full:false}
+  };
+  ['A1','A2','B1','B2'].forEach(rid=>{
+    const r=routeData[rid];
+    const div=document.createElement('div');
+    div.className=`route-btn ${rid}`;
+    if(r.full) div.classList.add('full');
+    div.innerHTML=`<div><b>${r.name}</b><br>${r.full?'已滿':r.remain+' 位'}</div>`;
+    if(!r.full) div.onclick=()=>selectRoute(div,rid,r.name);
+    container.appendChild(div);
+  });
+}
 
-      document.getElementById('logoutBtn').addEventListener('click', () => {
-        sessionStorage.clear();
-        window.location.href = 'index.html';
-      });
+// === 選擇班次 ===
+function selectRoute(btn,id,name){
+  selectedRoute=id;
+  document.querySelectorAll('.route-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  updateStops(name);
+}
 
-      document.getElementById('reservationForm').addEventListener('submit', handleSubmit);
-      document.getElementById('newReservationBtn').addEventListener('click', () => location.reload());
-    }
+// === 下車站 ===
+function updateStops(routeName){
+  const toStop=document.getElementById('toStop');
+  toStop.innerHTML='<option value="">請選擇下車站</option>';
+  const isOutbound=routeName.includes('暨大→埔里');
+  const stops=isOutbound?stopsOutbound:stopsReturn;
+  const fromStop=isOutbound?'行政大樓':'埔里總站';
+  stops.filter(s=>s!==fromStop).forEach(s=>{
+    const o=document.createElement('option');
+    o.value=s; o.textContent=s;
+    toStop.appendChild(o);
+  });
+}
 
-    // === 生成月曆 ===
-    function generateCalendarDays() {
-      const container = document.getElementById('calendarDays');
-      container.innerHTML = '';
-
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth();
-      const firstDay = new Date(year, month, 1);
-      const lastDay = new Date(year, month + 1, 0);
-      const totalDays = lastDay.getDate();
-      const startWeekday = firstDay.getDay();
-
-      const holidays = ['2025-10-12', '2025-10-13']; // 模擬停駛日
-
-      for (let i = 0; i < startWeekday; i++) container.appendChild(document.createElement('div'));
-
-      for (let d = 1; d <= totalDays; d++) {
-        const date = new Date(year, month, d);
-        const formatted = date.toISOString().split('T')[0];
-        const day = document.createElement('div');
-        day.textContent = d;
-        day.className = 'calendar-day text-center py-2 rounded-lg border border-gray-200 cursor-pointer';
-        if (holidays.includes(formatted) || date.getDay() === 0) {
-          day.classList.add('holiday');
-        } else {
-          day.addEventListener('click', () => selectDate(date));
-        }
-        container.appendChild(day);
-      }
-    }
-
-    // === 選擇日期 ===
-    function selectDate(date) {
-      const formatted = date.toISOString().split('T')[0];
-      const holidays = ['2025-10-12', '2025-10-13'];
-
-      if (holidays.includes(formatted)) {
-        document.getElementById('unavailableMsg').classList.remove('hidden');
-        document.getElementById('stationSection').classList.add('hidden');
-        document.getElementById('timeSection').classList.add('hidden');
-        return;
-      } else {
-        document.getElementById('unavailableMsg').classList.add('hidden');
-      }
-
-      document.getElementById('selectedDateText').textContent = formatted;
-      document.getElementById('selectedDateDisplay').classList.remove('hidden');
-      document.getElementById('calendarContainer').classList.remove('show');
-
-      // 顯示下車站與時段
-      document.getElementById('stationSection').classList.remove('hidden');
-      generateTimeSlots();
-    }
-
-    // === 生成時段 ===
-    function generateTimeSlots() {
-      const container = document.getElementById('timeSlotsContainer');
-      container.innerHTML = '';
-      const times = ['07:30', '09:30', '13:00', '15:30'];
-      times.forEach(time => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.textContent = time;
-        btn.className = 'time-slot border border-gray-300 rounded-lg py-3 hover:bg-blue-100';
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('.time-slot').forEach(b => b.classList.remove('selected'));
-          btn.classList.add('selected');
-          document.getElementById('submitBtn').classList.remove('hidden');
-          document.getElementById('timeSection').classList.remove('hidden');
-        });
-        container.appendChild(btn);
-      });
-      document.getElementById('timeSection').classList.remove('hidden');
-    }
-
-    // === 送出預約 ===
-    async function handleSubmit(e) {
-      e.preventDefault();
-      const submitBtn = document.getElementById('submitBtn');
-      const loading = document.getElementById('loading');
-      const success = document.getElementById('successMessage');
-
-      const date = document.getElementById('selectedDateText').textContent;
-      const time = document.querySelector('.time-slot.selected')?.textContent;
-      const station = document.getElementById('stationSelect').value;
-      const user = JSON.parse(sessionStorage.getItem('userData'));
-
-      if (!date || !time || !station) return alert('請完整選擇日期、時段與站點');
-
-      submitBtn.classList.add('hidden');
-      loading.classList.remove('hidden');
-
-      // 模擬上傳過程
-      setTimeout(() => {
-        loading.classList.add('hidden');
-        success.classList.remove('hidden');
-        document.getElementById('successDetails').innerHTML =
-          `<b>${user.displayName}</b> 預約成功！<br>日期：${date}<br>時段：${time}<br>下車站：${station}`;
-      }, 1200);
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      initializePage();
-      setupEventListeners();
-    });
-  </script>
+// === 預約 ===
+function submitForm(){
+  const toStop=document.getElementById('toStop').value;
+  const btn=document.getElementById('submitBtn');
+  if(!selectedDate||!selectedRoute||!toStop){
+    alert('請完整選擇日期、班次與下車站');
+    return;
+  }
+  btn.disabled=true; btn.classList.add('loading');
+  setTimeout(()=>{
+    btn.disabled=false; btn.classList.remove('loading');
+    document.getElementById('result').innerHTML=
+      `<div class="notice success">
+        ✅ ${userData.name}<br>
+        日期：${selectedDate}<br>
+        班次：${selectedRoute}<br>
+        下車站：${toStop}<br>
+        <b>預約成功！</b>
+      </div>`;
+  },1000);
+}
+</script>
 </body>
 </html>
