@@ -8,11 +8,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .college-humanities { color: #3B82F6; font-weight: 600; }
-        .college-science { color: #10B981; font-weight: 600; }
-        .college-engineering { color: #F59E0B; font-weight: 600; }
+        .college-education { color: #10B981; font-weight: 600; }
+        .college-technology { color: #F59E0B; font-weight: 600; }
         .college-management { color: #8B5CF6; font-weight: 600; }
-        .college-education { color: #EF4444; font-weight: 600; }
-        .college-other { color: #6B7280; font-weight: 600; }
+        .college-watershalian { color: #EF4444; font-weight: 600; }
+        .college-nursing { color: #EC4899; font-weight: 600; }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen flex items-center justify-center p-4">
@@ -133,44 +133,58 @@
     </div>
 
     <script>
-        // 暨大科系資料
-        const NCU_DEPARTMENTS = [
+        // 國立暨南國際大學科系資料（正確版本）
+        const NCNU_DEPARTMENTS = [
             // 人文學院
-            { name: "中國文學系", college: "人文學院", color: "college-humanities" },
+            { name: "中國語文學系", college: "人文學院", color: "college-humanities" },
             { name: "外國語文學系", college: "人文學院", color: "college-humanities" },
+            { name: "社會政策與社會工作學系", college: "人文學院", color: "college-humanities" },
+            { name: "公共行政與政策學系", college: "人文學院", color: "college-humanities" },
             { name: "歷史學系", college: "人文學院", color: "college-humanities" },
-            { name: "哲學系", college: "人文學院", color: "college-humanities" },
-            
-            // 理學院
-            { name: "數學系", college: "理學院", color: "college-science" },
-            { name: "物理學系", college: "理學院", color: "college-science" },
-            { name: "化學系", college: "理學院", color: "college-science" },
-            { name: "生命科學系", college: "理學院", color: "college-science" },
-            
-            // 工學院
-            { name: "資訊工程學系", college: "工學院", color: "college-engineering" },
-            { name: "電機工程學系", college: "工學院", color: "college-engineering" },
-            { name: "機械工程學系", college: "工學院", color: "college-engineering" },
-            { name: "化學工程學系", college: "工學院", color: "college-engineering" },
-            { name: "土木工程學系", college: "工學院", color: "college-engineering" },
-            
-            // 管理學院
-            { name: "企業管理學系", college: "管理學院", color: "college-management" },
-            { name: "資訊管理學系", college: "管理學院", color: "college-management" },
-            { name: "財務金融學系", college: "管理學院", color: "college-management" },
-            { name: "國際企業學系", college: "管理學院", color: "college-management" },
-            { name: "會計學系", college: "管理學院", color: "college-management" },
-            
+            { name: "東南亞學系", college: "人文學院", color: "college-humanities" },
+            { name: "華語文教學碩士學位學程", college: "人文學院", color: "college-humanities" },
+            { name: "非營利組織經營管理碩士學位學程", college: "人文學院", color: "college-humanities" },
+            { name: "長期照顧經營管理碩士在職學位學程", college: "人文學院", color: "college-humanities" },
+            { name: "文化創意與社會行銷碩士學位學程", college: "人文學院", color: "college-humanities" },
+            { name: "原鄉發展跨領域學士學位學程", college: "人文學院", color: "college-humanities" },
+
             // 教育學院
-            { name: "教育學系", college: "教育學院", color: "college-education" },
-            { name: "特殊教育學系", college: "教育學院", color: "college-education" },
-            { name: "教育科技學系", college: "教育學院", color: "college-education" },
-            { name: "體育學系", college: "教育學院", color: "college-education" },
-            
-            // 其他單位
-            { name: "通識教育中心", college: "其他單位", color: "college-other" },
-            { name: "語言中心", college: "其他單位", color: "college-other" },
-            { name: "師資培育中心", college: "其他單位", color: "college-other" }
+            { name: "國際文教與比較教育學系", college: "教育學院", color: "college-education" },
+            { name: "教育政策與行政學系", college: "教育學院", color: "college-education" },
+            { name: "諮商心理與人力資源發展學系", college: "教育學院", color: "college-education" },
+            { name: "教育學院學士班", college: "教育學院", color: "college-education" },
+            { name: "終身學習與人力資源發展碩士學位學程", college: "教育學院", color: "college-education" },
+            { name: "心理健康與諮詢碩士在職學位學程", college: "教育學院", color: "college-education" },
+
+            // 科技學院
+            { name: "資訊工程學系", college: "科技學院", color: "college-technology" },
+            { name: "土木工程學系", college: "科技學院", color: "college-technology" },
+            { name: "電機工程學系", college: "科技學院", color: "college-technology" },
+            { name: "應用化學系", college: "科技學院", color: "college-technology" },
+            { name: "應用材料及光電工程學系", college: "科技學院", color: "college-technology" },
+            { name: "光電科技碩士學位學程", college: "科技學院", color: "college-technology" },
+            { name: "智慧精準農業產學研發博士學位學程", college: "科技學院", color: "college-technology" },
+            { name: "科技學院學士班", college: "科技學院", color: "college-technology" },
+
+            // 管理學院
+            { name: "財務金融學系", college: "管理學院", color: "college-management" },
+            { name: "經濟學系", college: "管理學院", color: "college-management" },
+            { name: "國際企業學系", college: "管理學院", color: "college-management" },
+            { name: "資訊管理學系", college: "管理學院", color: "college-management" },
+            { name: "觀光休閒與餐旅管理學系", college: "管理學院", color: "college-management" },
+            { name: "經營管理碩士學位學程在職專班", college: "管理學院", color: "college-management" },
+            { name: "高階經營管理碩士學位學程", college: "管理學院", color: "college-management" },
+            { name: "新興產業策略與發展碩士學位學程", college: "管理學院", color: "college-management" },
+            { name: "新興產業策略與發展博士學位學程", college: "管理學院", color: "college-management" },
+
+            // 水沙連學院
+            { name: "地方創生與跨域治理碩士學位學程", college: "水沙連學院", color: "college-watershalian" },
+            { name: "R立方青年返鄉創新實務學程", college: "水沙連學院", color: "college-watershalian" },
+            { name: "運動教練專業知識學分學程", college: "水沙連學院", color: "college-watershalian" },
+
+            // 護理暨健康福祉學院
+            { name: "護理學系原住民族專班", college: "護理暨健康福祉學院", color: "college-nursing" },
+            { name: "高齡健康與長期照顧管理學士學位學程", college: "護理暨健康福祉學院", color: "college-nursing" }
         ];
 
         // 系統配置
@@ -215,7 +229,7 @@
             
             // 按學院分組
             const colleges = {};
-            NCU_DEPARTMENTS.forEach(dept => {
+            NCNU_DEPARTMENTS.forEach(dept => {
                 if (!colleges[dept.college]) {
                     colleges[dept.college] = [];
                 }
