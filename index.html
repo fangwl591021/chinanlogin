@@ -61,7 +61,7 @@
     // 配置
     const CONFIG = {
       LINE_GROUP_ID: 'C596050d1193b9b930ac25469c61ba12a',
-      LIFF_ID: 'YOUR_LIFF_ID' // 需要在 LINE Developers 建立 LIFF app
+      LIFF_ID: '2008231249-yv8294Jp' // 需要在 LINE Developers 建立 LIFF app
     };
 
     // LINE Login
@@ -113,7 +113,7 @@
 
     // 儲存用戶資料到 Google Sheets
     async function saveUserToSheet(userData) {
-      const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL'; // 需要部署 Google Apps Script
+      const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwN2PoJQBvmkzo1E5IdsbQSLCTg5y4QxshYfab9o2M-GfMl1YC_hO8RbHeVH8PcpCRI-w/exec'; // 需要部署 Google Apps Script
       
       try {
         const response = await fetch(SCRIPT_URL, {
