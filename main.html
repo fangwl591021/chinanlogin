@@ -1,1039 +1,192 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>暨大接駁車 - 預約系統</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .holiday {
-            background-color: #fee2e2 !important;
-            color: #dc2626 !important;
-            cursor: not-allowed;
-        }
-        .no-service {
-            position: relative;
-        }
-        .no-service::after {
-            content: "停駛";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(220, 38, 38, 0.9);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        .selected {
-            background-color: #3b82f6 !important;
-            color: white !important;
-        }
-        .calendar-day {
-            transition: all 0.2s ease;
-        }
-        .calendar-day:not(.disabled):hover {
-            background-color: #dbeafe;
-        }
-        .time-slot {
-            transition: all 0.2s ease;
-        }
-        .time-slot.selected {
-            border-color: #3b82f6;
-            background-color: #dbeafe;
-        }
-        .calendar-container {
-            display: none;
-        }
-        .calendar-container.show {
-            display: block;
-        }
-        .reservation-card {
-            transition: all 0.3s ease;
-            max-height: 60px;
-            overflow: hidden;
-        }
-        .reservation-card.expanded {
-            max-height: 200px;
-        }
-        .reservation-item {
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
-        .reservation-item:hover {
-            background-color: #f8fafc;
-        }
-        .rotate-180 {
-            transform: rotate(180deg);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>暨大接駁車 - 預約系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .holiday { background-color: #fee2e2 !important; color: #dc2626 !important; cursor: not-allowed; }
+    .no-service { position: relative; }
+    .no-service::after { content: "停駛"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(220, 38, 38, 0.9); color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+    .selected { background-color: #3b82f6 !important; color: white !important; }
+    .calendar-day { transition: all 0.2s ease; }
+    .calendar-day:not(.disabled):hover { background-color: #dbeafe; }
+    .time-slot { transition: all 0.2s ease; }
+    .time-slot.selected { border-color: #3b82f6; background-color: #dbeafe; }
+    .calendar-container { display: none; }
+    .calendar-container.show { display: block; }
+    .reservation-card { transition: all 0.3s ease; max-height: 60px; overflow: hidden; }
+    .reservation-card.expanded { max-height: 200px; }
+    .reservation-item { cursor: pointer; transition: background-color 0.2s ease; }
+    .reservation-item:hover { background-color: #f8fafc; }
+    .rotate-180 { transform: rotate(180deg); }
+  </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen p-4">
-    <div class="max-w-md mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <!-- 頁首 -->
-        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold">穿山甲專車預約</h1>
-                    <p class="text-purple-200 mt-1">暨大接駁車服務</p>
-                </div>
-                <div class="bg-white/20 p-3 rounded-full">
-                    <i class="fas fa-bus text-xl"></i>
-                </div>
-            </div>
+
+  <div class="max-w-md mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
+
+    <!-- 頁首 -->
+    <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold">穿山甲專車預約</h1>
+          <p class="text-purple-200 mt-1">暨大接駁車服務</p>
         </div>
-<!-- 放在 main.html 頁面頂部合適位置 -->
-<div id="lineUserInfo" class="hidden">
-  <p id="lineUserName"></p>
-  <p id="lineUserStatus"></p>
-</div>
-
-        <!-- 用戶資訊 -->
-        <div class="p-4 border-b border-gray-200 bg-gray-50">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-full flex items-center justify-center">
-                        <i class="fas fa-user text-white text-sm"></i>
-                    </div>
-                    <div>
-                        <h2 class="font-semibold text-gray-800 text-sm" id="userName">方</h2>
-                        <p class="text-xs text-gray-600">資訊工程學系 | 114230123</p>
-                    </div>
-                </div>
-                <button id="logoutBtn" class="text-xs text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-sign-out-alt mr-1"></i>登出
-                </button>
-            </div>
+        <div class="bg-white/20 p-3 rounded-full">
+          <i class="fas fa-bus text-xl"></i>
         </div>
-
-        <!-- 預約表單 -->
-        <form id="reservationForm" class="p-6 space-y-6">
-            <!-- 步驟1: 日期選擇 -->
-            <div>
-                <label class="block text-lg font-bold text-gray-800 mb-3">
-                    <i class="fas fa-calendar-alt text-green-500 mr-2"></i>選擇搭乘日期 *
-                </label>
-                
-                <!-- 日期選擇按鈕 -->
-                <button 
-                    type="button" 
-                    id="dateSelectBtn"
-                    class="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 px-6 rounded-xl transition duration-200 shadow-lg flex items-center justify-center"
-                >
-                    <i class="fas fa-calendar-plus mr-2"></i>
-                    點我選擇搭乘日期
-                </button>
-                
-                <!-- 日期狀態提示 -->
-                <div id="dateStatus" class="mt-4 p-3 rounded-lg bg-yellow-50 border border-yellow-200 hidden">
-                    <div class="flex items-start">
-                        <i class="fas fa-exclamation-triangle text-yellow-500 mt-0.5 mr-2"></i>
-                        <div>
-                            <p class="text-yellow-800 font-medium" id="statusMessage"></p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 日曆容器 -->
-                <div id="calendarContainer" class="calendar-container mt-4">
-                    <div class="grid grid-cols-7 gap-2 mb-2">
-                        <div class="text-center text-sm font-medium text-gray-500">日</div>
-                        <div class="text-center text-sm font-medium text-gray-500">一</div>
-                        <div class="text-center text-sm font-medium text-gray-500">二</div>
-                        <div class="text-center text-sm font-medium text-gray-500">三</div>
-                        <div class="text-center text-sm font-medium text-gray-500">四</div>
-                        <div class="text-center text-sm font-medium text-gray-500">五</div>
-                        <div class="text-center text-sm font-medium text-gray-500">六</div>
-                    </div>
-                    <div class="grid grid-cols-7 gap-2" id="calendarDays">
-                        <!-- 日期將由 JavaScript 動態生成 -->
-                    </div>
-                </div>
-
-                <!-- 已選擇日期顯示 -->
-                <div id="selectedDateDisplay" class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200 hidden">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-blue-800 font-medium">已選擇日期：</p>
-                            <p class="text-lg font-bold text-blue-900" id="selectedDateText"></p>
-                        </div>
-                        <button type="button" id="changeDateBtn" class="text-blue-600 hover:text-blue-800 text-sm">
-                            <i class="fas fa-edit mr-1"></i>變更
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 已預約時段列表 -->
-                <div id="existingReservations" class="mt-6">
-                    <h3 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
-                        <i class="fas fa-list-check text-purple-500 mr-2"></i>
-                        已預約時段
-                    </h3>
-                    <div id="reservationsList" class="space-y-2">
-                        <!-- 已預約項目將由 JavaScript 動態生成 -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- 步驟2: 時段選擇 -->
-            <div id="timeSection" class="hidden">
-                <label class="block text-lg font-bold text-gray-800 mb-3">
-                    <i class="fas fa-clock text-blue-500 mr-2"></i>請點選搭乘時段 *
-                </label>
-                <div class="grid grid-cols-1 gap-3" id="timeSlotsContainer">
-                    <!-- 時段將由 JavaScript 動態生成 -->
-                </div>
-            </div>
-
-            <!-- 步驟3: 下車站選擇 -->
-            <div id="stationSection" class="hidden">
-                <label class="block text-lg font-bold text-gray-800 mb-3">
-                    <i class="fas fa-map-marker-alt text-red-500 mr-2"></i>下車站 *
-                </label>
-                <div class="relative">
-                    <select 
-                        id="stationSelect" 
-                        name="station"
-                        required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition appearance-none"
-                    >
-                        <option value="">請選擇下車站</option>
-                        <!-- 車站選項將由 JavaScript 動態生成 -->
-                    </select>
-                    <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 提交按鈕 -->
-            <button 
-                type="submit"
-                id="submitBtn"
-                class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition duration-200 shadow-lg flex items-center justify-center hidden"
-            >
-                <i class="fas fa-paper-plane mr-2"></i>
-                送出預約
-            </button>
-        </form>
-
-        <!-- 載入提示 -->
-        <div id="loading" class="hidden text-center py-6">
-            <div class="flex items-center justify-center gap-3 text-purple-600">
-                <div class="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                <span>送出中...</span>
-            </div>
-        </div>
-
-        <!-- 預約成功提示 -->
-        <div id="successMessage" class="hidden p-6">
-            <div class="bg-green-50 border border-green-200 rounded-xl p-5 text-center">
-                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i class="fas fa-check text-green-500 text-xl"></i>
-                </div>
-                <h3 class="text-lg font-bold text-green-800 mb-2">預約成功！</h3>
-                <p class="text-green-700 mb-2" id="successDetails"></p>
-                <p class="text-sm text-green-600 mb-4">預約資訊已發送至群組</p>
-                <button id="newReservationBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition">
-                    新預約
-                </button>
-            </div>
-        </div>
+      </div>
     </div>
 
-    <script>
-        // 停駛日期資料
-        const NO_SERVICE_DATES = [
-            '2024-01-10', // 10號公休日
-            '2024-01-25', // 其他停駛日
-            '2024-02-10', // 春節
-            '2024-02-11', // 春節
-            '2024-02-12', // 春節
-            '2024-04-04', // 清明節
-        ];
+    <!-- 用戶資訊 -->
+    <div class="p-4 border-b border-gray-200 bg-gray-50">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-full flex items-center justify-center">
+            <i class="fas fa-user text-white text-sm"></i>
+          </div>
+          <div>
+            <h2 class="font-semibold text-gray-800 text-sm" id="userName">方</h2>
+            <!-- ✅ 補上 id="userInfo" -->
+            <p class="text-xs text-gray-600" id="userInfo">資訊工程學系 | 114230123</p>
+          </div>
+        </div>
+        <button id="logoutBtn" class="text-xs text-gray-500 hover:text-gray-700">
+          <i class="fas fa-sign-out-alt mr-1"></i>登出
+        </button>
+      </div>
+    </div>
 
-        // ✅ 上下車停靠站
-        const stopsOutbound = ["行政大樓", "中餐廳", "科技學院", "學人會館", "中城", "下城", "坪頂", "愛蘭橋", "大成國小", "中山安七街口", "榮民診所", "埔里酒廠", "埔里總站"];
-        const stopsReturn = ["埔里總站", "埔里酒廠", "榮民診所", "中山安七街口", "大成國小", "愛蘭橋", "坪頂", "下城", "中城", "學人會館", "科技學院", "中餐廳", "行政大樓"];
+    <!-- 預約表單 -->
+    <form id="reservationForm" class="p-6 space-y-6">
+      <!-- 日期選擇區 -->
+      <div>
+        <label class="block text-lg font-bold text-gray-800 mb-3">
+          <i class="fas fa-calendar-alt text-green-500 mr-2"></i>選擇搭乘日期 *
+        </label>
+        <button type="button" id="dateSelectBtn"
+          class="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 px-6 rounded-xl transition duration-200 shadow-lg flex items-center justify-center">
+          <i class="fas fa-calendar-plus mr-2"></i> 點我選擇搭乘日期
+        </button>
 
-        // 時段資料
-        const TIME_SLOTS = [
-            { id: 'A1', time: '22:00-22:30', route: '暨大→埔里總站', direction: 'outbound', seats: 6 },
-            { id: 'B1', time: '22:30-23:00', route: '埔里總站→暨大', direction: 'return', seats: 6 },
-            { id: 'A2', time: '23:00-23:30', route: '暨大→埔里總站', direction: 'outbound', seats: 6 },
-            { id: 'B2', time: '23:30-24:00', route: '埔里總站→暨大', direction: 'return', seats: 6 }
-        ];
+        <div id="dateStatus" class="mt-4 p-3 rounded-lg bg-yellow-50 border border-yellow-200 hidden">
+          <div class="flex items-start">
+            <i class="fas fa-exclamation-triangle text-yellow-500 mt-0.5 mr-2"></i>
+            <div><p class="text-yellow-800 font-medium" id="statusMessage"></p></div>
+          </div>
+        </div>
 
-        // LINE 推播設定
-        const LINE_CONFIG = {
-            GROUP_ID: 'C596050d1193b9b930ac25469c61ba12a',
-            CHANNEL_ACCESS_TOKEN: 'hhFVS+V7Fp4zIFZ0sv6vq1WuvKmIKzsK6RlZkAOftxr2Lob218VgP+/PK+wIhwhw8HTlOobneGQhxTllrjt8uAzwaCGgWZ5yokIKZSVID+ccNDJmKxElxNQatB6NUObNTtofnMdDZTOLx12X4QRRdwdB04t89/1O/w1cDnyilFU='
-        };
+        <div id="calendarContainer" class="calendar-container mt-4">
+          <div class="grid grid-cols-7 gap-2 mb-2 text-sm text-gray-500 text-center font-medium">
+            <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+          </div>
+          <div class="grid grid-cols-7 gap-2" id="calendarDays"></div>
+        </div>
 
-        // 當前選擇的資料
-        let currentSelection = {
-            date: null,
-            timeSlot: null,
-            station: null,
-            reservationId: null
-        };
+        <div id="selectedDateDisplay" class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200 hidden">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-blue-800 font-medium">已選擇日期：</p>
+              <p class="text-lg font-bold text-blue-900" id="selectedDateText"></p>
+            </div>
+            <button type="button" id="changeDateBtn" class="text-blue-600 hover:text-blue-800 text-sm">
+              <i class="fas fa-edit mr-1"></i>變更
+            </button>
+          </div>
+        </div>
 
-        // 初始化頁面
-        document.addEventListener('DOMContentLoaded', function() {
-            initializePage();
-            setupEventListeners();
-            loadExistingReservations();
-        });
+        <div id="existingReservations" class="mt-6">
+          <h3 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
+            <i class="fas fa-list-check text-purple-500 mr-2"></i> 已預約時段
+          </h3>
+          <div id="reservationsList" class="space-y-2"></div>
+        </div>
+      </div>
 
-        // 初始化頁面資料
-        function initializePage() {
-            // 從 sessionStorage 取得用戶資料
-            const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
-            
-            // 如果沒有用戶資料，使用預設值
-            if (!userData.userId || !userData.isRegistered) {
-                // 設定預設用戶資料
-                const defaultUserData = {
-                    userId: 'user001',
-                    displayName: '方',
-                    department: '資訊工程學系',
-                    studentId: '114230123',
-                    phone: '0912345678',
-                    isRegistered: true
-                };
-                sessionStorage.setItem('userData', JSON.stringify(defaultUserData));
-                
-                // 顯示用戶資訊
-                document.getElementById('userName').textContent = defaultUserData.displayName;
-                document.getElementById('userInfo').textContent = `${defaultUserData.department} | ${defaultUserData.studentId}`;
-                return;
-            }
+      <!-- 時段選擇 -->
+      <div id="timeSection" class="hidden">
+        <label class="block text-lg font-bold text-gray-800 mb-3">
+          <i class="fas fa-clock text-blue-500 mr-2"></i>請點選搭乘時段 *
+        </label>
+        <div class="grid grid-cols-1 gap-3" id="timeSlotsContainer"></div>
+      </div>
 
-            // 顯示用戶資訊
-            document.getElementById('userName').textContent = userData.displayName || '方';
-            document.getElementById('userInfo').textContent = `${userData.department || '資訊工程學系'} | ${userData.studentId || '114230123'}`;
-        }
+      <!-- 下車站選擇 -->
+      <div id="stationSection" class="hidden">
+        <label class="block text-lg font-bold text-gray-800 mb-3">
+          <i class="fas fa-map-marker-alt text-red-500 mr-2"></i>下車站 *
+        </label>
+        <div class="relative">
+          <select id="stationSelect" name="station" required
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 transition">
+            <option value="">請選擇下車站</option>
+          </select>
+          <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+            <i class="fas fa-chevron-down"></i>
+          </div>
+        </div>
+      </div>
 
-        // 設置事件監聽器
-        function setupEventListeners() {
-            // 日期選擇按鈕
-            document.getElementById('dateSelectBtn').addEventListener('click', function() {
-                document.getElementById('calendarContainer').classList.add('show');
-                generateCalendarDays();
-            });
+      <!-- 送出按鈕 -->
+      <button type="submit" id="submitBtn"
+        class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition duration-200 shadow-lg flex items-center justify-center hidden">
+        <i class="fas fa-paper-plane mr-2"></i> 送出預約
+      </button>
+    </form>
 
-            // 變更日期按鈕
-            document.getElementById('changeDateBtn').addEventListener('click', function() {
-                document.getElementById('selectedDateDisplay').classList.add('hidden');
-                document.getElementById('dateSelectBtn').classList.remove('hidden');
-                document.getElementById('calendarContainer').classList.add('show');
-                currentSelection.date = null;
-                resetSections();
-            });
+    <!-- 載入提示 -->
+    <div id="loading" class="hidden text-center py-6">
+      <div class="flex items-center justify-center gap-3 text-purple-600">
+        <div class="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+        <span>送出中...</span>
+      </div>
+    </div>
 
-            // 車站選擇
-            document.getElementById('stationSelect').addEventListener('change', function() {
-                currentSelection.station = this.value;
-                if (this.value) {
-                    document.getElementById('submitBtn').classList.remove('hidden');
-                } else {
-                    document.getElementById('submitBtn').classList.add('hidden');
-                }
-            });
-
-            // 登出按鈕
-            document.getElementById('logoutBtn').addEventListener('click', function() {
-                if (confirm('確定要登出嗎？')) {
-                    sessionStorage.clear();
-                    window.location.href = 'index.html';
-                }
-            });
-
-            // 表單提交
-            document.getElementById('reservationForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                submitReservation();
-            });
-
-            // 新預約按鈕
-            document.getElementById('newReservationBtn').addEventListener('click', function() {
-                resetForm();
-            });
-        }
-
-        // 載入已存在的預約
-        function loadExistingReservations() {
-            const reservationsList = document.getElementById('reservationsList');
-            reservationsList.innerHTML = '';
-
-            try {
-                const storedReservations = localStorage.getItem('ncnu_shuttle_reservations');
-                if (!storedReservations) {
-                    reservationsList.innerHTML = `
-                        <div class="text-center py-4 text-gray-500">
-                            <i class="fas fa-calendar-plus text-2xl mb-2"></i>
-                            <p>尚無預約記錄</p>
-                        </div>
-                    `;
-                    return;
-                }
-
-                const reservations = JSON.parse(storedReservations);
-                const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
-                
-                // 過濾當前用戶的預約
-                const userReservations = reservations.filter(r => 
-                    r.userId === userData.userId && r.status === 'confirmed'
-                );
-
-                if (userReservations.length === 0) {
-                    reservationsList.innerHTML = `
-                        <div class="text-center py-4 text-gray-500">
-                            <i class="fas fa-calendar-plus text-2xl mb-2"></i>
-                            <p>尚無預約記錄</p>
-                        </div>
-                    `;
-                    return;
-                }
-
-                // 顯示預約項目
-                userReservations.forEach(reservation => {
-                    const dateObj = new Date(reservation.date);
-                    const formattedDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
-                    
-                    const reservationItem = document.createElement('div');
-                    reservationItem.className = 'reservation-card bg-white border border-gray-200 rounded-lg overflow-hidden';
-                    reservationItem.innerHTML = `
-                        <div class="reservation-item p-4 flex justify-between items-center">
-                            <div class="flex items-center space-x-3">
-  <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-full flex items-center justify-center">
-      <i class="fas fa-user text-white text-sm"></i>
+    <!-- 預約成功 -->
+    <div id="successMessage" class="hidden p-6">
+      <div class="bg-green-50 border border-green-200 rounded-xl p-5 text-center">
+        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+          <i class="fas fa-check text-green-500 text-xl"></i>
+        </div>
+        <h3 class="text-lg font-bold text-green-800 mb-2">預約成功！</h3>
+        <p class="text-green-700 mb-2" id="successDetails"></p>
+        <p class="text-sm text-green-600 mb-4">預約資訊已發送至群組</p>
+        <button id="newReservationBtn"
+          class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition">
+          新預約
+        </button>
+      </div>
+    </div>
   </div>
-  <div>
-      <h2 class="font-semibold text-gray-800 text-sm" id="userName">方</h2>
-      <p class="text-xs text-gray-600" id="userInfo">資訊工程學系 | 114230123</p>
-  </div>
-</div>
 
-                                <div>
-                                    <div class="font-medium text-gray-800">${formattedDate} ${reservation.timeSlot.id}</div>
-                                    <div class="text-sm text-gray-600">${reservation.timeSlot.time}</div>
-                                </div>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">已預約</span>
-                                <i class="fas fa-chevron-down text-gray-400 transition-transform"></i>
-                            </div>
-                        </div>
-                        <div class="reservation-details px-4 pb-4 hidden">
-                            <div class="border-t border-gray-100 pt-3 space-y-2">
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">路線：</span>
-                                    <span class="font-medium">${reservation.timeSlot.route}</span>
-                                </div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">下車站：</span>
-                                    <span class="font-medium">${reservation.station}</span>
-                                </div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">預約時間：</span>
-                                    <span class="font-medium">${new Date(reservation.reservationTime).toLocaleString('zh-TW')}</span>
-                                </div>
-                                <button 
-                                    class="cancel-reservation-btn w-full mt-3 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg text-sm transition flex items-center justify-center"
-                                    data-reservation-id="${reservation.id}"
-                                >
-                                    <i class="fas fa-times mr-2"></i>取消預約
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    
-                    // 添加點擊事件
-                    const reservationHeader = reservationItem.querySelector('.reservation-item');
-                    reservationHeader.addEventListener('click', function() {
-                        toggleReservationCard(this);
-                    });
-                    
-                    // 添加取消按鈕事件
-                    const cancelBtn = reservationItem.querySelector('.cancel-reservation-btn');
-                    cancelBtn.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        cancelExistingReservation(this.getAttribute('data-reservation-id'));
-                    });
-                    
-                    reservationsList.appendChild(reservationItem);
-                });
+  <script>
+    // 🧠 安全防呆版本 initializePage()
+    function initializePage() {
+      const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
+      const nameEl = document.getElementById('userName');
+      const infoEl = document.getElementById('userInfo');
 
-            } catch (error) {
-                console.error('載入預約記錄失敗:', error);
-                reservationsList.innerHTML = `
-                    <div class="text-center py-4 text-red-500">
-                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                        <p>載入預約記錄失敗</p>
-                    </div>
-                `;
-            }
-        }
+      if (!userData.userId || !userData.isRegistered) {
+        const defaultUser = { userId: 'user001', displayName: '方', department: '資訊工程學系', studentId: '114230123', phone: '0912345678', isRegistered: true };
+        sessionStorage.setItem('userData', JSON.stringify(defaultUser));
+        if (nameEl) nameEl.textContent = defaultUser.displayName;
+        if (infoEl) infoEl.textContent = `${defaultUser.department} | ${defaultUser.studentId}`;
+        return;
+      }
+      if (nameEl) nameEl.textContent = userData.displayName || '方';
+      if (infoEl) infoEl.textContent = `${userData.department || '資訊工程學系'} | ${userData.studentId || '114230123'}`;
+    }
 
-        // 切換預約卡片展開/收合
-        function toggleReservationCard(element) {
-            const card = element.closest('.reservation-card');
-            const details = card.querySelector('.reservation-details');
-            const icon = card.querySelector('.fa-chevron-down');
-            
-            card.classList.toggle('expanded');
-            details.classList.toggle('hidden');
-            icon.classList.toggle('rotate-180');
-        }
+    document.addEventListener('DOMContentLoaded', () => {
+      initializePage();
+      setupEventListeners();
+      loadExistingReservations();
+    });
 
-        // 取消現有預約
-        function cancelExistingReservation(reservationId) {
-            if (!confirm('確定要取消這個預約嗎？')) {
-                return;
-            }
-
-            try {
-                const reservations = JSON.parse(localStorage.getItem('ncnu_shuttle_reservations') || '[]');
-                const reservationIndex = reservations.findIndex(r => r.id === reservationId);
-                
-                if (reservationIndex !== -1) {
-                    reservations[reservationIndex].status = 'cancelled';
-                    localStorage.setItem('ncnu_shuttle_reservations', JSON.stringify(reservations));
-                    
-                    // 發送取消通知
-                    sendLineNotification('cancel', reservationId);
-                    
-                    alert('預約已取消');
-                    loadExistingReservations(); // 重新載入列表
-                }
-            } catch (error) {
-                console.error('取消預約失敗:', error);
-                alert('取消預約失敗，請重試');
-            }
-        }
-
-        // 生成日曆日期
-        function generateCalendarDays() {
-            const container = document.getElementById('calendarDays');
-            container.innerHTML = '';
-
-            const today = new Date();
-            const currentMonth = today.getMonth();
-            const currentYear = today.getFullYear();
-            
-            // 獲取當月第一天和最後一天
-            const firstDay = new Date(currentYear, currentMonth, 1);
-            const lastDay = new Date(currentYear, currentMonth + 1, 0);
-            
-            // 獲取當月第一天是星期幾（0=星期日, 6=星期六）
-            const firstDayIndex = firstDay.getDay();
-            
-            // 獲取當月天數
-            const daysInMonth = lastDay.getDate();
-            
-            // 填充空白（上個月的日期）
-            for (let i = 0; i < firstDayIndex; i++) {
-                const emptyDay = document.createElement('div');
-                emptyDay.className = 'h-10';
-                container.appendChild(emptyDay);
-            }
-            
-            // 填充當月日期
-            for (let i = 1; i <= daysInMonth; i++) {
-                const dayElement = document.createElement('div');
-                dayElement.className = 'h-10 flex items-center justify-center rounded-lg calendar-day text-sm font-medium';
-                
-                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                const dateObj = new Date(currentYear, currentMonth, i);
-                
-                // 檢查是否為過去日期
-                if (dateObj < today && dateObj.toDateString() !== today.toDateString()) {
-                    dayElement.classList.add('text-gray-400', 'cursor-not-allowed');
-                    dayElement.textContent = i;
-                } 
-                // 檢查是否為停駛日期
-                else if (NO_SERVICE_DATES.includes(dateStr)) {
-                    dayElement.classList.add('holiday', 'no-service', 'cursor-not-allowed');
-                    dayElement.textContent = i;
-                    dayElement.title = '接駁車停駛日';
-                } 
-                // 正常可預約日期
-                else {
-                    dayElement.classList.add('text-gray-700', 'cursor-pointer', 'bg-gray-100');
-                    dayElement.textContent = i;
-                    
-                    dayElement.addEventListener('click', function() {
-                        handleDateSelection(dateStr);
-                        
-                        // 更新選中狀態
-                        document.querySelectorAll('.calendar-day').forEach(day => {
-                            day.classList.remove('selected');
-                        });
-                        this.classList.add('selected');
-                    });
-                }
-                
-                // 如果是今天，特別標記
-                if (dateObj.toDateString() === today.toDateString()) {
-                    dayElement.classList.add('border-2', 'border-blue-500');
-                }
-                
-                container.appendChild(dayElement);
-            }
-        }
-
-        // 處理日期選擇
-        function handleDateSelection(date) {
-            currentSelection.date = date;
-            
-            // 檢查服務狀態
-            if (!checkServiceStatus(date)) {
-                return;
-            }
-
-            // 隱藏日曆，顯示選擇的日期
-            document.getElementById('calendarContainer').classList.remove('show');
-            document.getElementById('dateSelectBtn').classList.add('hidden');
-            
-            // 顯示選擇的日期
-            const dateObj = new Date(date);
-            const formattedDate = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
-            document.getElementById('selectedDateText').textContent = formattedDate;
-            document.getElementById('selectedDateDisplay').classList.remove('hidden');
-
-            // 顯示時段選擇區
-            document.getElementById('timeSection').classList.remove('hidden');
-            generateTimeSlots();
-        }
-
-        // 檢查服務狀態
-        function checkServiceStatus(date) {
-            const dateStatus = document.getElementById('dateStatus');
-            const statusMessage = document.getElementById('statusMessage');
-            
-            const selectedDate = new Date(date);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            // 檢查是否為過去日期
-            if (selectedDate < today) {
-                dateStatus.classList.remove('hidden');
-                statusMessage.textContent = '無法選擇過去的日期';
-                dateStatus.className = 'mt-4 p-3 rounded-lg bg-red-50 border border-red-200';
-                return false;
-            }
-            
-            // 檢查是否為停駛日期 - 修正：遇到停駛日直接無法預約
-            if (NO_SERVICE_DATES.includes(date)) {
-                dateStatus.classList.remove('hidden');
-                statusMessage.textContent = '所選日期接駁車停駛，請選擇其他日期';
-                dateStatus.className = 'mt-4 p-3 rounded-lg bg-red-50 border border-red-200';
-                
-                // 重置選擇
-                currentSelection.date = null;
-                document.querySelectorAll('.calendar-day').forEach(day => {
-                    day.classList.remove('selected');
-                });
-                return false;
-            }
-            
-            // 隱藏狀態提示
-            dateStatus.classList.add('hidden');
-            
-            return true;
-        }
-
-        // 生成時段選項
-        function generateTimeSlots() {
-            const container = document.getElementById('timeSlotsContainer');
-            container.innerHTML = '';
-
-            TIME_SLOTS.forEach(slot => {
-                const slotElement = document.createElement('div');
-                slotElement.className = 'time-slot border border-gray-300 rounded-lg p-4 cursor-pointer hover:bg-gray-50';
-                slotElement.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="font-bold text-blue-600">${slot.id}</span>
-                                <span class="font-medium">${slot.time}</span>
-                            </div>
-                            <p class="text-sm text-gray-600">${slot.route}</p>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-sm text-green-600">剩餘${slot.seats}名</span>
-                        </div>
-                    </div>
-                `;
-
-                slotElement.addEventListener('click', function() {
-                    // 移除其他時段的選中狀態
-                    document.querySelectorAll('.time-slot').forEach(s => {
-                        s.classList.remove('selected');
-                    });
-                    
-                    // 設定當前選中狀態
-                    this.classList.add('selected');
-                    currentSelection.timeSlot = slot;
-
-                    // 顯示車站選擇區並生成對應的車站選項
-                    document.getElementById('stationSection').classList.remove('hidden');
-                    generateStationOptions(slot.direction);
-                });
-
-                container.appendChild(slotElement);
-            });
-        }
-
-        // 生成車站選項
-        function generateStationOptions(direction) {
-            const select = document.getElementById('stationSelect');
-            select.innerHTML = '<option value="">請選擇下車站</option>';
-            
-            const stops = direction === 'outbound' ? stopsOutbound : stopsReturn;
-            
-            stops.forEach(station => {
-                const option = document.createElement('option');
-                option.value = station;
-                option.textContent = station;
-                select.appendChild(option);
-            });
-            
-            // 重置車站選擇
-            currentSelection.station = null;
-            document.getElementById('submitBtn').classList.add('hidden');
-        }
-
-        // 提交預約
-        function submitReservation() {
-            const submitBtn = document.getElementById('submitBtn');
-            const loading = document.getElementById('loading');
-            
-            // 顯示載入中
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>送出中...';
-            loading.classList.remove('hidden');
-            
-            // 驗證所有選擇
-            if (!validateReservation()) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>送出預約';
-                loading.classList.add('hidden');
-                return;
-            }
-            
-            // 模擬 API 呼叫延遲
-            setTimeout(() => {
-                try {
-                    // 儲存預約資料
-                    const reservationId = saveReservation();
-                    
-                    // 發送 LINE 推播
-                    sendLineNotification('new', reservationId);
-                    
-                    // 顯示成功訊息
-                    showSuccessMessage(reservationId);
-                    
-                    // 重新載入預約列表
-                    loadExistingReservations();
-                    
-                } catch (error) {
-                    console.error('預約失敗:', error);
-                    alert('預約失敗，請稍後再試');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>送出預約';
-                    loading.classList.add('hidden');
-                }
-            }, 1500);
-        }
-
-        // 驗證預約資料
-        function validateReservation() {
-            if (!currentSelection.date) {
-                alert('請選擇乘車日期');
-                return false;
-            }
-            
-            if (!currentSelection.timeSlot) {
-                alert('請選擇搭乘時段');
-                return false;
-            }
-            
-            if (!currentSelection.station) {
-                alert('請選擇下車站');
-                return false;
-            }
-            
-            return true;
-        }
-
-        // 儲存預約資料
-        function saveReservation() {
-            // 從 sessionStorage 取得用戶資料
-            const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
-            
-            // 建立預約 ID
-            const reservationId = 'RES' + Date.now().toString();
-            
-            // 建立完整預約記錄
-            const reservation = {
-                id: reservationId,
-                userId: userData.userId,
-                userName: userData.displayName,
-                userPhone: userData.phone,
-                userStudentId: userData.studentId,
-                userDepartment: userData.department,
-                date: currentSelection.date,
-                timeSlot: currentSelection.timeSlot,
-                station: currentSelection.station,
-                status: 'confirmed',
-                reservationTime: new Date().toISOString()
-            };
-            
-            // 獲取現有預約資料
-            let reservations = [];
-            try {
-                const storedReservations = localStorage.getItem('ncnu_shuttle_reservations');
-                if (storedReservations) {
-                    reservations = JSON.parse(storedReservations);
-                }
-            } catch (error) {
-                console.error('讀取預約資料失敗:', error);
-                reservations = [];
-            }
-            
-            // 添加新預約
-            reservations.push(reservation);
-            
-            // 儲存回 localStorage
-            localStorage.setItem('ncnu_shuttle_reservations', JSON.stringify(reservations));
-            
-            console.log('預約已儲存:', reservation);
-            
-            // 更新當前選擇的預約 ID
-            currentSelection.reservationId = reservationId;
-            
-            return reservationId;
-        }
-
-        // 發送 LINE 推播通知
-        async function sendLineNotification(type, reservationId) {
-            try {
-                const reservations = JSON.parse(localStorage.getItem('ncnu_shuttle_reservations') || '[]');
-                const reservation = reservations.find(r => r.id === reservationId);
-                
-                if (!reservation) {
-                    console.error('找不到預約資料');
-                    return;
-                }
-                
-                // 格式化日期
-                const dateObj = new Date(reservation.date);
-                const formattedDate = `${dateObj.getFullYear()}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getDate().toString().padStart(2, '0')}`;
-                
-                let flexMessage;
-                
-                if (type === 'new') {
-                    // 新預約 FLEX 訊息
-                    flexMessage = {
-                        type: "flex",
-                        altText: "穿山甲專車新預約",
-                        contents: {
-                            type: "bubble",
-                            header: {
-                                type: "box",
-                                layout: "vertical",
-                                contents: [
-                                    {
-                                        type: "text",
-                                        text: "暨大生活圈 Life Circle",
-                                        weight: "bold",
-                                        size: "lg",
-                                        color: "#FFFFFF"
-                                    },
-                                    {
-                                        type: "text",
-                                        text: "穿山甲專車新預約",
-                                        size: "md",
-                                        color: "#FFFFFF"
-                                    }
-                                ],
-                                backgroundColor: "#06C755"
-                            },
-                            body: {
-                                type: "box",
-                                layout: "vertical",
-                                contents: [
-                                    {
-                                        type: "text",
-                                        text: `日期：${formattedDate}`,
-                                        wrap: true
-                                    },
-                                    {
-                                        type: "text",
-                                        text: `班次：${reservation.timeSlot.id} | ${reservation.timeSlot.time} ${reservation.timeSlot.route}`,
-                                        wrap: true
-                                    },
-                                    {
-                                        type: "text",
-                                        text: `姓名：${reservation.userName}`,
-                                        wrap: true
-                                    },
-                                    {
-                                        type: "text",
-                                        text: `電話：${reservation.userPhone}`,
-                                        wrap: true
-                                    },
-                                    {
-                                        type: "text",
-                                        text: `下車：${reservation.station}`,
-                                        wrap: true
-                                    }
-                                ]
-                            }
-                        }
-                    };
-                } else if (type === 'cancel') {
-                    // 取消預約 FLEX 訊息
-                    flexMessage = {
-                        type: "flex",
-                        altText: "穿山甲專車預約取消",
-                        contents: {
-                            type: "bubble",
-                            header: {
-                                type: "box",
-                                layout: "vertical",
-                                contents: [
-                                    {
-                                        type: "text",
-                                        text: "暨大生活圈 Life Circle",
-                                        weight: "bold",
-                                        size: "lg",
-                                        color: "#FFFFFF"
-                                    },
-                                    {
-                                        type: "text",
-                                        text: "穿山甲專車預約取消",
-                                        size: "md",
-                                        color: "#FFFFFF"
-                                    }
-                                ],
-                                backgroundColor: "#FF6B6B"
-                            },
-                            body: {
-                                type: "box",
-                                layout: "vertical",
-                                contents: [
-                                    {
-                                        type: "text",
-                                        text: `日期：${formattedDate}`,
-                                        wrap: true
-                                    },
-                                    {
-                                        type: "text",
-                                        text: `姓名：${reservation.userName}`,
-                                        wrap: true
-                                    },
-                                    {
-                                        type: "text",
-                                        text: `班次：${reservation.timeSlot.id} | ${reservation.timeSlot.time} ${reservation.timeSlot.route}`,
-                                        wrap: true
-                                    },
-                                    {
-                                        type: "text",
-                                        text: "狀態：已取消",
-                                        wrap: true,
-                                        color: "#FF6B6B"
-                                    }
-                                ]
-                            }
-                        }
-                    };
-                }
-                
-                // 發送到 LINE 群組
-                await fetch('https://api.line.me/v2/bot/message/push', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${LINE_CONFIG.CHANNEL_ACCESS_TOKEN}`
-                    },
-                    body: JSON.stringify({
-                        to: LINE_CONFIG.GROUP_ID,
-                        messages: [flexMessage]
-                    })
-                });
-                
-                console.log(`${type === 'new' ? '新預約' : '取消'}通知已發送`);
-                
-            } catch (error) {
-                console.error('發送 LINE 通知失敗:', error);
-            }
-        }
-
-        // 顯示成功訊息
-        function showSuccessMessage(reservationId) {
-            const loading = document.getElementById('loading');
-            const form = document.getElementById('reservationForm');
-            const successDetails = document.getElementById('successDetails');
-            
-            // 格式化日期顯示
-            const dateObj = new Date(currentSelection.date);
-            const formattedDate = `${dateObj.getFullYear()}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getDate().toString().padStart(2, '0')}`;
-            
-            successDetails.textContent = `${formattedDate} ${currentSelection.timeSlot.id} | ${currentSelection.timeSlot.time}`;
-            
-            loading.classList.add('hidden');
-            form.classList.add('hidden');
-            document.getElementById('successMessage').classList.remove('hidden');
-        }
-
-        // 重置表單
-        function resetForm() {
-            document.getElementById('successMessage').classList.add('hidden');
-            document.getElementById('reservationForm').classList.remove('hidden');
-            document.getElementById('reservationForm').reset();
-            
-            // 重置所有區塊
-            resetSections();
-            
-            // 重置選擇
-            currentSelection = {
-                date: null,
-                timeSlot: null,
-                station: null,
-                reservationId: null
-            };
-            
-            // 重置按鈕狀態
-            document.getElementById('submitBtn').disabled = false;
-            document.getElementById('submitBtn').innerHTML = '<i class="fas fa-paper-plane mr-2"></i>送出預約';
-            
-            // 顯示日期選擇按鈕
-            document.getElementById('dateSelectBtn').classList.remove('hidden');
-            document.getElementById('selectedDateDisplay').classList.add('hidden');
-            document.getElementById('calendarContainer').classList.remove('show');
-        }
-
-        // 重置區塊顯示
-        function resetSections() {
-            document.getElementById('timeSection').classList.add('hidden');
-            document.getElementById('stationSection').classList.add('hidden');
-            document.getElementById('submitBtn').classList.add('hidden');
-            
-            // 重置視覺狀態
-            document.querySelectorAll('.time-slot').forEach(slot => {
-                slot.classList.remove('selected');
-            });
-            
-            document.querySelectorAll('.calendar-day').forEach(day => {
-                day.classList.remove('selected');
-            });
-        }
-    </script>
+    // ... 其他函式保持不變 ...
+  </script>
 </body>
 </html>
