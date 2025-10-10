@@ -36,7 +36,7 @@
       >
     </div>
 
-    <!-- 車次列表 -->
+    <!-- 車次列表 - 改為兩排設計 -->
     <div id="routesList" class="space-y-4">
       <div class="text-center py-12 text-gray-500">
         <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,12 +86,12 @@
       SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwN2PoJQBvmkzo1E5IdsbQSLCTg5y4QxshYfab9o2M-GfMl1YC_hO8RbHeVH8PcpCRI-w/exec' // 需要部署
     };
 
-    // 路線設定
+    // 路線設定 - 精簡文字
     const ROUTES = [
-      { id: 'A1', name: 'A1｜22:00–22:30 暨大→埔里總站', from: '行政大樓', to: '埔里總站', time: '22:00–22:30' },
-      { id: 'B1', name: 'B1｜22:30–23:00 埔里總站→暨大', from: '埔里總站', to: '暨大校區', time: '22:30–23:00' },
-      { id: 'A2', name: 'A2｜23:00–23:30 暨大→埔里總站', from: '行政大樓', to: '埔里總站', time: '23:00–23:30' },
-      { id: 'B2', name: 'B2｜23:30–24:00 埔里總站→暨大', from: '埔里總站', to: '暨大校區', time: '23:30–24:00' }
+      { id: 'A1', name: 'A1｜22:00 暨大→埔里', from: '行政大樓', to: '埔里總站', time: '22:00–22:30' },
+      { id: 'B1', name: 'B1｜22:30 埔里→暨大', from: '埔里總站', to: '暨大校區', time: '22:30–23:00' },
+      { id: 'A2', name: 'A2｜23:00 暨大→埔里', from: '行政大樓', to: '埔里總站', time: '23:00–23:30' },
+      { id: 'B2', name: 'B2｜23:30 埔里→暨大', from: '埔里總站', to: '暨大校區', time: '23:30–24:00' }
     ];
 
     let currentUser = null;
@@ -145,7 +145,7 @@
       loadRoutes();
     }
 
-    // 載入車次
+    // 載入車次 - 改為兩排設計
     async function loadRoutes() {
       const date = document.getElementById('bookingDate').value;
       if (!date) return;
@@ -157,31 +157,35 @@
         // 載入各車次的預約狀況
         const bookings = await getBookingsByDate(date);
         
-        let html = '';
+        let html = '<div class="grid grid-cols-2 gap-4">';
         ROUTES.forEach(route => {
           const bookedCount = bookings.filter(b => b.routeId === route.id).length;
           const available = CONFIG.MAX_SEATS - bookedCount;
           const isFull = available <= 0;
           
           html += `
-            <div class="bg-white rounded-xl shadow-md p-5 ${isFull ? 'opacity-60' : 'hover:shadow-lg transition'}">
-              <div class="flex items-center justify-between">
+            <div class="bg-white rounded-xl shadow-md p-4 ${isFull ? 'opacity-60' : 'hover:shadow-lg transition'}">
+              <div class="flex flex-col h-full">
                 <div class="flex-1">
-                  <h3 class="text-lg font-bold text-gray-800 mb-1">${route.name}</h3>
-                  <div class="flex items-center gap-4 text-sm text-gray-600 mb-2">
-                    <span>📍 ${route.from} → ${route.to}</span>
-                    <span>⏰ ${route.time}</span>
+                  <h3 class="text-base font-bold text-gray-800 mb-2">${route.name}</h3>
+                  <div class="space-y-1 text-xs text-gray-600 mb-3">
+                    <div class="flex items-center gap-1">
+                      <span>📍 ${route.from} → ${route.to}</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <span>⏰ ${route.time}</span>
+                    </div>
                   </div>
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center">
                     <span class="text-xs px-2 py-1 rounded-full ${isFull ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}">
-                      ${isFull ? '已額滿' : `剩餘 ${available}/${CONFIG.MAX_SEATS} 位`}
+                      ${isFull ? '已額滿' : `剩餘 ${available} 位`}
                     </span>
                   </div>
                 </div>
                 <button 
                   onclick="openBookingModal('${route.id}', '${date}')"
                   ${isFull ? 'disabled' : ''}
-                  class="px-6 py-3 rounded-lg font-semibold transition ${
+                  class="mt-3 px-4 py-2 text-sm rounded-lg font-semibold transition ${
                     isFull 
                       ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
                       : 'bg-purple-600 hover:bg-purple-700 text-white'
@@ -194,6 +198,7 @@
           `;
         });
         
+        html += '</div>';
         container.innerHTML = html;
       } catch (error) {
         console.error('載入車次失敗:', error);
