@@ -58,48 +58,208 @@
   </div>
 
   <script>
-    // 配置
+    // ⚠️ 配置
     const CONFIG = {
       LINE_GROUP_ID: 'C596050d1193b9b930ac25469c61ba12a',
-      LIFF_ID: '2008231249-yv8294Jp' // 需要在 LINE Developers 建立 LIFF app
+      LIFF_ID: '2008231249-yv8294Jp',
+      SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwN2PoJQBvmkzo1E5IdsbQSLCTg5y4QxshYfab9o2M-GfMl1YC_hO8RbHeVH8PcpCRI-w/exec'
     };
+
+    // 等待 LIFF SDK 載入
+    let liffReady = false;
 
     // LINE Login
     function lineLogin() {
-      // 檢查是否在 LINE 內開啟
-      if (window.liff) {
-        initializeLIFF();
-      } else {
-        alert('請先設定 LIFF ID\n\n步驟：\n1. 前往 LINE Developers Console\n2. 建立 LIFF app\n3. 將 LIFF ID 填入此檔案\n\n目前為測試模式，將直接跳轉...');
-        // 測試模式：直接跳轉到 main.html
-        window.location.href = 'main.html?test=true';
+      console.log('點擊登入按鈕');
+      
+      // 檢查 LIFF SDK 是否已載入
+      if (typeof liff === 'undefined') {
+        console.log('LIFF SDK 尚未載入，等待中...');
+        alert('正在載入 LINE Login SDK，請稍候...');
+        
+        // 等待 SDK 載入後再試
+        setTimeout(() => {
+          if (typeof liff !== 'undefined') {
+            initializeLIFF();
+          } else {
+            alert('❌ LIFF SDK 載入失敗\n\n請檢查網路連線\n或切換到測試模式');
+            window.location.href = 'main.html?test=true';
+          }
+        }, 1000);
+        return;
       }
+      
+      initializeLIFF();
     }
 
     // 初始化 LIFF
     async function initializeLIFF() {
       try {
+        console.log('🚀 開始初始化 LIFF...');
+        console.log('LIFF ID:', CONFIG.LIFF_ID);
+        
         await liff.init({ liffId: CONFIG.LIFF_ID });
         
+        console.log('✅ LIFF 初始化成功');
+        console.log('📱 是否在 LINE 中開啟:', liff.isInClient());
+        console.log('🔐 是否已登入:', liff.isLoggedIn());
+        
         if (!liff.isLoggedIn()) {
+          console.log('➡️ 導向 LINE 登入頁面...');
           liff.login({ redirectUri: window.location.href });
         } else {
+          console.log('✅ 已登入，取得用戶資料...');
+          
           // 取得用戶資料
           const profile = await liff.getProfile();
+          console.log('👤 用戶資料:', profile);
           
-          // 儲存用戶資料到記憶體
+          // 儲存用戶資料
           const userData = {
             userId: profile.userId,
             displayName: profile.displayName,
             pictureUrl: profile.pictureUrl,
-            statusMessage: profile.statusMessage,
+            statusMessage: profile.statusMessage || '',
             loginTime: new Date().toISOString()
           };
           
-          // 使用 sessionStorage 暫存（因為不能用 localStorage）
+          sessionStorage.setItem('userData', JSON.stringify(userData));
+          console.log('💾 用戶資料已儲存到 sessionStorage');
+          
+          // 寫入 Google Sheets
+          await saveUserToSheet(userData);
+          
+          // 跳轉到預約頁面
+          console.log('➡️ 跳轉到預約頁面');
+          window.location.href = 'main.html';
+        }
+      } catch (error) {
+        console.error('❌ LIFF 初始化失敗:', error);
+        
+        let errorMsg = '登入失敗\n\n';
+        
+        if (error.message && error.message.includes('channel not found')) {
+          errorMsg += '❌ 找不到 LIFF Channel\n\n';
+          errorMsg += '可能原因：\n';
+          errorMsg += '1. LIFF ID 不正確\n';
+          errorMsg += '2. LIFF app 已被刪除\n';
+          errorMsg += '3. Channel 未啟用\n\n';
+          errorMsg += '目前 LIFF ID: ' + CONFIG.LIFF_ID + '\n\n';
+        } else if (error.message && error.message.includes('403')) {
+          errorMsg += '❌ 權限錯誤\n\n';
+          errorMsg += 'LIFF app 的 Endpoint URL 可能設定錯誤\n\n';
+          errorMsg += '請確認 Endpoint URL 設定為：\n' + window.location.origin + '/\n\n';
+        } else {
+          errorMsg += '錯誤訊息：\n' + (error.message || error) + '\n\n';
+        }
+        
+        errorMsg += '將切換到測試模式...';
+        alert(errorMsg);
+        window.location.href = 'main.html?test=true';
+      }
+    }
+
+    // 儲存用戶資料到 Google Sheets
+    async function saveUserToSheet(userData) {
+      try {
+        console.log('📤 正在儲存用戶資料到 Google Sheets...');
+        
+        const response = await fetch(CONFIG.SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'saveUser',
+            data: userData
+          })
+        });
+        
+        console.log('✅ 用戶資料已發送');
+      } catch (error) {
+        console.error('❌ 儲存用戶資料失敗:', error);
+      }
+    }
+
+    // 頁面載入時檢查是否已登入
+    window.addEventListener('load', function() {
+      console.log('📄 頁面載入完成');
+      
+      const userData = sessionStorage.getItem('userData');
+      if (userData) {
+        console.log('✅ 偵測到已登入，跳轉到預約頁面');
+        window.location.href = 'main.html';
+      } else {
+        console.log('ℹ️ 尚未登入');
+      }
+    });
+  </script>
+
+  <!-- ⚠️ 重要：LIFF SDK 必須放在最後載入 -->
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+    // 初始化 LIFF
+    async function initializeLIFF() {
+      try {
+        console.log('正在初始化 LIFF...', CONFIG.LIFF_ID);
+        
+        await liff.init({ liffId: CONFIG.LIFF_ID });
+        
+        console.log('LIFF 初始化成功');
+        console.log('是否在 LINE 中開啟:', liff.isInClient());
+        console.log('是否已登入:', liff.isLoggedIn());
+        
+        if (!liff.isLoggedIn()) {
+          console.log('尚未登入，導向登入頁面...');
+          liff.login({ redirectUri: window.location.href });
+        } else {
+          // 取得用戶資料
+          const profile = await liff.getProfile();
+          console.log('用戶資料:', profile);
+          
+          // 儲存用戶資料
+          const userData = {
+            userId: profile.userId,
+            displayName: profile.displayName,
+            pictureUrl: profile.pictureUrl,
+            statusMessage: profile.statusMessage || '',
+            loginTime: new Date().toISOString()
+          };
+          
           sessionStorage.setItem('userData', JSON.stringify(userData));
           
           // 寫入 Google Sheets
+          await saveUserToSheet(userData);
+          
+          // 跳轉到預約頁面
+          console.log('登入成功，跳轉到預約頁面');
+          window.location.href = 'main.html';
+        }
+      } catch (error) {
+        console.error('LIFF 初始化失敗:', error);
+        
+        let errorMsg = 'LIFF 初始化失敗\n\n';
+        
+        if (error.message.includes('channel not found')) {
+          errorMsg += '❌ LIFF ID 不正確\n\n';
+          errorMsg += '請檢查：\n';
+          errorMsg += '1. LIFF ID 格式是否正確\n';
+          errorMsg += '   (格式: 1234567890-abcdefgh)\n\n';
+          errorMsg += '2. LIFF app 是否已建立\n\n';
+          errorMsg += '3. LIFF app 的 Endpoint URL 是否設定為此網站網址\n\n';
+          errorMsg += '目前 LIFF ID: ' + CONFIG.LIFF_ID;
+        } else if (error.message.includes('403')) {
+          errorMsg += '❌ 權限錯誤\n\n';
+          errorMsg += 'LIFF app 的 Channel 可能未啟用';
+        } else {
+          errorMsg += '錯誤訊息: ' + error.message;
+        }
+        
+        alert(errorMsg + '\n\n將切換到測試模式...');
+        window.location.href = 'main.html?test=true';
+      }
+    }
           await saveUserToSheet(userData);
           
           // 跳轉到預約頁面
@@ -113,7 +273,7 @@
 
     // 儲存用戶資料到 Google Sheets
     async function saveUserToSheet(userData) {
-      const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwN2PoJQBvmkzo1E5IdsbQSLCTg5y4QxshYfab9o2M-GfMl1YC_hO8RbHeVH8PcpCRI-w/exec'; // 需要部署 Google Apps Script
+      const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL'; // 需要部署 Google Apps Script
       
       try {
         const response = await fetch(SCRIPT_URL, {
