@@ -554,5 +554,21 @@
             window.location.href = 'admin.html';
         }
     </script>
+<!-- 在導航列按鈕組中添加 -->
+<div class="flex items-center gap-4">
+    <span id="currentTime" class="text-sm"></span>
+    <button onclick="goToMain()" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition">
+        <i class="fas fa-home mr-2"></i>返回主頁
+    </button>
+    <button onclick="goToAdmin()" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition">
+        <i class="fas fa-cog mr-2"></i>管理後台
+    </button>
+</div>
+
+<script>
+function goToMain() {
+    window.location.href = 'main.html';
+}
+</script>
 </body>
 </html>
