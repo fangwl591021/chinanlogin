@@ -905,3 +905,124 @@
                                         color: "#FFFFFF"
                                     },
                                     {
+                                        type: "text",
+                                        text: "穿山甲專車預約取消",
+                                        size: "md",
+                                        color: "#FFFFFF"
+                                    }
+                                ],
+                                backgroundColor: "#FF6B6B"
+                            },
+                            body: {
+                                type: "box",
+                                layout: "vertical",
+                                contents: [
+                                    {
+                                        type: "text",
+                                        text: `日期：${formattedDate}`,
+                                        wrap: true
+                                    },
+                                    {
+                                        type: "text",
+                                        text: `姓名：${reservation.userName}`,
+                                        wrap: true
+                                    },
+                                    {
+                                        type: "text",
+                                        text: `班次：${reservation.timeSlot.id} | ${reservation.timeSlot.time} ${reservation.timeSlot.route}`,
+                                        wrap: true
+                                    },
+                                    {
+                                        type: "text",
+                                        text: "狀態：已取消",
+                                        wrap: true,
+                                        color: "#FF6B6B"
+                                    }
+                                ]
+                            }
+                        }
+                    };
+                }
+                
+                // 發送到 LINE 群組
+                await fetch('https://api.line.me/v2/bot/message/push', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${LINE_CONFIG.CHANNEL_ACCESS_TOKEN}`
+                    },
+                    body: JSON.stringify({
+                        to: LINE_CONFIG.GROUP_ID,
+                        messages: [flexMessage]
+                    })
+                });
+                
+                console.log(`${type === 'new' ? '新預約' : '取消'}通知已發送`);
+                
+            } catch (error) {
+                console.error('發送 LINE 通知失敗:', error);
+            }
+        }
+
+        // 顯示成功訊息
+        function showSuccessMessage(reservationId) {
+            const loading = document.getElementById('loading');
+            const form = document.getElementById('reservationForm');
+            const successDetails = document.getElementById('successDetails');
+            
+            // 格式化日期顯示
+            const dateObj = new Date(currentSelection.date);
+            const formattedDate = `${dateObj.getFullYear()}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getDate().toString().padStart(2, '0')}`;
+            
+            successDetails.textContent = `${formattedDate} ${currentSelection.timeSlot.id} | ${currentSelection.timeSlot.time}`;
+            
+            loading.classList.add('hidden');
+            form.classList.add('hidden');
+            document.getElementById('successMessage').classList.remove('hidden');
+        }
+
+        // 重置表單
+        function resetForm() {
+            document.getElementById('successMessage').classList.add('hidden');
+            document.getElementById('reservationForm').classList.remove('hidden');
+            document.getElementById('reservationForm').reset();
+            
+            // 重置所有區塊
+            resetSections();
+            
+            // 重置選擇
+            currentSelection = {
+                date: null,
+                timeSlot: null,
+                station: null,
+                reservationId: null
+            };
+            
+            // 重置按鈕狀態
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('submitBtn').innerHTML = '<i class="fas fa-paper-plane mr-2"></i>送出預約';
+            
+            // 顯示日期選擇按鈕
+            document.getElementById('dateSelectBtn').classList.remove('hidden');
+            document.getElementById('selectedDateDisplay').classList.add('hidden');
+            document.getElementById('calendarContainer').classList.remove('show');
+        }
+
+        // 重置區塊顯示
+        function resetSections() {
+            document.getElementById('timeSection').classList.add('hidden');
+            document.getElementById('stationSection').classList.add('hidden');
+            document.getElementById('submitBtn').classList.add('hidden');
+            
+            // 重置視覺狀態
+            document.querySelectorAll('.time-slot').forEach(slot => {
+                slot.classList.remove('selected');
+            });
+            
+            document.querySelectorAll('.calendar-day').forEach(day => {
+                day.classList.remove('selected');
+            });
+        }
+    </script>
+</body>
+</html>
