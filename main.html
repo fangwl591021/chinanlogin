@@ -66,6 +66,9 @@
         .reservation-item:hover {
             background-color: #f8fafc;
         }
+        .rotate-180 {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen p-4">
@@ -91,7 +94,7 @@
                         <i class="fas fa-user text-white text-sm"></i>
                     </div>
                     <div>
-                        <h2 class="font-semibold text-gray-800 text-sm" id="userName">王子齊</h2>
+                        <h2 class="font-semibold text-gray-800 text-sm" id="userName">方</h2>
                         <p class="text-xs text-gray-600">資訊工程學系 | 114230123</p>
                     </div>
                 </div>
@@ -285,14 +288,27 @@
             // 從 sessionStorage 取得用戶資料
             const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
             
+            // 如果沒有用戶資料，使用預設值
             if (!userData.userId || !userData.isRegistered) {
-                alert('請先完成註冊');
-                window.location.href = 'register.html';
+                // 設定預設用戶資料
+                const defaultUserData = {
+                    userId: 'user001',
+                    displayName: '方',
+                    department: '資訊工程學系',
+                    studentId: '114230123',
+                    phone: '0912345678',
+                    isRegistered: true
+                };
+                sessionStorage.setItem('userData', JSON.stringify(defaultUserData));
+                
+                // 顯示用戶資訊
+                document.getElementById('userName').textContent = defaultUserData.displayName;
+                document.getElementById('userInfo').textContent = `${defaultUserData.department} | ${defaultUserData.studentId}`;
                 return;
             }
 
             // 顯示用戶資訊
-            document.getElementById('userName').textContent = userData.displayName || '王子齊';
+            document.getElementById('userName').textContent = userData.displayName || '方';
             document.getElementById('userInfo').textContent = `${userData.department || '資訊工程學系'} | ${userData.studentId || '114230123'}`;
         }
 
@@ -386,7 +402,7 @@
                     const reservationItem = document.createElement('div');
                     reservationItem.className = 'reservation-card bg-white border border-gray-200 rounded-lg overflow-hidden';
                     reservationItem.innerHTML = `
-                        <div class="reservation-item p-4 flex justify-between items-center" onclick="toggleReservationCard(this)">
+                        <div class="reservation-item p-4 flex justify-between items-center">
                             <div class="flex items-center space-x-3">
                                 <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                                     <i class="fas fa-bus text-green-600 text-sm"></i>
@@ -416,14 +432,28 @@
                                     <span class="font-medium">${new Date(reservation.reservationTime).toLocaleString('zh-TW')}</span>
                                 </div>
                                 <button 
-                                    onclick="cancelExistingReservation('${reservation.id}')" 
-                                    class="w-full mt-3 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg text-sm transition flex items-center justify-center"
+                                    class="cancel-reservation-btn w-full mt-3 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg text-sm transition flex items-center justify-center"
+                                    data-reservation-id="${reservation.id}"
                                 >
                                     <i class="fas fa-times mr-2"></i>取消預約
                                 </button>
                             </div>
                         </div>
                     `;
+                    
+                    // 添加點擊事件
+                    const reservationHeader = reservationItem.querySelector('.reservation-item');
+                    reservationHeader.addEventListener('click', function() {
+                        toggleReservationCard(this);
+                    });
+                    
+                    // 添加取消按鈕事件
+                    const cancelBtn = reservationItem.querySelector('.cancel-reservation-btn');
+                    cancelBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        cancelExistingReservation(this.getAttribute('data-reservation-id'));
+                    });
+                    
                     reservationsList.appendChild(reservationItem);
                 });
 
@@ -875,124 +905,3 @@
                                         color: "#FFFFFF"
                                     },
                                     {
-                                        type: "text",
-                                        text: "穿山甲專車預約取消",
-                                        size: "md",
-                                        color: "#FFFFFF"
-                                    }
-                                ],
-                                backgroundColor: "#FF6B6B"
-                            },
-                            body: {
-                                type: "box",
-                                layout: "vertical",
-                                contents: [
-                                    {
-                                        type: "text",
-                                        text: `日期：${formattedDate}`,
-                                        wrap: true
-                                    },
-                                    {
-                                        type: "text",
-                                        text: `姓名：${reservation.userName}`,
-                                        wrap: true
-                                    },
-                                    {
-                                        type: "text",
-                                        text: `班次：${reservation.timeSlot.id} | ${reservation.timeSlot.time} ${reservation.timeSlot.route}`,
-                                        wrap: true
-                                    },
-                                    {
-                                        type: "text",
-                                        text: "狀態：已取消",
-                                        wrap: true,
-                                        color: "#FF6B6B"
-                                    }
-                                ]
-                            }
-                        }
-                    };
-                }
-                
-                // 發送到 LINE 群組
-                await fetch('https://api.line.me/v2/bot/message/push', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${LINE_CONFIG.CHANNEL_ACCESS_TOKEN}`
-                    },
-                    body: JSON.stringify({
-                        to: LINE_CONFIG.GROUP_ID,
-                        messages: [flexMessage]
-                    })
-                });
-                
-                console.log(`${type === 'new' ? '新預約' : '取消'}通知已發送`);
-                
-            } catch (error) {
-                console.error('發送 LINE 通知失敗:', error);
-            }
-        }
-
-        // 顯示成功訊息
-        function showSuccessMessage(reservationId) {
-            const loading = document.getElementById('loading');
-            const form = document.getElementById('reservationForm');
-            const successDetails = document.getElementById('successDetails');
-            
-            // 格式化日期顯示
-            const dateObj = new Date(currentSelection.date);
-            const formattedDate = `${dateObj.getFullYear()}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getDate().toString().padStart(2, '0')}`;
-            
-            successDetails.textContent = `${formattedDate} ${currentSelection.timeSlot.id} | ${currentSelection.timeSlot.time}`;
-            
-            loading.classList.add('hidden');
-            form.classList.add('hidden');
-            document.getElementById('successMessage').classList.remove('hidden');
-        }
-
-        // 重置表單
-        function resetForm() {
-            document.getElementById('successMessage').classList.add('hidden');
-            document.getElementById('reservationForm').classList.remove('hidden');
-            document.getElementById('reservationForm').reset();
-            
-            // 重置所有區塊
-            resetSections();
-            
-            // 重置選擇
-            currentSelection = {
-                date: null,
-                timeSlot: null,
-                station: null,
-                reservationId: null
-            };
-            
-            // 重置按鈕狀態
-            document.getElementById('submitBtn').disabled = false;
-            document.getElementById('submitBtn').innerHTML = '<i class="fas fa-paper-plane mr-2"></i>送出預約';
-            
-            // 顯示日期選擇按鈕
-            document.getElementById('dateSelectBtn').classList.remove('hidden');
-            document.getElementById('selectedDateDisplay').classList.add('hidden');
-            document.getElementById('calendarContainer').classList.remove('show');
-        }
-
-        // 重置區塊顯示
-        function resetSections() {
-            document.getElementById('timeSection').classList.add('hidden');
-            document.getElementById('stationSection').classList.add('hidden');
-            document.getElementById('submitBtn').classList.add('hidden');
-            
-            // 重置視覺狀態
-            document.querySelectorAll('.time-slot').forEach(slot => {
-                slot.classList.remove('selected');
-            });
-            
-            document.querySelectorAll('.calendar-day').forEach(day => {
-                day.classList.remove('selected');
-            });
-        }
-    </script>
-</body>
-</html>
