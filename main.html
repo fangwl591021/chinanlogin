@@ -45,6 +45,60 @@
             border-color: #3b82f6;
             background-color: #dbeafe;
         }
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        .step-indicator::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #e5e7eb;
+            z-index: 1;
+        }
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        .step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #e5e7eb;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .step.active .step-number {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .step.completed .step-number {
+            background-color: #10b981;
+            color: white;
+        }
+        .step-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        .step.active .step-label {
+            color: #3b82f6;
+            font-weight: 600;
+        }
+        .step.completed .step-label {
+            color: #10b981;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen p-4">
@@ -80,10 +134,32 @@
             </div>
         </div>
 
+        <!-- 步驟指示器 -->
+        <div class="p-6">
+            <div class="step-indicator">
+                <div class="step active" id="step1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">選擇日期</div>
+                </div>
+                <div class="step" id="step2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">選擇時段</div>
+                </div>
+                <div class="step" id="step3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">選擇車站</div>
+                </div>
+                <div class="step" id="step4">
+                    <div class="step-number">4</div>
+                    <div class="step-label">確認預約</div>
+                </div>
+            </div>
+        </div>
+
         <!-- 預約表單 -->
         <form id="reservationForm" class="p-6 space-y-6">
             <!-- 步驟1: 日期選擇 -->
-            <div>
+            <div id="step1Section">
                 <label class="block text-lg font-bold text-gray-800 mb-3">
                     <i class="fas fa-calendar-alt text-green-500 mr-2"></i>選擇搭乘日期 *
                 </label>
@@ -123,37 +199,98 @@
                     </div>
                 </div>
                 <p class="text-xs text-gray-500 mt-2">請選擇乘車日期，停駛日期無法選擇</p>
+                
+                <div class="flex justify-end mt-4">
+                    <button type="button" id="nextToStep2" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition">
+                        下一步 <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
             </div>
 
             <!-- 步驟2: 時段選擇 -->
-            <div id="timeSection" class="hidden">
+            <div id="step2Section" class="hidden">
                 <label class="block text-lg font-bold text-gray-800 mb-3">
                     <i class="fas fa-clock text-blue-500 mr-2"></i>請點選搭乘時段 *
                 </label>
                 <div class="grid grid-cols-1 gap-3" id="timeSlotsContainer">
                     <!-- 時段將由 JavaScript 動態生成 -->
                 </div>
+                
+                <div class="flex justify-between mt-6">
+                    <button type="button" id="backToStep1" class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-6 rounded-lg transition">
+                        <i class="fas fa-arrow-left mr-1"></i> 上一步
+                    </button>
+                    <button type="button" id="nextToStep3" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition">
+                        下一步 <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
             </div>
 
             <!-- 步驟3: 下車站選擇 -->
-            <div id="stationSection" class="hidden">
+            <div id="step3Section" class="hidden">
                 <label class="block text-lg font-bold text-gray-800 mb-3">
                     <i class="fas fa-map-marker-alt text-red-500 mr-2"></i>下車站 *
                 </label>
                 <div class="space-y-3" id="stationOptionsContainer">
                     <!-- 車站選項將由 JavaScript 動態生成 -->
                 </div>
+                
+                <div class="flex justify-between mt-6">
+                    <button type="button" id="backToStep2" class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-6 rounded-lg transition">
+                        <i class="fas fa-arrow-left mr-1"></i> 上一步
+                    </button>
+                    <button type="button" id="nextToStep4" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition">
+                        下一步 <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
             </div>
 
-            <!-- 提交按鈕 -->
-            <button 
-                type="submit"
-                id="submitBtn"
-                class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition duration-200 shadow-lg flex items-center justify-center hidden"
-            >
-                <i class="fas fa-paper-plane mr-2"></i>
-                送出預約
-            </button>
+            <!-- 步驟4: 確認預約 -->
+            <div id="step4Section" class="hidden">
+                <div class="bg-gray-50 rounded-xl p-4 mb-4">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">預約資訊確認</h3>
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">日期：</span>
+                            <span class="font-medium" id="confirmDate"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">時段：</span>
+                            <span class="font-medium" id="confirmTime"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">路線：</span>
+                            <span class="font-medium" id="confirmRoute"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">下車站：</span>
+                            <span class="font-medium" id="confirmStation"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">姓名：</span>
+                            <span class="font-medium" id="confirmName"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">電話：</span>
+                            <span class="font-medium" id="confirmPhone"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between mt-6">
+                    <button type="button" id="backToStep3" class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-6 rounded-lg transition">
+                        <i class="fas fa-arrow-left mr-1"></i> 上一步
+                    </button>
+                    <button 
+                        type="submit"
+                        id="submitBtn"
+                        class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg transition flex items-center"
+                    >
+                        <i class="fas fa-check mr-2"></i>
+                        確認預約
+                    </button>
+                </div>
+            </div>
         </form>
 
         <!-- 載入提示 -->
@@ -226,6 +363,9 @@
             reservationId: null
         };
 
+        // 當前步驟
+        let currentStep = 1;
+
         // 初始化頁面
         document.addEventListener('DOMContentLoaded', function() {
             initializePage();
@@ -274,6 +414,26 @@
                 submitReservation();
             });
 
+            // 步驟導航按鈕
+            document.getElementById('nextToStep2').addEventListener('click', function() {
+                goToStep(2);
+            });
+            document.getElementById('nextToStep3').addEventListener('click', function() {
+                goToStep(3);
+            });
+            document.getElementById('nextToStep4').addEventListener('click', function() {
+                goToStep(4);
+            });
+            document.getElementById('backToStep1').addEventListener('click', function() {
+                goToStep(1);
+            });
+            document.getElementById('backToStep2').addEventListener('click', function() {
+                goToStep(2);
+            });
+            document.getElementById('backToStep3').addEventListener('click', function() {
+                goToStep(3);
+            });
+
             // 新預約按鈕
             document.getElementById('newReservationBtn').addEventListener('click', function() {
                 resetForm();
@@ -285,6 +445,89 @@
             });
         }
 
+        // 步驟導航
+        function goToStep(step) {
+            // 驗證當前步驟
+            if (!validateCurrentStep()) {
+                return;
+            }
+            
+            // 更新步驟指示器
+            updateStepIndicator(step);
+            
+            // 顯示對應的步驟內容
+            document.getElementById('step1Section').classList.add('hidden');
+            document.getElementById('step2Section').classList.add('hidden');
+            document.getElementById('step3Section').classList.add('hidden');
+            document.getElementById('step4Section').classList.add('hidden');
+            
+            switch(step) {
+                case 1:
+                    document.getElementById('step1Section').classList.remove('hidden');
+                    break;
+                case 2:
+                    document.getElementById('step2Section').classList.remove('hidden');
+                    generateTimeSlots();
+                    break;
+                case 3:
+                    document.getElementById('step3Section').classList.remove('hidden');
+                    generateStationOptions();
+                    break;
+                case 4:
+                    document.getElementById('step4Section').classList.remove('hidden');
+                    displayConfirmation();
+                    break;
+            }
+            
+            currentStep = step;
+        }
+
+        // 更新步驟指示器
+        function updateStepIndicator(step) {
+            // 重置所有步驟狀態
+            document.querySelectorAll('.step').forEach(stepEl => {
+                stepEl.classList.remove('active', 'completed');
+            });
+            
+            // 設置當前步驟和已完成步驟
+            for (let i = 1; i <= 4; i++) {
+                const stepEl = document.getElementById(`step${i}`);
+                if (i < step) {
+                    stepEl.classList.add('completed');
+                } else if (i === step) {
+                    stepEl.classList.add('active');
+                }
+            }
+        }
+
+        // 驗證當前步驟
+        function validateCurrentStep() {
+            switch(currentStep) {
+                case 1:
+                    if (!currentSelection.date) {
+                        alert('請選擇乘車日期');
+                        return false;
+                    }
+                    if (!checkServiceStatus(currentSelection.date)) {
+                        return false;
+                    }
+                    break;
+                case 2:
+                    if (!currentSelection.timeSlot) {
+                        alert('請選擇搭乘時段');
+                        return false;
+                    }
+                    break;
+                case 3:
+                    if (!currentSelection.station) {
+                        alert('請選擇下車站');
+                        return false;
+                    }
+                    break;
+            }
+            return true;
+        }
+
         // 處理日期選擇
         function handleDateSelection(date) {
             currentSelection.date = date;
@@ -293,14 +536,6 @@
             if (!checkServiceStatus(date)) {
                 return;
             }
-
-            // 顯示時段選擇區
-            document.getElementById('timeSection').classList.remove('hidden');
-            generateTimeSlots();
-            
-            // 隱藏後續步驟（重新選擇日期時）
-            document.getElementById('stationSection').classList.add('hidden');
-            document.getElementById('submitBtn').classList.add('hidden');
         }
 
         // 檢查服務狀態
@@ -446,10 +681,6 @@
                     // 設定當前選中狀態
                     this.classList.add('selected');
                     currentSelection.timeSlot = slot;
-
-                    // 顯示車站選擇區
-                    document.getElementById('stationSection').classList.remove('hidden');
-                    generateStationOptions();
                 });
 
                 container.appendChild(slotElement);
@@ -489,13 +720,26 @@
                     this.querySelector('.radio-indicator').classList.remove('border-gray-400');
                     
                     currentSelection.station = station.name;
-
-                    // 顯示提交按鈕
-                    document.getElementById('submitBtn').classList.remove('hidden');
                 });
 
                 container.appendChild(stationElement);
             });
+        }
+
+        // 顯示確認資訊
+        function displayConfirmation() {
+            const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
+            
+            // 格式化日期顯示
+            const dateObj = new Date(currentSelection.date);
+            const formattedDate = `${dateObj.getFullYear()}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getDate().toString().padStart(2, '0')}`;
+            
+            document.getElementById('confirmDate').textContent = formattedDate;
+            document.getElementById('confirmTime').textContent = `${currentSelection.timeSlot.id} | ${currentSelection.timeSlot.time}`;
+            document.getElementById('confirmRoute').textContent = currentSelection.timeSlot.route;
+            document.getElementById('confirmStation').textContent = currentSelection.station;
+            document.getElementById('confirmName').textContent = userData.displayName || '未提供';
+            document.getElementById('confirmPhone').textContent = userData.phone || '未提供';
         }
 
         // 提交預約
@@ -642,223 +886,4 @@
             cancelBtn.disabled = true;
             cancelBtn.innerHTML = '<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>取消中...';
             
-            setTimeout(() => {
-                try {
-                    // 更新預約狀態
-                    updateReservationStatus(currentSelection.reservationId, 'cancelled');
-                    
-                    // 發送取消通知
-                    sendLineNotification('cancel', currentSelection.reservationId);
-                    
-                    alert('預約已取消');
-                    resetForm();
-                    
-                } catch (error) {
-                    console.error('取消預約失敗:', error);
-                    alert('取消預約失敗，請重試');
-                    cancelBtn.disabled = false;
-                    cancelBtn.innerHTML = '取消預約';
-                }
-            }, 1000);
-        }
-
-        // 更新預約狀態
-        function updateReservationStatus(reservationId, status) {
-            let reservations = JSON.parse(localStorage.getItem('ncnu_shuttle_reservations') || '[]');
-            const reservationIndex = reservations.findIndex(r => r.id === reservationId);
-            
-            if (reservationIndex !== -1) {
-                reservations[reservationIndex].status = status;
-                localStorage.setItem('ncnu_shuttle_reservations', JSON.stringify(reservations));
-            }
-        }
-
-        // 發送 LINE 推播通知
-        async function sendLineNotification(type, reservationId) {
-            try {
-                const reservations = JSON.parse(localStorage.getItem('ncnu_shuttle_reservations') || '[]');
-                const reservation = reservations.find(r => r.id === reservationId);
-                
-                if (!reservation) {
-                    console.error('找不到預約資料');
-                    return;
-                }
-                
-                // 格式化日期
-                const dateObj = new Date(reservation.date);
-                const formattedDate = `${dateObj.getFullYear()}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getDate().toString().padStart(2, '0')}`;
-                
-                let flexMessage;
-                
-                if (type === 'new') {
-                    // 新預約 FLEX 訊息
-                    flexMessage = {
-                        type: "flex",
-                        altText: "穿山甲專車新預約",
-                        contents: {
-                            type: "bubble",
-                            header: {
-                                type: "box",
-                                layout: "vertical",
-                                contents: [
-                                    {
-                                        type: "text",
-                                        text: "暨大生活圈 Life Circle",
-                                        weight: "bold",
-                                        size: "lg",
-                                        color: "#FFFFFF"
-                                    },
-                                    {
-                                        type: "text",
-                                        text: "穿山甲專車新預約",
-                                        size: "md",
-                                        color: "#FFFFFF"
-                                    }
-                                ],
-                                backgroundColor: "#06C755"
-                            },
-                            body: {
-                                type: "box",
-                                layout: "vertical",
-                                contents: [
-                                    {
-                                        type: "text",
-                                        text: `日期：${formattedDate} 08:00:00`,
-                                        wrap: true
-                                    },
-                                    {
-                                        type: "text",
-                                        text: `班次：${reservation.timeSlot.id} | ${reservation.timeSlot.time} ${reservation.timeSlot.route}`,
-                                        wrap: true
-                                    },
-                                    {
-                                        type: "text",
-                                        text: `姓名：${reservation.userName}`,
-                                        wrap: true
-                                    },
-                                    {
-                                        type: "text",
-                                        text: `電話：${reservation.userPhone}`,
-                                        wrap: true
-                                    },
-                                    {
-                                        type: "text",
-                                        text: `下車：${reservation.station}`,
-                                        wrap: true
-                                    }
-                                ]
-                            }
-                        }
-                    };
-                } else if (type === 'cancel') {
-                    // 取消預約 FLEX 訊息
-                    flexMessage = {
-                        type: "flex",
-                        altText: "穿山甲專車預約取消",
-                        contents: {
-                            type: "bubble",
-                            header: {
-                                type: "box",
-                                layout: "vertical",
-                                contents: [
-                                    {
-                                        type: "text",
-                                        text: "暨大生活圈 Life Circle",
-                                        weight: "bold",
-                                        size: "lg",
-                                        color: "#FFFFFF"
-                                    },
-                                    {
-                                        type: "text",
-                                        text: "穿山甲專車預約取消",
-                                        size: "md",
-                                        color: "#FFFFFF"
-                                    }
-                                ],
-                                backgroundColor: "#FF6B6B"
-                            },
-                            body: {
-                                type: "box",
-                                layout: "vertical",
-                                contents: [
-                                    {
-                                        type: "text",
-                                        text: `日期：${formattedDate} 08:00:00`,
-                                        wrap: true
-                                    },
-                                    {
-                                        type: "text",
-                                        text: `姓名：${reservation.userName}`,
-                                        wrap: true
-                                    },
-                                    {
-                                        type: "text",
-                                        text: `班次：${reservation.timeSlot.id} | ${reservation.timeSlot.time} ${reservation.timeSlot.route}`,
-                                        wrap: true
-                                    },
-                                    {
-                                        type: "text",
-                                        text: "狀態：已取消",
-                                        wrap: true,
-                                        color: "#FF6B6B"
-                                    }
-                                ]
-                            }
-                        }
-                    };
-                }
-                
-                // 發送到 LINE 群組
-                await fetch('https://api.line.me/v2/bot/message/push', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${LINE_CONFIG.CHANNEL_ACCESS_TOKEN}`
-                    },
-                    body: JSON.stringify({
-                        to: LINE_CONFIG.GROUP_ID,
-                        messages: [flexMessage]
-                    })
-                });
-                
-                console.log(`${type === 'new' ? '新預約' : '取消'}通知已發送`);
-                
-            } catch (error) {
-                console.error('發送 LINE 通知失敗:', error);
-                // 這裡可以選擇是否要讓用戶知道推播失敗
-            }
-        }
-
-        // 重置表單
-        function resetForm() {
-            document.getElementById('successMessage').classList.add('hidden');
-            document.getElementById('reservationForm').classList.remove('hidden');
-            document.getElementById('reservationForm').reset();
-            
-            // 重置所有步驟
-            document.getElementById('timeSection').classList.add('hidden');
-            document.getElementById('stationSection').classList.add('hidden');
-            document.getElementById('submitBtn').classList.add('hidden');
-            
-            // 重置選擇
-            currentSelection = {
-                date: null,
-                timeSlot: null,
-                station: null,
-                reservationId: null
-            };
-            
-            // 重置視覺狀態
-            document.querySelectorAll('.time-slot').forEach(slot => {
-                slot.classList.remove('selected');
-            });
-            
-            document.querySelectorAll('.station-option').forEach(opt => {
-                opt.classList.remove('border-blue-500', 'bg-blue-50');
-                opt.querySelector('.radio-indicator').classList.remove('bg-blue-500', 'border-blue-500');
-                opt.querySelector('.radio-indicator').classList.add('border-gray-400');
-            });
-        }
-    </script>
-</body>
-</html>
+           
