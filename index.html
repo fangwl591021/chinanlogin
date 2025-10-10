@@ -1,124 +1,150 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>穿山甲專車</title>
-    <!-- ✅ 改用新版 LIFF SDK -->
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <!-- 直接引用 LIFF SDK -->
-    <script src="https://d.line-scdn.net/liff/1.0/sdk.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>暨大接駁車預約系統 - 登入</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+  </style>
 </head>
 <body>
-    <div id="app" style="text-align: center; padding: 50px 20px;">
-        <h1>🚐 穿山甲專車</h1>
-        <div id="status">
-            <p>系統初始化中...</p>
+  <div class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+      <!-- Logo 區域 -->
+      <div class="text-center mb-8">
+        <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+          </svg>
         </div>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">暨大接駁車預約</h1>
+        <p class="text-gray-600">請使用 LINE 帳號登入</p>
+      </div>
+
+      <!-- 登入按鈕 -->
+      <button 
+        onclick="lineLogin()"
+        class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-6 rounded-xl transition duration-200 flex items-center justify-center gap-3 shadow-lg mb-6"
+      >
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
+        </svg>
+        使用 LINE 登入
+      </button>
+
+      <!-- 說明文字 -->
+      <div class="text-center text-sm text-gray-500 space-y-2">
+        <p>🚌 提供埔里總站 ⇄ 暨大校區接駁服務</p>
+        <p>⏰ 每日 22:00-24:00 營運</p>
+        <p>👥 每車限額 6 人</p>
+      </div>
+
+      <!-- 車次資訊 -->
+      <div class="mt-6 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4">
+        <p class="text-xs font-semibold text-gray-700 mb-2">📍 營運車次</p>
+        <div class="text-xs text-gray-600 space-y-1">
+          <p>A1｜22:00-22:30 暨大→埔里總站</p>
+          <p>B1｜22:30-23:00 埔里總站→暨大</p>
+          <p>A2｜23:00-23:30 暨大→埔里總站</p>
+          <p>B2｜23:30-24:00 埔里總站→暨大</p>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <script>
-        const LIFF_ID = '2008231249-yv8294Jp';
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbw0UT6Bln6APIonRNFI2ehltr8RziEozDRUkTZ8QRHoaLVa9B41lBMyBe7KnFgT7CZeXA/exec';
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzKZNfyLWWIKCEe_yzlZZP8KcWcjREeHAb36-X2HbIflXh0kCTxFJxkO8KIEv4Z6_3Pew/exec';
+  <script>
+    // 配置
+    const CONFIG = {
+      LINE_GROUP_ID: 'C596050d1193b9b930ac25469c61ba12a',
+      LIFF_ID: 'YOUR_LIFF_ID' // 需要在 LINE Developers 建立 LIFF app
+    };
 
-        // 檢查是否在 LINE 環境中
-        function isInLineApp() {
-            return /Line/i.test(navigator.userAgent) || window.self !== window.top;
+    // LINE Login
+    function lineLogin() {
+      // 檢查是否在 LINE 內開啟
+      if (window.liff) {
+        initializeLIFF();
+      } else {
+        alert('請先設定 LIFF ID\n\n步驟：\n1. 前往 LINE Developers Console\n2. 建立 LIFF app\n3. 將 LIFF ID 填入此檔案\n\n目前為測試模式，將直接跳轉...');
+        // 測試模式：直接跳轉到 main.html
+        window.location.href = 'main.html?test=true';
+      }
+    }
+
+    // 初始化 LIFF
+    async function initializeLIFF() {
+      try {
+        await liff.init({ liffId: CONFIG.LIFF_ID });
+        
+        if (!liff.isLoggedIn()) {
+          liff.login({ redirectUri: window.location.href });
+        } else {
+          // 取得用戶資料
+          const profile = await liff.getProfile();
+          
+          // 儲存用戶資料到記憶體
+          const userData = {
+            userId: profile.userId,
+            displayName: profile.displayName,
+            pictureUrl: profile.pictureUrl,
+            statusMessage: profile.statusMessage,
+            loginTime: new Date().toISOString()
+          };
+          
+          // 使用 sessionStorage 暫存（因為不能用 localStorage）
+          sessionStorage.setItem('userData', JSON.stringify(userData));
+          
+          // 寫入 Google Sheets
+          await saveUserToSheet(userData);
+          
+          // 跳轉到預約頁面
+          window.location.href = 'main.html';
         }
+      } catch (error) {
+        console.error('LIFF 初始化失敗:', error);
+        alert('登入失敗，請重試');
+      }
+    }
 
-        async function initializeApp() {
-            const statusEl = document.getElementById('status');
-            try {
-                const statusEl = document.getElementById('status');
-                
-                // 步驟 1: 檢查環境
-                statusEl.innerHTML = '<p>🔍 檢查執行環境...</p>';
-                
-                if (!isInLineApp()) {
-                    statusEl.innerHTML = `
-                        <p style="color: red;">❌ 請在 LINE App 中開啟此連結</p>
-                        <p>請使用 LINE 掃描 QR Code 或點擊連結開啟</p>
-                        <button onclick="location.reload()" style="padding: 10px 20px; margin: 10px; background: #06c755; color: white; border: none; border-radius: 5px; cursor: pointer;">重新整理</button>
-                    `;
-                    return;
-                }
-
-                // 初始化 LIFF
-                // 步驟 2: 檢查 LIFF SDK
-                statusEl.innerHTML = '<p>📦 載入 LIFF SDK...</p>';
-                
-                if (typeof liff === 'undefined') {
-                    throw new Error('LIFF SDK 載入失敗，請重新整理');
-                }
-
-                // 步驟 3: 初始化 LIFF
-                statusEl.innerHTML = '<p>⚙️ 初始化應用程式...</p>';
-                await liff.init({ liffId: LIFF_ID });
-
-                
-                if (!liff.isLoggedIn()) {
-                    statusEl.innerHTML = '<p>🔑 跳轉至登入頁面...</p>';
-                    liff.login();
-                    return;
-                }
-
-                // 取得使用者資料
-                // 步驟 4: 取得使用者資料
-                statusEl.innerHTML = '<p>👤 取得使用者資訊...</p>';
-                const profile = await liff.getProfile();
-
-                // 檢查註冊狀態
-                
-                // 步驟 5: 檢查註冊狀態
-                statusEl.innerHTML = '<p>📋 檢查註冊狀態...</p>';
-                const response = await fetch(`${GAS_URL}?action=register&userId=${profile.userId}&name=${encodeURIComponent(profile.displayName)}`);
-                const data = await response.json();
-
-                
-                if (data.status === 'existing_user') {
-                    window.location.href = 'booking.html';
-                } else {
-                    window.location.href = 'register.html';
-                }
-
-                
-            } catch (error) {
-                console.error('初始化失敗:', error);
-                showError(error.message || '未知錯誤');
-                showError(error.message);
-            }
-        }
-
-        function showError(message) {
-            document.getElementById('status').innerHTML = `
-                <p style="color: red;">❌ 系統初始化失敗</p>
-                <p>錯誤訊息: ${message}</p>
-                <ol style="text-align: left; display: inline-block;">
-                    <li>確認在 LINE App 中開啟</li>
-                    <li>檢查網路連線</li>
-                    <li>重新整理頁面</li>
-                </ol>
-                <div style="margin: 20px 0;">
-                    <p><strong>請嘗試以下步驟：</strong></p>
-                    <ol style="text-align: left; display: inline-block;">
-                        <li>確認在 LINE App 中開啟</li>
-                        <li>檢查網路連線</li>
-                        <li>重新整理頁面</li>
-                    </ol>
-                </div>
-                <button onclick="location.reload()" style="padding: 10px 20px; margin: 10px; background: #06c755; color: white; border: none; border-radius: 5px; cursor: pointer;">重新整理頁面</button>
-                <button onclick="liff.login()" style="padding: 10px 20px; margin: 10px; background: #0066ff; color: white; border: none; border-radius: 5px; cursor: pointer;">重新登入</button>
-                <p style="font-size: 12px; color: #666; margin-top: 20px;">如果持續出現錯誤，請聯繫管理員</p>
-            `;
-        }
-
-        window.addEventListener('load', () => setTimeout(initializeApp, 200));
-        // 頁面載入後開始初始化
-        window.addEventListener('load', function() {
-            // 給 LIFF SDK 一點時間載入
-            setTimeout(initializeApp, 100);
+    // 儲存用戶資料到 Google Sheets
+    async function saveUserToSheet(userData) {
+      const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL'; // 需要部署 Google Apps Script
+      
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'saveUser',
+            data: userData
+          })
         });
-    </script>
+        
+        console.log('用戶資料已儲存');
+      } catch (error) {
+        console.error('儲存用戶資料失敗:', error);
+      }
+    }
+
+    // 檢查是否已登入
+    window.addEventListener('load', function() {
+      const userData = sessionStorage.getItem('userData');
+      if (userData) {
+        // 已登入，直接跳轉
+        window.location.href = 'main.html';
+      }
+    });
+  </script>
+
+  <!-- 載入 LIFF SDK -->
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </body>
 </html>
