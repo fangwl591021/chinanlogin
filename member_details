@@ -34,6 +34,9 @@
                 </div>
                 <div class="flex items-center gap-4">
                     <span id="currentTime" class="text-sm"></span>
+                    <button onclick="goToMain()" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition">
+                        <i class="fas fa-home mr-2"></i>返回主頁
+                    </button>
                     <button onclick="goToAdmin()" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition">
                         <i class="fas fa-cog mr-2"></i>管理後台
                     </button>
@@ -84,11 +87,11 @@
             <div class="bg-white rounded-xl shadow-md p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-gray-500 text-sm">資料狀態</p>
-                        <p id="dataStatus" class="text-3xl font-bold text-green-600">正常</p>
+                        <p class="text-gray-500 text-sm">管理員數量</p>
+                        <p id="adminCount" class="text-3xl font-bold text-green-600">0</p>
                     </div>
                     <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                        <i class="fas fa-user-shield text-green-600 text-xl"></i>
                     </div>
                 </div>
             </div>
@@ -124,6 +127,17 @@
                         <option value="外國語文學系">外國語文學系</option>
                         <option value="經濟學系">經濟學系</option>
                         <option value="財務金融學系">財務金融學系</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">權限篩選</label>
+                    <select 
+                        id="adminFilter" 
+                        class="w-full md:w-32 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    >
+                        <option value="">所有會員</option>
+                        <option value="admin">僅管理員</option>
+                        <option value="user">僅一般會員</option>
                     </select>
                 </div>
                 <div class="flex items-end">
@@ -167,8 +181,8 @@
                         <div class="col-span-2">學號</div>
                         <div class="col-span-2">科系</div>
                         <div class="col-span-2">電話</div>
-                        <div class="col-span-2">LINE ID</div>
                         <div class="col-span-2">註冊時間</div>
+                        <div class="col-span-2">管理員權限</div>
                     </div>
                     <div id="listViewContent" class="divide-y">
                         <!-- 動態載入列表內容 -->
@@ -248,6 +262,9 @@
             // 科系篩選
             document.getElementById('departmentFilter').addEventListener('change', filterUsers);
             
+            // 權限篩選
+            document.getElementById('adminFilter').addEventListener('change', filterUsers);
+            
             // 視圖切換
             document.getElementById('cardViewBtn').addEventListener('click', () => switchView('card'));
             document.getElementById('listViewBtn').addEventListener('click', () => switchView('list'));
@@ -260,7 +277,7 @@
         async function loadUserData() {
             try {
                 const data = await getGistData();
-                allUsers = data.users || [];
+                allUsers = validateUserData(data.users || []);
                 
                 updateStatistics(allUsers);
                 filterUsers();
@@ -282,6 +299,22 @@
             }
         }
 
+        // 驗證和處理用戶資料
+        function validateUserData(users) {
+            return users.map(user => {
+                // 確保所有必要欄位都有預設值
+                return {
+                    lineUserId: user.lineUserId || '未提供',
+                    displayName: user.displayName || '未提供姓名',
+                    phone: user.phone || '未提供電話',
+                    studentId: user.studentId || '未提供學號',
+                    department: user.department || '未選擇科系',
+                    registerTime: user.registerTime || new Date().toISOString(),
+                    isAdmin: user.isAdmin || false  // 新增管理權限欄位
+                };
+            });
+        }
+
         // 從 GitHub Gist 取得資料
         async function getGistData() {
             const response = await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, {
@@ -298,6 +331,42 @@
             return JSON.parse(gist.files['data.json'].content);
         }
 
+        // 更新 GitHub Gist 資料
+        async function updateGistData() {
+            try {
+                // 先取得目前的資料
+                const currentData = await getGistData();
+                
+                // 更新 users 陣列
+                currentData.users = allUsers;
+                
+                // 更新到 GitHub Gist
+                const response = await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        files: {
+                            'data.json': {
+                                content: JSON.stringify(currentData, null, 2)
+                            }
+                        }
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`更新失敗: ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('更新 Gist 資料失敗:', error);
+                throw error;
+            }
+        }
+
         // 更新統計資料
         function updateStatistics(users) {
             document.getElementById('totalUsers').textContent = users.length;
@@ -308,6 +377,10 @@
                 user.registerTime && user.registerTime.startsWith(today)
             ).length;
             document.getElementById('todayRegistrations').textContent = todayRegistrations;
+            
+            // 計算管理員人數
+            const adminCount = users.filter(user => user.isAdmin).length;
+            document.getElementById('adminCount').textContent = adminCount;
             
             // 計算最多科系
             const departmentCounts = {};
@@ -333,6 +406,7 @@
         function filterUsers() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const departmentFilter = document.getElementById('departmentFilter').value;
+            const adminFilter = document.getElementById('adminFilter').value;
             
             filteredUsers = allUsers.filter(user => {
                 const matchesSearch = !searchTerm || 
@@ -343,7 +417,11 @@
                 
                 const matchesDepartment = !departmentFilter || user.department === departmentFilter;
                 
-                return matchesSearch && matchesDepartment;
+                const matchesAdmin = !adminFilter || 
+                    (adminFilter === 'admin' && user.isAdmin) ||
+                    (adminFilter === 'user' && !user.isAdmin);
+                
+                return matchesSearch && matchesDepartment && matchesAdmin;
             });
             
             renderUsers();
@@ -382,7 +460,10 @@
                 <div class="user-card bg-white border border-gray-200 rounded-xl shadow-sm p-5 fade-in hover:shadow-md transition">
                     <div class="flex items-start justify-between mb-4">
                         <div>
-                            <h3 class="font-bold text-lg text-gray-800">${user.displayName || '未提供'}</h3>
+                            <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">
+                                ${user.displayName || '未提供'}
+                                ${user.isAdmin ? '<span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">管理員</span>' : ''}
+                            </h3>
                             <p class="text-sm text-gray-500">${user.studentId || '未提供學號'}</p>
                         </div>
                         <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
@@ -405,7 +486,16 @@
                         </div>
                     </div>
                     
-                    <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end">
+                    <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                ${user.isAdmin ? 'checked' : ''} 
+                                onchange="toggleAdmin('${user.lineUserId}', this.checked)"
+                                class="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                            >
+                            <span class="text-sm text-gray-600">設為管理員</span>
+                        </label>
                         <button 
                             onclick="showUserDetail('${user.lineUserId}')" 
                             class="px-3 py-1 bg-blue-100 text-blue-600 text-sm rounded-lg hover:bg-blue-200 transition"
@@ -423,12 +513,25 @@
             
             listViewContent.innerHTML = filteredUsers.map(user => `
                 <div class="px-4 py-3 grid grid-cols-12 gap-4 text-sm items-center hover:bg-gray-50 fade-in">
-                    <div class="col-span-2 font-medium">${user.displayName || '未提供'}</div>
+                    <div class="col-span-2 font-medium flex items-center gap-2">
+                        ${user.displayName || '未提供'}
+                        ${user.isAdmin ? '<span class="px-1 py-0.5 bg-red-100 text-red-800 text-xs rounded">管理員</span>' : ''}
+                    </div>
                     <div class="col-span-2 text-gray-600">${user.studentId || '未提供'}</div>
                     <div class="col-span-2 text-gray-600">${user.department || '未提供'}</div>
                     <div class="col-span-2 text-gray-600">${user.phone || '未提供'}</div>
-                    <div class="col-span-2 text-gray-600 font-mono text-xs truncate">${user.lineUserId || '未提供'}</div>
                     <div class="col-span-2 text-gray-500 text-xs">${formatDate(user.registerTime)}</div>
+                    <div class="col-span-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                ${user.isAdmin ? 'checked' : ''} 
+                                onchange="toggleAdmin('${user.lineUserId}', this.checked)"
+                                class="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                            >
+                            <span class="text-xs text-gray-600">管理員</span>
+                        </label>
+                    </div>
                 </div>
             `).join('');
         }
@@ -456,6 +559,40 @@
             renderUsers();
         }
 
+        // 切換管理員權限
+        async function toggleAdmin(lineUserId, isAdmin) {
+            try {
+                // 更新本地資料
+                const userIndex = allUsers.findIndex(user => user.lineUserId === lineUserId);
+                if (userIndex !== -1) {
+                    allUsers[userIndex].isAdmin = isAdmin;
+                    
+                    // 更新 GitHub Gist
+                    await updateGistData();
+                    
+                    // 顯示成功訊息
+                    const message = isAdmin ? '已設為管理員' : '已取消管理員權限';
+                    showNotification(message, 'success');
+                    
+                    // 更新統計資料
+                    updateStatistics(allUsers);
+                    
+                    // 重新整理顯示
+                    filterUsers();
+                }
+            } catch (error) {
+                console.error('更新管理員權限失敗:', error);
+                showNotification('更新失敗，請稍後再試', 'error');
+                
+                // 恢復 checkbox 狀態
+                const userIndex = allUsers.findIndex(user => user.lineUserId === lineUserId);
+                if (userIndex !== -1) {
+                    allUsers[userIndex].isAdmin = !isAdmin;
+                    filterUsers();
+                }
+            }
+        }
+
         // 顯示使用者詳細資料
         function showUserDetail(lineUserId) {
             const user = allUsers.find(u => u.lineUserId === lineUserId);
@@ -472,6 +609,7 @@
                     <div>
                         <h4 class="font-bold text-lg">${user.displayName || '未提供姓名'}</h4>
                         <p class="text-gray-600">${user.studentId || '未提供學號'}</p>
+                        ${user.isAdmin ? '<span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">管理員</span>' : ''}
                     </div>
                 </div>
                 
@@ -496,6 +634,18 @@
                         <p class="text-sm text-gray-500">註冊時間</p>
                         <p class="font-medium">${formatDate(user.registerTime)}</p>
                     </div>
+                    
+                    <div class="pt-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                ${user.isAdmin ? 'checked' : ''} 
+                                onchange="toggleAdmin('${user.lineUserId}', this.checked)"
+                                class="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                            >
+                            <span class="text-sm text-gray-600">設為管理員</span>
+                        </label>
+                    </div>
                 </div>
             `;
             
@@ -518,7 +668,40 @@
             a.download = `ncnu_shuttle_users_${new Date().toISOString().split('T')[0]}.json`;
             a.click();
             
-            alert('會員資料匯出成功！');
+            showNotification('會員資料匯出成功！', 'success');
+        }
+
+        // 顯示通知
+        function showNotification(message, type = 'info') {
+            // 移除現有的通知
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+            
+            const notification = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : 
+                           type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+            
+            notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 fade-in`;
+            notification.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // 3秒後自動移除
+            setTimeout(() => {
+                notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
         }
 
         // 格式化日期
@@ -549,26 +732,15 @@
                 });
         }
 
+        // 前往主頁
+        function goToMain() {
+            window.location.href = 'main.html';
+        }
+
         // 前往管理後台
         function goToAdmin() {
             window.location.href = 'admin.html';
         }
     </script>
-<!-- 在導航列按鈕組中添加 -->
-<div class="flex items-center gap-4">
-    <span id="currentTime" class="text-sm"></span>
-    <button onclick="goToMain()" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition">
-        <i class="fas fa-home mr-2"></i>返回主頁
-    </button>
-    <button onclick="goToAdmin()" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition">
-        <i class="fas fa-cog mr-2"></i>管理後台
-    </button>
-</div>
-
-<script>
-function goToMain() {
-    window.location.href = 'main.html';
-}
-</script>
 </body>
 </html>
