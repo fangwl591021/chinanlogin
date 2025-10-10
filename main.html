@@ -51,6 +51,21 @@
         .calendar-container.show {
             display: block;
         }
+        .reservation-card {
+            transition: all 0.3s ease;
+            max-height: 60px;
+            overflow: hidden;
+        }
+        .reservation-card.expanded {
+            max-height: 200px;
+        }
+        .reservation-item {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .reservation-item:hover {
+            background-color: #f8fafc;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen p-4">
@@ -76,8 +91,8 @@
                         <i class="fas fa-user text-white text-sm"></i>
                     </div>
                     <div>
-                        <h2 class="font-semibold text-gray-800 text-sm" id="userName">載入中...</h2>
-                        <p class="text-xs text-gray-600" id="userInfo">載入中...</p>
+                        <h2 class="font-semibold text-gray-800 text-sm" id="userName">王子齊</h2>
+                        <p class="text-xs text-gray-600">資訊工程學系 | 114230123</p>
                     </div>
                 </div>
                 <button id="logoutBtn" class="text-xs text-gray-500 hover:text-gray-700">
@@ -140,6 +155,17 @@
                         <button type="button" id="changeDateBtn" class="text-blue-600 hover:text-blue-800 text-sm">
                             <i class="fas fa-edit mr-1"></i>變更
                         </button>
+                    </div>
+                </div>
+
+                <!-- 已預約時段列表 -->
+                <div id="existingReservations" class="mt-6">
+                    <h3 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                        <i class="fas fa-list-check text-purple-500 mr-2"></i>
+                        已預約時段
+                    </h3>
+                    <div id="reservationsList" class="space-y-2">
+                        <!-- 已預約項目將由 JavaScript 動態生成 -->
                     </div>
                 </div>
             </div>
@@ -251,6 +277,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             initializePage();
             setupEventListeners();
+            loadExistingReservations();
         });
 
         // 初始化頁面資料
@@ -265,8 +292,8 @@
             }
 
             // 顯示用戶資訊
-            document.getElementById('userName').textContent = userData.displayName || '未提供姓名';
-            document.getElementById('userInfo').textContent = `${userData.department || '未選擇科系'} | ${userData.studentId || '未提供學號'}`;
+            document.getElementById('userName').textContent = userData.displayName || '王子齊';
+            document.getElementById('userInfo').textContent = `${userData.department || '資訊工程學系'} | ${userData.studentId || '114230123'}`;
         }
 
         // 設置事件監聽器
@@ -314,6 +341,138 @@
             document.getElementById('newReservationBtn').addEventListener('click', function() {
                 resetForm();
             });
+        }
+
+        // 載入已存在的預約
+        function loadExistingReservations() {
+            const reservationsList = document.getElementById('reservationsList');
+            reservationsList.innerHTML = '';
+
+            try {
+                const storedReservations = localStorage.getItem('ncnu_shuttle_reservations');
+                if (!storedReservations) {
+                    reservationsList.innerHTML = `
+                        <div class="text-center py-4 text-gray-500">
+                            <i class="fas fa-calendar-plus text-2xl mb-2"></i>
+                            <p>尚無預約記錄</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const reservations = JSON.parse(storedReservations);
+                const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
+                
+                // 過濾當前用戶的預約
+                const userReservations = reservations.filter(r => 
+                    r.userId === userData.userId && r.status === 'confirmed'
+                );
+
+                if (userReservations.length === 0) {
+                    reservationsList.innerHTML = `
+                        <div class="text-center py-4 text-gray-500">
+                            <i class="fas fa-calendar-plus text-2xl mb-2"></i>
+                            <p>尚無預約記錄</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // 顯示預約項目
+                userReservations.forEach(reservation => {
+                    const dateObj = new Date(reservation.date);
+                    const formattedDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
+                    
+                    const reservationItem = document.createElement('div');
+                    reservationItem.className = 'reservation-card bg-white border border-gray-200 rounded-lg overflow-hidden';
+                    reservationItem.innerHTML = `
+                        <div class="reservation-item p-4 flex justify-between items-center" onclick="toggleReservationCard(this)">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-bus text-green-600 text-sm"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium text-gray-800">${formattedDate} ${reservation.timeSlot.id}</div>
+                                    <div class="text-sm text-gray-600">${reservation.timeSlot.time}</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">已預約</span>
+                                <i class="fas fa-chevron-down text-gray-400 transition-transform"></i>
+                            </div>
+                        </div>
+                        <div class="reservation-details px-4 pb-4 hidden">
+                            <div class="border-t border-gray-100 pt-3 space-y-2">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">路線：</span>
+                                    <span class="font-medium">${reservation.timeSlot.route}</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">下車站：</span>
+                                    <span class="font-medium">${reservation.station}</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">預約時間：</span>
+                                    <span class="font-medium">${new Date(reservation.reservationTime).toLocaleString('zh-TW')}</span>
+                                </div>
+                                <button 
+                                    onclick="cancelExistingReservation('${reservation.id}')" 
+                                    class="w-full mt-3 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg text-sm transition flex items-center justify-center"
+                                >
+                                    <i class="fas fa-times mr-2"></i>取消預約
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    reservationsList.appendChild(reservationItem);
+                });
+
+            } catch (error) {
+                console.error('載入預約記錄失敗:', error);
+                reservationsList.innerHTML = `
+                    <div class="text-center py-4 text-red-500">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                        <p>載入預約記錄失敗</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 切換預約卡片展開/收合
+        function toggleReservationCard(element) {
+            const card = element.closest('.reservation-card');
+            const details = card.querySelector('.reservation-details');
+            const icon = card.querySelector('.fa-chevron-down');
+            
+            card.classList.toggle('expanded');
+            details.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
+        }
+
+        // 取消現有預約
+        function cancelExistingReservation(reservationId) {
+            if (!confirm('確定要取消這個預約嗎？')) {
+                return;
+            }
+
+            try {
+                const reservations = JSON.parse(localStorage.getItem('ncnu_shuttle_reservations') || '[]');
+                const reservationIndex = reservations.findIndex(r => r.id === reservationId);
+                
+                if (reservationIndex !== -1) {
+                    reservations[reservationIndex].status = 'cancelled';
+                    localStorage.setItem('ncnu_shuttle_reservations', JSON.stringify(reservations));
+                    
+                    // 發送取消通知
+                    sendLineNotification('cancel', reservationId);
+                    
+                    alert('預約已取消');
+                    loadExistingReservations(); // 重新載入列表
+                }
+            } catch (error) {
+                console.error('取消預約失敗:', error);
+                alert('取消預約失敗，請重試');
+            }
         }
 
         // 生成日曆日期
@@ -533,10 +692,13 @@
                     const reservationId = saveReservation();
                     
                     // 發送 LINE 推播
-                    sendLineNotification(reservationId);
+                    sendLineNotification('new', reservationId);
                     
                     // 顯示成功訊息
                     showSuccessMessage(reservationId);
+                    
+                    // 重新載入預約列表
+                    loadExistingReservations();
                     
                 } catch (error) {
                     console.error('預約失敗:', error);
@@ -618,7 +780,7 @@
         }
 
         // 發送 LINE 推播通知
-        async function sendLineNotification(reservationId) {
+        async function sendLineNotification(type, reservationId) {
             try {
                 const reservations = JSON.parse(localStorage.getItem('ncnu_shuttle_reservations') || '[]');
                 const reservation = reservations.find(r => r.id === reservationId);
@@ -632,65 +794,125 @@
                 const dateObj = new Date(reservation.date);
                 const formattedDate = `${dateObj.getFullYear()}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getDate().toString().padStart(2, '0')}`;
                 
-                // 預約成功 FLEX 訊息
-                const flexMessage = {
-                    type: "flex",
-                    altText: "穿山甲專車新預約",
-                    contents: {
-                        type: "bubble",
-                        header: {
-                            type: "box",
-                            layout: "vertical",
-                            contents: [
-                                {
-                                    type: "text",
-                                    text: "暨大生活圈 Life Circle",
-                                    weight: "bold",
-                                    size: "lg",
-                                    color: "#FFFFFF"
-                                },
-                                {
-                                    type: "text",
-                                    text: "穿山甲專車新預約",
-                                    size: "md",
-                                    color: "#FFFFFF"
-                                }
-                            ],
-                            backgroundColor: "#06C755"
-                        },
-                        body: {
-                            type: "box",
-                            layout: "vertical",
-                            contents: [
-                                {
-                                    type: "text",
-                                    text: `日期：${formattedDate}`,
-                                    wrap: true
-                                },
-                                {
-                                    type: "text",
-                                    text: `班次：${reservation.timeSlot.id} | ${reservation.timeSlot.time} ${reservation.timeSlot.route}`,
-                                    wrap: true
-                                },
-                                {
-                                    type: "text",
-                                    text: `姓名：${reservation.userName}`,
-                                    wrap: true
-                                },
-                                {
-                                    type: "text",
-                                    text: `電話：${reservation.userPhone}`,
-                                    wrap: true
-                                },
-                                {
-                                    type: "text",
-                                    text: `下車：${reservation.station}`,
-                                    wrap: true
-                                }
-                            ]
+                let flexMessage;
+                
+                if (type === 'new') {
+                    // 新預約 FLEX 訊息
+                    flexMessage = {
+                        type: "flex",
+                        altText: "穿山甲專車新預約",
+                        contents: {
+                            type: "bubble",
+                            header: {
+                                type: "box",
+                                layout: "vertical",
+                                contents: [
+                                    {
+                                        type: "text",
+                                        text: "暨大生活圈 Life Circle",
+                                        weight: "bold",
+                                        size: "lg",
+                                        color: "#FFFFFF"
+                                    },
+                                    {
+                                        type: "text",
+                                        text: "穿山甲專車新預約",
+                                        size: "md",
+                                        color: "#FFFFFF"
+                                    }
+                                ],
+                                backgroundColor: "#06C755"
+                            },
+                            body: {
+                                type: "box",
+                                layout: "vertical",
+                                contents: [
+                                    {
+                                        type: "text",
+                                        text: `日期：${formattedDate}`,
+                                        wrap: true
+                                    },
+                                    {
+                                        type: "text",
+                                        text: `班次：${reservation.timeSlot.id} | ${reservation.timeSlot.time} ${reservation.timeSlot.route}`,
+                                        wrap: true
+                                    },
+                                    {
+                                        type: "text",
+                                        text: `姓名：${reservation.userName}`,
+                                        wrap: true
+                                    },
+                                    {
+                                        type: "text",
+                                        text: `電話：${reservation.userPhone}`,
+                                        wrap: true
+                                    },
+                                    {
+                                        type: "text",
+                                        text: `下車：${reservation.station}`,
+                                        wrap: true
+                                    }
+                                ]
+                            }
                         }
-                    }
-                };
+                    };
+                } else if (type === 'cancel') {
+                    // 取消預約 FLEX 訊息
+                    flexMessage = {
+                        type: "flex",
+                        altText: "穿山甲專車預約取消",
+                        contents: {
+                            type: "bubble",
+                            header: {
+                                type: "box",
+                                layout: "vertical",
+                                contents: [
+                                    {
+                                        type: "text",
+                                        text: "暨大生活圈 Life Circle",
+                                        weight: "bold",
+                                        size: "lg",
+                                        color: "#FFFFFF"
+                                    },
+                                    {
+                                        type: "text",
+                                        text: "穿山甲專車預約取消",
+                                        size: "md",
+                                        color: "#FFFFFF"
+                                    }
+                                ],
+                                backgroundColor: "#FF6B6B"
+                            },
+                            body: {
+                                type: "box",
+                                layout: "vertical",
+                                contents: [
+                                    {
+                                        type: "text",
+                                        text: `日期：${formattedDate}`,
+                                        wrap: true
+                                    },
+                                    {
+                                        type: "text",
+                                        text: `姓名：${reservation.userName}`,
+                                        wrap: true
+                                    },
+                                    {
+                                        type: "text",
+                                        text: `班次：${reservation.timeSlot.id} | ${reservation.timeSlot.time} ${reservation.timeSlot.route}`,
+                                        wrap: true
+                                    },
+                                    {
+                                        type: "text",
+                                        text: "狀態：已取消",
+                                        wrap: true,
+                                        color: "#FF6B6B"
+                                    }
+                                ]
+                            }
+                        }
+                    };
+                }
                 
                 // 發送到 LINE 群組
                 await fetch('https://api.line.me/v2/bot/message/push', {
@@ -705,7 +927,7 @@
                     })
                 });
                 
-                console.log('預約通知已發送');
+                console.log(`${type === 'new' ? '新預約' : '取消'}通知已發送`);
                 
             } catch (error) {
                 console.error('發送 LINE 通知失敗:', error);
