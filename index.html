@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>暨大接駁車 - 首頁</title>
+    <title>暨大接駁車 - LINE Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .hero-pattern {
-            background-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-image: linear-gradient(135deg, #06C755 0%, #05B04E 100%);
         }
     </style>
 </head>
@@ -18,7 +18,7 @@
         <div class="max-w-6xl mx-auto px-4 py-3">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                    <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
                         <i class="fas fa-bus text-white text-sm"></i>
                     </div>
                     <span class="font-bold text-gray-800">暨大接駁車</span>
@@ -33,31 +33,25 @@
     <!-- 主要內容 -->
     <main class="max-w-md mx-auto mt-10 px-4">
         <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
-            <!-- 歡迎區 -->
+            <!-- LINE Login 區 -->
             <div class="hero-pattern text-white p-8 text-center">
                 <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-bus text-3xl"></i>
+                    <i class="fab fa-line text-3xl"></i>
                 </div>
                 <h1 class="text-2xl font-bold mb-2">暨大接駁車服務</h1>
-                <p class="text-purple-100">便捷的校園交通解決方案</p>
+                <p class="text-green-100">使用 LINE 帳號快速登入</p>
             </div>
 
-            <!-- 功能選項 -->
+            <!-- 登入區 -->
             <div class="p-8 space-y-6">
                 <div class="text-center mb-6">
                     <h2 class="text-xl font-semibold text-gray-800 mb-2">歡迎使用接駁車系統</h2>
-                    <p class="text-gray-600">請選擇以下選項開始使用</p>
+                    <p class="text-gray-600">請使用 LINE 帳號登入以繼續使用服務</p>
                 </div>
 
-                <!-- 註冊按鈕 -->
-                <a href="register.html" class="block w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition duration-200 shadow-lg text-center">
-                    <i class="fas fa-user-plus mr-2"></i>
-                    會員註冊
-                </a>
-
-                <!-- 登入按鈕 -->
-                <button id="loginBtn" class="w-full bg-white border border-purple-600 text-purple-600 hover:bg-purple-50 font-bold py-4 px-6 rounded-xl transition duration-200 text-center">
-                    <i class="fas fa-sign-in-alt mr-2"></i>
+                <!-- LINE Login 按鈕 -->
+                <button id="lineLoginBtn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-6 rounded-xl transition duration-200 shadow-lg flex items-center justify-center">
+                    <i class="fab fa-line text-xl mr-3"></i>
                     LINE 快速登入
                 </button>
 
@@ -66,8 +60,8 @@
                     <div class="flex items-start">
                         <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
                         <div class="text-sm text-blue-800">
-                            <p class="font-medium">首次使用請先註冊</p>
-                            <p class="mt-1">註冊完成後即可預約接駁車服務</p>
+                            <p class="font-medium">使用流程說明</p>
+                            <p class="mt-1">1. LINE 登入 → 2. 會員註冊 → 3. 預約接駁車</p>
                         </div>
                     </div>
                 </div>
@@ -78,65 +72,90 @@
         <div class="grid grid-cols-2 gap-4 mt-8">
             <div class="bg-white rounded-xl p-4 text-center shadow-sm">
                 <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <i class="fas fa-calendar-check text-green-600"></i>
+                    <i class="fab fa-line text-green-600"></i>
+                </div>
+                <p class="text-sm font-medium text-gray-700">LINE 整合</p>
+            </div>
+            <div class="bg-white rounded-xl p-4 text-center shadow-sm">
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i class="fas fa-calendar-check text-blue-600"></i>
                 </div>
                 <p class="text-sm font-medium text-gray-700">線上預約</p>
             </div>
             <div class="bg-white rounded-xl p-4 text-center shadow-sm">
-                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <i class="fas fa-bell text-blue-600"></i>
+                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i class="fas fa-bell text-purple-600"></i>
                 </div>
                 <p class="text-sm font-medium text-gray-700">即時通知</p>
             </div>
             <div class="bg-white rounded-xl p-4 text-center shadow-sm">
-                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <i class="fas fa-map-marker-alt text-purple-600"></i>
-                </div>
-                <p class="text-sm font-medium text-gray-700">多站點選擇</p>
-            </div>
-            <div class="bg-white rounded-xl p-4 text-center shadow-sm">
                 <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <i class="fas fa-clock text-orange-600"></i>
+                    <i class="fas fa-map-marker-alt text-orange-600"></i>
                 </div>
-                <p class="text-sm font-medium text-gray-700">時刻表查詢</p>
+                <p class="text-sm font-medium text-gray-700">多站點</p>
             </div>
         </div>
     </main>
 
     <script>
-        // 模擬 LINE 登入
-        document.getElementById('loginBtn').addEventListener('click', function() {
-            // 模擬 LINE 用戶資料
-            const mockUserId = 'U' + Math.random().toString(36).substr(2, 9);
-            const mockUserData = {
-                userId: mockUserId,
-                displayName: 'LINE用戶',
-                isRegistered: false
-            };
+        // LINE Login 處理
+        document.getElementById('lineLoginBtn').addEventListener('click', function() {
+            const btn = this;
+            const originalText = btn.innerHTML;
             
-            // 儲存到 sessionStorage
-            sessionStorage.setItem('userData', JSON.stringify(mockUserData));
+            // 顯示載入中
+            btn.innerHTML = '<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>登入中...';
+            btn.disabled = true;
             
-            // 檢查是否已註冊
+            // 模擬 LINE Login 流程
+            setTimeout(() => {
+                // 模擬從 LINE 獲取用戶資料
+                const lineUserData = {
+                    userId: 'U' + Math.random().toString(36).substr(2, 9),
+                    displayName: 'LINE用戶',
+                    pictureUrl: '',
+                    statusMessage: ''
+                };
+                
+                // 儲存 LINE 用戶資料到 sessionStorage
+                sessionStorage.setItem('lineUserData', JSON.stringify(lineUserData));
+                
+                // 檢查是否已註冊
+                checkUserRegistration(lineUserData.userId);
+                
+            }, 1500);
+        });
+
+        // 檢查用戶是否已註冊
+        function checkUserRegistration(lineUserId) {
             const existingUsers = JSON.parse(localStorage.getItem('ncnu_shuttle_users') || '{"users": []}');
-            const userExists = existingUsers.users.find(user => user.lineUserId === mockUserId);
+            const userExists = existingUsers.users.find(user => user.lineUserId === lineUserId);
             
             if (userExists) {
-                // 用戶已註冊，導向主頁面
-                mockUserData.isRegistered = true;
-                mockUserData.displayName = userExists.displayName;
-                mockUserData.phone = userExists.phone;
-                mockUserData.studentId = userExists.studentId;
-                mockUserData.department = userExists.department;
-                sessionStorage.setItem('userData', JSON.stringify(mockUserData));
+                // 用戶已註冊，建立 session 資料並導向主頁面
+                const userData = {
+                    userId: lineUserId,
+                    displayName: userExists.displayName,
+                    phone: userExists.phone,
+                    studentId: userExists.studentId,
+                    department: userExists.department,
+                    isRegistered: true
+                };
+                sessionStorage.setItem('userData', JSON.stringify(userData));
                 
                 window.location.href = 'main.html';
             } else {
                 // 用戶未註冊，導向註冊頁面
-                alert('檢測到您尚未註冊，將導向註冊頁面');
+                const userData = {
+                    userId: lineUserId,
+                    displayName: '', // 註冊時可以填入
+                    isRegistered: false
+                };
+                sessionStorage.setItem('userData', JSON.stringify(userData));
+                
                 window.location.href = 'register.html';
             }
-        });
+        }
 
         // 檢查是否已有登入狀態
         window.addEventListener('load', function() {
