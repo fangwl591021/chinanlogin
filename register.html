@@ -1,76 +1,59 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>註冊 - 穿山甲專車</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- 移除原本的 liff SDK 引用 -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>穿山甲專車註冊</title>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🚐 穿山甲專車</h1>
-            <p>會員註冊</p>
-        </div>
+<body style="text-align:center;padding:40px;font-family:sans-serif">
+<h2>會員註冊</h2>
+<p>請填寫以下資料以完成註冊</p>
+<div>
+  <input id="name" placeholder="姓名"><br><br>
+  <input id="phone" placeholder="電話"><br><br>
+  <input id="sid" placeholder="學號"><br><br>
+  <input id="dept" placeholder="科系"><br><br>
+  <button onclick="submitForm()">送出註冊</button>
+</div>
 
-        <div id="loading" class="loading">
-            <p>載入中...</p>
-        </div>
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwN2PoJQBvmkzo1E5IdsbQSLCTg5y4QxshYfab9o2M-GfMl1YC_hO8RbHeVH8PcpCRI-w/exec";
 
-        <div id="registerForm" class="form-container" style="display: none;">
-            <h2>填寫基本資料</h2>
-            <form id="userForm">
-                <div class="form-group">
-                    <label for="name">姓名 *</label>
-                    <input type="text" id="name" name="name" required>
-                </div>
+async function submitForm() {
+  const userData = JSON.parse(sessionStorage.getItem("userData"));
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const sid = document.getElementById("sid").value.trim();
+  const dept = document.getElementById("dept").value.trim();
+  if (!name || !phone || !sid || !dept) return alert("請完整填寫！");
 
-                <div class="form-group">
-                    <label for="phone">手機號碼 *</label>
-                    <input type="tel" id="phone" name="phone" pattern="09[0-9]{8}" required>
-                    <small>格式：0912345678</small>
-                </div>
+  const body = {
+    action: "registerUser",
+    data: {
+      userId: userData.userId,
+      name, phone, sid, dept,
+      registerTime: new Date().toISOString()
+    }
+  };
 
-                <div class="form-group">
-                    <label for="studentId">學號</label>
-                    <input type="text" id="studentId" name="studentId">
-                </div>
-
-                <div class="form-group">
-                    <label for="department">科系</label>
-                    <input type="text" id="department" name="department">
-                </div>
-
-                <div class="form-group">
-                    <label for="agreement">
-                        <input type="checkbox" id="agreement" name="agreement" required>
-                        我同意服務條款及隱私權政策
-                    </label>
-                </div>
-
-                <button type="submit" class="btn-primary" id="submitBtn">完成註冊</button>
-            </form>
-        </div>
-
-        <div id="userInfo" class="user-info" style="display: none;">
-            <h2>🎉 註冊成功！</h2>
-            <div class="info-card">
-                <p><strong>姓名：</strong><span id="infoName"></span></p>
-                <p><strong>手機：</strong><span id="infoPhone"></span></p>
-                <p><strong>學號：</strong><span id="infoStudentId"></span></p>
-                <p><strong>科系：</strong><span id="infoDepartment"></span></p>
-            </div>
-            <button onclick="goToBooking()" class="btn-primary">開始預約專車</button>
-        </div>
-
-        <div id="errorMessage" class="error-container" style="display: none;">
-            <h2>系統錯誤</h2>
-            <p id="errorText"></p>
-            <button onclick="location.reload()" class="btn-primary">重新整理</button>
-        </div>
-    </div>
-
-    <script src="register.js"></script>
+  const res = await fetch(SCRIPT_URL, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  const result = await res.json();
+  if (result.success) {
+    userData.isRegistered = true;
+    userData.phone = phone;
+    userData.schoolId = sid;
+    userData.dept = dept;
+    userData.displayName = name;
+    sessionStorage.setItem("userData", JSON.stringify(userData));
+    alert("註冊成功！");
+    location.href = "main.html";
+  } else {
+    alert("註冊失敗：" + result.message);
+  }
+}
+</script>
 </body>
 </html>
