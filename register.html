@@ -123,7 +123,6 @@
                     <option value="外國語文學系">外國語文學系</option>
                     <option value="經濟學系">經濟學系</option>
                     <option value="財務金融學系">財務金融學系</option>
-                    <!-- 其他科系... -->
                 </select>
             </div>
 
@@ -148,11 +147,12 @@
     </div>
 
     <script>
-        // 在 register.html 的 CONFIG 更新為：
-const CONFIG = {
-    GITHUB_TOKEN: "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",
-    GIST_ID: "802416482763775c3c17680ffea14e7e"
-};
+        // 系統配置
+        const CONFIG = {
+            GITHUB_TOKEN: "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",
+            GIST_ID: "802416482763775c3c17680ffea14e7e"
+        };
+
         // 初始化頁面
         window.addEventListener('load', function() {
             initializePage();
@@ -197,12 +197,23 @@ const CONFIG = {
         }
 
         // 檢查是否已註冊
-        function checkIfRegistered(lineUserId) {
+        async function checkIfRegistered(lineUserId) {
             try {
+                // 檢查本地存儲
                 const existingUsers = JSON.parse(localStorage.getItem('ncnu_shuttle_users') || '{"users": []}');
-                const existingUser = existingUsers.users?.find(user => user.lineUserId === lineUserId);
+                const existingUserLocal = existingUsers.users?.find(user => user.lineUserId === lineUserId);
                 
-                if (existingUser) {
+                if (existingUserLocal) {
+                    alert('您已完成註冊，將導向預約頁面');
+                    window.location.href = 'main.html';
+                    return;
+                }
+                
+                // 檢查 GitHub Gist 中的資料
+                const data = await getGistData();
+                const existingUserGist = data.users?.find(user => user.lineUserId === lineUserId);
+                
+                if (existingUserGist) {
                     alert('您已完成註冊，將導向預約頁面');
                     window.location.href = 'main.html';
                 }
@@ -211,8 +222,73 @@ const CONFIG = {
             }
         }
 
+        // 從 GitHub Gist 取得資料
+        async function getGistData() {
+            const response = await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, {
+                headers: {
+                    'Authorization': `token ${CONFIG.GITHUB_TOKEN}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`GitHub API 錯誤: ${response.status}`);
+            }
+            
+            const gist = await response.json();
+            return JSON.parse(gist.files['data.json'].content);
+        }
+
+        // 更新 GitHub Gist 資料
+        async function updateGistData(userData) {
+            try {
+                // 先取得目前的資料
+                const currentData = await getGistData();
+                
+                // 檢查是否已存在相同 lineUserId 或 studentId 的用戶
+                const existingUser = currentData.users?.find(user => 
+                    user.lineUserId === userData.lineUserId || 
+                    user.studentId === userData.studentId
+                );
+                
+                if (existingUser) {
+                    throw new Error('該用戶或學號已註冊');
+                }
+                
+                // 新增用戶到 users 陣列
+                if (!currentData.users) {
+                    currentData.users = [];
+                }
+                currentData.users.push(userData);
+                
+                // 更新到 GitHub Gist
+                const response = await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        files: {
+                            'data.json': {
+                                content: JSON.stringify(currentData, null, 2)
+                            }
+                        }
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`更新失敗: ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('更新 Gist 資料失敗:', error);
+                throw error;
+            }
+        }
+
         // 表單提交處理
-        document.getElementById('registerForm').addEventListener('submit', function(e) {
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const submitBtn = document.getElementById('submitBtn');
@@ -229,7 +305,8 @@ const CONFIG = {
                     phone: document.getElementById('phone').value.trim(),
                     studentId: document.getElementById('studentId').value.trim(),
                     department: document.getElementById('department').value,
-                    registerTime: new Date().toISOString()
+                    registerTime: new Date().toISOString(),
+                    isAdmin: false  // 預設為一般用戶
                 };
 
                 // 表單驗證
@@ -239,18 +316,34 @@ const CONFIG = {
                     return;
                 }
 
-                // 儲存到本地存儲
+                // 儲存到 GitHub Gist
+                await updateGistData(formData);
+                
+                // 同時儲存到本地存儲作為備份
                 saveRegistration(formData);
                 
                 // 更新本地用戶資料
                 updateLocalUserData(formData);
                 
-                alert('註冊成功！');
-                window.location.href = 'main.html';
+                // 顯示成功頁面選項
+                document.getElementById('registerForm').innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-check text-green-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">註冊成功！</h3>
+                        <p class="text-gray-600 mb-6">您的帳號已成功建立</p>
+                        <div class="flex gap-4 justify-center">
+                            <button onclick="goToBooking()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition">
+                                <i class="fas fa-bus mr-2"></i>開始預約
+                            </button>
+                        </div>
+                    </div>
+                `;
                 
             } catch (error) {
                 console.error('註冊失敗:', error);
-                alert('註冊失敗，請稍後再試');
+                alert('註冊失敗: ' + error.message);
                 submitBtn.disabled = false;
                 loading.classList.add('hidden');
             }
@@ -311,6 +404,11 @@ const CONFIG = {
             userData.department = formData.department;
             userData.displayName = formData.displayName;
             sessionStorage.setItem('userData', JSON.stringify(userData));
+        }
+
+        // 前往預約頁面
+        function goToBooking() {
+            window.location.href = 'main.html';
         }
     </script>
 </body>
