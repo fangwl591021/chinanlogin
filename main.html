@@ -6,126 +6,6 @@
   <title>暨大接駁車預約系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    /* 新增中途停靠點選擇相關樣式 */
-    .route-btn {
-      flex: 0 0 calc(50% - 8px);
-      box-sizing: border-box;
-      padding: 10px 6px;
-      border-radius: 8px;
-      font-size: 14px;
-      line-height: 1.3;
-      cursor: pointer;
-      text-align: center;
-      min-height: 70px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      border: 1px solid;
-    }
-
-    /* A1, B1 路線 - 綠色 */
-    .route-btn.A1,
-    .route-btn.B1 {
-      background: #e8f5e9;
-      color: #2e7d32;
-      border-color: #4caf50;
-    }
-
-    /* A2, B2 路線 - 藍色 */
-    .route-btn.A2,
-    .route-btn.B2 {
-      background: #e8f0fe;
-      color: #1a73e8;
-      border-color: #4285f4;
-    }
-
-    .route-btn .line1 {
-      font-weight: bold;
-      font-size: 15px;
-      margin-bottom: 2px;
-    }
-    .route-btn .line2 {
-      font-size: 13px;
-      margin-bottom: 2px;
-      color: #666;
-    }
-    .route-btn .line3 {
-      font-size: 12px;
-      color: #888;
-    }
-
-    /* 已滿狀態 */
-    .route-btn.full { 
-      background: #eee; 
-      color: #999; 
-      border-color: #ccc; 
-      cursor: not-allowed; 
-    }
-    .route-btn.full .line1,
-    .route-btn.full .line2,
-    .route-btn.full .line3 {
-      color: #999;
-    }
-
-    /* 選擇狀態 */
-    .route-btn.selected.A1,
-    .route-btn.selected.B1 {
-      background: #2e7d32; 
-      color: #fff;
-      border-color: #1b5e20;
-    }
-    .route-btn.selected.A2,
-    .route-btn.selected.B2 {
-      background: #1a73e8; 
-      color: #fff;
-      border-color: #0d47a1;
-    }
-    .route-btn.selected .line1,
-    .route-btn.selected .line2,
-    .route-btn.selected .line3 {
-      color: #fff;
-    }
-
-    /* 公休日提示 */
-    .notice {
-      padding: 10px;
-      margin-top: 10px;
-      border-radius: 6px;
-    }
-    .notice.holiday {
-      background: #f9f9f9;
-      color: #b71c1c;
-      border: 1px dashed #e57373;
-    }
-
-    /* 響應式調整 */
-    @media (max-width: 480px) {
-      .route-btn {
-        flex: 0 0 calc(50% - 6px);
-        min-height: 65px;
-        padding: 8px 4px;
-      }
-      .route-btn .line1 {
-        font-size: 14px;
-      }
-      .route-btn .line2 {
-        font-size: 14px;
-      }
-      .route-btn .line3 {
-        font-size: 14px;
-      }
-    }
-
-    @media (max-width: 360px) {
-      .route-btn {
-        flex: 0 0 100%;
-        min-height: 60px;
-        padding: 6px 4px;
-      }
-    }
-  </style>
 </head>
 <body class="bg-gray-50">
   <!-- 導航列 -->
@@ -136,7 +16,7 @@
           <i class="fas fa-user text-purple-600"></i>
         </div>
         <div>
-          <p id="userName" class="font-semibold">載入中...</p>
+          <p id="userName" class="font-semibold">Tonyfang</p>
           <p class="text-xs text-purple-200">暨大接駁車預約</p>
         </div>
       </div>
@@ -157,10 +37,9 @@
         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
         onchange="loadRoutes()"
       >
-      <div id="holidayNotice" class="notice" style="display:none;"></div>
     </div>
 
-    <!-- 車次列表 - 兩排設計 -->
+    <!-- 車次列表 - 兩排設計，文字靠左 -->
     <div id="routesList" class="space-y-4">
       <div class="text-center py-12 text-gray-500">
         <i class="fas fa-calendar-day text-4xl mb-4 opacity-50"></i>
@@ -168,30 +47,15 @@
       </div>
     </div>
 
-    <!-- 中途停靠點選擇 -->
-    <div id="stopSelection" class="bg-white rounded-xl shadow-md p-6 mb-6 hidden">
-      <h2 class="text-xl font-bold text-gray-800 mb-4">選擇下車站</h2>
-      <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-2">下車站 *</label>
-        <select id="toStop" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-          <option value="">請先選擇搭乘時段</option>
-        </select>
-      </div>
-      <div class="flex gap-3">
-        <button onclick="confirmStopSelection()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg transition">
-          確認選擇
-        </button>
-        <button onclick="cancelStopSelection()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 rounded-lg transition">
-          取消
-        </button>
-      </div>
-    </div>
-
     <!-- 我的預約 -->
     <div class="bg-white rounded-xl shadow-md p-6 mt-6">
       <h2 class="text-xl font-bold text-gray-800 mb-4">我的預約</h2>
       <div id="myBookings" class="space-y-3">
-        <p class="text-center text-gray-500 py-8">載入中...</p>
+        <div class="text-center text-gray-500 py-8">
+          <i class="fas fa-calendar-check text-3xl mb-3 opacity-50"></i>
+          <p>尚無預約記錄</p>
+          <p class="text-sm mt-2">完成預約後將顯示在這裡</p>
+        </div>
       </div>
     </div>
   </div>
@@ -224,56 +88,51 @@
       MAX_SEATS: 6,
       LINE_TOKEN: 'hhFVS+V7Fp4zIFZ0sv6vq1WuvKmIKzsK6RlZkAOftxr2Lob218VgP+/PK+wIhwhw8HTlOobneGQhxTllrjt8uAzwaCGgWZ5yokIKZSVID+ccNDJmKxElxNQatB6NUObNTtofnMdDZTOLx12X4QRRdwdB04t89/1O/w1cDnyilFU=',
       LINE_GROUP_ID: 'C596050d1193b9b930ac25469c61ba12a',
-      SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwN2PoJQBvmkzo1E5IdsbQSLCTg5y4QxshYfab9o2M-GfMl1YC_hO8RbHeVH8PcpCRI-w/exec' // 需要部署
+      SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwN2PoJQBvmkzo1E5IdsbQSLCTg5y4QxshYfab9o2M-GfMl1YC_hO8RbHeVH8PcpCRI-w/exec'
     };
 
     // 路線設定
     const ROUTES = [
       { 
         id: 'A1', 
-        name: 'A1 | 22:00–22:30 暨大→埔里總站', 
-        from: '行政大樓', 
-        to: '埔里總站', 
+        name: 'A1', 
         time: '22:00–22:30',
-        icon: 'fa-bus',
-        direction: 'outbound'
+        direction: '暨大→埔里總站',
+        from: '行政大樓', 
+        to: '埔里總站',
+        icon: 'fa-bus'
       },
       { 
         id: 'B1', 
-        name: 'B1 | 22:30–23:00 埔里總站→暨大', 
-        from: '埔里總站', 
-        to: '暨大校區', 
+        name: 'B1', 
         time: '22:30–23:00',
-        icon: 'fa-bus',
-        direction: 'return'
+        direction: '埔里總站→暨大',
+        from: '埔里總站', 
+        to: '暨大校區',
+        icon: 'fa-bus'
       },
       { 
         id: 'A2', 
-        name: 'A2 | 23:00–23:30 暨大→埔里總站', 
-        from: '行政大樓', 
-        to: '埔里總站', 
+        name: 'A2', 
         time: '23:00–23:30',
-        icon: 'fa-bus',
-        direction: 'outbound'
+        direction: '暨大→埔里總站',
+        from: '行政大樓', 
+        to: '埔里總站',
+        icon: 'fa-bus'
       },
       { 
         id: 'B2', 
-        name: 'B2 | 23:30–24:00 埔里總站→暨大', 
-        from: '埔里總站', 
-        to: '暨大校區', 
+        name: 'B2', 
         time: '23:30–24:00',
-        icon: 'fa-bus',
-        direction: 'return'
+        direction: '埔里總站→暨大',
+        from: '埔里總站', 
+        to: '暨大校區',
+        icon: 'fa-bus'
       }
     ];
 
-    // 停靠站設定
-    const stopsOutbound = ["行政大樓", "中餐廳", "科技學院", "學人會館", "中城", "下城", "坪頂", "愛蘭橋", "大成國小", "中山安七街口", "榮民診所", "埔里酒廠", "埔里總站"];
-    const stopsReturn = ["埔里總站", "埔里酒廠", "榮民診所", "中山安七街口", "大成國小", "愛蘭橋", "坪頂", "下城", "中城", "學人會館", "科技學院", "中餐廳", "行政大樓"];
-
     let currentUser = null;
     let selectedRoute = null;
-    let isHoliday = false;
 
     // 初始化
     window.addEventListener('load', function() {
@@ -296,7 +155,7 @@
         // 測試模式
         currentUser = {
           userId: 'U' + Math.random().toString(36).substr(2, 9),
-          displayName: '測試用戶',
+          displayName: 'Tonyfang',
           pictureUrl: '',
           loginTime: new Date().toISOString()
         };
@@ -323,7 +182,7 @@
       loadRoutes();
     }
 
-    // 載入車次 - 改為兩排設計
+    // 載入車次 - 兩排設計，文字靠左
     async function loadRoutes() {
       const date = document.getElementById('bookingDate').value;
       if (!date) return;
@@ -342,10 +201,55 @@
           const isFull = available <= 0;
           
           html += `
-            <div class="route-btn ${route.id} ${isFull ? 'full' : ''}" onclick="${isFull ? '' : `selectRoute('${route.id}', '${route.name}', ${isFull})`}">
-              <div class="line1">${route.name.split('|')[0]}</div>
-              <div class="line2">${route.name.split('|')[1]}</div>
-              <div class="line3">${isFull ? '已額滿' : `剩餘 ${available}/${CONFIG.MAX_SEATS} 位`}</div>
+            <div class="bg-white rounded-xl shadow-md p-5 hover:shadow-lg transition ${isFull ? 'opacity-60' : ''}">
+              <div class="flex flex-col h-full">
+                <div class="flex-1">
+                  <!-- 路線資訊 - 文字靠左 -->
+                  <div class="text-left space-y-2">
+                    <div class="flex items-center gap-2">
+                      <div class="w-8 h-8 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center">
+                        <i class="${route.icon} text-sm"></i>
+                      </div>
+                      <h3 class="text-lg font-bold text-gray-800">${route.name}</h3>
+                    </div>
+                    
+                    <div class="space-y-1 pl-10">
+                      <div class="flex items-center gap-2 text-gray-700">
+                        <i class="fas fa-clock text-purple-500 text-sm"></i>
+                        <span class="text-sm">${route.time}</span>
+                      </div>
+                      
+                      <div class="flex items-center gap-2 text-gray-700">
+                        <i class="fas fa-route text-purple-500 text-sm"></i>
+                        <span class="text-sm">${route.direction}</span>
+                      </div>
+                      
+                      <div class="flex items-center gap-2 text-gray-600 text-xs">
+                        <i class="fas fa-map-marker-alt text-purple-500"></i>
+                        <span>${route.from} → ${route.to}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- 座位資訊和預約按鈕 -->
+                <div class="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
+                  <span class="text-xs px-3 py-1 rounded-full ${isFull ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}">
+                    ${isFull ? '已額滿' : `剩餘 ${available}/${CONFIG.MAX_SEATS} 位`}
+                  </span>
+                  <button 
+                    onclick="openBookingModal('${route.id}', '${date}')"
+                    ${isFull ? 'disabled' : ''}
+                    class="px-4 py-2 rounded-lg font-semibold transition ${
+                      isFull 
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                        : 'bg-purple-600 hover:bg-purple-700 text-white'
+                    }"
+                  >
+                    ${isFull ? '已滿' : '預約'}
+                  </button>
+                </div>
+              </div>
             </div>
           `;
         });
@@ -358,105 +262,21 @@
       }
     }
 
-    // 選擇路線
-    function selectRoute(routeId, routeName, isFull) {
-      if (isFull) return;
-      
-      // 移除其他路線的選擇狀態
-      document.querySelectorAll('.route-btn').forEach(btn => {
-        btn.classList.remove('selected');
-      });
-      
-      // 添加當前路線的選擇狀態
-      const selectedBtn = document.querySelector(`.route-btn.${routeId}`);
-      selectedBtn.classList.add('selected');
-      
-      // 設定選擇的路線
-      selectedRoute = ROUTES.find(r => r.id === routeId);
-      
-      // 顯示中途停靠點選擇
-      showStopSelection(selectedRoute);
-    }
-
-    // 顯示中途停靠點選擇
-    function showStopSelection(route) {
-      const stopSelection = document.getElementById('stopSelection');
-      const toStopSelect = document.getElementById('toStop');
-      
-      // 清空現有選項
-      toStopSelect.innerHTML = '<option value="">請選擇下車站</option>';
-      
-      let stops = [];
-      
-      // 根據路線方向設定停靠站
-      if (route.direction === 'outbound') {
-        // A路線：從行政大樓出發，往埔里總站方向
-        stops = stopsOutbound;
-      } else if (route.direction === 'return') {
-        // B路線：從埔里總站出發，往行政大樓方向
-        stops = stopsReturn;
-      }
-      
-      // 過濾掉上車站（不能選擇上車站作為下車站）
-      const fromStop = route.direction === 'outbound' ? '行政大樓' : '埔里總站';
-      const availableStops = stops.filter(stop => stop !== fromStop);
-      
-      // 添加選項
-      availableStops.forEach(stop => {
-        const option = document.createElement('option');
-        option.value = stop;
-        option.textContent = stop;
-        toStopSelect.appendChild(option);
-      });
-      
-      // 顯示停靠點選擇區域
-      stopSelection.classList.remove('hidden');
-      stopSelection.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    // 確認停靠點選擇
-    function confirmStopSelection() {
-      const toStop = document.getElementById('toStop').value;
-      
-      if (!toStop) {
-        alert('請選擇下車站');
-        return;
-      }
-      
-      // 設定選擇的下車站
-      selectedRoute.toStop = toStop;
-      
-      // 隱藏停靠點選擇區域
-      document.getElementById('stopSelection').classList.add('hidden');
-      
-      // 開啟預約確認視窗
-      openBookingModal();
-    }
-
-    // 取消停靠點選擇
-    function cancelStopSelection() {
-      // 隱藏停靠點選擇區域
-      document.getElementById('stopSelection').classList.add('hidden');
-      
-      // 移除路線選擇狀態
-      document.querySelectorAll('.route-btn').forEach(btn => {
-        btn.classList.remove('selected');
-      });
-      
-      selectedRoute = null;
-    }
-
     // 開啟預約確認視窗
-    function openBookingModal() {
-      if (!selectedRoute) return;
+    function openBookingModal(routeId, date) {
+      const route = ROUTES.find(r => r.id === routeId);
+      if (!route) return;
+      
+      selectedRoute = { ...route, date };
       
       const content = document.getElementById('confirmContent');
       content.innerHTML = `
-        <p><strong>車次：</strong>${selectedRoute.name}</p>
-        <p><strong>日期：</strong>${document.getElementById('bookingDate').value}</p>
-        <p><strong>起點：</strong>${selectedRoute.from}</p>
-        <p><strong>下車站：</strong>${selectedRoute.toStop}</p>
-        <p><strong>時間：</strong>${selectedRoute.time}</p>
+        <p><strong>車次：</strong>${route.name}</p>
+        <p><strong>日期：</strong>${date}</p>
+        <p><strong>時間：</strong>${route.time}</p>
+        <p><strong>路線：</strong>${route.direction}</p>
+        <p><strong>起點：</strong>${route.from}</p>
+        <p><strong>終點：</strong>${route.to}</p>
       `;
       
       document.getElementById('confirmModal').style.display = 'flex';
@@ -477,10 +297,11 @@
         userName: currentUser.displayName,
         routeId: selectedRoute.id,
         routeName: selectedRoute.name,
-        date: document.getElementById('bookingDate').value,
+        date: selectedRoute.date,
         from: selectedRoute.from,
-        to: selectedRoute.toStop,
+        to: selectedRoute.to,
         time: selectedRoute.time,
+        direction: selectedRoute.direction,
         createdAt: new Date().toISOString()
       };
       
@@ -495,12 +316,6 @@
         closeModal();
         loadRoutes();
         loadMyBookings();
-        
-        // 重置選擇
-        document.querySelectorAll('.route-btn').forEach(btn => {
-          btn.classList.remove('selected');
-        });
-        selectedRoute = null;
       } catch (error) {
         console.error('預約失敗:', error);
         alert('預約失敗，請重試');
