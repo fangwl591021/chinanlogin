@@ -3,20 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>暨大接駁車 - 預約系統</title>
+  <title>穿山甲專車預約 - 暨大接駁車服務</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    .holiday { background-color: #fee2e2 !important; color: #dc2626 !important; cursor: not-allowed; }
-    .no-service { position: relative; }
-    .no-service::after { content: "停駛"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(220, 38, 38, 0.9); color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-    .selected { background-color: #3b82f6 !important; color: white !important; }
+    .holiday { background-color: #fee2e2 !important; color: #dc2626 !important; cursor: not-allowed !important; }
     .calendar-day { transition: all 0.2s ease; }
-    .calendar-day:not(.disabled):hover { background-color: #dbeafe; }
-    .time-slot { transition: all 0.2s ease; }
-    .time-slot.selected { border-color: #3b82f6; background-color: #dbeafe; }
+    .calendar-day:not(.holiday):hover { background-color: #dbeafe; }
     .calendar-container { display: none; }
     .calendar-container.show { display: block; }
+    .selected { background-color: #3b82f6 !important; color: white !important; }
   </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen p-4">
@@ -56,6 +52,7 @@
 
     <!-- 預約表單 -->
     <form id="reservationForm" class="p-6 space-y-6">
+      <!-- 日期選擇 -->
       <div>
         <label class="block text-lg font-bold text-gray-800 mb-3">
           <i class="fas fa-calendar-alt text-green-500 mr-2"></i>選擇搭乘日期 *
@@ -71,37 +68,64 @@
           </div>
           <div class="grid grid-cols-7 gap-2" id="calendarDays"></div>
         </div>
+
+        <div id="selectedDateDisplay" class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200 hidden">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-blue-800 font-medium">已選擇日期：</p>
+              <p class="text-lg font-bold text-blue-900" id="selectedDateText"></p>
+            </div>
+            <button type="button" id="changeDateBtn" class="text-blue-600 hover:text-blue-800 text-sm">
+              <i class="fas fa-edit mr-1"></i>變更
+            </button>
+          </div>
+        </div>
       </div>
     </form>
-
   </div>
 
   <script>
-    // 🧠 初始化用戶資料
+    // 🧠 初始化頁面
     function initializePage() {
       const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
       const nameEl = document.getElementById('userName');
       const infoEl = document.getElementById('userInfo');
 
       if (!userData.userId || !userData.isRegistered) {
-        const defaultUser = { userId: 'user001', displayName: '方', department: '資訊工程學系', studentId: '114230123', phone: '0912345678', isRegistered: true };
+        const defaultUser = { 
+          userId: 'user001', 
+          displayName: '王子齊 bit.ly/遊戲達人', 
+          department: '電機工程學系', 
+          studentId: '114230145', 
+          phone: '0912345678', 
+          isRegistered: true 
+        };
         sessionStorage.setItem('userData', JSON.stringify(defaultUser));
-        if (nameEl) nameEl.textContent = defaultUser.displayName;
-        if (infoEl) infoEl.textContent = `${defaultUser.department} | ${defaultUser.studentId}`;
-        return;
+        nameEl.textContent = defaultUser.displayName;
+        infoEl.textContent = `${defaultUser.department} | ${defaultUser.studentId}`;
+      } else {
+        nameEl.textContent = userData.displayName || '方';
+        infoEl.textContent = `${userData.department || '資訊工程學系'} | ${userData.studentId || '114230123'}`;
       }
-      if (nameEl) nameEl.textContent = userData.displayName || '方';
-      if (infoEl) infoEl.textContent = `${userData.department || '資訊工程學系'} | ${userData.studentId || '114230123'}`;
     }
 
-    // 🧩 補回 setupEventListeners()
+    // 🧩 設定事件監聽
     function setupEventListeners() {
       const dateBtn = document.getElementById('dateSelectBtn');
+      const changeDateBtn = document.getElementById('changeDateBtn');
       const logoutBtn = document.getElementById('logoutBtn');
 
       if (dateBtn) {
         dateBtn.addEventListener('click', () => {
           document.getElementById('calendarContainer').classList.toggle('show');
+          generateCalendarDays();
+        });
+      }
+
+      if (changeDateBtn) {
+        changeDateBtn.addEventListener('click', () => {
+          document.getElementById('selectedDateDisplay').classList.add('hidden');
+          document.getElementById('calendarContainer').classList.add('show');
         });
       }
 
@@ -115,16 +139,59 @@
       }
     }
 
-    // 🧩 補回 loadExistingReservations()（暫時防呆）
-    function loadExistingReservations() {
-      console.log('📘 預約資料載入完成（示意用）');
+    // 🗓️ 生成月曆
+    function generateCalendarDays() {
+      const calendarDays = document.getElementById('calendarDays');
+      calendarDays.innerHTML = '';
+
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const totalDays = lastDay.getDate();
+      const startWeekday = firstDay.getDay();
+
+      const holidays = []; // 可手動指定日期停駛
+
+      // 補空格
+      for (let i = 0; i < startWeekday; i++) {
+        const blank = document.createElement('div');
+        calendarDays.appendChild(blank);
+      }
+
+      // 日期方格
+      for (let d = 1; d <= totalDays; d++) {
+        const date = new Date(year, month, d);
+        const dayElement = document.createElement('div');
+        dayElement.textContent = d;
+        dayElement.className = 'calendar-day text-center py-2 rounded-lg border border-gray-200 cursor-pointer';
+
+        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+        const isToday = date.toDateString() === today.toDateString();
+
+        if (isToday) dayElement.classList.add('bg-blue-100', 'font-bold');
+        if (isWeekend || holidays.includes(d)) {
+          dayElement.classList.add('holiday');
+        } else {
+          dayElement.addEventListener('click', () => selectDate(date));
+        }
+
+        calendarDays.appendChild(dayElement);
+      }
     }
 
-    // 🔄 啟動初始化
+    // 🟦 選擇日期
+    function selectDate(date) {
+      const formatted = date.toISOString().split('T')[0];
+      document.getElementById('selectedDateText').textContent = formatted;
+      document.getElementById('selectedDateDisplay').classList.remove('hidden');
+      document.getElementById('calendarContainer').classList.remove('show');
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       initializePage();
       setupEventListeners();
-      loadExistingReservations();
     });
   </script>
 </body>
