@@ -3,539 +3,378 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>暨大接駁車 - 預約系統</title>
+    <title>暨大接駁車 - 會員註冊</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .holiday {
-            background-color: #fee2e2 !important;
-            color: #dc2626 !important;
-            cursor: not-allowed;
-        }
-        .no-service {
-            position: relative;
-        }
-        .no-service::after {
-            content: "停駛";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(220, 38, 38, 0.9);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        .selected {
-            background-color: #3b82f6 !important;
-            color: white !important;
-        }
-        .calendar-day {
-            transition: all 0.2s ease;
-        }
-        .calendar-day:not(.disabled):hover {
-            background-color: #dbeafe;
-        }
+        .college-humanities { color: #3B82F6; }
+        .college-education { color: #10B981; }
+        .college-technology { color: #F59E0B; }
+        .college-management { color: #8B5CF6; }
+        .college-watershalian { color: #EF4444; }
+        .college-nursing { color: #EC4899; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen p-4">
-    <div class="max-w-md mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <!-- 頁首 -->
-        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold">接駁車預約</h1>
-                    <p class="text-purple-200 mt-1">選擇您的乘車資訊</p>
-                </div>
-                <div class="bg-white/20 p-3 rounded-full">
-                    <i class="fas fa-bus text-xl"></i>
-                </div>
-            </div>
+<body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
+        <!-- 頁首 - 簡化版 -->
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">會員註冊</h1>
+            <p class="text-gray-600 text-sm">請填寫以下資料完成註冊</p>
         </div>
 
-        <!-- 用戶資訊 -->
-        <div class="p-6 border-b border-gray-200">
-            <div class="flex items-center space-x-4">
-                <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-full flex items-center justify-center">
-                    <i class="fas fa-user text-white"></i>
-                </div>
-                <div>
-                    <h2 class="font-semibold text-gray-800" id="userName">載入中...</h2>
-                    <p class="text-sm text-gray-600" id="userInfo">載入中...</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- 預約表單 -->
-        <form id="reservationForm" class="p-6 space-y-6">
-            <!-- 下車站選擇 -->
+        <!-- 註冊表單 -->
+        <form id="registerForm" class="space-y-4">
+            <!-- LINE UserID (隱藏欄位) -->
+            <input type="hidden" id="lineUserId" name="lineUserId">
+            
+            <!-- 顯示 LINE UserID (唯讀) -->
             <div>
-                <label class="block text-lg font-bold text-gray-800 mb-3">
-                    <i class="fas fa-map-marker-alt text-red-500 mr-2"></i>下車站 *
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-id-card text-purple-500 mr-2"></i>LINE 用戶 ID
                 </label>
-                <div class="space-y-3">
-                    <div class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-blue-50 transition station-option">
-                        <input type="radio" id="station1" name="station" value="學人會館" class="hidden" required>
-                        <label for="station1" class="flex items-center cursor-pointer w-full">
-                            <div class="w-6 h-6 rounded-full border-2 border-gray-400 mr-3 flex-shrink-0 radio-indicator"></div>
-                            <div>
-                                <span class="font-medium">學人會館</span>
-                                <p class="text-sm text-gray-600 mt-1">位於校園中心，鄰近行政大樓</p>
-                            </div>
-                        </label>
-                    </div>
-                    
-                    <div class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-blue-50 transition station-option">
-                        <input type="radio" id="station2" name="station" value="管理學院" class="hidden" required>
-                        <label for="station2" class="flex items-center cursor-pointer w-full">
-                            <div class="w-6 h-6 rounded-full border-2 border-gray-400 mr-3 flex-shrink-0 radio-indicator"></div>
-                            <div>
-                                <span class="font-medium">管理學院</span>
-                                <p class="text-sm text-gray-600 mt-1">靠近管院大樓與圖書館</p>
-                            </div>
-                        </label>
-                    </div>
-                    
-                    <div class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-blue-50 transition station-option">
-                        <input type="radio" id="station3" name="station" value="科技學院" class="hidden" required>
-                        <label for="station3" class="flex items-center cursor-pointer w-full">
-                            <div class="w-6 h-6 rounded-full border-2 border-gray-400 mr-3 flex-shrink-0 radio-indicator"></div>
-                            <div>
-                                <span class="font-medium">科技學院</span>
-                                <p class="text-sm text-gray-600 mt-1">鄰近工學院與實驗大樓</p>
-                            </div>
-                        </label>
-                    </div>
-                </div>
+                <input 
+                    type="text" 
+                    id="displayLineUserId" 
+                    readonly 
+                    class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-500 cursor-not-allowed"
+                    placeholder="系統自動帶入"
+                >
             </div>
 
-            <!-- 日期選擇 -->
+            <!-- 姓名 -->
             <div>
-                <label class="block text-lg font-bold text-gray-800 mb-3">
-                    <i class="fas fa-calendar-alt text-green-500 mr-2"></i>乘車日期 *
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-user text-blue-500 mr-2"></i>姓名 *
                 </label>
-                
-                <!-- 日期狀態提示 -->
-                <div id="dateStatus" class="mb-4 p-3 rounded-lg bg-yellow-50 border border-yellow-200 hidden">
-                    <div class="flex items-start">
-                        <i class="fas fa-exclamation-triangle text-yellow-500 mt-0.5 mr-2"></i>
-                        <div>
-                            <p class="text-yellow-800 font-medium" id="statusMessage"></p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 簡化日期選擇器 -->
-                <div class="grid grid-cols-7 gap-2 mb-4">
-                    <div class="text-center text-sm font-medium text-gray-500">日</div>
-                    <div class="text-center text-sm font-medium text-gray-500">一</div>
-                    <div class="text-center text-sm font-medium text-gray-500">二</div>
-                    <div class="text-center text-sm font-medium text-gray-500">三</div>
-                    <div class="text-center text-sm font-medium text-gray-500">四</div>
-                    <div class="text-center text-sm font-medium text-gray-500">五</div>
-                    <div class="text-center text-sm font-medium text-gray-500">六</div>
-                    
-                    <!-- 日期將由 JavaScript 動態生成 -->
-                </div>
-                
-                <div class="relative">
-                    <input 
-                        type="date" 
-                        id="reservationDate" 
-                        name="reservationDate"
-                        required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
-                        min=""
-                    >
-                    <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                        <i class="fas fa-calendar"></i>
-                    </div>
-                </div>
-                <p class="text-xs text-gray-500 mt-2">請選擇乘車日期，停駛日期無法選擇</p>
+                <input 
+                    type="text" 
+                    id="displayName" 
+                    name="displayName"
+                    required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    placeholder="請填寫真實姓名"
+                >
             </div>
 
-            <!-- 時間選擇 -->
+            <!-- 電話 -->
             <div>
-                <label class="block text-lg font-bold text-gray-800 mb-3">
-                    <i class="fas fa-clock text-blue-500 mr-2"></i>乘車時間 *
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-phone text-green-500 mr-2"></i>電話 *
                 </label>
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="relative">
-                        <select 
-                            id="reservationTime" 
-                            name="reservationTime"
-                            required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition appearance-none"
-                        >
-                            <option value="">選擇時間</option>
-                            <option value="08:00">08:00</option>
-                            <option value="09:30">09:30</option>
-                            <option value="11:00">11:00</option>
-                            <option value="13:00">13:00</option>
-                            <option value="14:30">14:30</option>
-                            <option value="16:00">16:00</option>
-                            <option value="17:30">17:30</option>
-                        </select>
-                        <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="relative">
-                        <select 
-                            id="period" 
-                            name="period"
-                            required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition appearance-none"
-                        >
-                            <option value="">選擇時段</option>
-                            <option value="上午">上午</option>
-                            <option value="下午">下午</option>
-                        </select>
-                        <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                    </div>
-                </div>
+                <input 
+                    type="tel" 
+                    id="phone" 
+                    name="phone"
+                    required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                    placeholder="0912345678"
+                    pattern="[0-9]{10}"
+                    maxlength="10"
+                >
+                <p class="text-xs text-gray-500 mt-1">請輸入10位數字手機號碼</p>
+            </div>
+
+            <!-- 學號 -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-graduation-cap text-orange-500 mr-2"></i>學號 *
+                </label>
+                <input 
+                    type="text" 
+                    id="studentId" 
+                    name="studentId"
+                    required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+                    placeholder="請輸入學號"
+                    pattern="[0-9]{9}"
+                    maxlength="9"
+                >
+                <p class="text-xs text-gray-500 mt-1">請輸入9位數字學號</p>
+            </div>
+
+            <!-- 科系 -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-school text-purple-500 mr-2"></i>科系 *
+                </label>
+                <select 
+                    id="department" 
+                    name="department"
+                    required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                >
+                    <option value="">請選擇所屬科系</option>
+                    <!-- 科系選項由 JavaScript 動態生成 -->
+                </select>
             </div>
 
             <!-- 提交按鈕 -->
             <button 
                 type="submit"
                 id="submitBtn"
-                class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition duration-200 shadow-lg flex items-center justify-center"
+                class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition duration-200 shadow-lg mt-4"
             >
-                <i class="fas fa-paper-plane mr-2"></i>
-                送出預約
+                <i class="fas fa-check-circle mr-2"></i>
+                完成註冊
             </button>
         </form>
 
-        <!-- 載入提示 -->
-        <div id="loading" class="hidden text-center py-6">
-            <div class="flex items-center justify-center gap-3 text-purple-600">
-                <div class="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                <span>預約處理中...</span>
-            </div>
+        <!-- 返回首頁 -->
+        <div class="text-center mt-4">
+            <a href="index.html" class="text-purple-600 hover:text-purple-800 text-sm font-medium">
+                <i class="fas fa-arrow-left mr-1"></i>返回首頁
+            </a>
         </div>
 
-        <!-- 預約成功提示 -->
-        <div id="successMessage" class="hidden p-6">
-            <div class="bg-green-50 border border-green-200 rounded-xl p-5 text-center">
-                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i class="fas fa-check text-green-500 text-xl"></i>
-                </div>
-                <h3 class="text-lg font-bold text-green-800 mb-2">預約成功！</h3>
-                <p class="text-green-700 mb-4">您的接駁車預約已完成</p>
-                <button id="newReservationBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition">
-                    建立新預約
-                </button>
+        <!-- 載入提示 -->
+        <div id="loading" class="hidden text-center py-4">
+            <div class="flex items-center justify-center gap-3 text-purple-600">
+                <div class="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                <span>註冊中...</span>
             </div>
         </div>
     </div>
 
     <script>
-        // 停駛日期資料（模擬 Google 日曆資料）
-        const NO_SERVICE_DATES = [
-            '2023-12-25', // 聖誕節
-            '2024-01-01', // 元旦
-            '2024-02-10', // 春節
-            '2024-02-11', // 春節
-            '2024-02-12', // 春節
-            '2024-04-04', // 清明節
+        // 國立暨南國際大學科系資料
+        const NCNU_DEPARTMENTS = [
+            // 人文學院
+            { name: "中國語文學系", college: "人文學院", color: "college-humanities" },
+            { name: "外國語文學系", college: "人文學院", color: "college-humanities" },
+            { name: "社會政策與社會工作學系", college: "人文學院", color: "college-humanities" },
+            { name: "公共行政與政策學系", college: "人文學院", color: "college-humanities" },
+            { name: "歷史學系", college: "人文學院", color: "college-humanities" },
+            { name: "東南亞學系", college: "人文學院", color: "college-humanities" },
+            { name: "華語文教學碩士學位學程", college: "人文學院", color: "college-humanities" },
+            { name: "非營利組織經營管理碩士學位學程", college: "人文學院", color: "college-humanities" },
+            { name: "長期照顧經營管理碩士在職學位學程", college: "人文學院", color: "college-humanities" },
+            { name: "文化創意與社會行銷碩士學位學程", college: "人文學院", color: "college-humanities" },
+            { name: "原鄉發展跨領域學士學位學程", college: "人文學院", color: "college-humanities" },
+
+            // 教育學院
+            { name: "國際文教與比較教育學系", college: "教育學院", color: "college-education" },
+            { name: "教育政策與行政學系", college: "教育學院", color: "college-education" },
+            { name: "諮商心理與人力資源發展學系", college: "教育學院", color: "college-education" },
+            { name: "教育學院學士班", college: "教育學院", color: "college-education" },
+            { name: "終身學習與人力資源發展碩士學位學程", college: "教育學院", color: "college-education" },
+            { name: "心理健康與諮詢碩士在職學位學程", college: "教育學院", color: "college-education" },
+
+            // 科技學院
+            { name: "資訊工程學系", college: "科技學院", color: "college-technology" },
+            { name: "土木工程學系", college: "科技學院", color: "college-technology" },
+            { name: "電機工程學系", college: "科技學院", color: "college-technology" },
+            { name: "應用化學系", college: "科技學院", color: "college-technology" },
+            { name: "應用材料及光電工程學系", college: "科技學院", color: "college-technology" },
+            { name: "光電科技碩士學位學程", college: "科技學院", color: "college-technology" },
+            { name: "智慧精準農業產學研發博士學位學程", college: "科技學院", color: "college-technology" },
+            { name: "科技學院學士班", college: "科技學院", color: "college-technology" },
+
+            // 管理學院
+            { name: "財務金融學系", college: "管理學院", color: "college-management" },
+            { name: "經濟學系", college: "管理學院", color: "college-management" },
+            { name: "國際企業學系", college: "管理學院", color: "college-management" },
+            { name: "資訊管理學系", college: "管理學院", color: "college-management" },
+            { name: "觀光休閒與餐旅管理學系", college: "管理學院", color: "college-management" },
+            { name: "經營管理碩士學位學程在職專班", college: "管理學院", color: "college-management" },
+            { name: "高階經營管理碩士學位學程", college: "管理學院", color: "college-management" },
+            { name: "新興產業策略與發展碩士學位學程", college: "管理學院", color: "college-management" },
+            { name: "新興產業策略與發展博士學位學程", college: "管理學院", color: "college-management" },
+
+            // 水沙連學院
+            { name: "地方創生與跨域治理碩士學位學程", college: "水沙連學院", color: "college-watershalian" },
+            { name: "R立方青年返鄉創新實務學程", college: "水沙連學院", color: "college-watershalian" },
+            { name: "運動教練專業知識學分學程", college: "水沙連學院", color: "college-watershalian" },
+
+            // 護理暨健康福祉學院
+            { name: "護理學系原住民族專班", college: "護理暨健康福祉學院", color: "college-nursing" },
+            { name: "高齡健康與長期照顧管理學士學位學程", college: "護理暨健康福祉學院", color: "college-nursing" }
         ];
 
         // 初始化頁面
-        document.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('load', function() {
             initializePage();
-            setupEventListeners();
-            generateCalendarDays();
-            checkServiceStatus();
+            populateDepartments();
         });
 
         // 初始化頁面資料
         function initializePage() {
-            // 從 sessionStorage 取得用戶資料
+            // 從 sessionStorage 取得 LINE 用戶資料
             const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
             
-            if (!userData.userId || !userData.isRegistered) {
-                alert('請先完成註冊');
-                window.location.href = 'register.html';
-                return;
-            }
-
-            // 顯示用戶資訊
-            document.getElementById('userName').textContent = userData.displayName || '未提供姓名';
-            document.getElementById('userInfo').textContent = `${userData.phone || '未提供電話'} | ${userData.department || '未選擇科系'}`;
-
-            // 設定日期選擇器的最小日期為今天
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('reservationDate').min = today;
-        }
-
-        // 設置事件監聽器
-        function setupEventListeners() {
-            // 車站選擇樣式
-            document.querySelectorAll('.station-option').forEach(option => {
-                option.addEventListener('click', function() {
-                    document.querySelectorAll('.station-option').forEach(opt => {
-                        opt.classList.remove('border-blue-500', 'bg-blue-50');
-                        opt.querySelector('.radio-indicator').classList.remove('bg-blue-500', 'border-blue-500');
-                        opt.querySelector('.radio-indicator').classList.add('border-gray-400');
-                    });
-                    
-                    this.classList.add('border-blue-500', 'bg-blue-50');
-                    this.querySelector('.radio-indicator').classList.add('bg-blue-500', 'border-blue-500');
-                    this.querySelector('.radio-indicator').classList.remove('border-gray-400');
-                });
-            });
-
-            // 日期選擇檢查
-            document.getElementById('reservationDate').addEventListener('change', function() {
-                checkServiceStatus();
-            });
-
-            // 表單提交
-            document.getElementById('reservationForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                submitReservation();
-            });
-
-            // 新預約按鈕
-            document.getElementById('newReservationBtn').addEventListener('click', function() {
-                document.getElementById('successMessage').classList.add('hidden');
-                document.getElementById('reservationForm').classList.remove('hidden');
-                document.getElementById('reservationForm').reset();
+            if (!userData.userId) {
+                // 如果沒有用戶資料，創建模擬資料
+                const mockUserId = 'U' + Math.random().toString(36).substr(2, 9);
+                const mockUserData = {
+                    userId: mockUserId,
+                    displayName: '',
+                    isRegistered: false
+                };
+                sessionStorage.setItem('userData', JSON.stringify(mockUserData));
                 
-                // 重置車站選擇樣式
-                document.querySelectorAll('.station-option').forEach(opt => {
-                    opt.classList.remove('border-blue-500', 'bg-blue-50');
-                    opt.querySelector('.radio-indicator').classList.remove('bg-blue-500', 'border-blue-500');
-                    opt.querySelector('.radio-indicator').classList.add('border-gray-400');
-                });
-            });
-        }
-
-        // 生成日曆日期
-        function generateCalendarDays() {
-            const calendarContainer = document.querySelector('.grid.grid-cols-7.gap-2.mb-4');
-            // 清除現有日期（保留星期標題）
-            while (calendarContainer.children.length > 7) {
-                calendarContainer.removeChild(calendarContainer.lastChild);
-            }
-
-            const today = new Date();
-            const currentMonth = today.getMonth();
-            const currentYear = today.getFullYear();
-            
-            // 獲取當月第一天和最後一天
-            const firstDay = new Date(currentYear, currentMonth, 1);
-            const lastDay = new Date(currentYear, currentMonth + 1, 0);
-            
-            // 獲取當月第一天是星期幾（0=星期日, 6=星期六）
-            const firstDayIndex = firstDay.getDay();
-            
-            // 獲取當月天數
-            const daysInMonth = lastDay.getDate();
-            
-            // 填充空白（上個月的日期）
-            for (let i = 0; i < firstDayIndex; i++) {
-                const emptyDay = document.createElement('div');
-                emptyDay.className = 'h-10';
-                calendarContainer.appendChild(emptyDay);
-            }
-            
-            // 填充當月日期
-            for (let i = 1; i <= daysInMonth; i++) {
-                const dayElement = document.createElement('div');
-                dayElement.className = 'h-10 flex items-center justify-center rounded-lg calendar-day text-sm font-medium';
-                
-                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                const dateObj = new Date(currentYear, currentMonth, i);
-                
-                // 檢查是否為過去日期
-                if (dateObj < today && dateObj.toDateString() !== today.toDateString()) {
-                    dayElement.classList.add('text-gray-400', 'cursor-not-allowed');
-                    dayElement.textContent = i;
-                } 
-                // 檢查是否為停駛日期
-                else if (NO_SERVICE_DATES.includes(dateStr)) {
-                    dayElement.classList.add('holiday', 'no-service', 'cursor-not-allowed');
-                    dayElement.textContent = i;
-                } 
-                // 正常可預約日期
-                else {
-                    dayElement.classList.add('text-gray-700', 'cursor-pointer', 'bg-gray-100');
-                    dayElement.textContent = i;
-                    
-                    dayElement.addEventListener('click', function() {
-                        document.getElementById('reservationDate').value = dateStr;
-                        checkServiceStatus();
-                        
-                        // 更新選中狀態
-                        document.querySelectorAll('.calendar-day').forEach(day => {
-                            day.classList.remove('selected');
-                        });
-                        this.classList.add('selected');
-                    });
-                }
-                
-                // 如果是今天，特別標記
-                if (dateObj.toDateString() === today.toDateString()) {
-                    dayElement.classList.add('border-2', 'border-blue-500');
-                }
-                
-                calendarContainer.appendChild(dayElement);
-            }
-        }
-
-        // 檢查服務狀態
-        function checkServiceStatus() {
-            const dateInput = document.getElementById('reservationDate');
-            const dateStatus = document.getElementById('dateStatus');
-            const statusMessage = document.getElementById('statusMessage');
-            const submitBtn = document.getElementById('submitBtn');
-            
-            if (!dateInput.value) {
-                dateStatus.classList.add('hidden');
-                submitBtn.disabled = false;
-                return;
-            }
-            
-            const selectedDate = new Date(dateInput.value);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            // 檢查是否為過去日期
-            if (selectedDate < today) {
-                dateStatus.classList.remove('hidden');
-                statusMessage.textContent = '無法選擇過去的日期';
-                dateStatus.className = dateStatus.className.replace('bg-yellow-50', 'bg-red-50');
-                dateStatus.className = dateStatus.className.replace('border-yellow-200', 'border-red-200');
-                submitBtn.disabled = true;
-                return;
-            }
-            
-            // 檢查是否為停駛日期
-            if (NO_SERVICE_DATES.includes(dateInput.value)) {
-                dateStatus.classList.remove('hidden');
-                statusMessage.textContent = '所選日期接駁車停駛，請選擇其他日期';
-                dateStatus.className = dateStatus.className.replace('bg-yellow-50', 'bg-red-50');
-                dateStatus.className = dateStatus.className.replace('border-yellow-200', 'border-red-200');
-                submitBtn.disabled = true;
-                return;
-            }
-            
-            // 檢查是否為週末
-            if (selectedDate.getDay() === 0 || selectedDate.getDay() === 6) {
-                dateStatus.classList.remove('hidden');
-                statusMessage.textContent = '週末班次較少，請確認時刻表';
-                dateStatus.className = dateStatus.className.replace('bg-red-50', 'bg-yellow-50');
-                dateStatus.className = dateStatus.className.replace('border-red-200', 'border-yellow-200');
-                submitBtn.disabled = false;
+                // 填入 LINE UserID
+                document.getElementById('lineUserId').value = mockUserId;
+                document.getElementById('displayLineUserId').value = mockUserId;
             } else {
-                dateStatus.classList.add('hidden');
-                submitBtn.disabled = false;
+                // 填入 LINE UserID
+                document.getElementById('lineUserId').value = userData.userId;
+                document.getElementById('displayLineUserId').value = userData.userId;
+
+                // 填入姓名（從 LINE 資料）
+                if (userData.displayName) {
+                    document.getElementById('displayName').value = userData.displayName;
+                }
+
+                // 檢查是否已註冊
+                checkIfRegistered(userData.userId);
             }
         }
 
-        // 提交預約
-        function submitReservation() {
+        // 填入科系選項
+        function populateDepartments() {
+            const departmentSelect = document.getElementById('department');
+            
+            // 按學院分組
+            const colleges = {};
+            NCNU_DEPARTMENTS.forEach(dept => {
+                if (!colleges[dept.college]) {
+                    colleges[dept.college] = [];
+                }
+                colleges[dept.college].push(dept);
+            });
+
+            // 建立 optgroup
+            Object.keys(colleges).forEach(college => {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = college;
+                
+                colleges[college].forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.name;
+                    option.textContent = dept.name;
+                    option.className = dept.color;
+                    optgroup.appendChild(option);
+                });
+                
+                departmentSelect.appendChild(optgroup);
+            });
+        }
+
+        // 檢查是否已註冊
+        function checkIfRegistered(lineUserId) {
+            try {
+                const existingUsers = JSON.parse(localStorage.getItem('ncnu_shuttle_users') || '{"users": []}');
+                const existingUser = existingUsers.users?.find(user => user.lineUserId === lineUserId);
+                
+                if (existingUser) {
+                    alert('您已完成註冊，將導向預約頁面');
+                    window.location.href = 'main.html';
+                }
+            } catch (error) {
+                console.error('檢查註冊狀態失敗:', error);
+            }
+        }
+
+        // 表單提交處理
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
             const submitBtn = document.getElementById('submitBtn');
             const loading = document.getElementById('loading');
-            const form = document.getElementById('reservationForm');
             
             // 顯示載入中
             submitBtn.disabled = true;
             loading.classList.remove('hidden');
             
-            // 獲取表單資料
-            const formData = {
-                station: document.querySelector('input[name="station"]:checked')?.value,
-                date: document.getElementById('reservationDate').value,
-                time: document.getElementById('reservationTime').value,
-                period: document.getElementById('period').value,
-                reservationTime: new Date().toISOString()
-            };
-            
-            // 驗證表單
-            if (!validateReservation(formData)) {
-                submitBtn.disabled = false;
-                loading.classList.add('hidden');
-                return;
-            }
-            
-            // 模擬 API 呼叫延遲
-            setTimeout(() => {
-                // 儲存預約資料
-                saveReservation(formData);
-                
-                // 顯示成功訊息
-                loading.classList.add('hidden');
-                form.classList.add('hidden');
-                document.getElementById('successMessage').classList.remove('hidden');
-                
-                // 重置按鈕狀態
-                submitBtn.disabled = false;
-            }, 1500);
-        }
+            try {
+                const formData = {
+                    lineUserId: document.getElementById('lineUserId').value,
+                    displayName: document.getElementById('displayName').value.trim(),
+                    phone: document.getElementById('phone').value.trim(),
+                    studentId: document.getElementById('studentId').value.trim(),
+                    department: document.getElementById('department').value,
+                    registerTime: new Date().toISOString()
+                };
 
-        // 驗證預約資料
-        function validateReservation(data) {
-            if (!data.station) {
-                alert('請選擇下車站');
+                // 表單驗證
+                if (!validateForm(formData)) {
+                    submitBtn.disabled = false;
+                    loading.classList.add('hidden');
+                    return;
+                }
+
+                // 儲存到本地存儲
+                saveRegistration(formData);
+                
+                // 更新本地用戶資料
+                updateLocalUserData(formData);
+                
+                alert('註冊成功！');
+                window.location.href = 'main.html';
+                
+            } catch (error) {
+                console.error('註冊失敗:', error);
+                alert('註冊失敗，請稍後再試');
+                submitBtn.disabled = false;
+                loading.classList.add('hidden');
+            }
+        });
+
+        // 表單驗證
+        function validateForm(data) {
+            if (!data.displayName) {
+                alert('請填寫姓名');
                 return false;
             }
             
-            if (!data.date) {
-                alert('請選擇乘車日期');
+            if (!data.phone.match(/^[0-9]{10}$/)) {
+                alert('請輸入正確的手機號碼（10位數字）');
                 return false;
             }
             
-            if (!data.time) {
-                alert('請選擇乘車時間');
+            if (!data.studentId.match(/^[0-9]{9}$/)) {
+                alert('請輸入正確的學號（9位數字）');
                 return false;
             }
             
-            if (!data.period) {
-                alert('請選擇時段');
-                return false;
-            }
-            
-            // 檢查是否為停駛日期
-            if (NO_SERVICE_DATES.includes(data.date)) {
-                alert('所選日期接駁車停駛，請選擇其他日期');
+            if (!data.department) {
+                alert('請選擇科系');
                 return false;
             }
             
             return true;
         }
 
-        // 儲存預約資料
-        function saveReservation(reservationData) {
-            // 從 sessionStorage 取得用戶資料
+        // 儲存註冊資料到本地存儲
+        function saveRegistration(userData) {
+            const existingUsers = JSON.parse(localStorage.getItem('ncnu_shuttle_users') || '{"users": []}');
+            
+            // 檢查是否重複註冊
+            const existingUser = existingUsers.users.find(user => 
+                user.lineUserId === userData.lineUserId || 
+                user.studentId === userData.studentId
+            );
+            
+            if (existingUser) {
+                throw new Error('該用戶或學號已註冊');
+            }
+            
+            // 新增用戶
+            existingUsers.users.push(userData);
+            
+            // 更新本地存儲
+            localStorage.setItem('ncnu_shuttle_users', JSON.stringify(existingUsers));
+        }
+
+        // 更新本地用戶資料
+        function updateLocalUserData(formData) {
             const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
-            
-            // 建立完整預約記錄
-            const reservation = {
-                id: Date.now().toString(),
-                userId: userData.userId,
-                userName: userData.displayName,
-                userPhone: userData.phone,
-                ...reservationData
-            };
-            
-            // 獲取現有預約資料
-            const reservations = JSON.parse(localStorage.getItem('ncnu_shuttle_reservations') || '[]');
-            
-            // 添加新預約
-            reservations.push(reservation);
-            
-            // 儲存回 localStorage
-            localStorage.setItem('ncnu_shuttle_reservations', JSON.stringify(reservations));
-            
-            console.log('預約已儲存:', reservation);
+            userData.isRegistered = true;
+            userData.phone = formData.phone;
+            userData.studentId = formData.studentId;
+            userData.department = formData.department;
+            userData.displayName = formData.displayName;
+            sessionStorage.setItem('userData', JSON.stringify(userData));
         }
     </script>
 </body>
