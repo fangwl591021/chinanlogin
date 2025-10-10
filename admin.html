@@ -167,22 +167,22 @@
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                         <div class="bg-blue-50 rounded-lg p-4 text-center">
                             <p class="text-sm text-blue-600">A1 班次</p>
-                            <p class="text-2xl font-bold">3/6</p>
+                            <p id="a1Count" class="text-2xl font-bold">0/6</p>
                             <p class="text-xs text-gray-500">22:00-22:30</p>
                         </div>
                         <div class="bg-green-50 rounded-lg p-4 text-center">
                             <p class="text-sm text-green-600">B1 班次</p>
-                            <p class="text-2xl font-bold">2/6</p>
+                            <p id="b1Count" class="text-2xl font-bold">0/6</p>
                             <p class="text-xs text-gray-500">22:30-23:00</p>
                         </div>
                         <div class="bg-purple-50 rounded-lg p-4 text-center">
                             <p class="text-sm text-purple-600">A2 班次</p>
-                            <p class="text-2xl font-bold">4/6</p>
+                            <p id="a2Count" class="text-2xl font-bold">0/6</p>
                             <p class="text-xs text-gray-500">23:00-23:30</p>
                         </div>
                         <div class="bg-orange-50 rounded-lg p-4 text-center">
                             <p class="text-sm text-orange-600">B2 班次</p>
-                            <p class="text-2xl font-bold">1/6</p>
+                            <p id="b2Count" class="text-2xl font-bold">0/6</p>
                             <p class="text-xs text-gray-500">23:30-24:00</p>
                         </div>
                     </div>
@@ -199,7 +199,7 @@
                 </div>
             </div>
 
-            <!-- 其他區塊預留 -->
+            <!-- 其他區塊 -->
             <div id="membersSection" class="section hidden"></div>
             <div id="bookingsSection" class="section hidden"></div>
             <div id="routesSection" class="section hidden"></div>
@@ -209,10 +209,10 @@
     </div>
 
     <script>
-        // 系統配置
+        // 系統配置 - 請替換為您的實際配置
         const CONFIG = {
-            GITHUB_TOKEN: "ghp_您的Token",
-            GIST_ID: "您的GistID",
+            GITHUB_TOKEN: "hhFVS+V7Fp4zIFZ0sv6vq1WuvKmIKzsK6RlZkAOftxr2Lob218VgP+/PK+wIhwhw8HTlOobneGQhxTllrjt8uAzwaCGgWZ5yokIKZSVID+ccNDJmKxElxNQatB6NUObNTtofnMdDZTOLx12X4QRRdwdB04t89/1O/w1cDnyilFU=",
+            GIST_ID: "C596050d1193b9b930ac25469c61ba12a",
             STOPS: {
                 outbound: ["行政大樓", "中餐廳", "科技學院", "學人會館", "中城", "下城", "坪頂", "愛蘭橋", "大成國小", "中山安七街口", "榮民診所", "埔里酒廠", "埔里總站"],
                 return: ["埔里總站", "埔里酒廠", "榮民診所", "中山安七街口", "大成國小", "愛蘭橋", "坪頂", "下城", "中城", "學人會館", "科技學院", "中餐廳", "行政大樓"]
@@ -266,16 +266,52 @@
                 const data = await getGistData();
                 
                 // 更新統計數字
-                document.getElementById('totalUsers').textContent = data.users?.length || 0;
-                document.getElementById('todayBookings').textContent = data.todayBookings || 0;
-                document.getElementById('monthBookings').textContent = data.monthBookings || 0;
+                const users = data.users || [];
+                const bookings = data.bookings || [];
+                
+                document.getElementById('totalUsers').textContent = users.length;
+                
+                // 計算今日預約
+                const today = new Date().toISOString().split('T')[0];
+                const todayBookings = bookings.filter(booking => booking.date === today);
+                document.getElementById('todayBookings').textContent = todayBookings.length;
+                
+                // 計算本月預約
+                const currentMonth = new Date().toISOString().substr(0, 7);
+                const monthBookings = bookings.filter(booking => booking.date.startsWith(currentMonth));
+                document.getElementById('monthBookings').textContent = monthBookings.length;
+                
+                // 更新班次預約統計
+                updateRouteCounts(todayBookings);
                 
                 // 更新即時預約列表
-                updateRealtimeBookings(data.bookings || []);
+                updateRealtimeBookings(bookings);
                 
             } catch (error) {
                 console.error('載入即時資料失敗:', error);
+                alert('載入資料失敗：' + error.message);
             }
+        }
+
+        // 更新班次預約統計
+        function updateRouteCounts(todayBookings) {
+            const counts = {
+                'A1｜22:00-22:30 暨大→埔里總站': 0,
+                'B1｜22:30-23:00 埔里總站→暨大': 0,
+                'A2｜23:00-23:30 暨大→埔里總站': 0,
+                'B2｜23:30-24:00 埔里總站→暨大': 0
+            };
+            
+            todayBookings.forEach(booking => {
+                if (counts.hasOwnProperty(booking.routeName)) {
+                    counts[booking.routeName]++;
+                }
+            });
+            
+            document.getElementById('a1Count').textContent = `${counts['A1｜22:00-22:30 暨大→埔里總站']}/6`;
+            document.getElementById('b1Count').textContent = `${counts['B1｜22:30-23:00 埔里總站→暨大']}/6`;
+            document.getElementById('a2Count').textContent = `${counts['A2｜23:00-23:30 暨大→埔里總站']}/6`;
+            document.getElementById('b2Count').textContent = `${counts['B2｜23:30-24:00 埔里總站→暨大']}/6`;
         }
 
         // 更新即時預約列表
@@ -283,17 +319,133 @@
             const container = document.getElementById('realtimeBookings');
             const recentBookings = bookings.slice(-10).reverse(); // 最新10筆
             
+            if (recentBookings.length === 0) {
+                container.innerHTML = `
+                    <div class="px-4 py-8 text-center text-gray-500">
+                        <i class="fas fa-calendar-times text-3xl mb-2"></i>
+                        <p>尚無預約記錄</p>
+                    </div>
+                `;
+                return;
+            }
+            
             container.innerHTML = recentBookings.map(booking => `
                 <div class="px-4 py-3 flex items-center justify-between">
                     <div>
                         <p class="font-medium">${booking.userName || '未知用戶'}</p>
                         <p class="text-sm text-gray-500">${booking.routeName} • ${booking.date}</p>
+                        <p class="text-xs text-gray-400">學號: ${booking.studentId || '未提供'}</p>
                     </div>
-                    <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                        已預約
-                    </span>
+                    <div class="text-right">
+                        <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                            已預約
+                        </span>
+                        <p class="text-xs text-gray-500 mt-1">${booking.bookingTime || ''}</p>
+                    </div>
                 </div>
             `).join('');
+        }
+
+        // 載入會員資料
+        async function loadMembersData() {
+            try {
+                const data = await getGistData();
+                const users = data.users || [];
+                
+                document.getElementById('membersSection').innerHTML = `
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold text-gray-800">會員管理</h2>
+                            <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                                共 ${users.length} 位會員
+                            </span>
+                        </div>
+                        
+                        ${users.length === 0 ? `
+                            <div class="text-center py-8 text-gray-500">
+                                <i class="fas fa-users text-3xl mb-2"></i>
+                                <p>尚無註冊會員</p>
+                            </div>
+                        ` : `
+                            <div class="border rounded-lg overflow-hidden">
+                                <div class="bg-gray-50 px-4 py-3 border-b grid grid-cols-12 gap-4 text-sm font-semibold">
+                                    <div class="col-span-3">姓名</div>
+                                    <div class="col-span-2">學號</div>
+                                    <div class="col-span-3">科系</div>
+                                    <div class="col-span-2">電話</div>
+                                    <div class="col-span-2">註冊時間</div>
+                                </div>
+                                <div class="divide-y">
+                                    ${users.map(user => `
+                                        <div class="px-4 py-3 grid grid-cols-12 gap-4 text-sm items-center hover:bg-gray-50">
+                                            <div class="col-span-3 font-medium">${user.displayName || '未提供'}</div>
+                                            <div class="col-span-2 text-gray-600">${user.studentId || '未提供'}</div>
+                                            <div class="col-span-3 text-gray-600">${user.department || '未提供'}</div>
+                                            <div class="col-span-2 text-gray-600">${user.phone || '未提供'}</div>
+                                            <div class="col-span-2 text-gray-500 text-xs">${formatDate(user.registerTime)}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('載入會員資料失敗:', error);
+            }
+        }
+
+        // 載入預約資料
+        async function loadBookingsData() {
+            try {
+                const data = await getGistData();
+                const bookings = data.bookings || [];
+                
+                document.getElementById('bookingsSection').innerHTML = `
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold text-gray-800">預約查詢</h2>
+                            <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                                共 ${bookings.length} 筆預約
+                            </span>
+                        </div>
+                        
+                        ${bookings.length === 0 ? `
+                            <div class="text-center py-8 text-gray-500">
+                                <i class="fas fa-calendar-times text-3xl mb-2"></i>
+                                <p>尚無預約記錄</p>
+                            </div>
+                        ` : `
+                            <div class="border rounded-lg overflow-hidden">
+                                <div class="bg-gray-50 px-4 py-3 border-b grid grid-cols-12 gap-4 text-sm font-semibold">
+                                    <div class="col-span-2">姓名</div>
+                                    <div class="col-span-2">學號</div>
+                                    <div class="col-span-3">班次路線</div>
+                                    <div class="col-span-2">預約日期</div>
+                                    <div class="col-span-2">上車站</div>
+                                    <div class="col-span-1">狀態</div>
+                                </div>
+                                <div class="divide-y max-h-96 overflow-y-auto">
+                                    ${bookings.map(booking => `
+                                        <div class="px-4 py-3 grid grid-cols-12 gap-4 text-sm items-center hover:bg-gray-50">
+                                            <div class="col-span-2 font-medium">${booking.userName || '未知用戶'}</div>
+                                            <div class="col-span-2 text-gray-600">${booking.studentId || '未提供'}</div>
+                                            <div class="col-span-3 text-gray-600">${booking.routeName}</div>
+                                            <div class="col-span-2 text-gray-600">${booking.date}</div>
+                                            <div class="col-span-2 text-gray-600">${booking.stop || '未選擇'}</div>
+                                            <div class="col-span-1">
+                                                <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">已預約</span>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('載入預約資料失敗:', error);
+            }
         }
 
         // 從 GitHub Gist 取得資料
@@ -304,8 +456,25 @@
                 }
             });
             
+            if (!response.ok) {
+                throw new Error(`GitHub API 錯誤: ${response.status}`);
+            }
+            
             const gist = await response.json();
             return JSON.parse(gist.files['data.json'].content);
+        }
+
+        // 格式化日期
+        function formatDate(dateString) {
+            if (!dateString) return '未知';
+            const date = new Date(dateString);
+            return date.toLocaleString('zh-TW', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
         }
 
         // 匯出所有資料
@@ -352,25 +521,7 @@
             setInterval(loadRealtimeData, 30000);
         });
 
-        // 預先載入其他區塊的函數（待實作）
-        async function loadMembersData() {
-            document.getElementById('membersSection').innerHTML = `
-                <div class="bg-white rounded-xl shadow-md p-6">
-                    <h2 class="text-xl font-bold text-gray-800 mb-4">會員管理</h2>
-                    <p class="text-gray-500">會員管理功能開發中...</p>
-                </div>
-            `;
-        }
-
-        async function loadBookingsData() {
-            document.getElementById('bookingsSection').innerHTML = `
-                <div class="bg-white rounded-xl shadow-md p-6">
-                    <h2 class="text-xl font-bold text-gray-800 mb-4">預約查詢</h2>
-                    <p class="text-gray-500">預約查詢功能開發中...</p>
-                </div>
-            `;
-        }
-
+        // 其他區塊的函數
         async function loadRoutesData() {
             document.getElementById('routesSection').innerHTML = `
                 <div class="bg-white rounded-xl shadow-md p-6">
