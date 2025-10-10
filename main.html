@@ -221,20 +221,16 @@
             '2024-04-04', // 清明節
         ];
 
+        // ✅ 上下車停靠站
+        const stopsOutbound = ["行政大樓", "中餐廳", "科技學院", "學人會館", "中城", "下城", "坪頂", "愛蘭橋", "大成國小", "中山安七街口", "榮民診所", "埔里酒廠", "埔里總站"];
+        const stopsReturn = ["埔里總站", "埔里酒廠", "榮民診所", "中山安七街口", "大成國小", "愛蘭橋", "坪頂", "下城", "中城", "學人會館", "科技學院", "中餐廳", "行政大樓"];
+
         // 時段資料
         const TIME_SLOTS = [
-            { id: 'A1', time: '22:00-22:30', route: '暨大→埔里總站', seats: 6 },
-            { id: 'B1', time: '22:30-23:00', route: '埔里總站→暨大', seats: 6 },
-            { id: 'A2', time: '23:00-23:30', route: '暨大→埔里總站', seats: 6 },
-            { id: 'B2', time: '23:30-24:00', route: '埔里總站→暨大', seats: 6 }
-        ];
-
-        // 車站資料
-        const STATIONS = [
-            { id: 'college', name: '學人會館', description: '位於校園中心，鄰近行政大樓' },
-            { id: 'management', name: '管理學院', description: '靠近管院大樓與圖書館' },
-            { id: 'technology', name: '科技學院', description: '鄰近工學院與實驗大樓' },
-            { id: 'ailan', name: '愛蘭橋', description: '校外站點，鄰近愛蘭地區' }
+            { id: 'A1', time: '22:00-22:30', route: '暨大→埔里總站', direction: 'outbound', seats: 6 },
+            { id: 'B1', time: '22:30-23:00', route: '埔里總站→暨大', direction: 'return', seats: 6 },
+            { id: 'A2', time: '23:00-23:30', route: '暨大→埔里總站', direction: 'outbound', seats: 6 },
+            { id: 'B2', time: '23:30-24:00', route: '埔里總站→暨大', direction: 'return', seats: 6 }
         ];
 
         // LINE 推播設定
@@ -255,7 +251,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             initializePage();
             setupEventListeners();
-            generateStationOptions();
         });
 
         // 初始化頁面資料
@@ -432,22 +427,22 @@
                 return false;
             }
             
-            // 檢查是否為停駛日期
+            // 檢查是否為停駛日期 - 修正：遇到停駛日直接無法預約
             if (NO_SERVICE_DATES.includes(date)) {
                 dateStatus.classList.remove('hidden');
                 statusMessage.textContent = '所選日期接駁車停駛，請選擇其他日期';
                 dateStatus.className = 'mt-4 p-3 rounded-lg bg-red-50 border border-red-200';
+                
+                // 重置選擇
+                currentSelection.date = null;
+                document.querySelectorAll('.calendar-day').forEach(day => {
+                    day.classList.remove('selected');
+                });
                 return false;
             }
             
-            // 檢查是否為週末
-            if (selectedDate.getDay() === 0 || selectedDate.getDay() === 6) {
-                dateStatus.classList.remove('hidden');
-                statusMessage.textContent = '週末班次較少，請確認時刻表';
-                dateStatus.className = 'mt-4 p-3 rounded-lg bg-yellow-50 border border-yellow-200';
-            } else {
-                dateStatus.classList.add('hidden');
-            }
+            // 隱藏狀態提示
+            dateStatus.classList.add('hidden');
             
             return true;
         }
@@ -485,8 +480,9 @@
                     this.classList.add('selected');
                     currentSelection.timeSlot = slot;
 
-                    // 顯示車站選擇區
+                    // 顯示車站選擇區並生成對應的車站選項
                     document.getElementById('stationSection').classList.remove('hidden');
+                    generateStationOptions(slot.direction);
                 });
 
                 container.appendChild(slotElement);
@@ -494,14 +490,22 @@
         }
 
         // 生成車站選項
-        function generateStationOptions() {
+        function generateStationOptions(direction) {
             const select = document.getElementById('stationSelect');
-            STATIONS.forEach(station => {
+            select.innerHTML = '<option value="">請選擇下車站</option>';
+            
+            const stops = direction === 'outbound' ? stopsOutbound : stopsReturn;
+            
+            stops.forEach(station => {
                 const option = document.createElement('option');
-                option.value = station.name;
-                option.textContent = `${station.name} - ${station.description}`;
+                option.value = station;
+                option.textContent = station;
                 select.appendChild(option);
             });
+            
+            // 重置車站選擇
+            currentSelection.station = null;
+            document.getElementById('submitBtn').classList.add('hidden');
         }
 
         // 提交預約
