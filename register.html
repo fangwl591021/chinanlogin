@@ -266,7 +266,9 @@
             }
             
             const gist = await response.json();
-            return JSON.parse(gist.files['data.json'].content);
+const fileKey = Object.keys(gist.files)[0]; // 自動抓第一個檔案名稱
+return JSON.parse(gist.files[fileKey].content);
+
         }
 
         // 更新 GitHub Gist 資料
@@ -299,13 +301,13 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        files: {
-                            'data.json': {
-                                content: JSON.stringify(currentData, null, 2)
-                            }
-                        }
-                    })
-                });
+  files: {
+    [fileKey]: {
+      content: JSON.stringify(currentData, null, 2)
+    }
+  }
+})
+
                 
                 if (!response.ok) {
                     throw new Error(`更新失敗: ${response.status}`);
