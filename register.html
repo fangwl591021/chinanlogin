@@ -23,12 +23,12 @@
         <!-- 註冊表單 -->
         <form id="registerForm" class="space-y-4">
             <!-- 從 LINE 獲取的用戶資訊 -->
-            <div id="lineUserInfo" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 hidden">
+            <div id="lineUserInfo" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                 <div class="flex items-center space-x-3">
                     <img id="lineUserPicture" src="" class="w-10 h-10 rounded-full" alt="LINE頭像">
                     <div>
-                        <p class="font-medium text-green-800" id="lineUserName"></p>
-                        <p class="text-sm text-green-600" id="lineUserStatus"></p>
+                        <p class="font-medium text-green-800" id="lineUserName">載入中...</p>
+                        <p class="text-sm text-green-600" id="lineUserStatus">LINE 用戶</p>
                     </div>
                 </div>
             </div>
@@ -174,12 +174,13 @@
 
             // 顯示 LINE 用戶資訊
             if (lineUserData.displayName) {
-                document.getElementById('lineUserInfo').classList.remove('hidden');
                 document.getElementById('lineUserName').textContent = lineUserData.displayName;
                 document.getElementById('lineUserStatus').textContent = lineUserData.statusMessage || '已連線到 LINE';
                 
                 if (lineUserData.pictureUrl) {
                     document.getElementById('lineUserPicture').src = lineUserData.pictureUrl;
+                } else {
+                    document.getElementById('lineUserPicture').src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiMwNkM3NTUiLz4KPHBhdGggZD0iTTI2LjUgMTUuNUgyMy41VjE4LjVIMjYuNVYyMS41SDIzLjVWMjQuNUgyMC41VjIxLjVIMTcuNVYxOC41SDIwLjVWMTUuNUgxNy41VjEyLjVIMjMuNVYxNS41SDI2LjVaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
                 }
                 
                 // 自動填入姓名 (從 LINE 顯示名稱)
