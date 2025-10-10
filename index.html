@@ -49,10 +49,17 @@
                     <p class="text-gray-600">請使用 LINE 帳號登入以繼續使用服務</p>
                 </div>
 
-                <!-- LINE Login 按鈕 -->
-                <button id="lineLoginBtn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-6 rounded-xl transition duration-200 shadow-lg flex items-center justify-center">
+                <!-- 真正的 LINE Login 按鈕 -->
+                <a href="https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=YOUR_CHANNEL_ID&redirect_uri=YOUR_REDIRECT_URI&state=YOUR_STATE&scope=profile%20openid" 
+                   class="block w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-6 rounded-xl transition duration-200 shadow-lg flex items-center justify-center">
                     <i class="fab fa-line text-xl mr-3"></i>
                     LINE 快速登入
+                </a>
+
+                <!-- 測試用模擬登入 (開發期間使用) -->
+                <button id="testLoginBtn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-xl transition duration-200 flex items-center justify-center text-sm">
+                    <i class="fas fa-code mr-2"></i>
+                    開發者測試登入
                 </button>
 
                 <!-- 說明 -->
@@ -67,63 +74,25 @@
                 </div>
             </div>
         </div>
-
-        <!-- 功能特色 -->
-        <div class="grid grid-cols-2 gap-4 mt-8">
-            <div class="bg-white rounded-xl p-4 text-center shadow-sm">
-                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <i class="fab fa-line text-green-600"></i>
-                </div>
-                <p class="text-sm font-medium text-gray-700">LINE 整合</p>
-            </div>
-            <div class="bg-white rounded-xl p-4 text-center shadow-sm">
-                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <i class="fas fa-calendar-check text-blue-600"></i>
-                </div>
-                <p class="text-sm font-medium text-gray-700">線上預約</p>
-            </div>
-            <div class="bg-white rounded-xl p-4 text-center shadow-sm">
-                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <i class="fas fa-bell text-purple-600"></i>
-                </div>
-                <p class="text-sm font-medium text-gray-700">即時通知</p>
-            </div>
-            <div class="bg-white rounded-xl p-4 text-center shadow-sm">
-                <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <i class="fas fa-map-marker-alt text-orange-600"></i>
-                </div>
-                <p class="text-sm font-medium text-gray-700">多站點</p>
-            </div>
-        </div>
     </main>
 
     <script>
-        // LINE Login 處理
-        document.getElementById('lineLoginBtn').addEventListener('click', function() {
-            const btn = this;
-            const originalText = btn.innerHTML;
+        // 開發者測試登入 (正式環境應移除)
+        document.getElementById('testLoginBtn').addEventListener('click', function() {
+            // 模擬真實的 LINE 用戶資料格式
+            const lineUserData = {
+                userId: 'U' + Math.random().toString(36).substr(2, 15), // 更符合真實 LINE ID 格式
+                displayName: '測試用戶',
+                pictureUrl: '',
+                statusMessage: '這是測試帳號',
+                email: 'test@example.com'
+            };
             
-            // 顯示載入中
-            btn.innerHTML = '<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>登入中...';
-            btn.disabled = true;
+            // 儲存 LINE 用戶資料
+            sessionStorage.setItem('lineUserData', JSON.stringify(lineUserData));
             
-            // 模擬 LINE Login 流程
-            setTimeout(() => {
-                // 模擬從 LINE 獲取用戶資料
-                const lineUserData = {
-                    userId: 'U' + Math.random().toString(36).substr(2, 9),
-                    displayName: 'LINE用戶',
-                    pictureUrl: '',
-                    statusMessage: ''
-                };
-                
-                // 儲存 LINE 用戶資料到 sessionStorage
-                sessionStorage.setItem('lineUserData', JSON.stringify(lineUserData));
-                
-                // 檢查是否已註冊
-                checkUserRegistration(lineUserData.userId);
-                
-            }, 1500);
+            // 檢查是否已註冊
+            checkUserRegistration(lineUserData.userId);
         });
 
         // 檢查用戶是否已註冊
@@ -146,9 +115,10 @@
                 window.location.href = 'main.html';
             } else {
                 // 用戶未註冊，導向註冊頁面
+                const lineData = JSON.parse(sessionStorage.getItem('lineUserData') || '{}');
                 const userData = {
                     userId: lineUserId,
-                    displayName: '', // 註冊時可以填入
+                    displayName: lineData.displayName || '', // 使用 LINE 的顯示名稱
                     isRegistered: false
                 };
                 sessionStorage.setItem('userData', JSON.stringify(userData));
@@ -157,15 +127,56 @@
             }
         }
 
+        // 檢查 URL 參數 (處理 LINE Login 回調)
+        function checkUrlParameters() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            
+            if (code) {
+                // 這裡應該發送 code 到後端換取 access token
+                // 由於沒有後端，我們使用模擬資料
+                handleLineLoginCallback(code, state);
+            }
+        }
+
+        // 處理 LINE Login 回調
+        function handleLineLoginCallback(code, state) {
+            // 顯示載入中
+            document.body.innerHTML = `
+                <div class="min-h-screen bg-gray-50 flex items-center justify-center">
+                    <div class="text-center">
+                        <div class="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                        <p class="text-gray-600">LINE 登入處理中...</p>
+                    </div>
+                </div>
+            `;
+            
+            // 模擬後端 API 呼叫
+            setTimeout(() => {
+                // 模擬從 LINE 獲取的真實用戶資料
+                const lineUserData = {
+                    userId: 'U' + Math.random().toString(36).substr(2, 15),
+                    displayName: 'LINE用戶',
+                    pictureUrl: 'https://profile.line-scdn.net/0h0J0aJF8TEF1EJy9WKl5TFT8WKE5OECRJQgw6RE0fIUkZQnJbFQk6ERhKd0wYSy0PUl8_UR5Kd0wZ',
+                    statusMessage: 'Hello!',
+                    email: 'user@line.example.com'
+                };
+                
+                sessionStorage.setItem('lineUserData', JSON.stringify(lineUserData));
+                checkUserRegistration(lineUserData.userId);
+            }, 2000);
+        }
+
         // 檢查是否已有登入狀態
         window.addEventListener('load', function() {
+            checkUrlParameters();
+            
             const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
             
             if (userData.userId && userData.isRegistered) {
-                // 如果已登入且已註冊，直接導向主頁面
                 window.location.href = 'main.html';
             } else if (userData.userId && !userData.isRegistered) {
-                // 如果已登入但未註冊，導向註冊頁面
                 window.location.href = 'register.html';
             }
         });
