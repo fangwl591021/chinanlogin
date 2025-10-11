@@ -234,7 +234,7 @@
         const CONFIG = {
             LINE_CHANNEL_ID: '2006590746',  // 請替換成你的 LINE Channel ID
             LINE_CALLBACK_URL: window.location.origin + window.location.pathname,  // 自動使用當前網址
-            APPS_SCRIPT_URL: 'https://delicate-math-7e61.fangwl591021.workers.dev//'  // Cloudflare Workers URL
+            APPS_SCRIPT_URL: 'https://delicate-math-7e61.fangwl591021.workers.dev/'  // Cloudflare Workers URL
         };
 
         // 儲存使用者資料
@@ -294,19 +294,21 @@
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('formSection').style.display = 'block';
             
-            // 顯示使用者資訊（示範用）
-            // 實際應用中，這些資料會從 LINE API 取得
+            // 顯示使用者資訊
+            const avatarUrl = userData.pictureUrl || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="60" height="60"%3E%3Ccircle cx="30" cy="30" r="30" fill="%2306C755"/%3E%3Ctext x="30" y="40" text-anchor="middle" fill="white" font-size="24" font-family="Arial"%3E👤%3C/text%3E%3C/svg%3E';
+            const displayName = userData.displayName || 'LINE 使用者';
+            
             document.getElementById('userInfo').innerHTML = `
-                <img src="https://via.placeholder.com/60" alt="Avatar" class="user-avatar">
+                <img src="${avatarUrl}" alt="Avatar" class="user-avatar" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%2230%22 fill=%22%2306C755%22/%3E%3Ctext x=%2230%22 y=%2240%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2224%22 font-family=%22Arial%22%3E👤%3C/text%3E%3C/svg%3E'">
                 <div class="user-details">
-                    <h3>LINE 使用者</h3>
+                    <h3>${displayName}</h3>
                     <p>已成功登入</p>
                 </div>
             `;
         }
 
-        // 表單送出（使用 Google Form 方式避免 CORS）
-        document.getElementById('registrationForm').addEventListener('submit', (e) => {
+        // 表單送出（透過 Cloudflare Workers 避免 CORS）
+        document.getElementById('registrationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const submitBtn = document.getElementById('submitBtn');
@@ -324,16 +326,29 @@
                 department: document.getElementById('department').value
             };
 
-            // 建立 URL 參數
-            const params = new URLSearchParams(formData).toString();
-            const url = CONFIG.APPS_SCRIPT_URL + '?' + params;
-            
-            // 使用 img 標籤發送請求（繞過 CORS）
-            const img = new Image();
-            img.onload = img.onerror = () => {
-                showSuccess();
-            };
-            img.src = url;
+            try {
+                const response = await fetch(CONFIG.APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+                console.log('回應結果:', result);
+                
+                if (result.status === 'success' || result.success) {
+                    showSuccess();
+                } else {
+                    throw new Error(result.message || '送出失敗');
+                }
+            } catch (error) {
+                console.error('送出錯誤:', error);
+                showError('送出失敗：' + error.message);
+                submitBtn.disabled = false;
+                submitBtn.textContent = '送出註冊';
+            }
         });
 
         // 顯示成功訊息
