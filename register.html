@@ -245,47 +245,65 @@
     }
 
     // -------------------------------------------------------------
-    // LIFF 初始化和流程控制 (保持不變)
+    // LIFF 初始化和流程控制 (修正後的穩定邏輯)
     // -------------------------------------------------------------
 
     async function initLINE() {
         try {
             await liff.init({ liffId: CONFIG.LIFF_ID });
 
-            const cachedUser = JSON.parse(sessionStorage.getItem("lineUserData") || "null");
+            // 嘗試從 sessionStorage 讀取資料
             const cachedRegistration = JSON.parse(sessionStorage.getItem("userData") || "null");
             
-            // 1. 檢查登入狀態和註冊狀態
-            if (!liff.isLoggedIn() || !cachedRegistration || !cachedRegistration.lineUserId) {
-                console.log("登入狀態遺失，導回登入頁面");
-                // 登入狀態遺失，導回登入頁面重新獲取 LIFF 狀態
-                alert('登入狀態遺失或無註冊記錄，將導回登入頁面');
+            let profile = null;
+
+            // 1. 檢查 LINE 登入狀態
+            if (!liff.isLoggedIn()) {
+                console.log("LINE 未登入，導回登入頁面");
+                alert('登入狀態遺失，請重新登入以繼續註冊。');
                 window.location.href = "index.html";
                 return;
             }
 
-            let userData = cachedUser;
-            if (!userData) {
-                 // 如果沒有 sessionStorage，嘗試從 LIFF 獲取 (備用)
-                const profile = await liff.getProfile();
-                userData = {
-                    lineUserId: profile.userId,
-                    displayName: profile.displayName,
-                    pictureUrl: profile.pictureUrl
-                };
-                sessionStorage.setItem("lineUserData", JSON.stringify(userData));
-            }
-
-            // 2. 檢查是否已被 index.html 判定為已註冊
-            if (cachedRegistration.isRegistered) {
-                 console.log("用戶已在 index.html 判定為已註冊，導向主頁面");
-                 alert('您已完成註冊，將導向主頁面');
-                 window.location.href = "main.html";
-                 return;
+            // 2. LINE 已登入：嘗試獲取用戶資料
+            try {
+                profile = await liff.getProfile();
+            } catch (err) {
+                // 如果無法獲取 Profile，可能是網路問題或權限問題
+                console.error("無法獲取 LIFF Profile:", err);
+                throw new Error("無法獲取 LINE 用戶資料，請確認網路連線。");
             }
             
+            // 3. 檢查是否已被 index.html 判定為已註冊
+            if (cachedRegistration && cachedRegistration.isRegistered) {
+                console.log("用戶已在 index.html 判定為已註冊，導向主頁面");
+                alert('您已完成註冊，將導向主頁面');
+                window.location.href = "main.html";
+                return;
+            }
+
+            // 4. 成功獲取 LIFF ID，如果 sessionStorage 遺失，則重新建立
+            
+            // 重新儲存 lineUserData (如果遺失的話)
+            const lineUserData = {
+                lineUserId: profile.userId,
+                displayName: profile.displayName,
+                pictureUrl: profile.pictureUrl
+            };
+            sessionStorage.setItem("lineUserData", JSON.stringify(lineUserData));
+            
+            // 重新儲存 userData (如果遺失或 ID 不符的話)
+            if (!cachedRegistration || cachedRegistration.lineUserId !== profile.userId) {
+                 const registrationData = {
+                    lineUserId: profile.userId,
+                    displayName: profile.displayName || '',
+                    isRegistered: false // 確定是未註冊狀態
+                 };
+                 sessionStorage.setItem('userData', JSON.stringify(registrationData));
+            }
+
             console.log("✅ 成功獲取登入資料，準備註冊");
-            showUser(userData);
+            showUser(lineUserData);
 
         } catch (err) {
             console.error("❌ LIFF 初始化錯誤：", err);
@@ -303,7 +321,9 @@
         document.getElementById("lineUserName").textContent = profile.displayName;
         document.getElementById("lineUserPicture").src = profile.pictureUrl || 'https://via.placeholder.com/150';
         document.getElementById("lineUserId").value = profile.lineUserId;
-        document.getElementById("displayName").value = profile.displayName;
+        // 如果 index.html 有傳入 displayName，則預填
+        const cachedRegistration = JSON.parse(sessionStorage.getItem("userData") || "{}");
+        document.getElementById("displayName").value = cachedRegistration.displayName || profile.displayName;
     }
 
     function logoutLINE() {
@@ -332,7 +352,7 @@
             isAdmin: false
         };
         try {
-            // 呼叫更新後的 GAS Proxy 函數
+            // 呼叫 GAS Proxy 函數
             await updateGistData(user);
             
             // 註冊成功，更新 sessionStorage 的 isRegistered 狀態
