@@ -3,90 +3,65 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>暨大接駁車 - LINE 註冊</title>
+  <title>LINE Login Debug</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gradient-to-br from-blue-100 to-purple-100 min-h-screen flex items-center justify-center p-4">
   <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center">
-    <h1 class="text-2xl font-bold mb-4">暨大接駁車會員註冊</h1>
-    <div id="loginBox" class="space-y-4">
-      <p class="text-gray-700">請使用 LINE 登入以開始註冊</p>
-      <button id="loginBtn" class="bg-green-500 text-white font-bold py-3 px-6 rounded-xl">使用 LINE 登入</button>
-    </div>
-
-    <div id="registerBox" class="hidden">
-      <img id="pictureUrl" class="mx-auto w-20 h-20 rounded-full mb-4" />
-      <p id="displayName" class="font-bold text-lg mb-2"></p>
-
-      <form id="registerForm" class="space-y-3">
-        <input type="hidden" id="lineUserId">
-        <input id="phone" type="tel" placeholder="手機號碼 (10 碼)" class="w-full border p-3 rounded-lg" required>
-        <input id="studentId" type="text" placeholder="學號 (9 碼)" class="w-full border p-3 rounded-lg" required>
-        <select id="department" class="w-full border p-3 rounded-lg" required>
-          <option value="">請選擇科系</option>
-          <option>觀光休閒與餐旅管理學系</option>
-          <option>資訊工程學系</option>
-          <option>電機工程學系</option>
-          <option>土木工程學系</option>
-          <option>應用化學系</option>
-        </select>
-        <button class="bg-blue-600 text-white w-full py-3 rounded-lg font-bold">送出註冊</button>
-      </form>
-    </div>
+    <h1 class="text-2xl font-bold mb-4 text-gray-700">LINE Login Debug 模式</h1>
+    <div id="logBox" class="text-left bg-gray-100 rounded-xl p-4 text-sm overflow-auto h-60 mb-4"></div>
+    <button id="loginBtn" class="bg-green-500 text-white font-bold py-3 px-6 rounded-xl">使用 LINE 登入</button>
   </div>
 
-<script>
-const CONFIG = {
-  CLIENT_ID: "2006590746",
-  REDIRECT_URI: "https://fangwl591021.github.io/chinanlogin/register.html",
-  STATE: "register",
-  SCOPE: "profile openid",
-  GAS_URL: "https://delicate-math-7e61.fangwl591021.workers.dev/"
-};
-
-document.getElementById("loginBtn").addEventListener("click", () => {
-  const loginUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${CONFIG.CLIENT_ID}&redirect_uri=${encodeURIComponent(CONFIG.REDIRECT_URI)}&state=${CONFIG.STATE}&scope=${CONFIG.SCOPE}`;
-  window.location.href = loginUrl;
-});
-
-window.addEventListener("load", async () => {
-  const code = new URL(location.href).searchParams.get("code");
-  if (!code) return;
-
-  try {
-    const res = await fetch(`${CONFIG.GAS_URL}?action=getProfile&code=${code}`);
-    const data = await res.json();
-
-    if (data.userId) {
-      document.getElementById("loginBox").classList.add("hidden");
-      document.getElementById("registerBox").classList.remove("hidden");
-      document.getElementById("pictureUrl").src = data.pictureUrl;
-      document.getElementById("displayName").textContent = data.displayName;
-      document.getElementById("lineUserId").value = data.userId;
-    } else alert("無法取得 LINE 資料");
-  } catch (e) {
-    alert("登入失敗：" + e.message);
-  }
-});
-
-document.getElementById("registerForm").addEventListener("submit", async e => {
-  e.preventDefault();
-  const body = {
-    lineUserId: document.getElementById("lineUserId").value,
-    displayName: document.getElementById("displayName").textContent,
-    phone: document.getElementById("phone").value,
-    studentId: document.getElementById("studentId").value,
-    department: document.getElementById("department").value,
-    registerTime: new Date().toISOString()
+  <script>
+  const CONFIG = {
+    CLIENT_ID: "2006590746",
+    REDIRECT_URI: "https://fangwl591021.github.io/chinanlogin/register.html",
+    STATE: "debugTest",
+    SCOPE: "profile openid",
+    WORKER_URL: "https://delicate-math-7e61.fangwl591021.workers.dev"
   };
-  const res = await fetch(CONFIG.GAS_URL, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(body)
+
+  const log = (msg) => {
+    const box = document.getElementById("logBox");
+    const time = new Date().toLocaleTimeString();
+    box.innerHTML += `<div>[${time}] ${msg}</div>`;
+    box.scrollTop = box.scrollHeight;
+    console.log(msg);
+  };
+
+  document.getElementById("loginBtn").addEventListener("click", () => {
+    const url = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${CONFIG.CLIENT_ID}&redirect_uri=${encodeURIComponent(CONFIG.REDIRECT_URI)}&state=${CONFIG.STATE}&scope=${CONFIG.SCOPE}`;
+    log("🔗 導向 LINE 登入頁...");
+    window.location.href = url;
   });
-  const result = await res.json();
-  alert(result.success ? "🎉 註冊成功！" : "❌ 註冊失敗");
-});
-</script>
+
+  async function getProfile(code) {
+    const api = `${CONFIG.WORKER_URL}?action=getProfile&code=${code}`;
+    log(`🚀 呼叫 Worker: ${api}`);
+    try {
+      const res = await fetch(api);
+      const data = await res.json();
+      log("✅ Worker 回傳：" + JSON.stringify(data, null, 2));
+      if (data.success && data.userId) {
+        log(`🎉 登入成功，使用者：${data.displayName}`);
+      } else {
+        log("⚠️ Worker 回傳錯誤，請檢查 GAS。");
+      }
+    } catch (err) {
+      log("❌ 讀取錯誤：" + err.message);
+    }
+  }
+
+  window.addEventListener("load", () => {
+    const code = new URL(location.href).searchParams.get("code");
+    if (code) {
+      log("🧩 收到 LINE 授權碼：" + code);
+      getProfile(code);
+    } else {
+      log("ℹ️ 尚未登入 LINE，請點上方按鈕。");
+    }
+  });
+  </script>
 </body>
 </html>
