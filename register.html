@@ -220,4 +220,165 @@
       allUsers = data.users || [];
       filteredUsers = [...allUsers];
       
-      document.getElementById("loading").classList.ad
+      document.getElementById("loading").classList.add("hidden");
+      displayUsers();
+      displayStatistics();
+    } catch (err) {
+      console.error("載入失敗：", err);
+      document.getElementById("loading").innerHTML = `
+        <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <i class="fas fa-exclamation-triangle text-red-500 text-3xl"></i>
+        </div>
+        <p class="text-red-600 font-bold text-lg mb-2">載入失敗</p>
+        <p class="text-gray-500">請重新整理頁面或稍後再試</p>
+      `;
+    }
+  }
+
+  function displayUsers() {
+    const container = document.getElementById("userList");
+    document.getElementById("totalCount").textContent = filteredUsers.length;
+
+    if (filteredUsers.length === 0) {
+      container.classList.add("hidden");
+      document.getElementById("noData").classList.remove("hidden");
+      return;
+    }
+
+    container.classList.remove("hidden");
+    document.getElementById("noData").classList.add("hidden");
+
+    const colors = [
+      'from-blue-500 to-cyan-500',
+      'from-purple-500 to-pink-500',
+      'from-green-500 to-emerald-500',
+      'from-orange-500 to-red-500',
+      'from-indigo-500 to-purple-500'
+    ];
+
+    container.innerHTML = filteredUsers.map((user, index) => `
+      <div class="bg-white rounded-2xl shadow-lg p-6 card-hover animate-slide-in" style="animation-delay: ${index * 0.05}s">
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-4">
+            <div class="w-16 h-16 bg-gradient-to-br ${colors[index % colors.length]} rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg">
+              ${user.displayName.charAt(0)}
+            </div>
+            <div>
+              <h3 class="text-xl font-black text-gray-800 mb-1">${user.displayName}</h3>
+              <p class="text-sm font-medium text-gray-500 flex items-center gap-2">
+                <i class="fas fa-school text-purple-500"></i>
+                ${user.department}
+              </p>
+            </div>
+          </div>
+          ${user.isAdmin ? '<span class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs px-4 py-2 rounded-full font-bold shadow-md">👑 管理員</span>' : ''}
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-blue-50 rounded-xl p-4">
+            <p class="text-xs font-bold text-blue-600 mb-1 flex items-center gap-1">
+              <i class="fas fa-id-card"></i>
+              學號
+            </p>
+            <p class="text-lg font-bold text-gray-800">${user.studentId}</p>
+          </div>
+          
+          <div class="bg-green-50 rounded-xl p-4">
+            <p class="text-xs font-bold text-green-600 mb-1 flex items-center gap-1">
+              <i class="fas fa-phone"></i>
+              電話
+            </p>
+            <p class="text-lg font-bold text-gray-800">${user.phone}</p>
+          </div>
+          
+          <div class="bg-purple-50 rounded-xl p-4">
+            <p class="text-xs font-bold text-purple-600 mb-1 flex items-center gap-1">
+              <i class="fas fa-calendar"></i>
+              註冊時間
+            </p>
+            <p class="text-sm font-bold text-gray-800">${formatDate(user.registerTime)}</p>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function displayStatistics() {
+    const stats = {};
+    allUsers.forEach(user => {
+      stats[user.department] = (stats[user.department] || 0) + 1;
+    });
+
+    const statsContainer = document.getElementById("statsGrid");
+    const colors = [
+      'from-blue-500 to-cyan-500',
+      'from-purple-500 to-pink-500',
+      'from-green-500 to-emerald-500',
+      'from-orange-500 to-red-500',
+      'from-indigo-500 to-blue-500',
+      'from-pink-500 to-rose-500',
+      'from-teal-500 to-green-500'
+    ];
+
+    statsContainer.innerHTML = Object.entries(stats)
+      .sort((a, b) => b[1] - a[1])
+      .map(([dept, count], index) => `
+        <div class="stat-card bg-gradient-to-br ${colors[index % colors.length]} rounded-2xl p-5 text-center text-white shadow-xl">
+          <p class="text-4xl font-black mb-2">${count}</p>
+          <p class="text-xs font-bold opacity-90">${dept.length > 12 ? dept.substring(0, 12) + '...' : dept}</p>
+        </div>
+      `).join('');
+
+    document.getElementById("statistics").classList.remove("hidden");
+  }
+
+  function filterUsers() {
+    const searchTerm = document.getElementById("searchInput").value.toLowerCase();
+    const deptFilter = document.getElementById("departmentFilter").value;
+    const sortBy = document.getElementById("sortSelect").value;
+
+    filteredUsers = allUsers.filter(user => {
+      const matchSearch = !searchTerm || 
+        user.displayName.toLowerCase().includes(searchTerm) ||
+        user.studentId.includes(searchTerm) ||
+        user.phone.includes(searchTerm);
+      
+      const matchDept = !deptFilter || user.department === deptFilter;
+      
+      return matchSearch && matchDept;
+    });
+
+    filteredUsers.sort((a, b) => {
+      if (sortBy === "registerTime") {
+        return new Date(b.registerTime) - new Date(a.registerTime);
+      } else if (sortBy === "displayName") {
+        return a.displayName.localeCompare(b.displayName);
+      } else if (sortBy === "studentId") {
+        return a.studentId.localeCompare(b.studentId);
+      } else if (sortBy === "department") {
+        return a.department.localeCompare(b.department);
+      }
+    });
+
+    displayUsers();
+  }
+
+  function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('zh-TW', { 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  document.getElementById("searchInput").addEventListener("input", filterUsers);
+  document.getElementById("departmentFilter").addEventListener("change", filterUsers);
+  document.getElementById("sortSelect").addEventListener("change", filterUsers);
+
+  window.onload = loadUsers;
+  </script>
+</body>
+</html>
