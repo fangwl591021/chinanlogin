@@ -205,89 +205,68 @@
     </div>
 
     <script>
+    // ⚠️ CONFIGURATION - 已移除 GITHUB_TOKEN/GIST_ID，改用安全的 GAS Proxy
     const CONFIG = {
         LIFF_ID: "2008231249-yv8294Jp",
-        // 警告：此 Token 應移至後端服務。在此公開有資安風險！
-        GITHUB_TOKEN: "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",
-        GIST_ID: "802416482763775c3c17680ffea14e7e"
+        PROXY_API_URL: "https://script.google.com/macros/s/AKfycbztIkoPisJ0W5CHEWPQI8lfNp20iz2UGRliUYDPDs1u46jsmq5yL28H_REhcRQ3IeEsWw/exec", 
     };
 
-    // 從 Gist 讀取數據 (已修正錯誤處理)
-    async function getGistData() {
-        const res = await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, {
-            headers: { Authorization: `token ${CONFIG.GITHUB_TOKEN}` }
-        });
-
-        if (!res.ok) {
-            throw new Error(`Gist API 呼叫失敗，狀態碼: ${res.status}`);
-        }
-
-        const gist = await res.json();
-        const fileKeys = Object.keys(gist.files);
-        
-        // 確保 files 陣列不為空
-        if (fileKeys.length === 0) {
-            return { fileKey: 'users.json', data: { users: [] } }; // 假設預期的檔名
-        }
-
-        const fileKey = fileKeys[0];
-        const content = gist.files[fileKey].content;
-        
-        try {
-            return { fileKey, data: JSON.parse(content || '{"users": []}') };
-        } catch (e) {
-            console.error('JSON 解析錯誤:', e);
-            throw new Error('Gist 檔案內容格式錯誤。');
-        }
-    }
-
-    // 更新 Gist 數據
+    /**
+     * @function updateGistData
+     * @description 使用 POST 請求呼叫 Google Apps Script Proxy 服務來新增用戶
+     * @param {object} user - 要註冊的用戶資料
+     */
     async function updateGistData(user) {
-        const { fileKey, data } = await getGistData();
-        
-        if (data.users.find(u => u.lineUserId === user.lineUserId))
-            throw new Error("此帳號已註冊");
-            
-        data.users.push(user);
-        
-        const res = await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, {
-            method: "PATCH",
+        // 使用 POST 請求呼叫 GAS Proxy
+        const res = await fetch(CONFIG.PROXY_API_URL, {
+            method: "POST",
             headers: {
-                Authorization: `token ${CONFIG.GITHUB_TOKEN}`,
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-                files: { [fileKey]: { content: JSON.stringify(data, null, 2) } }
-            })
+            // 將新用戶資料包裝在 GAS 期望的 { newUser: user } 格式中
+            body: JSON.stringify({ newUser: user }) 
         });
-        
+
         if (!res.ok) {
-            throw new Error(`Gist 更新失敗，狀態碼: ${res.status}`);
+            // 處理網路或伺服器錯誤 (例如：500 Internal Server Error)
+            throw new Error(`Proxy API 呼叫失敗，狀態碼: ${res.status}`);
         }
+
+        const result = await res.json();
+        
+        // 檢查 GAS 回傳的 JSON 結構中的 status 屬性
+        if (result.status === 'error') {
+            // 處理 GAS 內部錯誤 (例如：Gist 讀寫失敗、帳號已註冊)
+            throw new Error(result.message);
+        }
+        
+        // 成功寫入
+        return result;
     }
+
+    // -------------------------------------------------------------
+    // LIFF 初始化和流程控制 (保持不變)
+    // -------------------------------------------------------------
 
     async function initLINE() {
         try {
             await liff.init({ liffId: CONFIG.LIFF_ID });
 
             const cachedUser = JSON.parse(sessionStorage.getItem("lineUserData") || "null");
+            const cachedRegistration = JSON.parse(sessionStorage.getItem("userData") || "null");
             
-            // 檢查是否已登入
-            if (!liff.isLoggedIn() && (!cachedUser || !cachedUser.lineUserId)) {
-                console.log("尚未登入 → 觸發 LIFF 登入");
-                // 檢查是否從 index.html 正確導向，如果沒有，就導回登入頁面
-                if (window.location.pathname.endsWith('register.html')) {
-                    alert('登入狀態遺失，將導向登入頁面');
-                    window.location.href = "index.html";
-                    return;
-                }
-                liff.login({ redirectUri: window.location.href });
+            // 1. 檢查登入狀態和註冊狀態
+            if (!liff.isLoggedIn() || !cachedRegistration || !cachedRegistration.lineUserId) {
+                console.log("登入狀態遺失，導回登入頁面");
+                // 登入狀態遺失，導回登入頁面重新獲取 LIFF 狀態
+                alert('登入狀態遺失或無註冊記錄，將導回登入頁面');
+                window.location.href = "index.html";
                 return;
             }
 
             let userData = cachedUser;
             if (!userData) {
-                // 如果沒有 sessionStorage，嘗試從 LIFF 獲取
+                 // 如果沒有 sessionStorage，嘗試從 LIFF 獲取 (備用)
                 const profile = await liff.getProfile();
                 userData = {
                     lineUserId: profile.userId,
@@ -296,8 +275,16 @@
                 };
                 sessionStorage.setItem("lineUserData", JSON.stringify(userData));
             }
+
+            // 2. 檢查是否已被 index.html 判定為已註冊
+            if (cachedRegistration.isRegistered) {
+                 console.log("用戶已在 index.html 判定為已註冊，導向主頁面");
+                 alert('您已完成註冊，將導向主頁面');
+                 window.location.href = "main.html";
+                 return;
+            }
             
-            console.log("✅ 成功獲取登入資料");
+            console.log("✅ 成功獲取登入資料，準備註冊");
             showUser(userData);
 
         } catch (err) {
@@ -345,6 +332,7 @@
             isAdmin: false
         };
         try {
+            // 呼叫更新後的 GAS Proxy 函數
             await updateGistData(user);
             
             // 註冊成功，更新 sessionStorage 的 isRegistered 狀態
@@ -355,15 +343,18 @@
             userData.department = user.department;
             sessionStorage.setItem('userData', JSON.stringify(userData));
             
-            submitBtn.innerHTML = '<i class="fas fa-check mr-2"></i>註冊成功！';
-            submitBtn.classList.remove('from-green-500', 'to-emerald-600');
+            submitBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>註冊成功！';
+            submitBtn.classList.remove('from-green-500', 'to-emerald-600', 'hover:from-green-600', 'hover:to-emerald-700');
             submitBtn.classList.add('from-blue-500', 'to-blue-600');
             
+            alert('🎉 會員註冊成功！您現在可以開始預約接駁車服務。');
+
             setTimeout(() => {
                 window.location.href = "main.html";
-            }, 1000);
+            }, 500);
         } catch (err) {
-            alert("❌ " + err.message);
+            console.error("註冊失敗:", err);
+            alert("❌ 註冊失敗: " + err.message);
             submitBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>完成註冊';
             submitBtn.disabled = false;
         }
