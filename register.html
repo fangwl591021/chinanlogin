@@ -115,12 +115,19 @@
       };
 
       try {
-        const res = await fetch(`${CONFIG.WORKER_URL}?action=register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
-        });
-        const result = await res.json();
-        log("Register Response →", result);
-        if (result.success) {
-          alert("🎉 
+  const res = await fetch(CONFIG.WORKER_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  const result = await res.json();
+  log("Register Response →", result);
+  if (result.success) {
+    alert("🎉 註冊成功！");
+    window.location.href = "main.html";
+  } else {
+    alert("❌ 註冊失敗：" + (result.error || "未知錯誤"));
+  }
+} catch (err) {
+  alert("網路錯誤：" + err.message);
+}
