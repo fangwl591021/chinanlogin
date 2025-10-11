@@ -139,12 +139,12 @@
 
     <script>
         // 統一配置
-        const CONFIG = {
-            LIFF_ID: "2006590746-VKy0Gk0l",
-            // 警告：此 Token 應移至後端服務。在此公開有資安風險！
-            GITHUB_TOKEN: "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", 
-            GIST_ID: "802416482763775c3c17680ffea14e7e"
-        };
+        // index.html - 統一配置
+const CONFIG = {
+    LIFF_ID: "2006590746-VKy0Gk0l",
+    // ⚠️ 新增 GAS Proxy URL ⚠️
+    PROXY_API_URL: "https://script.google.com/macros/s/AKfycbztIkoPisJ0W5CHEWPQI8lfNp20iz2UGRliUYDPDs1u46jsmq5yL28H_REhcRQ3IeEsWw/exec",
+};
 
         // 從 Gist 讀取用戶資料 (已加入錯誤處理)
         async function getUsersFromGist() {
