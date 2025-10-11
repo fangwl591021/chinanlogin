@@ -145,8 +145,22 @@
     <script>
         const CONFIG = {
             LIFF_ID: "2006590746-VKy0Gk0l",
-            GAS_API_URL: "https://script.google.com/macros/s/AKfycbxZp7z4aKT_DwxvmcRdawLDIKZdxho5Lpn8awzRPYmeoir7ze6TGGe1C7QQE5LoZunhXA/exec"
+            GAS_API_URL: "https://script.google.com/macros/s/AKfycbye4h7nvJBQgdUK9gIYw0JABuV6Aijmw7aWtBg6e_F5jsK4EGTrBfcKV07j5JJ-OvQ2Kg/exec"
         };
+
+        // 測試 GAS 連接
+        async function testGASConnection() {
+            try {
+                console.log('測試 GAS 連接...');
+                const response = await fetch(CONFIG.GAS_API_URL);
+                const result = await response.json();
+                console.log('GAS 連接測試結果:', result);
+                return true;
+            } catch (error) {
+                console.error('GAS 連接測試失敗:', error);
+                return false;
+            }
+        }
 
         // 初始化 LIFF
         async function initLINE() {
@@ -168,6 +182,14 @@
                 document.getElementById('lineUserPicture').src = profile.pictureUrl || 'https://via.placeholder.com/150';
                 document.getElementById('lineUserId').value = profile.userId;
                 document.getElementById('displayName').value = profile.displayName;
+
+                // 測試 GAS 連接
+                const gasConnected = await testGASConnection();
+                if (!gasConnected) {
+                    updateStatus('伺服器連線測試失敗，註冊時將使用本地儲存', 'error');
+                } else {
+                    updateStatus('系統連線正常', 'success');
+                }
 
                 // 檢查是否已註冊
                 await checkIfRegistered(profile.userId);
@@ -221,14 +243,13 @@
             indicator.classList.remove('hidden');
         }
 
-        // 註冊用戶到 GAS
+        // 註冊用戶到 GAS - 加強錯誤處理
         async function registerToGAS(user) {
-            console.log('註冊到 GAS:', user);
+            console.log('開始註冊到 GAS:', user);
             
             updateStatus('正在連線到伺服器...', 'info');
             
             try {
-                // 修改資料格式以匹配試算表欄位
                 const userData = {
                     lineUserId: user.lineUserId,
                     displayName: user.displayName,
@@ -237,6 +258,8 @@
                     department: user.department,
                     registerTime: user.registerTime
                 };
+
+                console.log('發送資料到 GAS:', userData);
 
                 const response = await fetch(CONFIG.GAS_API_URL, {
                     method: 'POST',
@@ -248,22 +271,32 @@
 
                 console.log('GAS 響應狀態:', response.status);
                 
+                const responseText = await response.text();
+                console.log('GAS 響應內容:', responseText);
+                
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('解析 JSON 失敗:', parseError);
+                    throw new Error('伺服器回應格式錯誤: ' + responseText);
+                }
+                
                 if (!response.ok) {
-                    throw new Error(`伺服器錯誤! 狀態碼: ${response.status}`);
+                    throw new Error(`伺服器錯誤! 狀態碼: ${response.status}, 訊息: ${result.error || '未知錯誤'}`);
                 }
 
-                const result = await response.json();
-                console.log('GAS 響應數據:', result);
-                
                 if (result.success === false) {
                     throw new Error(result.error || '註冊失敗');
                 }
                 
-                updateStatus('註冊成功！', 'success');
+                console.log('GAS 註冊成功:', result);
+                updateStatus('註冊成功！資料已寫入試算表', 'success');
                 return result;
 
             } catch (error) {
-                updateStatus('伺服器連線失敗，使用本地儲存', 'error');
+                console.error('GAS 註冊失敗:', error);
+                updateStatus('伺服器連線失敗: ' + error.message, 'error');
                 throw error;
             }
         }
