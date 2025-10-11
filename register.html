@@ -142,302 +142,261 @@
         </div>
     </div>
 
-    <script>
-        const CONFIG = {
-            LIFF_ID: "2006590746-VKy0Gk0l",
-            GAS_API_URL: "https://script.google.com/macros/s/AKfycbye4h7nvJBQgdUK9gIYw0JABuV6Aijmw7aWtBg6e_F5jsK4EGTrBfcKV07j5JJ-OvQ2Kg/exec"
-        };
+    <<script>
+    const CONFIG = {
+        LIFF_ID: "2006590746-VKy0Gk0l",
+        GAS_API_URL: "https://script.google.com/macros/s/AKfycbxZp7z4aKT_DwxvmcRdawLDIKZdxho5Lpn8awzRPYmeoir7ze6TGGe1C7QQE5LoZunhXA/exec"
+    };
 
-        // 測試 GAS 連接
-        async function testGASConnection() {
-            try {
-                console.log('測試 GAS 連接...');
-                const response = await fetch(CONFIG.GAS_API_URL);
-                const result = await response.json();
-                console.log('GAS 連接測試結果:', result);
-                return true;
-            } catch (error) {
-                console.error('GAS 連接測試失敗:', error);
-                return false;
-            }
+    // 測試 GAS 連接
+    async function testGASConnection() {
+        try {
+            console.log('測試 GAS 連接...');
+            const response = await fetch(CONFIG.GAS_API_URL);
+            const result = await response.json();
+            console.log('GAS 連接測試結果:', result);
+            return true;
+        } catch (error) {
+            console.error('GAS 連接測試失敗:', error);
+            return false;
         }
+    }
 
-        // 初始化 LIFF
-        async function initLINE() {
-            try {
-                await liff.init({ liffId: CONFIG.LIFF_ID });
-                console.log('LIFF 初始化成功');
+    // 初始化 LIFF
+    async function initLINE() {
+        try {
+            await liff.init({ liffId: CONFIG.LIFF_ID });
+            console.log('LIFF 初始化成功');
 
-                if (!liff.isLoggedIn()) {
-                    alert('請先完成 LINE 登入');
-                    window.location.href = 'index.html';
-                    return;
-                }
-
-                const profile = await liff.getProfile();
-                console.log('LINE 用戶資料:', profile);
-
-                // 顯示用戶資訊
-                document.getElementById('lineUserName').textContent = profile.displayName;
-                document.getElementById('lineUserPicture').src = profile.pictureUrl || 'https://via.placeholder.com/150';
-                document.getElementById('lineUserId').value = profile.userId;
-                document.getElementById('displayName').value = profile.displayName;
-
-                // 測試 GAS 連接
-                const gasConnected = await testGASConnection();
-                if (!gasConnected) {
-                    updateStatus('伺服器連線測試失敗，註冊時將使用本地儲存', 'error');
-                } else {
-                    updateStatus('系統連線正常', 'success');
-                }
-
-                // 檢查是否已註冊
-                await checkIfRegistered(profile.userId);
-
-            } catch (error) {
-                console.error('LIFF 初始化失敗:', error);
-                alert('LINE 登入失敗，請重試');
+            if (!liff.isLoggedIn()) {
+                alert('請先完成 LINE 登入');
+                window.location.href = 'index.html';
+                return;
             }
-        }
 
-        // 檢查是否已註冊
-        async function checkIfRegistered(lineUserId) {
-            try {
-                const users = await getUsersFromGAS();
+            const profile = await liff.getProfile();
+            console.log('LINE 用戶資料:', profile);
+
+            // 顯示用戶資訊
+            document.getElementById('lineUserName').textContent = profile.displayName;
+            document.getElementById('lineUserPicture').src = profile.pictureUrl || 'https://via.placeholder.com/150';
+            document.getElementById('lineUserId').value = profile.userId;
+            document.getElementById('displayName').value = profile.displayName;
+
+            // 測試 GAS 連接
+            const gasConnected = await testGASConnection();
+            if (!gasConnected) {
+                updateStatus('⚠️ 伺服器連線異常，請稍後再試', 'error');
+            } else {
+                updateStatus('✅ 系統連線正常', 'success');
+            }
+
+            // 檢查是否已註冊
+            await checkIfRegistered(profile.userId);
+
+        } catch (error) {
+            console.error('LIFF 初始化失敗:', error);
+            alert('LINE 登入失敗，請重試');
+        }
+    }
+
+    // 檢查是否已註冊
+    async function checkIfRegistered(lineUserId) {
+        try {
+            const response = await fetch(CONFIG.GAS_API_URL + '?action=getUsers');
+            if (response.ok) {
+                const users = await response.json();
                 const existingUser = users.find(user => user.LINEUSERID === lineUserId);
                 
                 if (existingUser) {
                     alert('您已完成註冊，將導向主頁面');
                     window.location.href = 'main.html';
                 }
-            } catch (error) {
-                console.log('檢查註冊狀態失敗，繼續註冊流程:', error.message);
             }
+        } catch (error) {
+            console.log('檢查註冊狀態失敗，繼續註冊流程:', error.message);
         }
+    }
 
-        // 從 GAS 獲取用戶列表
-        async function getUsersFromGAS() {
-            try {
-                const response = await fetch(CONFIG.GAS_API_URL + '?action=getUsers');
-                if (response.ok) {
-                    const result = await response.json();
-                    return result;
-                }
-            } catch (error) {
-                console.error('獲取用戶列表失敗:', error);
-            }
-            return [];
-        }
+    // 更新狀態指示器
+    function updateStatus(message, type = 'info') {
+        const indicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        
+        statusText.textContent = message;
+        indicator.className = `mt-4 p-3 rounded-xl text-center text-sm ${
+            type === 'success' ? 'bg-green-100 text-green-700 border border-green-200' :
+            type === 'error' ? 'bg-red-100 text-red-700 border border-red-200' :
+            'bg-blue-100 text-blue-700 border border-blue-200'
+        }`;
+        indicator.classList.remove('hidden');
+    }
 
-        // 更新狀態指示器
-        function updateStatus(message, type = 'info') {
-            const indicator = document.getElementById('statusIndicator');
-            const statusText = document.getElementById('statusText');
-            
-            statusText.textContent = message;
-            indicator.className = `mt-4 p-3 rounded-xl text-center text-sm ${
-                type === 'success' ? 'bg-green-100 text-green-700 border border-green-200' :
-                type === 'error' ? 'bg-red-100 text-red-700 border border-red-200' :
-                'bg-blue-100 text-blue-700 border border-blue-200'
-            }`;
-            indicator.classList.remove('hidden');
-        }
-
-        // 註冊用戶到 GAS - 加強錯誤處理
-        async function registerToGAS(user) {
-            console.log('開始註冊到 GAS:', user);
-            
-            updateStatus('正在連線到伺服器...', 'info');
-            
-            try {
-                const userData = {
-                    lineUserId: user.lineUserId,
-                    displayName: user.displayName,
-                    phone: user.phone,
-                    studentId: user.studentId,
-                    department: user.department,
-                    registerTime: user.registerTime
-                };
-
-                console.log('發送資料到 GAS:', userData);
-
-                const response = await fetch(CONFIG.GAS_API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(userData)
-                });
-
-                console.log('GAS 響應狀態:', response.status);
-                
-                const responseText = await response.text();
-                console.log('GAS 響應內容:', responseText);
-                
-                let result;
-                try {
-                    result = JSON.parse(responseText);
-                } catch (parseError) {
-                    console.error('解析 JSON 失敗:', parseError);
-                    throw new Error('伺服器回應格式錯誤: ' + responseText);
-                }
-                
-                if (!response.ok) {
-                    throw new Error(`伺服器錯誤! 狀態碼: ${response.status}, 訊息: ${result.error || '未知錯誤'}`);
-                }
-
-                if (result.success === false) {
-                    throw new Error(result.error || '註冊失敗');
-                }
-                
-                console.log('GAS 註冊成功:', result);
-                updateStatus('註冊成功！資料已寫入試算表', 'success');
-                return result;
-
-            } catch (error) {
-                console.error('GAS 註冊失敗:', error);
-                updateStatus('伺服器連線失敗: ' + error.message, 'error');
-                throw error;
-            }
-        }
-
-        // 本地儲存備用方案
-        function saveToLocalStorage(user) {
-            try {
-                const users = JSON.parse(localStorage.getItem('ncnu_users') || '[]');
-                
-                // 檢查是否已存在
-                const exists = users.find(u => u.studentId === user.studentId);
-                if (exists) {
-                    throw new Error('該學號已註冊');
-                }
-                
-                users.push(user);
-                localStorage.setItem('ncnu_users', JSON.stringify(users));
-                return { 
-                    success: true,
-                    message: '註冊成功！(資料暫存本地)',
-                    storage: 'local'
-                };
-            } catch (error) {
-                throw error;
-            }
-        }
-
-        // 主要註冊函數
-        async function registerUser(user) {
-            try {
-                // 先嘗試 GAS
-                const result = await registerToGAS(user);
-                return result;
-            } catch (error) {
-                console.log('GAS 註冊失敗，降級到本地儲存:', error.message);
-                // 降級到本地儲存
-                return saveToLocalStorage(user);
-            }
-        }
-
-        // 表單提交處理
-        document.getElementById("registerForm").addEventListener("submit", async e => {
-            e.preventDefault();
-            
-            const submitBtn = document.getElementById("submitBtn");
-            const originalText = submitBtn.innerHTML;
-            
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>註冊中...';
-            submitBtn.disabled = true;
-
-            const user = {
-                lineUserId: document.getElementById("lineUserId").value,
-                displayName: document.getElementById("displayName").value.trim(),
-                phone: document.getElementById("phone").value.trim(),
-                studentId: document.getElementById("studentId").value.trim(),
-                department: document.getElementById("department").value,
-                registerTime: new Date().toISOString(),
-                isAdmin: false
+    // 註冊用戶到 GAS - 只使用 GAS，不降級到本地
+    async function registerToGAS(user) {
+        console.log('開始註冊到 GAS:', user);
+        
+        updateStatus('正在連線到伺服器...', 'info');
+        
+        try {
+            const userData = {
+                lineUserId: user.lineUserId,
+                displayName: user.displayName,
+                phone: user.phone,
+                studentId: user.studentId,
+                department: user.department,
+                registerTime: user.registerTime
             };
 
-            // 表單驗證
-            if (!validateForm(user)) {
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-                return;
+            console.log('發送資料到 GAS:', userData);
+
+            const response = await fetch(CONFIG.GAS_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userData)
+            });
+
+            console.log('GAS 響應狀態:', response.status);
+            
+            const responseText = await response.text();
+            console.log('GAS 響應內容:', responseText);
+            
+            let result;
+            try {
+                result = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('解析 JSON 失敗:', parseError);
+                throw new Error('伺服器回應格式錯誤，請聯繫管理員');
+            }
+            
+            if (!response.ok) {
+                throw new Error(`伺服器錯誤! 狀態碼: ${response.status}`);
             }
 
-            try {
-                const result = await registerUser(user);
-                
-                submitBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>註冊成功！';
-                submitBtn.classList.remove('from-green-500', 'to-emerald-600', 'hover:from-green-600', 'hover:to-emerald-700');
-                submitBtn.classList.add('from-blue-500', 'to-blue-600');
-                
-                // 修改成功訊息處理
-                let successMessage = '🎉 註冊成功！';
-                if (result.storage === 'local') {
-                    successMessage += '\n\n⚠️ 注意：資料暫存於本地瀏覽器，管理員後續會同步到伺服器。';
-                } else {
-                    successMessage += '\n資料已成功寫入系統！';
-                }
-                
-                alert(successMessage);
-                
-                // 儲存到 sessionStorage
-                sessionStorage.setItem('userData', JSON.stringify({
-                    ...user,
-                    isRegistered: true
-                }));
-                
-                setTimeout(() => {
-                    window.location.href = "main.html";
-                }, 2000);
-                
-            } catch (err) {
-                console.error("註冊失敗:", err);
-                alert("❌ 註冊失敗: " + err.message);
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-                updateStatus('', 'info');
+            if (result.success === false) {
+                throw new Error(result.error || '註冊失敗');
             }
-        });
+            
+            console.log('GAS 註冊成功:', result);
+            updateStatus('✅ 註冊成功！資料已寫入試算表', 'success');
+            return result;
+
+        } catch (error) {
+            console.error('GAS 註冊失敗:', error);
+            updateStatus('❌ 伺服器連線失敗', 'error');
+            throw error;
+        }
+    }
+
+    // 主要註冊函數 - 只使用 GAS，失敗時不降級
+    async function registerUser(user) {
+        // 直接使用 GAS，不提供降級方案
+        const result = await registerToGAS(user);
+        return result;
+    }
+
+    // 表單提交處理
+    document.getElementById("registerForm").addEventListener("submit", async e => {
+        e.preventDefault();
+        
+        const submitBtn = document.getElementById("submitBtn");
+        const originalText = submitBtn.innerHTML;
+        
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>註冊中...';
+        submitBtn.disabled = true;
+
+        const user = {
+            lineUserId: document.getElementById("lineUserId").value,
+            displayName: document.getElementById("displayName").value.trim(),
+            phone: document.getElementById("phone").value.trim(),
+            studentId: document.getElementById("studentId").value.trim(),
+            department: document.getElementById("department").value,
+            registerTime: new Date().toISOString(),
+            isAdmin: false
+        };
 
         // 表單驗證
-        function validateForm(data) {
-            if (!data.displayName || data.displayName.trim() === '') {
-                alert('請填寫姓名');
-                return false;
-            }
-            
-            if (!data.phone.match(/^[0-9]{10}$/)) {
-                alert('請輸入正確的手機號碼（10位數字）');
-                return false;
-            }
-            
-            if (!data.studentId.match(/^[0-9]{9}$/)) {
-                alert('請輸入正確的學號（9位數字）');
-                return false;
-            }
-            
-            if (!data.department) {
-                alert('請選擇科系');
-                return false;
-            }
-            
-            return true;
+        if (!validateForm(user)) {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            return;
         }
 
-        // 登出功能
-        function logoutLINE() {
-            if (confirm("確定要登出嗎？登出後將返回登入頁面。")) {
-                sessionStorage.clear();
-                if (liff.isLoggedIn()) {
-                    liff.logout();
-                }
-                window.location.href = "index.html";
-            }
+        try {
+            const result = await registerUser(user);
+            
+            submitBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>註冊成功！';
+            submitBtn.classList.remove('from-green-500', 'to-emerald-600', 'hover:from-green-600', 'hover:to-emerald-700');
+            submitBtn.classList.add('from-blue-500', 'to-blue-600');
+            
+            alert('🎉 註冊成功！\n資料已成功寫入 Google 試算表');
+            
+            // 儲存到 sessionStorage
+            sessionStorage.setItem('userData', JSON.stringify({
+                ...user,
+                isRegistered: true
+            }));
+            
+            setTimeout(() => {
+                window.location.href = "main.html";
+            }, 2000);
+            
+        } catch (err) {
+            console.error("註冊失敗:", err);
+            
+            let errorMessage = "❌ 註冊失敗: " + err.message;
+            errorMessage += "\n\n請檢查：";
+            errorMessage += "\n• 網路連線是否正常";
+            errorMessage += "\n• 或稍後再試";
+            errorMessage += "\n• 如持續失敗，請聯繫管理員";
+            
+            alert(errorMessage);
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            updateStatus('❌ 註冊失敗，請重試', 'error');
         }
+    });
 
-        // 頁面載入時初始化
-        window.addEventListener('load', initLINE);
-    </script>
+    // 表單驗證
+    function validateForm(data) {
+        if (!data.displayName || data.displayName.trim() === '') {
+            alert('請填寫姓名');
+            return false;
+        }
+        
+        if (!data.phone.match(/^[0-9]{10}$/)) {
+            alert('請輸入正確的手機號碼（10位數字）');
+            return false;
+        }
+        
+        if (!data.studentId.match(/^[0-9]{9}$/)) {
+            alert('請輸入正確的學號（9位數字）');
+            return false;
+        }
+        
+        if (!data.department) {
+            alert('請選擇科系');
+            return false;
+        }
+        
+        return true;
+    }
+
+    // 登出功能
+    function logoutLINE() {
+        if (confirm("確定要登出嗎？登出後將返回登入頁面。")) {
+            sessionStorage.clear();
+            if (liff.isLoggedIn()) {
+                liff.logout();
+            }
+            window.location.href = "index.html";
+        }
+    }
+
+    // 頁面載入時初始化
+    window.addEventListener('load', initLINE);
+</script>
 </body>
 </html>
