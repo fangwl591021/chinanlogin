@@ -25,7 +25,6 @@
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
     
-    <!-- 導航欄 -->
     <nav class="bg-white shadow-sm">
         <div class="max-w-6xl mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
@@ -42,11 +41,9 @@
         </div>
     </nav>
 
-    <!-- 主要內容 -->
     <main class="max-w-md mx-auto mt-16 px-4">
         <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
             
-            <!-- LINE Login 區 -->
             <div class="hero-pattern text-white p-12 text-center relative overflow-hidden">
                 <div class="absolute inset-0 opacity-10">
                     <div class="absolute top-0 left-0 w-40 h-40 bg-white rounded-full -translate-x-20 -translate-y-20"></div>
@@ -61,21 +58,18 @@
                 </div>
             </div>
 
-            <!-- 登入區 -->
             <div class="p-8 space-y-6">
                 <div class="text-center mb-6">
                     <h2 class="text-xl font-black text-gray-800 mb-2">歡迎使用接駁車系統</h2>
                     <p class="text-gray-600">請使用 LINE 帳號登入以繼續使用服務</p>
                 </div>
 
-                <!-- LINE Login 按鈕 -->
                 <button id="lineLoginBtn" 
                     class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-black py-5 px-6 rounded-2xl transition duration-200 shadow-xl hover:shadow-2xl transform hover:scale-[1.02] flex items-center justify-center text-lg">
                     <i class="fab fa-line text-2xl mr-3"></i>
                     LINE 快速登入
                 </button>
 
-                <!-- 說明 -->
                 <div class="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-2xl p-5 mt-6">
                     <div class="flex items-start">
                         <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -103,7 +97,6 @@
             </div>
         </div>
 
-        <!-- 功能特色 -->
         <div class="grid grid-cols-2 gap-4 mt-8 mb-8">
             <div class="bg-white rounded-2xl p-5 text-center shadow-lg hover:shadow-xl transition transform hover:scale-105">
                 <div class="w-14 h-14 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md">
@@ -132,7 +125,6 @@
         </div>
     </main>
 
-    <!-- 載入提示 -->
     <div id="loading" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white rounded-3xl p-8 text-center shadow-2xl">
             <div class="flex justify-center items-center gap-2 mb-6">
@@ -149,36 +141,64 @@
         // 統一配置
         const CONFIG = {
             LIFF_ID: "2006590746-VKy0Gk0l",
-            GITHUB_TOKEN: "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",
+            // 警告：此 Token 應移至後端服務。在此公開有資安風險！
+            GITHUB_TOKEN: "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", 
             GIST_ID: "802416482763775c3c17680ffea14e7e"
         };
 
-        // 從 Gist 讀取用戶資料
+        // 從 Gist 讀取用戶資料 (已加入錯誤處理)
         async function getUsersFromGist() {
             try {
                 const res = await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, {
                     headers: { Authorization: `token ${CONFIG.GITHUB_TOKEN}` }
                 });
+                
+                if (!res.ok) {
+                    throw new Error(`Gist API 呼叫失敗，狀態碼: ${res.status}`);
+                }
+                
                 const gist = await res.json();
-                const fileKey = Object.keys(gist.files)[0];
-                const data = JSON.parse(gist.files[fileKey].content || '{"users": []}');
+                const fileKeys = Object.keys(gist.files);
+                
+                if (fileKeys.length === 0) {
+                    return []; // Gist 檔案為空
+                }
+                
+                const fileKey = fileKeys[0];
+                const content = gist.files[fileKey].content;
+                
+                const data = JSON.parse(content || '{"users": []}');
                 return data.users || [];
             } catch (error) {
                 console.error('讀取 Gist 失敗:', error);
-                return [];
+                // 在 Gist 讀取失敗時，返回空陣列，讓程式繼續執行註冊邏輯
+                return []; 
             }
         }
 
-        // 初始化 LIFF
+        // 初始化 LIFF (已優化登入檢查邏輯)
         async function initializeLiff() {
             try {
                 await liff.init({ liffId: CONFIG.LIFF_ID });
                 
                 console.log('LIFF 初始化成功');
-                console.log('是否在 LINE 中:', liff.isInClient());
-                console.log('是否已登入:', liff.isLoggedIn());
                 
-                // 如果已經登入，自動處理
+                // 檢查是否有儲存的註冊狀態
+                const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
+                
+                if (userData.lineUserId) {
+                    if (userData.isRegistered) {
+                        console.log('已登入且已註冊，導向主頁面');
+                        window.location.href = 'main.html';
+                        return;
+                    } else {
+                        console.log('已登入但未註冊，導向註冊頁面');
+                        window.location.href = 'register.html';
+                        return;
+                    }
+                }
+                
+                // 如果已經登入但無 sessionStorage，自動處理
                 if (liff.isLoggedIn()) {
                     await handleLineLogin();
                 }
@@ -199,7 +219,7 @@
                 
                 console.log('LINE 用戶資料:', profile);
                 
-                // 儲存 LINE 用戶資料到 sessionStorage
+                // 儲存 LINE 用戶資料到 sessionStorage (原始碼保留的 lineUserData)
                 const lineUserData = {
                     lineUserId: profile.userId,
                     displayName: profile.displayName,
@@ -210,7 +230,7 @@
                 sessionStorage.setItem('lineUserData', JSON.stringify(lineUserData));
                 
                 // 從 Gist 檢查用戶是否已註冊
-                await checkUserRegistration(profile.userId);
+                await checkUserRegistration(profile.userId, lineUserData.displayName);
                 
             } catch (error) {
                 console.error('LINE 登入失敗:', error);
@@ -233,7 +253,7 @@
         });
 
         // 檢查用戶是否已註冊（從 Gist）
-        async function checkUserRegistration(lineUserId) {
+        async function checkUserRegistration(lineUserId, displayName) {
             try {
                 const users = await getUsersFromGist();
                 const userExists = users.find(user => user.lineUserId === lineUserId);
@@ -258,11 +278,10 @@
                 } else {
                     console.log('用戶未註冊，導向註冊頁面');
                     
-                    // 用戶未註冊，導向註冊頁面
-                    const lineData = JSON.parse(sessionStorage.getItem('lineUserData') || '{}');
+                    // 用戶未註冊，建立 session 資料並導向註冊頁面
                     const userData = {
                         lineUserId: lineUserId,
-                        displayName: lineData.displayName || '',
+                        displayName: displayName || '', // 使用 LINE 提供的名稱
                         isRegistered: false
                     };
                     sessionStorage.setItem('userData', JSON.stringify(userData));
@@ -290,22 +309,8 @@
 
         // 頁面載入時檢查登入狀態
         window.addEventListener('load', async function() {
-            console.log('頁面載入完成');
-            
-            // 檢查是否已有登入狀態
-            const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
-            
-            if (userData.lineUserId && userData.isRegistered) {
-                console.log('已登入且已註冊，導向主頁面');
-                window.location.href = 'main.html';
-            } else if (userData.lineUserId && !userData.isRegistered) {
-                console.log('已登入但未註冊，導向註冊頁面');
-                window.location.href = 'register.html';
-            } else {
-                console.log('未登入，初始化 LIFF');
-                // 初始化 LIFF
-                await initializeLiff();
-            }
+            console.log('頁面載入完成，開始初始化 LIFF');
+            await initializeLiff();
         });
     </script>
 </body>
