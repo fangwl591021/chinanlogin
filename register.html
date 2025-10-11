@@ -7,10 +7,43 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        * { font-family: 'Noto Sans TC', sans-serif; }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+    </style>
 </head>
 
-<body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-lg w-full">
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+    
+    <!-- 背景泡泡動畫 -->
+    <div class="bubble" style="left: 10%; width: 80px; height: 80px; animation: rise 15s infinite ease-in; animation-delay: 0s;"></div>
+    <div class="bubble" style="left: 30%; width: 60px; height: 60px; animation: rise 15s infinite ease-in; animation-delay: 2s;"></div>
+    <div class="bubble" style="left: 50%; width: 100px; height: 100px; animation: rise 15s infinite ease-in; animation-delay: 4s;"></div>
+    
+    <style>
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        @keyframes rise {
+            0% { bottom: -100px; opacity: 0; transform: translateX(0); }
+            50% { opacity: 1; }
+            100% { bottom: 100vh; opacity: 0; transform: translateX(100px); }
+        }
+    </style>
+
+    <div class="glass-effect rounded-3xl shadow-2xl p-8 max-w-lg w-full relative z-10">
         
         <div class="text-center mb-8">
             <div class="flex items-center justify-center mb-6">
@@ -22,74 +55,179 @@
             <p class="text-gray-600">填寫資料，開始使用接駁車服務 🚌</p>
         </div>
 
+        <!-- LINE 用戶資訊 -->
+        <div id="lineUserInfo" class="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-5 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <img id="lineUserPicture" src="" class="w-14 h-14 rounded-2xl border-2 border-white shadow-md" alt="LINE頭像">
+                    <div>
+                        <p class="font-bold text-gray-800 text-lg" id="lineUserName">王子齊</p>
+                        <p class="text-sm text-green-600 flex items-center gap-1">
+                            <i class="fas fa-circle text-xs"></i>
+                            <span>LINE 已連結</span>
+                        </p>
+                    </div>
+                </div>
+                <button onclick="logoutLINE()" class="w-10 h-10 rounded-xl bg-red-500 hover:bg-red-600 text-white transition flex items-center justify-center shadow-md">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 註冊表單 -->
         <form id="registerForm" class="space-y-5">
+            <input type="hidden" id="lineUserId">
+
             <div class="relative">
-                <label class="block text-sm font-bold text-gray-700 mb-2">姓名</label>
-                <input type="text" id="displayName" value="王子齊" required class="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 transition outline-none">
+                <label class="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-user text-blue-600"></i>
+                    </span>
+                    姓名
+                </label>
+                <input type="text" id="displayName" required
+                    class="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 transition outline-none text-gray-800 font-medium"
+                    placeholder="請填寫真實姓名">
             </div>
 
             <div class="relative">
-                <label class="block text-sm font-bold text-gray-700 mb-2">電話號碼</label>
-                <input type="tel" id="phone" pattern="[0-9]{10}" maxlength="10" placeholder="0912345678" required class="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:border-green-500 transition outline-none">
+                <label class="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                        <i class="fas fa-phone text-green-600"></i>
+                    </span>
+                    電話號碼
+                </label>
+                <input type="tel" id="phone" pattern="[0-9]{10}" maxlength="10" placeholder="0912345678" required
+                    class="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:border-green-500 transition outline-none text-gray-800 font-medium">
             </div>
 
             <div class="relative">
-                <label class="block text-sm font-bold text-gray-700 mb-2">學號</label>
-                <input type="text" id="studentId" pattern="[0-9]{9}" maxlength="9" value="114231456" required class="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:border-orange-500 transition outline-none">
+                <label class="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
+                        <i class="fas fa-graduation-cap text-orange-600"></i>
+                    </span>
+                    學號
+                </label>
+                <input type="text" id="studentId" pattern="[0-9]{9}" maxlength="9" placeholder="114231456" required
+                    class="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:border-orange-500 transition outline-none text-gray-800 font-medium">
             </div>
 
             <div class="relative">
-                <label class="block text-sm font-bold text-gray-700 mb-2">所屬科系</label>
-                <select id="department" required class="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:border-purple-500 transition outline-none">
-                    <option value="觀光休閒與餐旅管理學系" selected>觀光休閒與餐旅管理學系</option>
+                <label class="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                        <i class="fas fa-school text-purple-600"></i>
+                    </span>
+                    所屬科系
+                </label>
+                <select id="department" required
+                    class="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:border-purple-500 transition outline-none text-gray-800 font-medium appearance-none bg-white cursor-pointer">
+                    <option value="">請選擇科系</option>
+                    <option value="觀光休閒與餐旅管理學系">觀光休閒與餐旅管理學系</option>
+                    <option value="資訊工程學系">資訊工程學系</option>
+                    <option value="電機工程學系">電機工程學系</option>
+                    <option value="土木工程學系">土木工程學系</option>
+                    <option value="應用化學系">應用化學系</option>
                 </select>
+                <i class="fas fa-chevron-down absolute right-5 top-14 text-gray-400 pointer-events-none"></i>
             </div>
 
-            <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-black py-5 rounded-2xl transition shadow-lg text-lg">
+            <button type="submit" id="submitBtn"
+                class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-black py-5 rounded-2xl transition shadow-lg hover:shadow-xl transform hover:scale-[1.02] text-lg">
                 <i class="fas fa-check-circle mr-2"></i>完成註冊
             </button>
         </form>
 
-        <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-            <div class="flex items-center">
-                <i class="fas fa-info-circle text-blue-500 mr-2"></i>
-                <span class="text-sm text-blue-700">已修正 GAS CORS 問題，請重新測試</span>
-            </div>
+        <!-- 狀態指示器 -->
+        <div id="statusIndicator" class="mt-4 p-3 rounded-xl text-center text-sm hidden">
+            <i class="fas fa-circle mr-2"></i>
+            <span id="statusText"></span>
         </div>
     </div>
 
     <script>
         const CONFIG = {
             LIFF_ID: "2006590746-VKy0Gk0l",
-            PROXY_API_URL: "https://script.google.com/macros/s/AKfycbysl5sIc2kUBwevfsMARULZM8zI17ZQ3L4IY_NW6h-PYykmI68GeOUNBtd2fB9vzhqnTw/exec"
+            PROXY_API_URL: "https://script.google.com/macros/s/AKfycbyWpWt34AtbWYZ84DBuqP7mSSW3o7wPSee8fgLiEsM6wKK9eUSFZCdXRLI93-bpyQv7-A/exec"
         };
 
-        // 測試 GAS 連線
-        async function testGASConnection() {
-            console.log('測試 GAS 連線...');
-            
+        // 初始化 LIFF
+        async function initLINE() {
             try {
-                const response = await fetch(CONFIG.PROXY_API_URL, {
-                    method: 'GET'
-                });
+                await liff.init({ liffId: CONFIG.LIFF_ID });
+                console.log('LIFF 初始化成功');
+
+                if (!liff.isLoggedIn()) {
+                    alert('請先完成 LINE 登入');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                const profile = await liff.getProfile();
+                console.log('LINE 用戶資料:', profile);
+
+                // 顯示用戶資訊
+                document.getElementById('lineUserName').textContent = profile.displayName;
+                document.getElementById('lineUserPicture').src = profile.pictureUrl || 'https://via.placeholder.com/150';
+                document.getElementById('lineUserId').value = profile.userId;
+                document.getElementById('displayName').value = profile.displayName;
+
+                // 檢查是否已註冊
+                await checkIfRegistered(profile.userId);
+
+            } catch (error) {
+                console.error('LIFF 初始化失敗:', error);
+                alert('LINE 登入失敗，請重試');
+            }
+        }
+
+        // 檢查是否已註冊
+        async function checkIfRegistered(lineUserId) {
+            try {
+                const users = await getUsersFromGAS();
+                const existingUser = users.find(user => user.lineUserId === lineUserId);
                 
-                if (response.ok) {
-                    const result = await response.json();
-                    console.log('GAS 連線測試成功:', result);
-                    return { success: true, data: result };
-                } else {
-                    console.log('GAS 連線測試失敗 - HTTP錯誤:', response.status);
-                    return { success: false, error: `HTTP ${response.status}` };
+                if (existingUser) {
+                    alert('您已完成註冊，將導向主頁面');
+                    window.location.href = 'main.html';
                 }
             } catch (error) {
-                console.log('GAS 連線測試失敗 - 網路錯誤:', error.message);
-                return { success: false, error: error.message };
+                console.log('檢查註冊狀態失敗，繼續註冊流程:', error.message);
             }
+        }
+
+        // 從 GAS 獲取用戶列表
+        async function getUsersFromGAS() {
+            try {
+                const response = await fetch(CONFIG.PROXY_API_URL + '?action=getUsers');
+                if (response.ok) {
+                    const result = await response.json();
+                    return result.users || [];
+                }
+            } catch (error) {
+                console.error('獲取用戶列表失敗:', error);
+            }
+            return [];
+        }
+
+        // 更新狀態指示器
+        function updateStatus(message, type = 'info') {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            statusText.textContent = message;
+            indicator.className = `mt-4 p-3 rounded-xl text-center text-sm ${
+                type === 'success' ? 'bg-green-100 text-green-700 border border-green-200' :
+                type === 'error' ? 'bg-red-100 text-red-700 border border-red-200' :
+                'bg-blue-100 text-blue-700 border border-blue-200'
+            }`;
+            indicator.classList.remove('hidden');
         }
 
         // 註冊用戶到 GAS
         async function registerToGAS(user) {
             console.log('註冊到 GAS:', user);
+            
+            updateStatus('正在連線到伺服器...', 'info');
             
             try {
                 const response = await fetch(CONFIG.PROXY_API_URL, {
@@ -103,7 +241,7 @@
                 console.log('GAS 響應狀態:', response.status);
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP錯誤! 狀態碼: ${response.status}`);
+                    throw new Error(`伺服器錯誤! 狀態碼: ${response.status}`);
                 }
 
                 const result = await response.json();
@@ -113,10 +251,11 @@
                     throw new Error(result.message);
                 }
                 
+                updateStatus('註冊成功！', 'success');
                 return result;
 
             } catch (error) {
-                console.error('GAS 註冊失敗:', error);
+                updateStatus('伺服器連線失敗，使用本地儲存', 'error');
                 throw error;
             }
         }
@@ -136,7 +275,7 @@
                 localStorage.setItem('ncnu_users', JSON.stringify(users));
                 return { 
                     status: 'success', 
-                    message: '本地註冊成功（GAS 連線失敗，資料暫存本地）',
+                    message: '註冊成功！(資料暫存本地)',
                     storage: 'local'
                 };
             } catch (error) {
@@ -144,27 +283,15 @@
             }
         }
 
-        // 主要註冊函數 - 會自動降級到本地儲存
+        // 主要註冊函數
         async function registerUser(user) {
-            console.log('開始註冊流程...');
-            
-            // 先測試 GAS 連線
-            const connectionTest = await testGASConnection();
-            
-            if (connectionTest.success) {
-                // GAS 連線正常，使用 GAS
-                try {
-                    console.log('使用 GAS 進行註冊...');
-                    const result = await registerToGAS(user);
-                    return result;
-                } catch (error) {
-                    console.log('GAS 註冊失敗，降級到本地儲存:', error.message);
-                    // 降級到本地儲存
-                    return saveToLocalStorage(user);
-                }
-            } else {
-                // GAS 連線失敗，直接使用本地儲存
-                console.log('GAS 連線失敗，使用本地儲存');
+            try {
+                // 先嘗試 GAS
+                const result = await registerToGAS(user);
+                return result;
+            } catch (error) {
+                console.log('GAS 註冊失敗，降級到本地儲存:', error.message);
+                // 降級到本地儲存
                 return saveToLocalStorage(user);
             }
         }
@@ -180,7 +307,7 @@
             submitBtn.disabled = true;
 
             const user = {
-                lineUserId: "U" + Date.now(), // 臨時 ID，實際使用時從 LINE 獲取
+                lineUserId: document.getElementById("lineUserId").value,
                 displayName: document.getElementById("displayName").value.trim(),
                 phone: document.getElementById("phone").value.trim(),
                 studentId: document.getElementById("studentId").value.trim(),
@@ -200,18 +327,18 @@
                 const result = await registerUser(user);
                 
                 submitBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>註冊成功！';
-                submitBtn.classList.remove('from-green-500', 'to-emerald-600');
+                submitBtn.classList.remove('from-green-500', 'to-emerald-600', 'hover:from-green-600', 'hover:to-emerald-700');
                 submitBtn.classList.add('from-blue-500', 'to-blue-600');
                 
                 // 根據儲存方式顯示不同訊息
                 let successMessage = '🎉 ' + result.message;
                 if (result.storage === 'local') {
-                    successMessage += '\n\n請注意：資料暫存於本地，管理員後續會同步到伺服器。';
+                    successMessage += '\n\n⚠️ 注意：資料暫存於本地瀏覽器，管理員後續會同步到伺服器。';
                 }
                 
                 alert(successMessage);
                 
-                // 儲存到 sessionStorage 表示已註冊
+                // 儲存到 sessionStorage
                 sessionStorage.setItem('userData', JSON.stringify({
                     ...user,
                     isRegistered: true
@@ -226,11 +353,17 @@
                 alert("❌ 註冊失敗: " + err.message);
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
+                updateStatus('', 'info');
             }
         });
 
         // 表單驗證
         function validateForm(data) {
+            if (!data.displayName || data.displayName.trim() === '') {
+                alert('請填寫姓名');
+                return false;
+            }
+            
             if (!data.phone.match(/^[0-9]{10}$/)) {
                 alert('請輸入正確的手機號碼（10位數字）');
                 return false;
@@ -241,20 +374,27 @@
                 return false;
             }
             
+            if (!data.department) {
+                alert('請選擇科系');
+                return false;
+            }
+            
             return true;
         }
 
-        // 頁面載入時測試連線
-        window.addEventListener('load', async () => {
-            console.log('頁面載入完成，測試 GAS 連線...');
-            const testResult = await testGASConnection();
-            
-            if (testResult.success) {
-                console.log('GAS 連線正常');
-            } else {
-                console.log('GAS 連線異常，將使用本地儲存:', testResult.error);
+        // 登出功能
+        function logoutLINE() {
+            if (confirm("確定要登出嗎？登出後將返回登入頁面。")) {
+                sessionStorage.clear();
+                if (liff.isLoggedIn()) {
+                    liff.logout();
+                }
+                window.location.href = "index.html";
             }
-        });
+        }
+
+        // 頁面載入時初始化
+        window.addEventListener('load', initLINE);
     </script>
 </body>
 </html>
