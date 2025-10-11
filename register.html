@@ -3,80 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>暨大接駁車 - LINE 登入註冊</title>
+  <title>暨大接駁車 - LINE 註冊</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://kit.fontawesome.com/a2e0e6ad3b.js" crossorigin="anonymous"></script>
-  <style>
-    body {
-      font-family: "Noto Sans TC", sans-serif;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .glass {
-      background: rgba(255,255,255,0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 24px;
-      padding: 2rem;
-      max-width: 480px;
-      width: 100%;
-      box-shadow: 0 4px 30px rgba(0,0,0,0.1);
-    }
-  </style>
 </head>
-<body>
-  <div class="glass">
-    <div class="text-center mb-6">
-      <div class="w-20 h-20 bg-green-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md">
-        <i class="fab fa-line text-white text-3xl"></i>
-      </div>
-      <h1 class="text-2xl font-bold text-gray-800 mb-2">暨大接駁車 - 會員註冊</h1>
-      <p class="text-gray-600 text-sm">請使用 LINE 登入以完成註冊</p>
+<body class="bg-gradient-to-br from-blue-100 to-purple-100 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center">
+    <h1 class="text-2xl font-bold mb-4">暨大接駁車會員註冊</h1>
+    <div id="loginBox" class="space-y-4">
+      <p class="text-gray-700">請使用 LINE 登入以開始註冊</p>
+      <button id="loginBtn" class="bg-green-500 text-white font-bold py-3 px-6 rounded-xl">使用 LINE 登入</button>
     </div>
 
-    <!-- 用戶資訊區 -->
-    <div id="userBox" class="hidden border-2 border-green-200 rounded-xl p-4 mb-6 bg-green-50 flex items-center justify-between">
-      <div class="flex items-center space-x-4">
-        <img id="lineUserPicture" src="" class="w-14 h-14 rounded-xl border shadow-md">
-        <div>
-          <p id="lineUserName" class="font-bold text-gray-800"></p>
-          <p class="text-green-600 text-sm">LINE 已登入</p>
-        </div>
-      </div>
-      <button onclick="logoutLINE()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl text-sm">
-        登出
-      </button>
-    </div>
+    <div id="registerBox" class="hidden">
+      <img id="pictureUrl" class="mx-auto w-20 h-20 rounded-full mb-4" />
+      <p id="displayName" class="font-bold text-lg mb-2"></p>
 
-    <!-- 註冊表單 -->
-    <form id="registerForm" class="space-y-4 hidden">
-      <input type="hidden" id="lineUserId">
-
-      <div>
-        <label class="block text-gray-700 font-bold mb-1">姓名</label>
-        <input id="displayName" type="text" required
-          class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none">
-      </div>
-
-      <div>
-        <label class="block text-gray-700 font-bold mb-1">電話號碼</label>
-        <input id="phone" type="tel" pattern="[0-9]{10}" maxlength="10" placeholder="0912345678" required
-          class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 outline-none">
-      </div>
-
-      <div>
-        <label class="block text-gray-700 font-bold mb-1">學號</label>
-        <input id="studentId" type="text" pattern="[0-9]{9}" maxlength="9" placeholder="114231456" required
-          class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 outline-none">
-      </div>
-
-      <div>
-        <label class="block text-gray-700 font-bold mb-1">科系</label>
-        <select id="department" required
-          class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 outline-none">
+      <form id="registerForm" class="space-y-3">
+        <input type="hidden" id="lineUserId">
+        <input id="phone" type="tel" placeholder="手機號碼 (10 碼)" class="w-full border p-3 rounded-lg" required>
+        <input id="studentId" type="text" placeholder="學號 (9 碼)" class="w-full border p-3 rounded-lg" required>
+        <select id="department" class="w-full border p-3 rounded-lg" required>
           <option value="">請選擇科系</option>
           <option>觀光休閒與餐旅管理學系</option>
           <option>資訊工程學系</option>
@@ -84,103 +30,63 @@
           <option>土木工程學系</option>
           <option>應用化學系</option>
         </select>
-      </div>
-
-      <button id="submitBtn" type="submit"
-        class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 rounded-xl">
-        <i class="fas fa-check-circle mr-2"></i>完成註冊
-      </button>
-    </form>
+        <button class="bg-blue-600 text-white w-full py-3 rounded-lg font-bold">送出註冊</button>
+      </form>
+    </div>
   </div>
 
-  <script>
-    const CONFIG = {
-      GAS_API_URL: "https://script.google.com/macros/s/AKfycbx93_YKfU_nKmODSKAKIOhlWfADIJM32OsM39E3Hk__M3YDtFqwxcGQxlbhmCGXWnZB/exec",
-      LINE_LOGIN_URL: "https://access.line.me/oauth2/v2.1/authorize",
-      CLIENT_ID: "2006590746", // ← 你的 LINE Login Channel ID
-      REDIRECT_URI: "https://你的github.io/register.html", // ← 改成你的網址
-      STATE: "login123",
-      SCOPE: "profile openid"
-    };
+<script>
+const CONFIG = {
+  CLIENT_ID: "2006590746",
+  REDIRECT_URI: "https://fangwl591021.github.io/chinanlogin/register.html",
+  STATE: "register",
+  SCOPE: "profile openid",
+  GAS_URL: "https://script.google.com/macros/s/AKfycbyo7jFH72fZi2RL-JU3Ekf6jwbtpGD9F3oEMkqTGnoHIB1UZ6Rba2Dc6CHRJ36_mbZI2w/exec"
+};
 
-    async function initPage() {
-      const url = new URL(window.location.href);
-      const code = url.searchParams.get("code");
+document.getElementById("loginBtn").addEventListener("click", () => {
+  const loginUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${CONFIG.CLIENT_ID}&redirect_uri=${encodeURIComponent(CONFIG.REDIRECT_URI)}&state=${CONFIG.STATE}&scope=${CONFIG.SCOPE}`;
+  window.location.href = loginUrl;
+});
 
-      if (!code) {
-        // 尚未登入 → 導向 LINE Login
-        const loginUrl = `${CONFIG.LINE_LOGIN_URL}?response_type=code&client_id=${CONFIG.CLIENT_ID}&redirect_uri=${encodeURIComponent(CONFIG.REDIRECT_URI)}&state=${CONFIG.STATE}&scope=${CONFIG.SCOPE}`;
-        window.location.href = loginUrl;
-        return;
-      }
+window.addEventListener("load", async () => {
+  const code = new URL(location.href).searchParams.get("code");
+  if (!code) return;
 
-      // 已登入 → 取得 LINE 用戶資料
-      try {
-        const res = await fetch(`${CONFIG.GAS_API_URL}?action=getProfile&code=${code}`);
-        const data = await res.json();
-        console.log("LINE 用戶:", data);
+  try {
+    const res = await fetch(`${CONFIG.GAS_URL}?action=getProfile&code=${code}`);
+    const data = await res.json();
 
-        if (!data.userId) throw new Error("無法取得 LINE 資料");
+    if (data.userId) {
+      document.getElementById("loginBox").classList.add("hidden");
+      document.getElementById("registerBox").classList.remove("hidden");
+      document.getElementById("pictureUrl").src = data.pictureUrl;
+      document.getElementById("displayName").textContent = data.displayName;
+      document.getElementById("lineUserId").value = data.userId;
+    } else alert("無法取得 LINE 資料");
+  } catch (e) {
+    alert("登入失敗：" + e.message);
+  }
+});
 
-        document.getElementById("userBox").classList.remove("hidden");
-        document.getElementById("registerForm").classList.remove("hidden");
-
-        document.getElementById("lineUserId").value = data.userId;
-        document.getElementById("lineUserName").textContent = data.displayName;
-        document.getElementById("lineUserPicture").src = data.pictureUrl;
-        document.getElementById("displayName").value = data.displayName;
-
-      } catch (err) {
-        alert("登入失敗，請重新嘗試");
-        console.error(err);
-      }
-    }
-
-    // 登出
-    function logoutLINE() {
-      sessionStorage.clear();
-      window.location.href = CONFIG.REDIRECT_URI;
-    }
-
-    // 表單送出
-    document.getElementById("registerForm").addEventListener("submit", async e => {
-      e.preventDefault();
-      const btn = document.getElementById("submitBtn");
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>註冊中...';
-
-      const user = {
-        lineUserId: document.getElementById("lineUserId").value,
-        displayName: document.getElementById("displayName").value,
-        phone: document.getElementById("phone").value,
-        studentId: document.getElementById("studentId").value,
-        department: document.getElementById("department").value,
-        registerTime: new Date().toISOString()
-      };
-
-      try {
-        const res = await fetch(CONFIG.GAS_API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(user)
-        });
-        const result = await res.json();
-
-        if (result.success) {
-          alert("🎉 註冊成功！");
-          window.location.href = "main.html";
-        } else {
-          throw new Error(result.error || "未知錯誤");
-        }
-      } catch (err) {
-        alert("註冊失敗：" + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>完成註冊';
-      }
-    });
-
-    window.addEventListener("load", initPage);
-  </script>
+document.getElementById("registerForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const body = {
+    lineUserId: document.getElementById("lineUserId").value,
+    displayName: document.getElementById("displayName").textContent,
+    phone: document.getElementById("phone").value,
+    studentId: document.getElementById("studentId").value,
+    department: document.getElementById("department").value,
+    registerTime: new Date().toISOString()
+  };
+  const res = await fetch(CONFIG.GAS_URL, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(body)
+  });
+  const result = await res.json();
+  alert(result.success ? "🎉 註冊成功！" : "❌ 註冊失敗");
+});
+</script>
 </body>
 </html>
