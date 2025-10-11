@@ -139,39 +139,34 @@
 
     <script>
         // 統一配置
-        // index.html - 統一配置
-const CONFIG = {
-    LIFF_ID: "2006590746-VKy0Gk0l",
-    // ⚠️ 新增 GAS Proxy URL ⚠️
-    PROXY_API_URL: "https://script.google.com/macros/s/AKfycbztIkoPisJ0W5CHEWPQI8lfNp20iz2UGRliUYDPDs1u46jsmq5yL28H_REhcRQ3IeEsWw/exec",
-};
+        const CONFIG = {
+            LIFF_ID: "2006590746-VKy0Gk0l",
+            // 🚨 已移除 GitHub Token，改用 GAS Proxy 網址
+            PROXY_API_URL: "https://script.google.com/macros/s/AKfycbztIkoPisJ0W5CHEWPQI8lfNp20iz2UGRliUYDPDs1u46jsmq5yL28H_REhcRQ3IeEsWw/exec", 
+        };
 
-        // 從 Gist 讀取用戶資料 (已加入錯誤處理)
+        // 從 GAS Proxy 讀取用戶資料 (已更新為呼叫 GAS)
         async function getUsersFromGist() {
             try {
-                const res = await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, {
-                    headers: { Authorization: `token ${CONFIG.GITHUB_TOKEN}` }
-                });
-                
+                // 使用 GET 請求呼叫 GAS Proxy，由 GAS 負責使用 Token 讀取 Gist
+                const res = await fetch(CONFIG.PROXY_API_URL, { method: 'GET' });
+
                 if (!res.ok) {
-                    throw new Error(`Gist API 呼叫失敗，狀態碼: ${res.status}`);
+                    throw new Error(`Proxy API 呼叫失敗，狀態碼: ${res.status}`);
                 }
                 
-                const gist = await res.json();
-                const fileKeys = Object.keys(gist.files);
+                const result = await res.json();
                 
-                if (fileKeys.length === 0) {
-                    return []; // Gist 檔案為空
+                // 檢查 GAS 回傳的 JSON 結構中的 status 屬性
+                if (result.status === 'error') {
+                    throw new Error(result.message);
                 }
+
+                return result.users || []; // 從 GAS 回傳的 JSON 中取得 users 陣列
                 
-                const fileKey = fileKeys[0];
-                const content = gist.files[fileKey].content;
-                
-                const data = JSON.parse(content || '{"users": []}');
-                return data.users || [];
             } catch (error) {
-                console.error('讀取 Gist 失敗:', error);
-                // 在 Gist 讀取失敗時，返回空陣列，讓程式繼續執行註冊邏輯
+                console.error('讀取 Gist (透過 GAS) 失敗:', error);
+                // 讀取失敗時，返回空陣列，讓程式繼續執行註冊邏輯
                 return []; 
             }
         }
@@ -205,7 +200,7 @@ const CONFIG = {
                 
             } catch (error) {
                 console.error('LIFF 初始化失敗:', error);
-                alert('LINE 登入初始化失敗，請確認 LIFF ID 是否正確');
+                alert('LINE 登入初始化失敗，請確認 LIFF ID 或網路連線是否正確');
             }
         }
 
@@ -293,7 +288,7 @@ const CONFIG = {
             } catch (error) {
                 console.error('檢查註冊狀態失敗:', error);
                 hideLoading();
-                alert('檢查註冊狀態失敗，請重試');
+                alert('檢查註冊狀態失敗，請重試 (' + error.message + ')');
             }
         }
 
