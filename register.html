@@ -202,89 +202,163 @@
             </div>
             <p class="text-gray-600 font-medium">正在載入 LINE 登入資料...</p>
         </div>
+
+        <!-- 錯誤訊息顯示區 -->
+        <div id="errorMessage" class="hidden bg-red-50 border-2 border-red-200 rounded-2xl p-5 mt-6">
+            <div class="flex items-center">
+                <div class="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-white"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="font-bold text-red-800" id="errorTitle">發生錯誤</p>
+                    <p class="text-red-600 text-sm" id="errorDetail"></p>
+                </div>
+            </div>
+            <div class="mt-4 flex gap-3">
+                <button onclick="retryLogin()" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-xl transition font-medium">
+                    重新嘗試
+                </button>
+                <button onclick="goToLogin()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded-xl transition font-medium">
+                    返回登入頁
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
-    // ⚠️ CONFIGURATION - 已移除 GITHUB_TOKEN/GIST_ID，改用安全的 GAS Proxy
-    const CONFIG = {
-        LIFF_ID: "2006590746-VKy0Gk0l",
-        PROXY_API_URL: "https://script.google.com/macros/s/AKfycbyWpWt34AtbWYZ84DBuqP7mSSW3o7wPSee8fgLiEsM6wKK9eUSFZCdXRLI93-bpyQv7-A/exec", 
-    };
+        // ⚠️ CONFIGURATION - 已移除 GITHUB_TOKEN/GIST_ID，改用安全的 GAS Proxy
+        const CONFIG = {
+            LIFF_ID: "2006590746-VKy0Gk0l",
+            PROXY_API_URL: "https://script.google.com/macros/s/AKfycbyWpWt34AtbWYZ84DBuqP7mSSW3o7wPSee8fgLiEsM6wKK9eUSFZCdXRLI93-bpyQv7-A/exec", 
+        };
 
-    /**
-     * @function updateGistData
-     * @description 使用 POST 請求呼叫 Google Apps Script Proxy 服務來新增用戶
-     * @param {object} user - 要註冊的用戶資料
-     */
-    async function updateGistData(user) {
-        // 使用 POST 請求呼叫 GAS Proxy
-        const res = await fetch(CONFIG.PROXY_API_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            // 將新用戶資料包裝在 GAS 期望的 { newUser: user } 格式中
-            body: JSON.stringify({ newUser: user }) 
-        });
+        /**
+         * @function updateGistData
+         * @description 使用 POST 請求呼叫 Google Apps Script Proxy 服務來新增用戶
+         * @param {object} user - 要註冊的用戶資料
+         */
+        async function updateGistData(user) {
+            // 使用 POST 請求呼叫 GAS Proxy
+            const res = await fetch(CONFIG.PROXY_API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                // 將新用戶資料包裝在 GAS 期望的 { newUser: user } 格式中
+                body: JSON.stringify({ newUser: user }) 
+            });
 
-        if (!res.ok) {
-            // 處理網路或伺服器錯誤 (例如：500 Internal Server Error)
-            throw new Error(`Proxy API 呼叫失敗，狀態碼: ${res.status}`);
-        }
-
-        const result = await res.json();
-        
-        // 檢查 GAS 回傳的 JSON 結構中的 status 屬性
-        if (result.status === 'error') {
-            // 處理 GAS 內部錯誤 (例如：Gist 讀寫失敗、帳號已註冊)
-            throw new Error(result.message);
-        }
-        
-        // 成功寫入
-        return result;
-    }
-
-    // -------------------------------------------------------------
-    // LIFF 初始化和流程控制 (修正後的穩定邏輯)
-    // -------------------------------------------------------------
-
-    async function initLINE() {
-        try {
-            await liff.init({ liffId: CONFIG.LIFF_ID });
-
-            // 嘗試從 sessionStorage 讀取資料
-            const cachedRegistration = JSON.parse(sessionStorage.getItem("userData") || "null");
-            
-            let profile = null;
-
-            // 1. 檢查 LINE 登入狀態
-            if (!liff.isLoggedIn()) {
-                console.log("LINE 未登入，導回登入頁面");
-                alert('登入狀態遺失，請重新登入以繼續註冊。');
-                window.location.href = "index.html";
-                return;
+            if (!res.ok) {
+                // 處理網路或伺服器錯誤 (例如：500 Internal Server Error)
+                throw new Error(`Proxy API 呼叫失敗，狀態碼: ${res.status}`);
             }
 
-            // 2. LINE 已登入：嘗試獲取用戶資料
+            const result = await res.json();
+            
+            // 檢查 GAS 回傳的 JSON 結構中的 status 屬性
+            if (result.status === 'error') {
+                // 處理 GAS 內部錯誤 (例如：Gist 讀寫失敗、帳號已註冊)
+                throw new Error(result.message);
+            }
+            
+            // 成功寫入
+            return result;
+        }
+
+        // -------------------------------------------------------------
+        // LIFF 初始化和流程控制 (修正後的穩定邏輯)
+        // -------------------------------------------------------------
+
+        async function initLINE() {
             try {
-                profile = await liff.getProfile();
-            } catch (err) {
-                // 如果無法獲取 Profile，可能是網路問題或權限問題
-                console.error("無法獲取 LIFF Profile:", err);
-                throw new Error("無法獲取 LINE 用戶資料，請確認網路連線。");
-            }
-            
-            // 3. 檢查是否已被 index.html 判定為已註冊
-            if (cachedRegistration && cachedRegistration.isRegistered) {
-                console.log("用戶已在 index.html 判定為已註冊，導向主頁面");
-                alert('您已完成註冊，將導向主頁面');
-                window.location.href = "main.html";
-                return;
-            }
+                await liff.init({ liffId: CONFIG.LIFF_ID });
+                console.log('LIFF 初始化成功');
 
-            // 4. 成功獲取 LIFF ID，如果 sessionStorage 遺失，則重新建立
+                // 1. 檢查 LINE 登入狀態
+                if (!liff.isLoggedIn()) {
+                    console.log("LINE 未登入，導回登入頁面");
+                    showError("LINE 未登入", "請先完成 LINE 登入以繼續註冊");
+                    return;
+                }
+
+                // 2. LINE 已登入：嘗試獲取用戶資料
+                let profile;
+                try {
+                    profile = await liff.getProfile();
+                    console.log("成功獲取 LINE 用戶資料:", profile);
+                } catch (err) {
+                    // 如果無法獲取 Profile，可能是網路問題或權限問題
+                    console.error("無法獲取 LIFF Profile:", err);
+                    showError("無法獲取用戶資料", "無法取得 LINE 用戶資料，請確認網路連線或重新登入");
+                    return;
+                }
+
+                // 3. 檢查是否已在 Gist 中註冊
+                try {
+                    const isRegistered = await checkRegistrationInGist(profile.userId);
+                    if (isRegistered) {
+                        console.log("用戶已在 Gist 中註冊，導向主頁面");
+                        alert('您已完成註冊，將導向主頁面');
+                        window.location.href = "main.html";
+                        return;
+                    }
+                } catch (error) {
+                    console.warn("檢查 Gist 註冊狀態失敗，繼續註冊流程:", error);
+                    // 檢查失敗時繼續註冊流程
+                }
+
+                // 4. 顯示用戶資料和註冊表單
+                console.log("✅ 成功獲取登入資料，準備註冊");
+                showUserAndForm(profile);
+
+            } catch (err) {
+                console.error("❌ LIFF 初始化錯誤：", err);
+                showError("LINE 登入失敗", "無法初始化 LINE 登入，請確認是否在 LINE 環境中開啟");
+            }
+        }
+
+        // 檢查用戶是否已在 Gist 中註冊
+        async function checkRegistrationInGist(lineUserId) {
+            try {
+                // 使用 GET 請求呼叫 GAS Proxy 獲取用戶列表
+                const res = await fetch(CONFIG.PROXY_API_URL, { method: 'GET' });
+                
+                if (!res.ok) {
+                    throw new Error(`Proxy API 呼叫失敗，狀態碼: ${res.status}`);
+                }
+                
+                const result = await res.json();
+                
+                if (result.status === 'error') {
+                    throw new Error(result.message);
+                }
+
+                const users = result.users || [];
+                return users.some(user => user.lineUserId === lineUserId);
+                
+            } catch (error) {
+                console.error('檢查 Gist 註冊狀態失敗:', error);
+                throw error;
+            }
+        }
+
+        function showUserAndForm(profile) {
+            // 隱藏載入動畫
+            document.getElementById("loading").classList.add("hidden");
             
-            // 重新儲存 lineUserData (如果遺失的話)
+            // 顯示用戶資訊
+            document.getElementById("lineUserInfo").classList.remove("hidden");
+            document.getElementById("lineUserName").textContent = profile.displayName;
+            document.getElementById("lineUserPicture").src = profile.pictureUrl || 'https://via.placeholder.com/150';
+            document.getElementById("lineUserId").value = profile.userId;
+            
+            // 顯示註冊表單
+            document.getElementById("registerForm").classList.remove("hidden");
+            
+            // 預填姓名
+            document.getElementById("displayName").value = profile.displayName || '';
+            
+            // 儲存用戶資料到 sessionStorage
             const lineUserData = {
                 lineUserId: profile.userId,
                 displayName: profile.displayName,
@@ -292,95 +366,131 @@
             };
             sessionStorage.setItem("lineUserData", JSON.stringify(lineUserData));
             
-            // 重新儲存 userData (如果遺失或 ID 不符的話)
-            if (!cachedRegistration || cachedRegistration.lineUserId !== profile.userId) {
-                 const registrationData = {
-                    lineUserId: profile.userId,
-                    displayName: profile.displayName || '',
-                    isRegistered: false // 確定是未註冊狀態
-                 };
-                 sessionStorage.setItem('userData', JSON.stringify(registrationData));
-            }
+            const userData = {
+                lineUserId: profile.userId,
+                displayName: profile.displayName || '',
+                isRegistered: false
+            };
+            sessionStorage.setItem('userData', JSON.stringify(userData));
+        }
 
-            console.log("✅ 成功獲取登入資料，準備註冊");
-            showUser(lineUserData);
-
-        } catch (err) {
-            console.error("❌ LIFF 初始化錯誤：", err);
-            document.getElementById("loading").innerHTML = `<p class="text-red-600 font-bold">錯誤：LINE 登入失敗 (${err.message})</p><p class="text-gray-500 mt-2">請確認是否在 LINE 環境中開啟</p>`;
+        function showError(title, detail) {
+            document.getElementById("loading").classList.add("hidden");
             document.getElementById("lineUserInfo").classList.add("hidden");
             document.getElementById("registerForm").classList.add("hidden");
+            
+            document.getElementById("errorTitle").textContent = title;
+            document.getElementById("errorDetail").textContent = detail;
+            document.getElementById("errorMessage").classList.remove("hidden");
         }
-    }
 
-    function showUser(profile) {
-        document.getElementById("lineUserInfo").classList.remove("hidden");
-        document.getElementById("registerForm").classList.remove("hidden");
-        document.getElementById("loading").classList.add("hidden");
+        function retryLogin() {
+            document.getElementById("errorMessage").classList.add("hidden");
+            document.getElementById("loading").classList.remove("hidden");
+            initLINE();
+        }
 
-        document.getElementById("lineUserName").textContent = profile.displayName;
-        document.getElementById("lineUserPicture").src = profile.pictureUrl || 'https://via.placeholder.com/150';
-        document.getElementById("lineUserId").value = profile.lineUserId;
-        // 如果 index.html 有傳入 displayName，則預填
-        const cachedRegistration = JSON.parse(sessionStorage.getItem("userData") || "{}");
-        document.getElementById("displayName").value = cachedRegistration.displayName || profile.displayName;
-    }
-
-    function logoutLINE() {
-        if (confirm("確定要登出嗎？登出後將返回登入頁面。")) {
+        function goToLogin() {
             sessionStorage.clear();
             if (liff.isLoggedIn()) {
                 liff.logout();
             }
             window.location.href = "index.html";
         }
-    }
 
-    document.getElementById("registerForm").addEventListener("submit", async e => {
-        e.preventDefault();
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>註冊中...';
-        submitBtn.disabled = true;
-        
-        const user = {
-            lineUserId: document.getElementById("lineUserId").value,
-            displayName: document.getElementById("displayName").value.trim(),
-            phone: document.getElementById("phone").value.trim(),
-            studentId: document.getElementById("studentId").value.trim(),
-            department: document.getElementById("department").value,
-            registerTime: new Date().toISOString(),
-            isAdmin: false
-        };
-        try {
-            // 呼叫 GAS Proxy 函數
-            await updateGistData(user);
-            
-            // 註冊成功，更新 sessionStorage 的 isRegistered 狀態
-            const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
-            userData.isRegistered = true;
-            userData.phone = user.phone;
-            userData.studentId = user.studentId;
-            userData.department = user.department;
-            sessionStorage.setItem('userData', JSON.stringify(userData));
-            
-            submitBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>註冊成功！';
-            submitBtn.classList.remove('from-green-500', 'to-emerald-600', 'hover:from-green-600', 'hover:to-emerald-700');
-            submitBtn.classList.add('from-blue-500', 'to-blue-600');
-            
-            alert('🎉 會員註冊成功！您現在可以開始預約接駁車服務。');
-
-            setTimeout(() => {
-                window.location.href = "main.html";
-            }, 500);
-        } catch (err) {
-            console.error("註冊失敗:", err);
-            alert("❌ 註冊失敗: " + err.message);
-            submitBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>完成註冊';
-            submitBtn.disabled = false;
+        function logoutLINE() {
+            if (confirm("確定要登出嗎？登出後將返回登入頁面。")) {
+                sessionStorage.clear();
+                if (liff.isLoggedIn()) {
+                    liff.logout();
+                }
+                window.location.href = "index.html";
+            }
         }
-    });
 
-    window.onload = initLINE;
+        // 表單提交處理
+        document.getElementById("registerForm").addEventListener("submit", async e => {
+            e.preventDefault();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>註冊中...';
+            submitBtn.disabled = true;
+            
+            const user = {
+                lineUserId: document.getElementById("lineUserId").value,
+                displayName: document.getElementById("displayName").value.trim(),
+                phone: document.getElementById("phone").value.trim(),
+                studentId: document.getElementById("studentId").value.trim(),
+                department: document.getElementById("department").value,
+                registerTime: new Date().toISOString(),
+                isAdmin: false
+            };
+
+            // 表單驗證
+            if (!validateForm(user)) {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                return;
+            }
+
+            try {
+                // 呼叫 GAS Proxy 函數
+                await updateGistData(user);
+                
+                // 註冊成功，更新 sessionStorage 的 isRegistered 狀態
+                const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
+                userData.isRegistered = true;
+                userData.phone = user.phone;
+                userData.studentId = user.studentId;
+                userData.department = user.department;
+                sessionStorage.setItem('userData', JSON.stringify(userData));
+                
+                submitBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>註冊成功！';
+                submitBtn.classList.remove('from-green-500', 'to-emerald-600', 'hover:from-green-600', 'hover:to-emerald-700');
+                submitBtn.classList.add('from-blue-500', 'to-blue-600');
+                
+                // 顯示成功訊息並導向主頁面
+                setTimeout(() => {
+                    alert('🎉 會員註冊成功！您現在可以開始預約接駁車服務。');
+                    window.location.href = "main.html";
+                }, 500);
+                
+            } catch (err) {
+                console.error("註冊失敗:", err);
+                alert("❌ 註冊失敗: " + err.message);
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // 表單驗證
+        function validateForm(data) {
+            if (!data.displayName || data.displayName.trim() === '') {
+                alert('請填寫姓名');
+                return false;
+            }
+            
+            if (!data.phone.match(/^[0-9]{10}$/)) {
+                alert('請輸入正確的手機號碼（10位數字）');
+                return false;
+            }
+            
+            if (!data.studentId.match(/^[0-9]{9}$/)) {
+                alert('請輸入正確的學號（9位數字）');
+                return false;
+            }
+            
+            if (!data.department) {
+                alert('請選擇科系');
+                return false;
+            }
+            
+            return true;
+        }
+
+        // 頁面載入時初始化
+        window.onload = initLINE;
     </script>
 </body>
 </html>
