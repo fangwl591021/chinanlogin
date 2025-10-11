@@ -127,30 +127,44 @@
   }
 
   async function initLINE() {
-    try {
-      await liff.init({ liffId: CONFIG.LIFF_ID });
-      if (!liff.isLoggedIn()) return liff.login();
+  try {
+    await liff.init({ liffId: CONFIG.LIFF_ID });
 
-      const profile = await liff.getProfile();
-      const userData = {
-        lineUserId: profile.userId,
-        displayName: profile.displayName,
-        pictureUrl: profile.pictureUrl
-      };
-      sessionStorage.setItem("lineUserData", JSON.stringify(userData));
-
-      document.getElementById("lineUserInfo").classList.remove("hidden");
-      document.getElementById("registerForm").classList.remove("hidden");
-      document.getElementById("loading").classList.add("hidden");
-
-      document.getElementById("lineUserName").textContent = profile.displayName;
-      document.getElementById("lineUserPicture").src = profile.pictureUrl;
-      document.getElementById("lineUserId").value = profile.userId;
-      document.getElementById("displayName").value = profile.displayName;
-    } catch (err) {
-      alert("LINE 登入失敗：" + err.message);
+    // 🧠 若未登入 → 執行 login 並中止後續流程
+    if (!liff.isLoggedIn()) {
+      console.log("尚未登入 → 觸發 LIFF 登入");
+      liff.login({ redirectUri: window.location.href });
+      return;
     }
+
+    // ✅ 已登入，用戶資料
+    const profile = await liff.getProfile();
+    const userData = {
+      lineUserId: profile.userId,
+      displayName: profile.displayName,
+      pictureUrl: profile.pictureUrl
+    };
+
+    // 🔒 儲存到 sessionStorage（避免 reload 後遺失）
+    sessionStorage.setItem("lineUserData", JSON.stringify(userData));
+
+    // ✅ 顯示畫面
+    document.getElementById("lineUserInfo").classList.remove("hidden");
+    document.getElementById("registerForm").classList.remove("hidden");
+    document.getElementById("loading").classList.add("hidden");
+
+    // ✅ 填入真實資料
+    document.getElementById("lineUserName").textContent = profile.displayName;
+    document.getElementById("lineUserPicture").src = profile.pictureUrl;
+    document.getElementById("lineUserId").value = profile.userId;
+    document.getElementById("displayName").value = profile.displayName;
+
+  } catch (err) {
+    console.error("LIFF 初始化錯誤：", err);
+    alert("LINE 登入初始化失敗，請重新開啟頁面");
   }
+}
+
 
   document.getElementById("registerForm").addEventListener("submit", async e => {
     e.preventDefault();
