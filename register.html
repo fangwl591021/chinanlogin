@@ -8,6 +8,7 @@
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen flex items-center justify-center p-4">
 
   <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
@@ -84,6 +85,14 @@
       </button>
     </form>
 
+    <!-- 登出 / 清除資料 -->
+    <div id="logoutSection" class="mt-6 hidden text-center">
+      <button onclick="logoutLINE()"
+        class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition shadow-md">
+        <i class="fas fa-sign-out-alt mr-2"></i>登出 / 清除登入狀態
+      </button>
+    </div>
+
     <!-- 載入中 -->
     <div id="loading" class="text-center text-gray-600">
       <div class="flex justify-center items-center gap-2">
@@ -100,6 +109,7 @@
     GIST_ID: "802416482763775c3c17680ffea14e7e"
   };
 
+  // ---------- 讀取 Gist ----------
   async function getGistData() {
     const res = await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, {
       headers: { Authorization: `token ${CONFIG.GITHUB_TOKEN}` }
@@ -109,11 +119,12 @@
     return { fileKey, data: JSON.parse(gist.files[fileKey].content || '{"users": []}') };
   }
 
+  // ---------- 更新 Gist ----------
   async function updateGistData(user) {
     const { fileKey, data } = await getGistData();
-    if (data.users.find(u => u.lineUserId === user.lineUserId)) throw new Error("此帳號已註冊");
+    if (data.users.find(u => u.lineUserId === user.lineUserId))
+      throw new Error("此帳號已註冊");
     data.users.push(user);
-
     await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, {
       method: "PATCH",
       headers: {
@@ -126,49 +137,71 @@
     });
   }
 
+  // ---------- 初始化 LIFF ----------
   async function initLINE() {
-  try {
-    await liff.init({ liffId: CONFIG.LIFF_ID });
+    try {
+      await liff.init({ liffId: CONFIG.LIFF_ID });
 
-    // 🧠 若未登入 → 執行 login 並中止後續流程
-    if (!liff.isLoggedIn()) {
-      console.log("尚未登入 → 觸發 LIFF 登入");
-      liff.login({ redirectUri: window.location.href });
-      return;
+      // 先檢查 localStorage
+      const cachedUser = JSON.parse(localStorage.getItem("lineUserData") || "null");
+      if (cachedUser && cachedUser.lineUserId) {
+        console.log("✅ 已從 localStorage 讀取登入資料");
+        showUser(cachedUser);
+        return;
+      }
+
+      if (!liff.isLoggedIn()) {
+        console.log("尚未登入 → 觸發 LIFF 登入");
+        liff.login({ redirectUri: window.location.href });
+        return;
+      }
+
+      const profile = await liff.getProfile();
+      const userData = {
+        lineUserId: profile.userId,
+        displayName: profile.displayName,
+        pictureUrl: profile.pictureUrl
+      };
+
+      localStorage.setItem("lineUserData", JSON.stringify(userData));
+      console.log("✅ 登入成功，已寫入 localStorage");
+      showUser(userData);
+
+    } catch (err) {
+      console.error("❌ LIFF 初始化錯誤：", err);
+      alert("LINE 登入初始化失敗，請重新開啟頁面");
     }
+  }
 
-    // ✅ 已登入，用戶資料
-    const profile = await liff.getProfile();
-    const userData = {
-      lineUserId: profile.userId,
-      displayName: profile.displayName,
-      pictureUrl: profile.pictureUrl
-    };
-
-    // 🔒 儲存到 sessionStorage（避免 reload 後遺失）
-    sessionStorage.setItem("lineUserData", JSON.stringify(userData));
-
-    // ✅ 顯示畫面
+  // ---------- 顯示使用者 ----------
+  function showUser(profile) {
     document.getElementById("lineUserInfo").classList.remove("hidden");
     document.getElementById("registerForm").classList.remove("hidden");
+    document.getElementById("logoutSection").classList.remove("hidden");
     document.getElementById("loading").classList.add("hidden");
 
-    // ✅ 填入真實資料
     document.getElementById("lineUserName").textContent = profile.displayName;
     document.getElementById("lineUserPicture").src = profile.pictureUrl;
-    document.getElementById("lineUserId").value = profile.userId;
+    document.getElementById("lineUserId").value = profile.lineUserId;
     document.getElementById("displayName").value = profile.displayName;
-
-  } catch (err) {
-    console.error("LIFF 初始化錯誤：", err);
-    alert("LINE 登入初始化失敗，請重新開啟頁面");
   }
-}
 
+  // ---------- 登出 / 清除登入狀態 ----------
+  function logoutLINE() {
+    if (confirm("確定要登出並清除登入資料嗎？")) {
+      localStorage.removeItem("lineUserData");
+      sessionStorage.clear();
+      if (liff.isLoggedIn()) {
+        liff.logout();
+      }
+      alert("✅ 已登出，將重新整理頁面");
+      window.location.reload();
+    }
+  }
 
+  // ---------- 表單提交 ----------
   document.getElementById("registerForm").addEventListener("submit", async e => {
     e.preventDefault();
-    const form = e.target;
     const user = {
       lineUserId: document.getElementById("lineUserId").value,
       displayName: document.getElementById("displayName").value.trim(),
