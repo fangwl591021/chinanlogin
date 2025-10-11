@@ -236,6 +236,13 @@ const CONFIG = {
                 loadSectionContent(sectionName);
             }
         }
+function showSection(sectionName) {
+  if (sectionName === 'bookings') {
+    window.location.href = 'bookings.html';
+    return;
+  }
+  ...
+}
 
         // 載入區塊內容
         async function loadSectionContent(sectionName) {
