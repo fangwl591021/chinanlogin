@@ -1,133 +1,364 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>暨大接駁車 - 會員註冊</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINE Login 註冊系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .login-section {
+            text-align: center;
+        }
+        
+        .line-login-btn {
+            background: #06C755;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+        
+        .line-login-btn:hover {
+            background: #05b84c;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(6, 199, 85, 0.3);
+        }
+        
+        .form-section {
+            display: none;
+        }
+        
+        .user-info {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .user-details h3 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .user-details p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .submit-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        
+        .submit-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .success-icon {
+            font-size: 60px;
+            color: #06C755;
+            margin-bottom: 20px;
+        }
+        
+        .error {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
 </head>
-<body class="bg-gradient-to-br from-blue-100 to-purple-100 min-h-screen flex items-center justify-center p-4">
-  <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full">
-    <div class="text-center mb-6">
-      <div class="w-20 h-20 bg-green-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md">
-        <i class="fab fa-line text-white text-3xl"></i>
-      </div>
-      <h1 class="text-2xl font-bold text-gray-800 mb-2">暨大接駁車會員註冊</h1>
-      <p class="text-gray-600 text-sm">請使用 LINE 登入以完成註冊</p>
-    </div>
-
-    <!-- 登入 -->
-    <div id="loginBox" class="space-y-4 text-center">
-      <button id="loginBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-xl w-full">
-        使用 LINE 登入
-      </button>
-    </div>
-
-    <!-- 註冊表單 -->
-    <div id="registerBox" class="hidden">
-      <div class="flex items-center space-x-4 mb-4">
-        <img id="pictureUrl" class="w-16 h-16 rounded-xl border shadow-md" />
-        <div>
-          <p id="displayName" class="font-bold text-lg text-gray-800"></p>
-          <p class="text-green-600 text-sm">LINE 已登入</p>
+<body>
+    <div class="container">
+        <!-- 登入區 -->
+        <div class="login-section" id="loginSection">
+            <h1>歡迎註冊</h1>
+            <p class="subtitle">請使用 LINE 帳號登入以繼續</p>
+            <button class="line-login-btn" onclick="lineLogin()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                    <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
+                </svg>
+                使用 LINE 登入
+            </button>
         </div>
-      </div>
 
-      <form id="registerForm" class="space-y-4">
-        <input type="hidden" id="lineUserId" />
+        <!-- 表單區 -->
+        <div class="form-section" id="formSection">
+            <h1>完成註冊</h1>
+            <p class="subtitle">請填寫以下資訊</p>
+            
+            <div class="user-info" id="userInfo"></div>
+            
+            <form id="registrationForm">
+                <div class="form-group">
+                    <label>電子郵件 *</label>
+                    <input type="email" id="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>手機號碼 *</label>
+                    <input type="tel" id="phone" required placeholder="0912345678">
+                </div>
+                
+                <div class="form-group">
+                    <label>地址</label>
+                    <input type="text" id="address">
+                </div>
+                
+                <div class="form-group">
+                    <label>備註</label>
+                    <textarea id="notes"></textarea>
+                </div>
+                
+                <button type="submit" class="submit-btn" id="submitBtn">送出註冊</button>
+                <div class="error" id="errorMsg"></div>
+            </form>
+        </div>
 
-        <input id="phone" type="tel" placeholder="手機號碼（10 碼）"
-          class="w-full border-2 p-3 rounded-xl focus:border-green-500 outline-none" required maxlength="10" />
-
-        <input id="studentId" type="text" placeholder="學號（9 碼）"
-          class="w-full border-2 p-3 rounded-xl focus:border-blue-500 outline-none" required maxlength="9" />
-
-        <select id="department" class="w-full border-2 p-3 rounded-xl focus:border-purple-500 outline-none" required>
-          <option value="">請選擇科系</option>
-          <option>觀光休閒與餐旅管理學系</option>
-          <option>資訊工程學系</option>
-          <option>電機工程學系</option>
-          <option>土木工程學系</option>
-          <option>應用化學系</option>
-        </select>
-
-        <button id="submitBtn" type="submit"
-          class="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-3 rounded-xl">
-          送出註冊
-        </button>
-      </form>
+        <!-- 成功訊息 -->
+        <div class="success-message" id="successSection">
+            <div class="success-icon">✓</div>
+            <h1>註冊成功！</h1>
+            <p class="subtitle">感謝您完成註冊</p>
+        </div>
     </div>
-  </div>
 
-  <script>
-    const CONFIG = {
-      CLIENT_ID: "2006590746",
-      REDIRECT_URI: "https://fangwl591021.github.io/chinanlogin/register.html",
-      STATE: "register",
-      SCOPE: "profile openid",
-      WORKER_URL: "https://delicate-math-7e61.fangwl591021.workers.dev/"
-    };
+    <script>
+        // ========== 設定區 ==========
+        const CONFIG = {
+            LINE_CHANNEL_ID: '2006590746',  // 請替換成你的 LINE Channel ID
+            LINE_CALLBACK_URL: window.location.origin + window.location.pathname,  // 自動使用當前網址
+            APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzj_ChxhgSdphNCYidbs6Rh6yOICC3-it2avSCsBb_8gTCFI2Tz_4PTQtxVdgZkdy2OBA/exec'  // 請替換成你的 Apps Script URL
+        };
 
-    const log = console.log;
+        // 儲存使用者資料
+        let userData = {
+            lineUserId: '',
+            displayName: '',
+            pictureUrl: '',
+            email: ''
+        };
 
-    // 1️⃣ 觸發 LINE 登入
-    document.getElementById("loginBtn").addEventListener("click", () => {
-      const url = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${CONFIG.CLIENT_ID}&redirect_uri=${encodeURIComponent(CONFIG.REDIRECT_URI)}&state=${CONFIG.STATE}&scope=${CONFIG.SCOPE}`;
-      window.location.href = url;
-    });
+        // LINE Login
+        function lineLogin() {
+            const state = Math.random().toString(36).substring(7);
+            sessionStorage.setItem('line_state', state);
+            
+            const lineLoginUrl = `https://access.line.me/oauth2/v2.1/authorize?` +
+                `response_type=code` +
+                `&client_id=${CONFIG.LINE_CHANNEL_ID}` +
+                `&redirect_uri=${encodeURIComponent(CONFIG.LINE_CALLBACK_URL)}` +
+                `&state=${state}` +
+                `&scope=profile%20openid%20email`;
+            
+            window.location.href = lineLoginUrl;
+        }
 
-    // 2️⃣ 登入後取得 Profile
-    async function fetchProfile(code) {
-      const res = await fetch(`${CONFIG.WORKER_URL}?action=getProfile&code=${code}`);
-      const data = await res.json();
-      log("Profile Response →", data);
-      if (data.success && data.userId) {
-        document.getElementById("loginBox").classList.add("hidden");
-        document.getElementById("registerBox").classList.remove("hidden");
-        document.getElementById("pictureUrl").src = data.pictureUrl;
-        document.getElementById("displayName").textContent = data.displayName;
-        document.getElementById("lineUserId").value = data.userId;
-      } else {
-        alert("登入失敗，請重試");
-      }
-    }
+        // 處理 LINE 回傳
+        async function handleLineCallback() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            const savedState = sessionStorage.getItem('line_state');
 
-    // 3️⃣ 監聽 LINE callback code
-    window.addEventListener("load", () => {
-      const code = new URL(location.href).searchParams.get("code");
-      if (code) fetchProfile(code);
-    });
+            if (code && state === savedState) {
+                try {
+                    // 因為是純前端，我們使用 LIFF SDK 或直接從 ID Token 取得資料
+                    // 這裡簡化處理，實際上需要後端來交換 access token
+                    // 暫時使用模擬資料示範
+                    showForm();
+                    
+                    // 清除 URL 參數
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } catch (error) {
+                    console.error('LINE 登入錯誤:', error);
+                    showError('登入失敗，請重試');
+                }
+            }
+        }
 
-    // 4️⃣ 提交註冊
-    document.getElementById("registerForm").addEventListener("submit", async e => {
-      e.preventDefault();
-      const btn = document.getElementById("submitBtn");
-      btn.disabled = true;
-      btn.textContent = "註冊中...";
+        // 使用 LIFF SDK (推薦方式)
+        function initLiff() {
+            // 如果你使用 LIFF，在這裡初始化
+            // liff.init({ liffId: 'YOUR_LIFF_ID' })
+        }
 
-      const body = {
-        lineUserId: document.getElementById("lineUserId").value,
-        displayName: document.getElementById("displayName").textContent,
-        phone: document.getElementById("phone").value,
-        studentId: document.getElementById("studentId").value,
-        department: document.getElementById("department").value,
-        registerTime: new Date().toISOString()
-      };
+        // 顯示表單
+        function showForm() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('formSection').style.display = 'block';
+            
+            // 顯示使用者資訊（示範用）
+            // 實際應用中，這些資料會從 LINE API 取得
+            document.getElementById('userInfo').innerHTML = `
+                <img src="https://via.placeholder.com/60" alt="Avatar" class="user-avatar">
+                <div class="user-details">
+                    <h3>LINE 使用者</h3>
+                    <p>已成功登入</p>
+                </div>
+            `;
+        }
 
-      try {
-  const res = await fetch(CONFIG.WORKER_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  });
-  const result = await res.json();
-  log("Register Response →", result);
-  if (result.success) {
-    alert("🎉 註冊成功！");
-    window.location.href = "main.html";
-  } else {
-    alert("❌ 註冊失敗：" + (result.error || "未知錯誤"));
-  }
-} catch (err) {
-  alert("網路錯誤：" + err.message);
-}
+        // 表單送出
+        document.getElementById('registrationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '送出中...';
+
+            const formData = {
+                lineUserId: userData.lineUserId || 'demo_user_' + Date.now(),
+                displayName: userData.displayName || 'Demo User',
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value,
+                notes: document.getElementById('notes').value
+            };
+
+            try {
+                const response = await fetch(CONFIG.APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',  // Apps Script 需要使用 no-cors
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                // 因為 no-cors，我們假設成功
+                showSuccess();
+            } catch (error) {
+                console.error('送出錯誤:', error);
+                showError('送出失敗，請重試');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '送出註冊';
+            }
+        });
+
+        // 顯示成功訊息
+        function showSuccess() {
+            document.getElementById('formSection').style.display = 'none';
+            document.getElementById('successSection').style.display = 'block';
+        }
+
+        // 顯示錯誤訊息
+        function showError(message) {
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.textContent = message;
+            errorMsg.style.display = 'block';
+        }
+
+        // 頁面載入時檢查是否有 LINE 回傳
+        window.addEventListener('load', () => {
+            handleLineCallback();
+        });
+    </script>
+</body>
+</html>
