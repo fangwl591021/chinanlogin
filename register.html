@@ -197,23 +197,23 @@
             
             <form id="registrationForm">
                 <div class="form-group">
-                    <label>電子郵件 *</label>
-                    <input type="email" id="email" required>
+                    <label>姓名 *</label>
+                    <input type="text" id="displayName" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>手機號碼 *</label>
+                    <label>電話 *</label>
                     <input type="tel" id="phone" required placeholder="0912345678">
                 </div>
                 
                 <div class="form-group">
-                    <label>地址</label>
-                    <input type="text" id="address">
+                    <label>學號 *</label>
+                    <input type="text" id="studentId" required placeholder="例如：S12345678">
                 </div>
                 
                 <div class="form-group">
-                    <label>備註</label>
-                    <textarea id="notes"></textarea>
+                    <label>科系 *</label>
+                    <input type="text" id="department" required placeholder="例如：資訊工程系">
                 </div>
                 
                 <button type="submit" class="submit-btn" id="submitBtn">送出註冊</button>
@@ -232,9 +232,9 @@
     <script>
         // ========== 設定區 ==========
         const CONFIG = {
-            LINE_CHANNEL_ID: '2006590746',  // 請替換成你的 LINE Channel ID
+            LINE_CHANNEL_ID: '你的_LINE_CHANNEL_ID',  // 請替換成你的 LINE Channel ID
             LINE_CALLBACK_URL: window.location.origin + window.location.pathname,  // 自動使用當前網址
-            APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzj_ChxhgSdphNCYidbs6Rh6yOICC3-it2avSCsBb_8gTCFI2Tz_4PTQtxVdgZkdy2OBA/exec'  // 請替換成你的 Apps Script URL
+            APPS_SCRIPT_URL: '你的_GOOGLE_APPS_SCRIPT_URL'  // 請替換成你的 Apps Script URL
         };
 
         // 儲存使用者資料
@@ -310,33 +310,39 @@
             e.preventDefault();
             
             const submitBtn = document.getElementById('submitBtn');
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.style.display = 'none';
+            
             submitBtn.disabled = true;
             submitBtn.textContent = '送出中...';
 
             const formData = {
                 lineUserId: userData.lineUserId || 'demo_user_' + Date.now(),
-                displayName: userData.displayName || 'Demo User',
-                email: document.getElementById('email').value,
+                displayName: document.getElementById('displayName').value,
                 phone: document.getElementById('phone').value,
-                address: document.getElementById('address').value,
-                notes: document.getElementById('notes').value
+                studentId: document.getElementById('studentId').value,
+                department: document.getElementById('department').value
             };
 
             try {
                 const response = await fetch(CONFIG.APPS_SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',  // Apps Script 需要使用 no-cors
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(formData)
                 });
 
-                // 因為 no-cors，我們假設成功
-                showSuccess();
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showSuccess();
+                } else {
+                    throw new Error(result.message || '送出失敗');
+                }
             } catch (error) {
                 console.error('送出錯誤:', error);
-                showError('送出失敗，請重試');
+                showError('送出失敗：' + error.message);
                 submitBtn.disabled = false;
                 submitBtn.textContent = '送出註冊';
             }
