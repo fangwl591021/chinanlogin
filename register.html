@@ -20,17 +20,7 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.3);
         }
-    </style>
-</head>
-
-<body class="gradient-bg min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-    
-    <!-- 背景泡泡動畫 -->
-    <div class="bubble" style="left: 10%; width: 80px; height: 80px; animation: rise 15s infinite ease-in; animation-delay: 0s;"></div>
-    <div class="bubble" style="left: 30%; width: 60px; height: 60px; animation: rise 15s infinite ease-in; animation-delay: 2s;"></div>
-    <div class="bubble" style="left: 50%; width: 100px; height: 100px; animation: rise 15s infinite ease-in; animation-delay: 4s;"></div>
-    
-    <style>
+        
         .bubble {
             position: absolute;
             border-radius: 50%;
@@ -42,6 +32,14 @@
             100% { bottom: 100vh; opacity: 0; transform: translateX(100px); }
         }
     </style>
+</head>
+
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+    
+    <!-- 背景泡泡動畫 -->
+    <div class="bubble" style="left: 10%; width: 80px; height: 80px; animation: rise 15s infinite ease-in; animation-delay: 0s;"></div>
+    <div class="bubble" style="left: 30%; width: 60px; height: 60px; animation: rise 15s infinite ease-in; animation-delay: 2s;"></div>
+    <div class="bubble" style="left: 50%; width: 100px; height: 100px; animation: rise 15s infinite ease-in; animation-delay: 4s;"></div>
 
     <div class="glass-effect rounded-3xl shadow-2xl p-8 max-w-lg w-full relative z-10">
         
@@ -147,7 +145,7 @@
     <script>
         const CONFIG = {
             LIFF_ID: "2006590746-VKy0Gk0l",
-            PROXY_API_URL: "https://script.google.com/macros/s/AKfycbyWpWt34AtbWYZ84DBuqP7mSSW3o7wPSee8fgLiEsM6wKK9eUSFZCdXRLI93-bpyQv7-A/exec"
+            GAS_API_URL: "https://script.google.com/macros/s/AKfycbxZp7z4aKT_DwxvmcRdawLDIKZdxho5Lpn8awzRPYmeoir7ze6TGGe1C7QQE5LoZunhXA/exec"
         };
 
         // 初始化 LIFF
@@ -184,7 +182,7 @@
         async function checkIfRegistered(lineUserId) {
             try {
                 const users = await getUsersFromGAS();
-                const existingUser = users.find(user => user.lineUserId === lineUserId);
+                const existingUser = users.find(user => user.LINEUSERID === lineUserId);
                 
                 if (existingUser) {
                     alert('您已完成註冊，將導向主頁面');
@@ -198,10 +196,10 @@
         // 從 GAS 獲取用戶列表
         async function getUsersFromGAS() {
             try {
-                const response = await fetch(CONFIG.PROXY_API_URL + '?action=getUsers');
+                const response = await fetch(CONFIG.GAS_API_URL + '?action=getUsers');
                 if (response.ok) {
                     const result = await response.json();
-                    return result.users || [];
+                    return result;
                 }
             } catch (error) {
                 console.error('獲取用戶列表失敗:', error);
@@ -230,12 +228,22 @@
             updateStatus('正在連線到伺服器...', 'info');
             
             try {
-                const response = await fetch(CONFIG.PROXY_API_URL, {
+                // 修改資料格式以匹配試算表欄位
+                const userData = {
+                    lineUserId: user.lineUserId,
+                    displayName: user.displayName,
+                    phone: user.phone,
+                    studentId: user.studentId,
+                    department: user.department,
+                    registerTime: user.registerTime
+                };
+
+                const response = await fetch(CONFIG.GAS_API_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ newUser: user })
+                    body: JSON.stringify(userData)
                 });
 
                 console.log('GAS 響應狀態:', response.status);
@@ -247,8 +255,8 @@
                 const result = await response.json();
                 console.log('GAS 響應數據:', result);
                 
-                if (result.status === 'error') {
-                    throw new Error(result.message);
+                if (result.success === false) {
+                    throw new Error(result.error || '註冊失敗');
                 }
                 
                 updateStatus('註冊成功！', 'success');
@@ -274,7 +282,7 @@
                 users.push(user);
                 localStorage.setItem('ncnu_users', JSON.stringify(users));
                 return { 
-                    status: 'success', 
+                    success: true,
                     message: '註冊成功！(資料暫存本地)',
                     storage: 'local'
                 };
@@ -330,10 +338,12 @@
                 submitBtn.classList.remove('from-green-500', 'to-emerald-600', 'hover:from-green-600', 'hover:to-emerald-700');
                 submitBtn.classList.add('from-blue-500', 'to-blue-600');
                 
-                // 根據儲存方式顯示不同訊息
-                let successMessage = '🎉 ' + result.message;
+                // 修改成功訊息處理
+                let successMessage = '🎉 註冊成功！';
                 if (result.storage === 'local') {
                     successMessage += '\n\n⚠️ 注意：資料暫存於本地瀏覽器，管理員後續會同步到伺服器。';
+                } else {
+                    successMessage += '\n資料已成功寫入系統！';
                 }
                 
                 alert(successMessage);
