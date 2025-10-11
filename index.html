@@ -6,26 +6,36 @@
     <title>暨大接駁車 - LINE Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        
+        * {
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        
         .hero-pattern {
-            background-image: linear-gradient(135deg, #06C755 0%, #05B04E 100%);
+            background: linear-gradient(135deg, #06C755 0%, #05B04E 100%);
+        }
+        
+        .animate-pulse-slow {
+            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
     </style>
-    <!-- LINE LIFF SDK -->
-    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/versions/2.22.3/sdk.js"></script>
 </head>
-<body class="min-h-screen bg-gray-50">
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+    
     <!-- 導航欄 -->
     <nav class="bg-white shadow-sm">
-        <div class="max-w-6xl mx-auto px-4 py-3">
+        <div class="max-w-6xl mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
-                <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
-                        <i class="fas fa-bus text-white text-sm"></i>
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center shadow-md">
+                        <i class="fas fa-bus text-white"></i>
                     </div>
-                    <span class="font-bold text-gray-800">暨大接駁車</span>
+                    <span class="font-black text-gray-800 text-lg">暨大接駁車</span>
                 </div>
-                <div class="text-sm text-gray-600">
+                <div class="text-sm text-gray-600 font-medium">
                     國立暨南國際大學
                 </div>
             </div>
@@ -33,37 +43,60 @@
     </nav>
 
     <!-- 主要內容 -->
-    <main class="max-w-md mx-auto mt-10 px-4">
-        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+    <main class="max-w-md mx-auto mt-16 px-4">
+        <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
+            
             <!-- LINE Login 區 -->
-            <div class="hero-pattern text-white p-8 text-center">
-                <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fab fa-line text-3xl"></i>
+            <div class="hero-pattern text-white p-12 text-center relative overflow-hidden">
+                <div class="absolute inset-0 opacity-10">
+                    <div class="absolute top-0 left-0 w-40 h-40 bg-white rounded-full -translate-x-20 -translate-y-20"></div>
+                    <div class="absolute bottom-0 right-0 w-40 h-40 bg-white rounded-full translate-x-20 translate-y-20"></div>
                 </div>
-                <h1 class="text-2xl font-bold mb-2">暨大接駁車服務</h1>
-                <p class="text-green-100">使用 LINE 帳號快速登入</p>
+                <div class="relative z-10">
+                    <div class="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-6 animate-pulse-slow shadow-xl">
+                        <i class="fab fa-line text-5xl"></i>
+                    </div>
+                    <h1 class="text-3xl font-black mb-3 tracking-tight">暨大接駁車服務</h1>
+                    <p class="text-green-100 font-medium">使用 LINE 帳號快速登入</p>
+                </div>
             </div>
 
             <!-- 登入區 -->
             <div class="p-8 space-y-6">
                 <div class="text-center mb-6">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-2">歡迎使用接駁車系統</h2>
+                    <h2 class="text-xl font-black text-gray-800 mb-2">歡迎使用接駁車系統</h2>
                     <p class="text-gray-600">請使用 LINE 帳號登入以繼續使用服務</p>
                 </div>
 
                 <!-- LINE Login 按鈕 -->
-                <button id="lineLoginBtn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-6 rounded-xl transition duration-200 shadow-lg flex items-center justify-center">
-                    <i class="fab fa-line text-xl mr-3"></i>
+                <button id="lineLoginBtn" 
+                    class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-black py-5 px-6 rounded-2xl transition duration-200 shadow-xl hover:shadow-2xl transform hover:scale-[1.02] flex items-center justify-center text-lg">
+                    <i class="fab fa-line text-2xl mr-3"></i>
                     LINE 快速登入
                 </button>
 
                 <!-- 說明 -->
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+                <div class="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-2xl p-5 mt-6">
                     <div class="flex items-start">
-                        <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
-                        <div class="text-sm text-blue-800">
-                            <p class="font-medium">使用流程說明</p>
-                            <p class="mt-1">1. LINE 登入 → 2. 會員註冊 → 3. 預約接駁車</p>
+                        <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-info-circle text-white"></i>
+                        </div>
+                        <div class="ml-4 text-sm text-blue-900">
+                            <p class="font-bold mb-2">使用流程說明</p>
+                            <div class="space-y-1">
+                                <p class="flex items-center gap-2">
+                                    <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                                    LINE 登入
+                                </p>
+                                <p class="flex items-center gap-2">
+                                    <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                                    會員註冊
+                                </p>
+                                <p class="flex items-center gap-2">
+                                    <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                                    預約接駁車
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -71,67 +104,88 @@
         </div>
 
         <!-- 功能特色 -->
-        <div class="grid grid-cols-2 gap-4 mt-8">
-            <div class="bg-white rounded-xl p-4 text-center shadow-sm">
-                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <i class="fab fa-line text-green-600"></i>
+        <div class="grid grid-cols-2 gap-4 mt-8 mb-8">
+            <div class="bg-white rounded-2xl p-5 text-center shadow-lg hover:shadow-xl transition transform hover:scale-105">
+                <div class="w-14 h-14 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md">
+                    <i class="fab fa-line text-white text-xl"></i>
                 </div>
-                <p class="text-sm font-medium text-gray-700">LINE 整合</p>
+                <p class="text-sm font-bold text-gray-700">LINE 整合</p>
             </div>
-            <div class="bg-white rounded-xl p-4 text-center shadow-sm">
-                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <i class="fas fa-calendar-check text-blue-600"></i>
+            <div class="bg-white rounded-2xl p-5 text-center shadow-lg hover:shadow-xl transition transform hover:scale-105">
+                <div class="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md">
+                    <i class="fas fa-calendar-check text-white text-xl"></i>
                 </div>
-                <p class="text-sm font-medium text-gray-700">線上預約</p>
+                <p class="text-sm font-bold text-gray-700">線上預約</p>
             </div>
-            <div class="bg-white rounded-xl p-4 text-center shadow-sm">
-                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <i class="fas fa-bell text-purple-600"></i>
+            <div class="bg-white rounded-2xl p-5 text-center shadow-lg hover:shadow-xl transition transform hover:scale-105">
+                <div class="w-14 h-14 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md">
+                    <i class="fas fa-bell text-white text-xl"></i>
                 </div>
-                <p class="text-sm font-medium text-gray-700">即時通知</p>
+                <p class="text-sm font-bold text-gray-700">即時通知</p>
             </div>
-            <div class="bg-white rounded-xl p-4 text-center shadow-sm">
-                <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <i class="fas fa-map-marker-alt text-orange-600"></i>
+            <div class="bg-white rounded-2xl p-5 text-center shadow-lg hover:shadow-xl transition transform hover:scale-105">
+                <div class="w-14 h-14 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md">
+                    <i class="fas fa-map-marker-alt text-white text-xl"></i>
                 </div>
-                <p class="text-sm font-medium text-gray-700">多站點</p>
+                <p class="text-sm font-bold text-gray-700">多站點服務</p>
             </div>
         </div>
     </main>
 
     <!-- 載入提示 -->
     <div id="loading" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-xl p-6 text-center">
-            <div class="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="text-gray-700">LINE 登入處理中...</p>
+        <div class="bg-white rounded-3xl p-8 text-center shadow-2xl">
+            <div class="flex justify-center items-center gap-2 mb-6">
+                <div class="w-3 h-3 bg-green-500 rounded-full animate-bounce" style="animation-delay: 0s;"></div>
+                <div class="w-3 h-3 bg-green-500 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+                <div class="w-3 h-3 bg-green-500 rounded-full animate-bounce" style="animation-delay: 0.4s;"></div>
+            </div>
+            <p class="text-gray-700 font-bold text-lg">LINE 登入處理中...</p>
+            <p class="text-gray-500 text-sm mt-2">請稍候</p>
         </div>
     </div>
 
     <script>
-        // LIFF ID
-        const liffId = '2006590746-VKy0Gk0l';
-        // 在 index.html 的 CONFIG 更新為：
-const CONFIG = {
-    LIFF_ID: "2008231249-yv8294Jp",
-    GITHUB_TOKEN: "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",
-    GIST_ID: "802416482763775c3c17680ffea14e7e"
-};
+        // 統一配置
+        const CONFIG = {
+            LIFF_ID: "2006590746-VKy0Gk0l",
+            GITHUB_TOKEN: "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",
+            GIST_ID: "802416482763775c3c17680ffea14e7e"
+        };
+
+        // 從 Gist 讀取用戶資料
+        async function getUsersFromGist() {
+            try {
+                const res = await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, {
+                    headers: { Authorization: `token ${CONFIG.GITHUB_TOKEN}` }
+                });
+                const gist = await res.json();
+                const fileKey = Object.keys(gist.files)[0];
+                const data = JSON.parse(gist.files[fileKey].content || '{"users": []}');
+                return data.users || [];
+            } catch (error) {
+                console.error('讀取 Gist 失敗:', error);
+                return [];
+            }
+        }
+
         // 初始化 LIFF
         async function initializeLiff() {
             try {
-                await liff.init({ liffId: liffId });
+                await liff.init({ liffId: CONFIG.LIFF_ID });
                 
-                // 檢查是否已經在 LINE 中登入
-                if (liff.isInClient()) {
-                    // 在 LINE 內建瀏覽器中，自動嘗試登入
-                    await handleLineLogin();
-                } else if (liff.isLoggedIn()) {
-                    // 已經登入，獲取用戶資料
+                console.log('LIFF 初始化成功');
+                console.log('是否在 LINE 中:', liff.isInClient());
+                console.log('是否已登入:', liff.isLoggedIn());
+                
+                // 如果已經登入，自動處理
+                if (liff.isLoggedIn()) {
                     await handleLineLogin();
                 }
                 
             } catch (error) {
                 console.error('LIFF 初始化失敗:', error);
+                alert('LINE 登入初始化失敗，請確認 LIFF ID 是否正確');
             }
         }
 
@@ -142,71 +196,85 @@ const CONFIG = {
             try {
                 // 獲取用戶資料
                 const profile = await liff.getProfile();
-                const idToken = liff.getIDToken();
                 
-                // 儲存 LINE 用戶資料
+                console.log('LINE 用戶資料:', profile);
+                
+                // 儲存 LINE 用戶資料到 sessionStorage
                 const lineUserData = {
-                    userId: profile.userId,
+                    lineUserId: profile.userId,
                     displayName: profile.displayName,
                     pictureUrl: profile.pictureUrl || '',
-                    statusMessage: profile.statusMessage || '',
-                    email: liff.getDecodedIDToken()?.email || ''
+                    statusMessage: profile.statusMessage || ''
                 };
                 
                 sessionStorage.setItem('lineUserData', JSON.stringify(lineUserData));
                 
-                // 檢查是否已註冊
-                checkUserRegistration(profile.userId);
+                // 從 Gist 檢查用戶是否已註冊
+                await checkUserRegistration(profile.userId);
                 
             } catch (error) {
                 console.error('LINE 登入失敗:', error);
                 hideLoading();
-                alert('LINE 登入失敗，請重試');
+                alert('LINE 登入失敗，請重試\n錯誤: ' + error.message);
             }
         }
 
         // LINE Login 按鈕點擊事件
         document.getElementById('lineLoginBtn').addEventListener('click', async function() {
+            console.log('點擊登入按鈕');
+            
             if (!liff.isLoggedIn()) {
-                // 如果未登入，執行登入
-                liff.login();
+                console.log('未登入，觸發 LINE 登入');
+                liff.login({ redirectUri: window.location.href });
             } else {
-                // 如果已登入，獲取用戶資料
+                console.log('已登入，獲取用戶資料');
                 await handleLineLogin();
             }
         });
 
-        // 檢查用戶是否已註冊
-        function checkUserRegistration(lineUserId) {
-            const existingUsers = JSON.parse(localStorage.getItem('ncnu_shuttle_users') || '{"users": []}');
-            const userExists = existingUsers.users.find(user => user.lineUserId === lineUserId);
-            
-            if (userExists) {
-                // 用戶已註冊，建立 session 資料並導向主頁面
-                const userData = {
-                    userId: lineUserId,
-                    displayName: userExists.displayName,
-                    phone: userExists.phone,
-                    studentId: userExists.studentId,
-                    department: userExists.department,
-                    isRegistered: true
-                };
-                sessionStorage.setItem('userData', JSON.stringify(userData));
+        // 檢查用戶是否已註冊（從 Gist）
+        async function checkUserRegistration(lineUserId) {
+            try {
+                const users = await getUsersFromGist();
+                const userExists = users.find(user => user.lineUserId === lineUserId);
                 
+                if (userExists) {
+                    console.log('用戶已註冊:', userExists);
+                    
+                    // 用戶已註冊，建立 session 資料並導向主頁面
+                    const userData = {
+                        lineUserId: lineUserId,
+                        displayName: userExists.displayName,
+                        phone: userExists.phone,
+                        studentId: userExists.studentId,
+                        department: userExists.department,
+                        isRegistered: true
+                    };
+                    sessionStorage.setItem('userData', JSON.stringify(userData));
+                    
+                    hideLoading();
+                    alert('✅ 登入成功！\n歡迎回來，' + userExists.displayName);
+                    window.location.href = 'main.html';
+                } else {
+                    console.log('用戶未註冊，導向註冊頁面');
+                    
+                    // 用戶未註冊，導向註冊頁面
+                    const lineData = JSON.parse(sessionStorage.getItem('lineUserData') || '{}');
+                    const userData = {
+                        lineUserId: lineUserId,
+                        displayName: lineData.displayName || '',
+                        isRegistered: false
+                    };
+                    sessionStorage.setItem('userData', JSON.stringify(userData));
+                    
+                    hideLoading();
+                    alert('ℹ️ 首次使用\n請先完成會員註冊');
+                    window.location.href = 'register.html';
+                }
+            } catch (error) {
+                console.error('檢查註冊狀態失敗:', error);
                 hideLoading();
-                window.location.href = 'main.html';
-            } else {
-                // 用戶未註冊，導向註冊頁面
-                const lineData = JSON.parse(sessionStorage.getItem('lineUserData') || '{}');
-                const userData = {
-                    userId: lineUserId,
-                    displayName: lineData.displayName || '',
-                    isRegistered: false
-                };
-                sessionStorage.setItem('userData', JSON.stringify(userData));
-                
-                hideLoading();
-                window.location.href = 'register.html';
+                alert('檢查註冊狀態失敗，請重試');
             }
         }
 
@@ -220,17 +288,23 @@ const CONFIG = {
             document.getElementById('loading').classList.add('hidden');
         }
 
-        // 檢查是否已有登入狀態
-        window.addEventListener('load', function() {
+        // 頁面載入時檢查登入狀態
+        window.addEventListener('load', async function() {
+            console.log('頁面載入完成');
+            
+            // 檢查是否已有登入狀態
             const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
             
-            if (userData.userId && userData.isRegistered) {
+            if (userData.lineUserId && userData.isRegistered) {
+                console.log('已登入且已註冊，導向主頁面');
                 window.location.href = 'main.html';
-            } else if (userData.userId && !userData.isRegistered) {
+            } else if (userData.lineUserId && !userData.isRegistered) {
+                console.log('已登入但未註冊，導向註冊頁面');
                 window.location.href = 'register.html';
             } else {
+                console.log('未登入，初始化 LIFF');
                 // 初始化 LIFF
-                initializeLiff();
+                await initializeLiff();
             }
         });
     </script>
