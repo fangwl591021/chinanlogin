@@ -11,9 +11,7 @@
   <p>登入中，請稍候…</p>
 
 <script>
-  // ✅ 設定你的 Cloudflare Worker 網址
   const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
-  // ✅ 註冊與主頁的網址
   const REGISTER_PAGE = 'register.html';
   const MAIN_PAGE = 'main.html';
 
@@ -24,13 +22,10 @@
       return;
     }
 
-    // 抓 LINE 使用者資料
     const profile = await liff.getProfile();
-    // 向 Worker 查詢是否已註冊
     const res = await fetch(`${WORKER_URL}?check=${profile.userId}`);
     const result = await res.json();
 
-    // 根據是否註冊導向
     if (result.registered) {
       window.location.href = MAIN_PAGE;
     } else {
