@@ -170,25 +170,30 @@ function selectDate(date){
 }
 
 // === 載入班次狀況 ===
-function loadSeatStatus(date){
-  const container=document.getElementById('routeButtons');
-  container.innerHTML='';
-  const routeData={
-    A1:{name:'A1 暨大→埔里總站',remain:3,full:false},
-    A2:{name:'A2 暨大→埔里總站',remain:0,full:true},
-    B1:{name:'B1 埔里總站→暨大',remain:2,full:false},
-    B2:{name:'B2 埔里總站→暨大',remain:5,full:false}
+function loadSeatStatus(date) {
+  const container = document.getElementById('routeButtons');
+  container.innerHTML = '';
+
+  const routeData = {
+    A1: { name: 'A1 暨大 → 埔里總站', remain: 3, full: false },
+    B1: { name: 'B1 埔里總站 → 暨大', remain: 2, full: false },
+    A2: { name: 'A2 暨大 → 埔里總站', remain: 0, full: true },
+    B2: { name: 'B2 埔里總站 → 暨大', remain: 5, full: false }
   };
-  ['A1','A2','B1','B2'].forEach(rid=>{
-    const r=routeData[rid];
-    const div=document.createElement('div');
-    div.className=`route-btn ${rid}`;
-    if(r.full) div.classList.add('full');
-    div.innerHTML=`<div><b>${r.name}</b><br>${r.full?'已滿':r.remain+' 位'}</div>`;
-    if(!r.full) div.onclick=()=>selectRoute(div,rid,r.name);
+
+  // ✅ 班次順序固定成 A1,B1,A2,B2
+  ['A1', 'B1', 'A2', 'B2'].forEach(rid => {
+    const r = routeData[rid];
+    const div = document.createElement('div');
+    div.className = `route-btn ${rid}`;
+    if (r.full) div.classList.add('full');
+
+    div.innerHTML = `<div><b>${r.name}</b><br>${r.full ? '已滿' : `${r.remain} 位`}</div>`;
+    if (!r.full) div.onclick = () => selectRoute(div, rid, r.name);
     container.appendChild(div);
   });
 }
+
 
 // === 選擇班次 ===
 function selectRoute(btn,id,name){
