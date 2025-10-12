@@ -110,22 +110,35 @@ const stopsReturn = ["埔里總站","埔里酒廠","榮民診所","中山安七�
 async function toggleCalendar() {
   const c = document.getElementById('calendarContainer');
   if (c.style.display === 'none') {
-    // 🚦 先檢查今天是否停駛
-    const today = new Date().toISOString().split('T')[0];
-    const res = await fetch(`${WORKER_URL}?mode=calendar&date=${today}`);
-    const result = await res.json();
-    if (result.holiday) {
-      document.getElementById('holidayNotice').style.display = 'block';
-      document.getElementById('holidayNotice').innerText = `🚫 今日 (${today}) 為停駛／公休`;
-      return;
-    } else {
-      document.getElementById('holidayNotice').style.display = 'none';
-    }
+    // 直接顯示月曆，不檢查今天是否停駛
     renderCalendar();
     c.style.display = 'block';
+    document.getElementById('holidayNotice').style.display = 'none';
   } else {
     c.style.display = 'none';
   }
+}
+
+// 修改 selectDate 函數，在選擇日期時檢查是否為停駛日
+async function selectDate(date){
+  // 檢查選擇的日期是否為停駛日
+  const res = await fetch(`${WORKER_URL}?mode=calendar&date=${date}`);
+  const result = await res.json();
+  
+  if (result.holiday) {
+    document.getElementById('holidayNotice').style.display = 'block';
+    document.getElementById('holidayNotice').innerText = `🚫 ${date} 為停駛／公休日，請選擇其他日期`;
+    document.getElementById('selectedDate').style.display = 'none';
+    selectedDate = null;
+    return;
+  }
+  
+  selectedDate = date;
+  document.getElementById('calendarContainer').style.display = 'none';
+  document.getElementById('selectedDate').innerHTML = '✅ 已選擇日期：' + date;
+  document.getElementById('selectedDate').style.display = 'block';
+  document.getElementById('holidayNotice').style.display = 'none';
+  loadSeatStatus(date);
 }
 
 function renderCalendar() {
