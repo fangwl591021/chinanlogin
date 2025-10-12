@@ -40,57 +40,87 @@
     .calendar-day.disabled { background:#eee; color:#aaa; cursor:not-allowed; }
     .calendar-day.selected { background:#3c8050; color:#fff; font-weight:bold; }
 
-    /* 預約卡片 */
-    .reservation-card {
-      background: #fff;
-      border-radius: 8px;
-      padding: 0;
-      margin: 20px 16px;
+    /* 橫向輪播式預約卡片 */
+    .carousel-container {
+      padding: 16px;
+      margin: 20px 0;
+    }
+    .carousel-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #333;
+      text-align: center;
+    }
+    .carousel {
+      display: flex;
+      overflow-x: auto;
+      gap: 15px;
+      padding: 10px 0;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .carousel::-webkit-scrollbar {
+      display: none;
+    }
+    .reservation-bubble {
+      min-width: 280px;
+      background: white;
+      border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       border: 1px solid #e0e0e0;
       overflow: hidden;
+      flex-shrink: 0;
     }
-    .reservation-header {
-      background: #3c8050;
+    .bubble-header {
+      background: #27ACB2;
       color: white;
       padding: 12px 15px;
       font-weight: bold;
-      font-size: 18px;
-      text-align: center;
-    }
-    .reservation-body {
-      padding: 15px;
-    }
-    .reservation-line {
-      margin-bottom: 8px;
       font-size: 14px;
-      line-height: 1.4;
     }
-    .reservation-label {
+    .bubble-body {
+      padding: 12px;
+    }
+    .bubble-line {
+      margin-bottom: 6px;
+      font-size: 12px;
+      line-height: 1.3;
+    }
+    .bubble-line:last-child {
+      margin-bottom: 0;
+    }
+    .route-time {
       font-weight: bold;
       color: #333;
-      display: inline-block;
-      min-width: 60px;
     }
-    .reservation-value {
-      color: #000;
-      margin-left: 5px;
+    .bubble-footer {
+      padding: 8px;
+      border-top: 1px solid #f0f0f0;
+      text-align: center;
+    }
+    .cancel-btn-small {
+      background: none;
+      border: none;
+      color: #FF0000;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 5px 10px;
+    }
+    .cancel-btn-small:hover {
+      background: #ffe6e6;
+      border-radius: 4px;
     }
 
-    /* 取消按鈕 */
-    .cancel-btn {
-      background: #d9534f;
-      color: #fff;
-      border: none;
-      padding: 10px;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 10px;
-      width: 100%;
+    /* 沒有預約的提示 */
+    .no-reservation {
+      text-align: center;
+      color: #666;
+      padding: 40px 20px;
+      background: white;
+      border-radius: 8px;
+      margin: 20px 16px;
     }
-    .cancel-btn:hover { background: #c9302c; }
 
     /* 班次選擇區域 */
     .route-section {
@@ -222,7 +252,7 @@
   <!-- 📝 送出按鈕 -->
   <button id="submitBtn" class="submit-btn" onclick="submitReservation()" style="display:none;">送出預約</button>
 
-  <!-- 🧾 預約卡片永遠在最下方 -->
+  <!-- 🧾 橫向輪播式預約卡片 -->
   <div id="currentReservationCard" style="display:none;"></div>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -460,7 +490,7 @@ function resetReservationForm() {
   document.querySelectorAll('.calendar-day').forEach(day => day.classList.remove('selected'));
 }
 
-// === 📅 預約卡片 ===
+// === 📅 橫向輪播式預約卡片 ===
 function renderCurrentReservationCard() {
   const section = document.getElementById('currentReservationCard');
   section.innerHTML = '';
@@ -471,36 +501,57 @@ function renderCurrentReservationCard() {
     .sort((a, b) => a.date.localeCompare(b.date));
 
   if (activeReservations.length === 0) {
-    section.innerHTML = '<p style="text-align:center;color:#666;padding:20px;">目前沒有預約紀錄</p>';
+    section.innerHTML = `
+      <div class="no-reservation">
+        <div style="font-size: 48px; margin-bottom: 10px;">📭</div>
+        <div style="font-size: 16px; color: #666;">目前沒有預約紀錄</div>
+      </div>
+    `;
     section.style.display = 'block';
     return;
   }
 
-  activeReservations.forEach(res => {
-    const dateOnly = res.date.split('T')[0];
-    const routeInfo = routeTimes[res.route] || { time: '', direction: '' };
-    const routeDisplay = `${res.route} | ${routeInfo.time} ${routeInfo.direction}`;
-
-    const card = document.createElement('div');
-    card.className = 'reservation-card';
-    card.innerHTML = `
-      <div class="reservation-header">穿山甲專車預約</div>
-      <div class="reservation-body">
-        <div class="reservation-line"><span class="reservation-label">日期：</span><span class="reservation-value">${dateOnly}</span></div>
-        <div class="reservation-line"><span class="reservation-label">班次：</span><span class="reservation-value">${routeDisplay}</span></div>
-        <div class="reservation-line"><span class="reservation-label">姓名：</span><span class="reservation-value">${res.name}</span></div>
-        <div class="reservation-line"><span class="reservation-label">電話：</span><span class="reservation-value">${res.phone || ''}</span></div>
-        <div class="reservation-line">
-          <span class="reservation-label">上車：</span><span class="reservation-value">${res.fromStop}</span>
-          <span style="margin-left:20px;"></span>
-          <span class="reservation-label">下車：</span><span class="reservation-value">${res.toStop}</span>
-        </div>
-        <button class="cancel-btn" onclick="cancelReservation('${res.id}')">❌ 取消預約</button>
+  // 建立輪播容器
+  const carouselContainer = document.createElement('div');
+  carouselContainer.className = 'carousel-container';
+  
+  const carouselTitle = document.createElement('div');
+  carouselTitle.className = 'carousel-title';
+  carouselTitle.textContent = `我的預約 (${activeReservations.length} 筆)`;
+  carouselContainer.appendChild(carouselTitle);
+  
+  const carousel = document.createElement('div');
+  carousel.className = 'carousel';
+  
+  // 為每個預約建立泡泡卡片
+  activeReservations.forEach(reservation => {
+    const dateOnly = reservation.date.split('T')[0];
+    const routeInfo = routeTimes[reservation.route] || { time: '', direction: '' };
+    
+    const bubble = document.createElement('div');
+    bubble.className = 'reservation-bubble';
+    bubble.innerHTML = `
+      <div class="bubble-header">
+        日期: ${dateOnly}
+      </div>
+      <div class="bubble-body">
+        <div class="bubble-line route-time">${reservation.route} | ${routeInfo.time}</div>
+        <div class="bubble-line">${routeInfo.direction}</div>
+        <div class="bubble-line">姓名: ${reservation.name}</div>
+        <div class="bubble-line">上車: ${reservation.fromStop}</div>
+        <div class="bubble-line">下車: ${reservation.toStop}</div>
+      </div>
+      <div class="bubble-footer">
+        <button class="cancel-btn-small" onclick="cancelReservation('${reservation.id}')">
+          ❌ 取消預約
+        </button>
       </div>
     `;
-    section.appendChild(card);
+    carousel.appendChild(bubble);
   });
-
+  
+  carouselContainer.appendChild(carousel);
+  section.appendChild(carouselContainer);
   section.style.display = 'block';
 }
 
