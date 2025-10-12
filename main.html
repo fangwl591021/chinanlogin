@@ -386,6 +386,49 @@ function renderExistingReservations() {
   section.style.display = 'block';
   container.innerHTML = '';
   
+  // 過濾並排序預約，只顯示今天及未來的預約
+  const today = formatDateToLocal(new Date());
+  const futureReservations = existingReservations
+    .filter(reservation => reservation.date >= today)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  
+  if (futureReservations.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  
+  futureReservations.forEach(reservation => {
+    const card = document.createElement('div');
+    card.className = 'reservation-card';
+    
+    const routeInfo = routeTimes[reservation.route] || { 
+      time: reservation.routeName || '', 
+      direction: reservation.routeName ? reservation.routeName.split(' ')[1] || '' : '' 
+    };
+    
+    // 修正：確保取消按鈕正確綁定
+    const reservationId = reservation.id || reservation.reservationId;
+    
+    card.innerHTML = `
+      <div class="reservation-header">
+        <div class="reservation-date">${reservation.date}</div>
+        <div class="reservation-route">${reservation.route}｜${routeInfo.direction}</div>
+      </div>
+      <div class="reservation-details">
+        <div>⏰ ${routeInfo.time}</div>
+        <div>📍 ${reservation.fromStop} → ${reservation.toStop}</div>
+        <div>👤 ${reservation.name}｜${reservation.studentId}</div>
+      </div>
+      <button class="cancel-btn" onclick="cancelReservation('${reservationId}')">取消預約</button>
+    `;
+    
+    container.appendChild(card);
+  });
+}
+  
+  section.style.display = 'block';
+  container.innerHTML = '';
+  
   existingReservations.forEach(reservation => {
     const card = document.createElement('div');
     card.className = 'reservation-card';
