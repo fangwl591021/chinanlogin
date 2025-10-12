@@ -118,11 +118,22 @@ const stopsOutbound = ["行政大樓","中餐廳","科技學院","學人會館",
 const stopsReturn = ["埔里總站","埔里酒廠","榮民診所","中山安七街口","大成國小","愛蘭橋","坪頂","下城","中城","學人會館","科技學院","中餐廳","行政大樓"];
 
 // === 月曆 ===
-function toggleCalendar(){
+async function toggleCalendar() {
   const c = document.getElementById('calendarContainer');
   c.style.display = c.style.display === 'none' ? 'block' : 'none';
-  if (c.style.display === 'block') renderCalendar();
+  if (c.style.display === 'block') {
+    const today = new Date().toISOString().split('T')[0];
+    const res = await fetch(`${WORKER_URL}?mode=calendar&date=${today}`);
+    const result = await res.json();
+    if (result.holiday) {
+      alert(`🚫 ${today} 停駛或公休，無法預約`);
+      c.style.display = 'none';
+      return;
+    }
+    renderCalendar();
+  }
 }
+
 
 function renderCalendar(){
   const cal = document.getElementById('calendar');
