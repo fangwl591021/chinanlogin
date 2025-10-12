@@ -239,22 +239,76 @@ async function loadExistingReservations() {
 }
 
 
-// === 顯示當前預約卡片 ===
-// === 顯示所有預約卡片 ===
+// === 顯示預約卡片（支援多筆） ===
 function renderCurrentReservationCard() {
   const section = document.getElementById('currentReservationCard');
   const formSection = document.getElementById('reservationFormSection');
-  const container = section.querySelector('.reservation-body');
 
-  // 清空卡片區
-  section.innerHTML = '';
+  console.log('現有預約數量:', existingReservations.length);
 
-  // 若沒有預約，直接隱藏整個卡片區
-  if (!existingReservations || existingReservations.length === 0) {
-    section.style.display = 'none';
-    formSection.style.display = 'block';
+  if (existingReservations.length === 0) {
+    showEmptyReservationCard();
     return;
   }
+
+  // 過濾「今天與未來」的有效預約
+  const today = formatDateToLocal(new Date());
+  const activeReservations = existingReservations
+    .filter(r => r.date >= today && r.status !== '已取消')
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  if (activeReservations.length === 0) {
+    showEmptyReservationCard();
+    return;
+  }
+
+  // 先清空區塊
+  section.innerHTML = '';
+
+  // 依每一筆預約資料動態產生卡片
+  activeReservations.forEach(res => {
+    const card = document.createElement('div');
+    card.className = 'reservation-card';
+    card.style.marginBottom = '16px'; // 每張卡片間隔
+
+    card.innerHTML = `
+      <div class="reservation-header">穿山甲專車新預約</div>
+      <div class="reservation-body">
+        <div class="reservation-line">
+          <span class="reservation-label">日期：</span>
+          <span class="reservation-value">${res.date}</span>
+        </div>
+        <div class="reservation-line">
+          <span class="reservation-label">班次：</span>
+          <span class="reservation-value">${res.route}</span>
+        </div>
+        <div class="reservation-line">
+          <span class="reservation-label">姓名：</span>
+          <span class="reservation-value">${res.name}</span>
+        </div>
+        <div class="reservation-line">
+          <span class="reservation-label">電話：</span>
+          <span class="reservation-value">${res.phone}</span>
+        </div>
+        <div class="reservation-line">
+          <span class="reservation-label">上車：</span>
+          <span class="reservation-value">${res.fromStop}</span>
+        </div>
+        <div class="reservation-line">
+          <span class="reservation-label">下車：</span>
+          <span class="reservation-value">${res.toStop}</span>
+        </div>
+      </div>
+    `;
+
+    section.appendChild(card);
+  });
+
+  // 顯示預約卡片、關閉預約表單
+  section.style.display = 'block';
+  formSection.style.display = 'block';
+}
+
 
   section.style.display = 'block';
   formSection.style.display = 'none';
