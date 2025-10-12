@@ -55,7 +55,7 @@
     .route-section { display: none; }
     .loading-state { text-align: center; padding: 20px; color: #666; }
 
-    /* 新的預約卡片樣式 - 簡化版 */
+    /* 圖1風格的預約卡片 */
     .reservation-card-simple { 
       background: #fff; 
       border-radius: 8px; 
@@ -74,32 +74,23 @@
       text-align: center;
     }
     .reservation-body-simple { 
-      padding: 20px 15px; 
-      line-height: 1.6;
+      padding: 15px; 
     }
-    .reservation-detail-simple { 
-      display: flex; 
-      justify-content: space-between; 
-      margin-bottom: 12px; 
-      font-size: 16px; 
+    .reservation-line {
+      display: flex;
+      margin-bottom: 8px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .reservation-label {
+      font-weight: bold;
+      min-width: 60px;
       color: #333;
-      border-bottom: 1px solid #f0f0f0;
-      padding-bottom: 8px;
     }
-    .reservation-detail-simple:last-child {
-      border-bottom: none;
-      margin-bottom: 0;
-      padding-bottom: 0;
-    }
-    .reservation-detail-label-simple { 
-      font-weight: bold; 
-      min-width: 80px; 
-      color: #555;
-    }
-    .reservation-detail-value-simple { 
-      flex: 1; 
-      text-align: right; 
+    .reservation-value {
+      flex: 1;
       color: #000;
+      margin-left: 10px;
     }
     .user-info-section {
       background: #e8f5e9;
@@ -108,6 +99,13 @@
       margin-bottom: 15px;
       font-weight: bold;
       color: #2e7d32;
+      text-align: center;
+    }
+    .date-section {
+      text-align: center;
+      margin: 15px 0;
+      font-weight: bold;
+      color: #333;
     }
   </style>
 </head>
@@ -120,41 +118,43 @@
       <div class="loading-state">⏳ 系統初始化中...</div>
     </div>
 
-    <!-- 當前預約卡片 - 簡化版 -->
-    <div id="currentReservationCard" class="reservation-card-simple" style="display:none;">
-      <div class="reservation-header-simple">穿山甲專車新預約</div>
-      <div class="reservation-body-simple">
-        <div class="reservation-detail-simple">
-          <span class="reservation-detail-label-simple">日期：</span>
-          <span class="reservation-detail-value-simple">2025/10/13 08:00:00</span>
-        </div>
-        <div class="reservation-detail-simple">
-          <span class="reservation-detail-label-simple">班次：</span>
-          <span class="reservation-detail-value-simple">A1 | 22:00–22:30 暨大一埔里總站</span>
-        </div>
-        <div class="reservation-detail-simple">
-          <span class="reservation-detail-label-simple">姓名：</span>
-          <span class="reservation-detail-value-simple">劉小姐</span>
-        </div>
-        <div class="reservation-detail-simple">
-          <span class="reservation-detail-label-simple">電話：</span>
-          <span class="reservation-detail-value-simple">0912345678</span>
-        </div>
-        <div class="reservation-detail-simple">
-          <span class="reservation-detail-label-simple">上車：</span>
-          <span class="reservation-detail-value-simple">行政大樓</span>
-        </div>
-        <div class="reservation-detail-simple">
-          <span class="reservation-detail-label-simple">下車：</span>
-          <span class="reservation-detail-value-simple">中山安七街口</span>
+    <!-- 當前預約卡片 - 圖1風格 -->
+    <div id="currentReservationCard" style="display:none;">
+      <div class="reservation-card-simple">
+        <div class="reservation-header-simple">穿山甲專車新預約</div>
+        <div class="reservation-body-simple">
+          <div class="reservation-line">
+            <span class="reservation-label">日期：</span>
+            <span class="reservation-value" id="reservationDate">2025/10/13 08:00:00</span>
+          </div>
+          <div class="reservation-line">
+            <span class="reservation-label">班次：</span>
+            <span class="reservation-value" id="reservationRoute">A1 | 22:00–22:30 暨大→埔里總站</span>
+          </div>
+          <div class="reservation-line">
+            <span class="reservation-label">姓名：</span>
+            <span class="reservation-value" id="reservationName">劉小姐</span>
+          </div>
+          <div class="reservation-line">
+            <span class="reservation-label">電話：</span>
+            <span class="reservation-value" id="reservationPhone">0912345678</span>
+          </div>
+          <div class="reservation-line">
+            <span class="reservation-label">上車：</span>
+            <span class="reservation-value" id="reservationFrom">行政大樓</span>
+          </div>
+          <div class="reservation-line">
+            <span class="reservation-label">下車：</span>
+            <span class="reservation-value" id="reservationTo">中山安七街口</span>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 預約表單區域 -->
     <div id="reservationFormSection">
-      <label><center>選擇搭乘日期</center></label>
-      <button id="calendarBtn" onclick="toggleCalendar()" disabled>📅 載入中...</button>
+      <div class="date-section">選擇搭乘日期</div>
+      <button id="calendarBtn" onclick="toggleCalendar()" disabled>📅 打開月曆</button>
 
       <div id="result" style="margin-top:10px;"></div>
 
@@ -187,6 +187,7 @@ let selectedDate = null, selectedRoute = null;
 let userData = null, noServiceDates = {};
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
+let existingReservations = [];
 
 const stopsOutbound = ["行政大樓","中餐廳","科技學院","學人會館","中城","下城","坪頂","愛蘭橋","大成國小","中山安七街口","榮民診所","埔里酒廠","埔里總站"];
 const stopsReturn = [...stopsOutbound].reverse();
@@ -198,6 +199,70 @@ const routeTimes = {
   'B2': { time: '23:30-24:00', direction: '埔里總站→暨大' }
 };
 
+// === 載入現有預約 ===
+async function loadExistingReservations() {
+  try {
+    console.log('載入現有預約...');
+    const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
+    const result = await res.json();
+
+    if (result.success && result.reservations) {
+      existingReservations = result.reservations;
+      console.log('現有預約:', existingReservations);
+      renderCurrentReservationCard();
+    } else {
+      console.log('沒有現有預約');
+      document.getElementById('currentReservationCard').style.display = 'none';
+    }
+  } catch (error) {
+    console.error('載入預約失敗:', error);
+    document.getElementById('currentReservationCard').style.display = 'none';
+  }
+}
+
+// === 顯示當前預約卡片 - 圖1風格 ===
+function renderCurrentReservationCard() {
+  const section = document.getElementById('currentReservationCard');
+
+  if (existingReservations.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  const today = formatDateToLocal(new Date());
+  const activeReservations = existingReservations
+    .filter(reservation => reservation.date >= today && reservation.status !== 'cancelled')
+    .sort((a, b) => a.date.localeCompare(b.date));
+  
+  if (activeReservations.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  
+  // 顯示最近的預約
+  const latestReservation = activeReservations[0];
+  
+  // 更新卡片內容
+  document.getElementById('reservationDate').textContent = latestReservation.date;
+  
+  // 解析路線資訊
+  let routeDisplay = '';
+  if (latestReservation.routeName) {
+    routeDisplay = latestReservation.routeName;
+  } else {
+    const routeInfo = routeTimes[latestReservation.route] || { time: '', direction: '' };
+    routeDisplay = `${latestReservation.route} | ${routeInfo.time} ${routeInfo.direction}`;
+  }
+  document.getElementById('reservationRoute').textContent = routeDisplay;
+  
+  document.getElementById('reservationName').textContent = latestReservation.name;
+  document.getElementById('reservationPhone').textContent = latestReservation.phone || '';
+  document.getElementById('reservationFrom').textContent = latestReservation.fromStop;
+  document.getElementById('reservationTo').textContent = latestReservation.toStop;
+  
+  section.style.display = 'block';
+}
+
 // 🧭 初始化
 async function init() {
   try {
@@ -208,33 +273,31 @@ async function init() {
     const result = await res.json();
     if (!result.registered) return window.location.href = 'register.html';
     userData = result.user;
-    document.getElementById('userInfo').innerHTML = `👤 ${userData.name}<br>🏫 ${userData.department}｜${userData.studentId}`;
     
-    // 顯示示例預約卡片
-    showExampleReservationCard();
+    // 更新使用者資訊為圖1風格
+    document.getElementById('userInfo').innerHTML = `${userData.name}<br>${userData.department} | ${userData.studentId}`;
+    
+    await loadExistingReservations();
     
   } catch (e) {
     console.error('❌ 初始化失敗:', e);
-    userData = { userId: 'offline', name: '測試使用者', department: '測試學系', studentId: '00000000', phone: '0900000000' };
-    document.getElementById('userInfo').innerHTML = `👤 ${userData.name}<br>🏫 ${userData.department}｜${userData.studentId}<br><small>離線模式</small>`;
-    showExampleReservationCard();
+    // 離線模式使用示例數據
+    userData = { 
+      userId: 'offline', 
+      name: '方萬隆', 
+      department: '觀光休閒與餐旅管理學系', 
+      studentId: '114320553', 
+      phone: '0912345678' 
+    };
+    document.getElementById('userInfo').innerHTML = `${userData.name}<br>${userData.department} | ${userData.studentId}`;
+    
+    // 顯示示例預約卡片
+    document.getElementById('currentReservationCard').style.display = 'block';
   } finally {
     await loadNoServiceDates();
     document.getElementById('calendarBtn').disabled = false;
     document.getElementById('calendarBtn').textContent = '📅 打開月曆';
   }
-}
-
-// 顯示示例預約卡片
-function showExampleReservationCard() {
-  const card = document.getElementById('currentReservationCard');
-  const userInfo = document.getElementById('userInfo');
-  
-  // 更新使用者資訊為示例中的格式
-  userInfo.innerHTML = `觀光休閒與餐旅管理學系 | 114320553`;
-  
-  // 顯示預約卡片
-  card.style.display = 'block';
 }
 
 window.addEventListener('load', init);
@@ -410,6 +473,8 @@ async function submitForm(){
       document.getElementById('selectedDate').style.display='none';
       document.getElementById('routeSection').style.display='none';
       document.getElementById('toStop').innerHTML='<option value="">請先選擇班次</option>';
+      // 重新載入預約資料
+      await loadExistingReservations();
     }else{
       document.getElementById('result').innerHTML=`<div class="notice error">❌ 預約失敗：${result.message||'請稍後再試'}</div>`;
     }
