@@ -574,8 +574,7 @@ function selectDate(dateStr) {
   }
   
   selectedDate = dateStr;
-  document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
-  event.target.classList.add('selected');
+  renderCalendar(); // 重新渲染以更新選中狀態
   
   document.getElementById('calendarContainer').style.display = 'none';
   document.getElementById('calendarBtn').textContent = '📅 打開月曆';
