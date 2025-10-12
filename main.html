@@ -218,6 +218,10 @@
 
     <label><center>選擇搭乘日期</center></label>
     <button id="calendarBtn" onclick="toggleCalendar()" disabled>📅 載入中...</button>
+    
+    <!-- 預約成功訊息移到這裡 -->
+    <div id="result" style="margin-top:10px;"></div>
+    
     <div id="calendarContainer" style="display:none;margin-top:10px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <button onclick="changeMonth(-1)" style="width:auto; padding:5px 10px;">◀ 上個月</button>
@@ -238,7 +242,6 @@
       <select id="toStop"><option value="">請先選擇班次</option></select>
 
       <button id="submitBtn" onclick="submitForm()">送出預約</button>
-      <div id="result"></div>
     </div>
   </div>
 
@@ -721,15 +724,18 @@ async function submitForm() {
 
   try {
     const routeInfo = routeTimes[selectedRoute];
+    // 修正路線名稱格式：A1|22:00-22:30 暨大->埔里總站
+    const routeName = `${selectedRoute}|${routeInfo.time} ${routeInfo.direction}`;
+    
     const data = {
       type: 'reserve',
       userId: userData.userId,
       name: userData.name,
       studentId: userData.studentId,
       department: userData.department,
-      phone: userData.phone, // 新增電話號碼
+      phone: userData.phone, // 電話號碼
       route: selectedRoute,
-      routeName: `${selectedRoute}|${routeInfo.direction}`, // 修正路線名稱格式
+      routeName: routeName, // 修正路線名稱格式
       fromStop: selectedRoute.includes('A') ? '行政大樓' : '埔里總站',
       toStop: toStop,
       date: selectedDate
