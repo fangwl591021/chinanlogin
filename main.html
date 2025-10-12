@@ -99,7 +99,6 @@
       padding: 15px;
     }
     .reservation-line {
-      display: flex;
       margin-bottom: 8px;
       font-size: 14px;
       line-height: 1.4;
@@ -107,28 +106,17 @@
     .reservation-label {
       font-weight: bold;
       color: #333;
-      min-width: 80px;
+      display: inline-block;
+      min-width: 60px;
     }
     .reservation-value {
       color: #000;
-      flex: 1;
+      margin-left: 5px;
     }
     .divider {
       height: 1px;
       background: #e0e0e0;
       margin: 15px 0;
-    }
-    .calendar-btn {
-      background: #3c8050;
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 6px;
-      font-size: 16px;
-      font-weight: bold;
-      margin: 10px 0;
-      cursor: pointer;
-      width: 100%;
     }
   </style>
 </head>
@@ -144,7 +132,7 @@
     <!-- 當前預約卡片 -->
     <div id="currentReservationCard" style="display:none;">
       <div class="date-section">選擇搭乘日期</div>
-      <button class="calendar-btn" onclick="toggleCalendar()">📅 打開月曆</button>
+      <button id="calendarBtn" onclick="toggleCalendar()">📅 打開月曆</button>
 
       <div class="divider"></div>
 
@@ -153,11 +141,11 @@
         <div class="reservation-body">
           <div class="reservation-line">
             <span class="reservation-label">日期：</span>
-            <span class="reservation-value" id="reservationDate">尚未預約</span>
+            <span class="reservation-value" id="reservationDate">載入中...</span>
           </div>
           <div class="reservation-line">
             <span class="reservation-label">班次：</span>
-            <span class="reservation-value" id="reservationRoute">尚未選擇班次</span>
+            <span class="reservation-value" id="reservationRoute">載入中...</span>
           </div>
           <div class="reservation-line">
             <span class="reservation-label">姓名：</span>
@@ -169,11 +157,11 @@
           </div>
           <div class="reservation-line">
             <span class="reservation-label">上車：</span>
-            <span class="reservation-value" id="reservationFrom">尚未選擇</span>
+            <span class="reservation-value" id="reservationFrom">載入中...</span>
           </div>
           <div class="reservation-line">
             <span class="reservation-label">下車：</span>
-            <span class="reservation-value" id="reservationTo">尚未選擇</span>
+            <span class="reservation-value" id="reservationTo">載入中...</span>
           </div>
         </div>
       </div>
@@ -224,21 +212,19 @@ const routeTimes = {
   'B2': { time: '23:30-24:00', direction: '埔里總站→暨大' }
 };
 
-// === 載入現有預約 - 修復版本 ===
+// === 載入現有預約 ===
 async function loadExistingReservations() {
   try {
-    console.log('開始載入現有預約，用戶ID:', userData.userId);
+    console.log('載入現有預約...');
     const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
     const result = await res.json();
-    
-    console.log('API回應:', result);
 
-    if (result.success && result.reservations && result.reservations.length > 0) {
+    if (result.success && result.reservations) {
       existingReservations = result.reservations;
-      console.log('成功載入預約:', existingReservations);
+      console.log('現有預約:', existingReservations);
       renderCurrentReservationCard();
     } else {
-      console.log('沒有現有預約或API回傳空資料');
+      console.log('沒有現有預約');
       showEmptyReservationCard();
     }
   } catch (error) {
@@ -252,30 +238,16 @@ function renderCurrentReservationCard() {
   const section = document.getElementById('currentReservationCard');
   const formSection = document.getElementById('reservationFormSection');
 
-  console.log('現有預約數量:', existingReservations.length);
-  console.log('現有預約內容:', existingReservations);
-
   if (existingReservations.length === 0) {
     showEmptyReservationCard();
     return;
   }
 
   const today = formatDateToLocal(new Date());
-  console.log('今天日期:', today);
-
-  // 過濾出有效的預約（今天及以後的日期，且狀態不是取消）
   const activeReservations = existingReservations
-    .filter(reservation => {
-      const reservationDate = reservation.date;
-      const isFuture = reservationDate >= today;
-      const isActive = reservation.status !== 'cancelled';
-      console.log(`預約日期: ${reservationDate}, 是否未來: ${isFuture}, 是否有效: ${isActive}`);
-      return isFuture && isActive;
-    })
+    .filter(reservation => reservation.date >= today && reservation.status !== 'cancelled')
     .sort((a, b) => a.date.localeCompare(b.date));
   
-  console.log('有效預約:', activeReservations);
-
   if (activeReservations.length === 0) {
     showEmptyReservationCard();
     return;
@@ -283,7 +255,6 @@ function renderCurrentReservationCard() {
   
   // 顯示最近的預約
   const latestReservation = activeReservations[0];
-  console.log('顯示的預約:', latestReservation);
   
   // 更新卡片內容 - 使用真實的預約數據
   document.getElementById('reservationDate').textContent = latestReservation.date + ' 08:00:00';
@@ -292,31 +263,25 @@ function renderCurrentReservationCard() {
   let routeDisplay = '';
   if (latestReservation.routeName) {
     routeDisplay = latestReservation.routeName.replace('→', '→');
-  } else if (latestReservation.route) {
+  } else {
     const routeInfo = routeTimes[latestReservation.route] || { time: '', direction: '' };
     routeDisplay = `${latestReservation.route} | ${routeInfo.time} ${routeInfo.direction}`;
-  } else {
-    routeDisplay = '尚未選擇班次';
   }
   document.getElementById('reservationRoute').textContent = routeDisplay;
   
-  document.getElementById('reservationName').textContent = latestReservation.name || userData.name;
+  document.getElementById('reservationName').textContent = latestReservation.name;
   document.getElementById('reservationPhone').textContent = latestReservation.phone || userData.phone || '';
-  document.getElementById('reservationFrom').textContent = latestReservation.fromStop || '尚未選擇';
-  document.getElementById('reservationTo').textContent = latestReservation.toStop || '尚未選擇';
+  document.getElementById('reservationFrom').textContent = latestReservation.fromStop;
+  document.getElementById('reservationTo').textContent = latestReservation.toStop;
   
   section.style.display = 'block';
   formSection.style.display = 'none';
-
-  console.log('預約卡片顯示完成');
 }
 
 // === 顯示空預約卡片 ===
 function showEmptyReservationCard() {
   const section = document.getElementById('currentReservationCard');
   const formSection = document.getElementById('reservationFormSection');
-  
-  console.log('顯示空預約卡片');
   
   // 顯示基本資訊但沒有具體預約內容
   document.getElementById('reservationDate').textContent = '尚未預約';
@@ -333,74 +298,42 @@ function showEmptyReservationCard() {
 // 🧭 初始化
 async function init() {
   try {
-    console.log('開始初始化...');
     await liff.init({ liffId: "2006590746-KJodGOda" });
-    if (!liff.isLoggedIn()) {
-      console.log('未登入，開始登入...');
-      return liff.login();
-    }
-    
-    console.log('已登入，獲取用戶資料...');
+    if (!liff.isLoggedIn()) return liff.login();
     const profile = await liff.getProfile();
-    console.log('LINE Profile:', profile);
-    
     const res = await fetch(`${WORKER_URL}?check=${profile.userId}`);
     const result = await res.json();
-    console.log('檢查用戶註冊結果:', result);
-    
-    if (!result.registered) {
-      console.log('用戶未註冊，跳轉到註冊頁面');
-      return window.location.href = 'register.html';
-    }
-    
+    if (!result.registered) return window.location.href = 'register.html';
     userData = result.user;
-    console.log('用戶資料:', userData);
     
     // 更新使用者資訊為您提供的格式
     document.getElementById('userInfo').innerHTML = `
       <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">穿山甲專車預約</div>
-      <div class="user-name"><strong>${userData.name}</strong></div>
-      <div class="user-info">${userData.department} | ${userData.studentId}</div>
+      <div class="user-name">${userData.name}</div>
+      <div class="user-info"><strong>${userData.department} | ${userData.studentId}</strong></div>
     `;
     
-    // 載入預約資料
     await loadExistingReservations();
     await loadNoServiceDates();
-    
-    console.log('初始化完成');
     
   } catch (e) {
     console.error('❌ 初始化失敗:', e);
     // 離線模式使用示例數據
     userData = { 
-      userId: 'Ue7a07fe317565389fbf4479172088f87', 
+      userId: 'offline', 
       name: '方萬隆', 
       department: '觀光休閒與餐旅管理學系', 
       studentId: '114320553', 
-      phone: '927136847' 
+      phone: '0912345678' 
     };
     
     document.getElementById('userInfo').innerHTML = `
       <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">穿山甲專車預約</div>
-      <div class="user-name"><strong>${userData.name}</strong></div>
-      <div class="user-info">${userData.department} | ${userData.studentId}</div>
+      <div class="user-name">${userData.name}</div>
+      <div class="user-info"><strong>${userData.department} | ${userData.studentId}</strong></div>
     `;
     
-    // 使用測試預約數據
-    existingReservations = [
-      {
-        date: '2025-10-20',
-        route: 'A2',
-        routeName: 'A2 | 23:00-23:30 暨大→埔里總站',
-        name: '方萬隆',
-        phone: '927136847',
-        fromStop: '行政大樓',
-        toStop: '榮民診所',
-        status: 'active'
-      }
-    ];
-    
-    renderCurrentReservationCard();
+    showEmptyReservationCard();
     await loadNoServiceDates();
   }
 }
@@ -422,19 +355,16 @@ async function loadNoServiceDates() {
   }
 }
 
-// 其他函數保持不變...
-// [其餘的 calendar, route, submit 函數保持原樣]
-
 // 📅 月曆
 async function toggleCalendar() {
   const c = document.getElementById('calendarContainer');
   if (c.style.display === 'none') { 
     await renderCalendar(); 
     c.style.display = 'block'; 
-    document.querySelector('.calendar-btn').textContent = '📅 關閉月曆';
+    document.getElementById('calendarBtn').textContent = '📅 關閉月曆';
   } else { 
     c.style.display = 'none';
-    document.querySelector('.calendar-btn').textContent = '📅 打開月曆';
+    document.getElementById('calendarBtn').textContent = '📅 打開月曆';
   }
 }
 
@@ -520,7 +450,7 @@ async function selectDate(date){
   document.getElementById('selectedDate').style.display='block';
   document.getElementById('holidayNotice').style.display='none';
   document.getElementById('routeSection').style.display='block';
-  document.querySelector('.calendar-btn').textContent = '📅 打開月曆';
+  document.getElementById('calendarBtn').textContent = '📅 打開月曆';
   loadSeatStatus();
 }
 
