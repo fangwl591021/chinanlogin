@@ -42,11 +42,23 @@
   const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 
   async function main() {
-    await liff.init({ liffId: "2006590746-KJodGOda" });
-    if (!liff.isLoggedIn()) {
-      liff.login();
-    }
+  await liff.init({ liffId: "2006590746-KJodGOda" });
+  if (!liff.isLoggedIn()) {
+    liff.login();
+    return;
   }
+
+  // 🚨 新增：檢查是否已註冊
+  const profile = await liff.getProfile();
+  const res = await fetch(`${WORKER_URL}?check=${profile.userId}`);
+  const result = await res.json();
+  if (result.registered) {
+    // ✨ 已註冊 → 導回 main
+    window.location.href = 'main.html';
+    return;
+  }
+}
+
 
   async function registerUser() {
     const profile = await liff.getProfile();
