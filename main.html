@@ -119,6 +119,11 @@
       color: #fff !important;
     }
 
+    /* 隱藏班次區域的樣式 */
+    .route-section {
+      display: none;
+    }
+
     @media (max-width:480px){
       .route-btn {
         flex: 0 0 calc(50% - 4px);
@@ -148,7 +153,7 @@
 
   <div class="card">
     <div id="userInfo" style="margin-bottom:15px;line-height:1.5;color:#2e7d32;font-weight:bold;">
-      👤 觀光休閒與餐旅管理學系 | 114320553
+      👤 使用者資訊載入中...
     </div>
 
     <label><center>選擇搭乘日期</center></label>
@@ -164,16 +169,20 @@
     <div id="selectedDate" class="notice success" style="display:none;"></div>
     <div id="holidayNotice" class="notice error" style="display:none;"></div>
 
-    <label>請選擇搭乘班次 *</label>
-    <div id="routeButtons"></div>
+    <!-- 班次選擇區域 - 初始隱藏 -->
+    <div id="routeSection" class="route-section">
+      <label>請選擇搭乘班次 *</label>
+      <div id="routeButtons"></div>
 
-    <label>下車站 *</label>
-    <select id="toStop"><option value="">請先選擇班次</option></select>
+      <label>下車站 *</label>
+      <select id="toStop"><option value="">請先選擇班次</option></select>
 
-    <button id="submitBtn" onclick="submitForm()">送出預約</button>
-    <div id="result"></div>
+      <button id="submitBtn" onclick="submitForm()">送出預約</button>
+      <div id="result"></div>
+    </div>
   </div>
 
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 const CALENDAR_ID = '86eee89e759f27d2a2c7a44853868f7be880aa8e745ba3839933ec84b562631e@group.calendar.google.com';
@@ -197,18 +206,27 @@ const routeTimes = {
 
 // === 初始化 ===
 (async function init(){
-  // 模擬使用者資料
-  userData = {
-    name: '觀光休閒與餐旅管理學系',
-    studentId: '114320553',
-    userId: 'test123'
-  };
+  await liff.init({ liffId: "2006590746-KJodGOda" });
+  if (!liff.isLoggedIn()) {
+    liff.login();
+    return;
+  }
+
+  const profile = await liff.getProfile();
+  const res = await fetch(`${WORKER_URL}?check=${profile.userId}`);
+  const result = await res.json();
+  
+  if (!result.registered) {
+    window.location.href = 'register.html';
+    return;
+  }
+  
+  userData = result.user;
+  // 顯示完整的使用者資訊
+  document.getElementById('userInfo').innerText = `👤 ${userData.name}\n🏫 ${userData.department}｜${userData.studentId}`;
   
   // 載入停駛日期
   await loadHolidays();
-  
-  // 初始化班次顯示
-  loadSeatStatus();
 })();
 
 // === 載入停駛日期 ===
@@ -348,6 +366,9 @@ async function selectDate(date) {
     document.getElementById('holidayNotice').innerText = `🚫 ${date} 為停駛日，請選擇其他日期`;
     document.getElementById('selectedDate').style.display = 'none';
     selectedDate = null;
+    
+    // 隱藏班次選擇區域
+    document.getElementById('routeSection').style.display = 'none';
     return;
   }
   
@@ -356,6 +377,9 @@ async function selectDate(date) {
   document.getElementById('selectedDate').innerHTML = '✅ 已選擇日期：' + date;
   document.getElementById('selectedDate').style.display = 'block';
   document.getElementById('holidayNotice').style.display = 'none';
+  
+  // 顯示班次選擇區域
+  document.getElementById('routeSection').style.display = 'block';
   
   // 重新載入班次狀態
   loadSeatStatus();
@@ -440,6 +464,7 @@ async function submitForm() {
       userId: userData.userId,
       name: userData.name,
       studentId: userData.studentId,
+      department: userData.department,
       route: selectedRoute,
       routeName: routeInfo.direction,
       fromStop: selectedRoute.includes('A') ? '行政大樓' : '埔里總站',
