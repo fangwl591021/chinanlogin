@@ -124,45 +124,55 @@
       color: #666;
     }
 
-    /* 預約記錄卡片 */
+    /* 預約記錄卡片 - Flex Message 風格 */
     .reservation-card {
       background: #fff;
-      border: 1px solid #e0e0e0;
       border-radius: 8px;
-      padding: 12px;
+      padding: 0;
       margin: 8px 0;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border: 1px solid #e0e0e0;
+      overflow: hidden;
     }
     .reservation-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .reservation-date {
+      background: #3c8050;
+      color: white;
+      padding: 12px 15px;
       font-weight: bold;
-      color: #2e7d32;
       font-size: 16px;
     }
-    .reservation-route {
-      font-weight: bold;
-      color: #1a73e8;
+    .reservation-body {
+      padding: 15px;
     }
-    .reservation-details {
-      color: #666;
+    .reservation-detail {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
       font-size: 14px;
-      line-height: 1.4;
+      color: #555555;
+    }
+    .reservation-detail-label {
+      font-weight: bold;
+      min-width: 60px;
+    }
+    .reservation-detail-value {
+      flex: 1;
+      text-align: right;
+    }
+    .reservation-footer {
+      padding: 10px 15px 15px;
+      text-align: center;
     }
     .cancel-btn {
       background: #f44336;
       color: white;
       border: none;
-      padding: 6px 12px;
+      padding: 8px 16px;
       border-radius: 4px;
-      font-size: 12px;
+      font-size: 14px;
       cursor: pointer;
-      margin-top: 8px;
       width: auto;
+      min-width: 100px;
     }
     .cancel-btn:hover {
       background: #d32f2f;
@@ -170,6 +180,22 @@
     .cancel-btn:disabled {
       background: #ccc;
       cursor: not-allowed;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-left: 8px;
+    }
+    .status-active {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    .status-cancelled {
+      background: #ffebee;
+      color: #c62828;
     }
 
     @media (max-width:450px){
@@ -358,7 +384,7 @@ async function loadExistingReservations() {
   }
 }
 
-// === 顯示現有預約 ===
+// === 顯示現有預約 - Flex Message 風格 ===
 function renderExistingReservations() {
   const container = document.getElementById('reservationsList');
   const section = document.getElementById('existingReservations');
@@ -385,24 +411,51 @@ function renderExistingReservations() {
     const card = document.createElement('div');
     card.className = 'reservation-card';
     
-    const routeInfo = routeTimes[reservation.route] || { 
-      time: '', 
-      direction: reservation.routeName || '' 
-    };
+    // 解析路線資訊
+    const routeParts = reservation.routeName ? reservation.routeName.split('|') : [reservation.route, ''];
+    const routeCode = routeParts[0].trim();
+    const timeAndDirection = routeParts[1] ? routeParts[1].trim() : '';
     
-    const reservationId = reservation.id || reservation.reservationId || `${reservation.userId}_${reservation.date}_${reservation.route}`;
+    const status = reservation.status === 'cancelled' ? '已取消' : '預約成功';
+    const statusClass = reservation.status === 'cancelled' ? 'status-cancelled' : 'status-active';
     
     card.innerHTML = `
       <div class="reservation-header">
-        <div class="reservation-date">${reservation.date}</div>
-        <div class="reservation-route">${reservation.route}｜${routeInfo.direction}</div>
+        🚌 穿山甲專車預約
+        <span class="status-badge ${statusClass}">${status}</span>
       </div>
-      <div class="reservation-details">
-        <div>⏰ ${routeInfo.time}</div>
-        <div>📍 ${reservation.fromStop} → ${reservation.toStop}</div>
-        <div>👤 ${reservation.name}｜${reservation.studentId}</div>
+      <div class="reservation-body">
+        <div class="reservation-detail">
+          <span class="reservation-detail-label">日期：</span>
+          <span class="reservation-detail-value">${reservation.date}</span>
+        </div>
+        <div class="reservation-detail">
+          <span class="reservation-detail-label">班次：</span>
+          <span class="reservation-detail-value">${routeCode} | ${timeAndDirection}</span>
+        </div>
+        <div class="reservation-detail">
+          <span class="reservation-detail-label">姓名：</span>
+          <span class="reservation-detail-value">${reservation.name}</span>
+        </div>
+        <div class="reservation-detail">
+          <span class="reservation-detail-label">電話：</span>
+          <span class="reservation-detail-value">${reservation.phone || ''}</span>
+        </div>
+        <div class="reservation-detail">
+          <span class="reservation-detail-label">上車：</span>
+          <span class="reservation-detail-value">${reservation.fromStop}</span>
+        </div>
+        <div class="reservation-detail">
+          <span class="reservation-detail-label">下車：</span>
+          <span class="reservation-detail-value">${reservation.toStop}</span>
+        </div>
       </div>
-      <button class="cancel-btn" onclick="cancelReservation('${reservationId}', '${reservation.date}', '${reservation.route}')">取消預約</button>
+      <div class="reservation-footer">
+        ${reservation.status !== 'cancelled' ? 
+          `<button class="cancel-btn" onclick="cancelReservation('${reservation.id || reservation.reservationId}', '${reservation.date}', '${reservation.route}')">取消預約</button>` : 
+          '<button class="cancel-btn" disabled>已取消</button>'
+        }
+      </div>
     `;
     
     container.appendChild(card);
@@ -435,6 +488,14 @@ async function cancelReservation(reservationId, date, route) {
     const result = await res.json();
 
     if(result.status === 'success'){
+      // 更新本地預約狀態
+      const reservation = existingReservations.find(r => 
+        (r.id === reservationId || r.reservationId === reservationId)
+      );
+      if (reservation) {
+        reservation.status = 'cancelled';
+      }
+      
       await loadExistingReservations();
       document.getElementById('result').innerHTML = 
         `<div class="notice success">✅ 已成功取消預約</div>`;
@@ -643,149 +704,7 @@ function selectRoute(btn, id, direction) {
   btn.classList.add('selected');
   updateStops(direction);
 }
-// 產生預約記錄的 Flex Message
-function generateReservationFlexMessage(reservation) {
-  // 解析路線資訊
-  const routeParts = reservation.route.split('|');
-  const routeCode = routeParts[0].trim(); // A1
-  const timeAndDirection = routeParts[1] ? routeParts[1].trim() : '';
-  const [time, direction] = timeAndDirection.split(' ');
-  
-  return {
-    type: "bubble",
-    header: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "text",
-          text: "🚌 穿山甲專車新預約",
-          weight: "bold",
-          color: "#ffffff",
-          size: "lg"
-        }
-      ],
-      backgroundColor: "#3c8050",
-      paddingAll: "15px"
-    },
-    body: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "text",
-          text: `日期：${reservation.date}`,
-          size: "sm",
-          color: "#555555",
-          margin: "md"
-        },
-        {
-          type: "text",
-          text: `班次：${routeCode} | ${time}`,
-          size: "sm",
-          color: "#555555",
-          margin: "md"
-        },
-        {
-          type: "text",
-          text: `姓名：${reservation.name}`,
-          size: "sm",
-          color: "#555555",
-          margin: "md"
-        },
-        {
-          type: "text",
-          text: `電話：${reservation.phone}`,
-          size: "sm",
-          color: "#555555",
-          margin: "md"
-        },
-        {
-          type: "text",
-          text: `上車：${reservation.fromStop}`,
-          size: "sm",
-          color: "#555555",
-          margin: "md"
-        },
-        {
-          type: "text",
-          text: `下車：${reservation.toStop}`,
-          size: "sm",
-          color: "#555555",
-          margin: "md"
-        }
-      ],
-      spacing: "md",
-      paddingAll: "15px"
-    },
-    footer: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          type: "button",
-          action: {
-            type: "uri",
-            label: "取消預約",
-            uri: `https://liff.line.me/2006590746-KJodGOda?cancel=${reservation.id}`
-          },
-          style: "primary",
-          color: "#f44336",
-          height: "sm"
-        }
-      ],
-      spacing: "sm",
-      paddingAll: "15px"
-    }
-  };
-}
 
-// 發送所有預約記錄的 Flex Messages
-async function sendReservationFlexMessages(reservations) {
-  if (!reservations || reservations.length === 0) {
-    return;
-  }
-
-  const flexMessages = reservations.map(reservation => 
-    generateReservationFlexMessage(reservation)
-  );
-
-  try {
-    await liff.sendMessages([
-      {
-        type: 'flex',
-        altText: '您的預約記錄',
-        contents: {
-          type: 'carousel',
-          contents: flexMessages
-        }
-      }
-    ]);
-    console.log('Flex Messages 發送成功');
-  } catch (error) {
-    console.error('發送 Flex Messages 失敗:', error);
-  }
-}
-
-// 使用範例：在載入預約後發送 Flex Message
-async function loadAndSendReservations() {
-  try {
-    const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
-    const result = await res.json();
-
-    if (result.success && result.reservations && result.reservations.length > 0) {
-      existingReservations = result.reservations;
-      
-      // 發送 Flex Message
-      await sendReservationFlexMessages(result.reservations);
-      
-      // 也在網頁上顯示
-      renderExistingReservations();
-    }
-  } catch (error) {
-    console.error('載入預約失敗:', error);
-  }
-}
 function updateStops(routeDirection) {
   const toStop = document.getElementById('toStop');
   toStop.innerHTML = '<option value="">請選擇下車站</option>';
