@@ -286,30 +286,60 @@ async function init() {
 init();
 
 // === 載入真正停駛的日期 ===
+// === 載入真正停駛的日期 ===
 async function loadNoServiceDates() {
   try {
     console.log('正在載入停駛日期，日曆ID:', CALENDAR_ID);
     
-    // 載入當月停駛日期
-    const startDate = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
-    const endDate = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
+    // 載入當月和前後月份的停駛日期（避免跨月問題）
+    const startDate = new Date(currentYear, currentMonth - 1, 1).toISOString().split('T')[0];
+    const endDate = new Date(currentYear, currentMonth + 2, 0).toISOString().split('T')[0];
     
-    const res = await fetch(`${WORKER_URL}?mode=calendar&start=${startDate}&end=${endDate}&calendarId=${CALENDAR_ID}`);
+    console.log('查詢日期範圍:', startDate, '到', endDate);
+    
+    const url = `${WORKER_URL}?mode=calendar&start=${startDate}&end=${endDate}&calendarId=${encodeURIComponent(CALENDAR_ID)}`;
+    console.log('完整API URL:', url);
+    
+    const res = await fetch(url);
     const result = await res.json();
     
-    console.log('日曆API回傳結果:', result);
+    console.log('日曆API回傳完整結果:', JSON.stringify(result, null, 2));
     
+    // 清空舊資料
+    noServiceDates = {};
+    
+    // 檢查多種可能的回傳格式
+    let holidays = null;
     if (result.holidays && Array.isArray(result.holidays)) {
-      // 將停駛日期陣列轉換為物件方便查詢
-      result.holidays.forEach(date => {
-        noServiceDates[date] = true;
+      holidays = result.holidays;
+    } else if (result.data && Array.isArray(result.data)) {
+      holidays = result.data;
+    } else if (Array.isArray(result)) {
+      holidays = result;
+    }
+    
+    if (holidays && holidays.length > 0) {
+      console.log('找到停駛日期數量:', holidays.length);
+      holidays.forEach((date, index) => {
+        // 處理可能的日期格式
+        let formattedDate = date;
+        if (typeof date === 'object' && date.date) {
+          formattedDate = date.date;
+        }
+        // 確保格式為 YYYY-MM-DD
+        if (formattedDate && formattedDate.length === 10) {
+          noServiceDates[formattedDate] = true;
+          console.log(`停駛日期 ${index + 1}:`, formattedDate);
+        }
       });
-      console.log('停駛日期:', noServiceDates);
+      console.log('已載入停駛日期:', Object.keys(noServiceDates));
     } else {
-      console.log('沒有停駛日期或格式不正確');
+      console.warn('⚠️ 沒有找到停駛日期資料');
+      console.log('API回傳的資料結構:', Object.keys(result));
     }
   } catch (error) {
-    console.error('載入停駛日期失敗:', error);
+    console.error('❌ 載入停駛日期失敗:', error);
+    console.error('錯誤詳情:', error.message);
     // 如果載入失敗，使用空物件（沒有停駛日）
     noServiceDates = {};
   }
