@@ -724,6 +724,69 @@ async function submitForm() {
 
   try {
     const routeInfo = routeTimes[selectedRoute];
+    // 修正：確保格式為 (A1|22:00-22:30 暨大->埔里總站)
+    const routeName = `(${selectedRoute}|${routeInfo.time} ${routeInfo.direction.replace('→', '->')})`;
+    
+    const data = {
+      type: 'reserve',
+      userId: userData.userId,
+      name: userData.name,
+      studentId: userData.studentId,
+      department: userData.department,
+      phone: userData.phone,
+      route: selectedRoute,
+      routeName: routeName, // 使用修正後的格式
+      fromStop: selectedRoute.includes('A') ? '行政大樓' : '埔里總站',
+      toStop: toStop,
+      date: selectedDate
+    };
+
+    console.log('發送預約資料:', data);
+
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    });
+    
+    const result = await res.json();
+    
+    if(result.status === 'success'){
+      document.getElementById('result').innerHTML = 
+        `<div class="notice success">
+          ✅ 預約成功<br>
+          ${selectedDate}｜${selectedRoute} ${routeInfo.time}<br>
+          ${routeInfo.direction.split('→')[0]} → ${toStop}
+        </div>`;
+      
+      // 清空選擇
+      selectedDate = null;
+      selectedRoute = null;
+      document.getElementById('selectedDate').style.display = 'none';
+      document.getElementById('routeSection').style.display = 'none';
+      document.getElementById('toStop').innerHTML = '<option value="">請先選擇班次</option>';
+      
+      // 重新載入預約列表
+      await loadExistingReservations();
+      
+    } else {
+      document.getElementById('result').innerHTML =
+        `<div class="notice error">❌ 預約失敗：${result.message || '請稍後再試'}</div>`;
+    }
+  } catch (error) {
+    document.getElementById('result').innerHTML =
+      `<div class="notice error">❌ 預約失敗，請檢查網路連線</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+  }
+}
+  
+  btn.disabled = true;
+  btn.classList.add('loading');
+
+  try {
+    const routeInfo = routeTimes[selectedRoute];
     // 修正路線名稱格式：A1|22:00-22:30 暨大->埔里總站
     const routeName = `${selectedRoute}|${routeInfo.time} ${routeInfo.direction}`;
     
