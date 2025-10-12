@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>暨大接駁車 - 學生註冊</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>穿山甲專車 - 學生註冊</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-
 <body class="bg-gradient-to-br from-green-100 to-blue-100 min-h-screen flex items-center justify-center p-4">
   <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
     <div class="text-center mb-6">
@@ -16,164 +15,71 @@
       <p class="text-gray-500 text-sm mt-1">請使用 LINE 登入並填寫資料</p>
     </div>
 
-    <!-- ✅ 註冊欄位 -->
     <div class="space-y-3">
-      <input id="name" type="text" placeholder="姓名" 
-        class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
-
-      <input id="phone" type="tel" placeholder="電話" 
-        class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
-
-      <input id="studentId" type="text" placeholder="學號" 
-        class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
-
-      <!-- ✅ 下拉式選單（科系） -->
-      <select id="department" 
-        class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
+      <input id="name" type="text" placeholder="姓名" class="w-full px-4 py-2 rounded-lg border">
+      <input id="phone" type="tel" placeholder="電話" class="w-full px-4 py-2 rounded-lg border">
+      <input id="studentId" type="text" placeholder="學號" class="w-full px-4 py-2 rounded-lg border">
+      <select id="department" class="w-full px-4 py-2 rounded-lg border">
         <option value="">請選擇科系</option>
-
-        <optgroup label="人文學院" style="color:green;">
+        <optgroup label="人文學院">
           <option value="中國語文學系">中國語文學系</option>
           <option value="外國語文學系">外國語文學系</option>
           <option value="社會政策與社會工作學系">社會政策與社會工作學系</option>
-          <option value="公共行政與政策學系">公共行政與政策學系</option>
-          <option value="歷史學系">歷史學系</option>
-          <option value="東南亞學系">東南亞學系</option>
-          <option value="原鄉發展跨領域學士學位學程原住民專班">原鄉發展跨領域學士學位學程原住民專班</option>
         </optgroup>
-
-        <optgroup label="管理學院" style="color:green;">
+        <optgroup label="管理學院">
           <option value="國際企業學系">國際企業學系</option>
-          <option value="經濟學系">經濟學系</option>
-          <option value="財務金融學系">財務金融學系</option>
-          <option value="資訊管理學系">資訊管理學系</option>
           <option value="觀光休閒與餐旅管理學系">觀光休閒與餐旅管理學系</option>
-          <option value="管理學院學士班">管理學院學士班</option>
-        </optgroup>
-
-        <optgroup label="科技學院" style="color:green;">
-          <option value="資訊工程學系">資訊工程學系</option>
-          <option value="土木工程學系">土木工程學系</option>
-          <option value="電機工程學系">電機工程學系</option>
-          <option value="應用化學系">應用化學系</option>
-          <option value="應用材料及光電工程學系">應用材料及光電工程學系</option>
-          <option value="科技學院學士班">科技學院學士班</option>
-        </optgroup>
-
-        <optgroup label="教育學院" style="color:green;">
-          <option value="國際文教與比較教育學系">國際文教與比較教育學系</option>
-          <option value="教育政策與行政學系">教育政策與行政學系</option>
-          <option value="諮商心理與人力資源發展學系">諮商心理與人力資源發展學系</option>
-        </optgroup>
-
-        <optgroup label="水沙連學院" style="color:green;">
-          <option value="水沙連學院學士班">水沙連學院學士班</option>
-        </optgroup>
-
-        <optgroup label="護理暨健康福祉學院" style="color:green;">
-          <option value="護理學系">護理學系</option>
         </optgroup>
       </select>
 
-      <button onclick="registerUser()" 
-        class="w-full bg-green-500 text-white py-2 rounded-lg font-bold text-lg hover:bg-green-600 transition">
+      <button onclick="registerUser()" class="w-full bg-green-500 text-white py-2 rounded-lg font-bold text-lg hover:bg-green-600 transition">
         立即註冊
       </button>
     </div>
-
-    <div class="mt-4 text-center text-sm text-gray-500">
-      本系統僅用於接駁車服務，不對外公開個資。
-    </div>
   </div>
 
-  <!-- ✅ 自訂彈窗 -->
-  <div id="popup" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-    <div class="bg-white rounded-lg p-6 w-72 text-center shadow-lg">
-      <p id="popupMessage" class="text-gray-800 mb-4"></p>
-      <button onclick="closePopup()" 
-        class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition">
-        確定
-      </button>
-    </div>
-  </div>
+<script>
+  const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 
-  <script>
-    const GAS_URL = "https://delicate-math-7e61.fangwl591021.workers.dev/"; // 👈 Cloudflare Worker
+  async function main() {
+    await liff.init({ liffId: "2006590746-KJodGOda" });
+    if (!liff.isLoggedIn()) {
+      liff.login();
+    }
+  }
 
-    // 初始化 LINE Login
-    async function main() {
-      await liff.init({ liffId: "2006590746-KJodGOda" });
-      if (!liff.isLoggedIn()) {
-        liff.login();
-      }
+  async function registerUser() {
+    const profile = await liff.getProfile();
+    const data = {
+      type: 'register',
+      userId: profile.userId,
+      name: document.getElementById('name').value,
+      phone: document.getElementById('phone').value,
+      studentId: document.getElementById('studentId').value,
+      department: document.getElementById('department').value
+    };
+
+    if (!data.name || !data.phone || !data.studentId || !data.department) {
+      alert('⚠️ 請完整填寫所有欄位');
+      return;
     }
 
-    // ✅ 自訂彈窗
-    function showPopup(message, autoClose = false) {
-      document.getElementById('popupMessage').textContent = message;
-      document.getElementById('popup').classList.remove('hidden');
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
 
-      if (autoClose) {
-        setTimeout(() => {
-          closePopup();
-        }, 1500);
-      }
+    const result = await res.json();
+    if (result.status === 'success') {
+      alert('✅ 註冊成功！');
+      window.location.href = 'main.html';
+    } else {
+      alert('❌ 註冊失敗，請稍後再試');
     }
+  }
 
-    function closePopup() {
-      document.getElementById('popup').classList.add('hidden');
-      liff.closeWindow();
-    }
-
-    // ✅ 註冊
-    async function registerUser() {
-      const profile = await liff.getProfile();
-      const data = {
-  type: 'register',
-  userId: profile.userId,
-  displayName: profile.displayName,
-  name: document.getElementById('name').value,
-  phone: document.getElementById('phone').value,
-  studentId: document.getElementById('studentId').value,
-  department: document.getElementById('department').value
-};
-
-
-      // 必填驗證
-      if (!data.name || !data.phone || !data.studentId || !data.department) {
-        showPopup('⚠️ 請填寫所有欄位');
-        return;
-      }
-
-      try {
-        const res = await fetch(GAS_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        });
-
-        const raw = await res.text();
-        let result;
-        try {
-          result = JSON.parse(raw);
-        } catch {
-          showPopup('⚠️ 系統已收到資料，但回傳格式有誤。');
-          return;
-        }
-
-        if (result.status === 'success') {
-          showPopup('✅ 註冊成功！', true);
-        } else {
-          showPopup('❌ 註冊失敗，請稍後再試');
-        }
-
-      } catch (error) {
-        console.error('🚨 Fetch error:', error);
-        showPopup('❌ 無法連線伺服器');
-      }
-    }
-
-    main();
-  </script>
+  main();
+</script>
 </body>
 </html>
