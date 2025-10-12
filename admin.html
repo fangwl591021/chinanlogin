@@ -1,16 +1,15 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>暨大接駁車 - 管理後台</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>穿山甲專車 - 管理後台</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body class="bg-gray-50">
-  <!-- 導航列 -->
   <nav class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
       <div class="flex items-center gap-3">
         <i class="fas fa-bus text-2xl"></i>
         <div>
@@ -20,9 +19,6 @@
       </div>
       <div class="flex items-center gap-4">
         <span id="currentTime" class="text-sm"></span>
-        <button onclick="exportAllData()" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition">
-          <i class="fas fa-download mr-2"></i>匯出資料
-        </button>
       </div>
     </div>
   </nav>
@@ -30,271 +26,129 @@
   <div class="max-w-7xl mx-auto p-6">
     <!-- 統計卡片 -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-      <div class="bg-white rounded-xl shadow-md p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-gray-500 text-sm">註冊會員</p>
-            <p id="totalUsers" class="text-3xl font-bold text-gray-800">0</p>
-          </div>
-          <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-            <i class="fas fa-users text-blue-600 text-xl"></i>
-          </div>
+      <div class="bg-white rounded-xl shadow-md p-6 flex justify-between items-center">
+        <div>
+          <p class="text-gray-500 text-sm">註冊會員</p>
+          <p id="totalUsers" class="text-3xl font-bold text-gray-800">0</p>
+        </div>
+        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+          <i class="fas fa-users text-blue-600 text-xl"></i>
         </div>
       </div>
 
-      <div class="bg-white rounded-xl shadow-md p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-gray-500 text-sm">今日預約</p>
-            <p id="todayBookings" class="text-3xl font-bold text-gray-800">0</p>
-          </div>
-          <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-            <i class="fas fa-calendar-check text-green-600 text-xl"></i>
-          </div>
+      <div class="bg-white rounded-xl shadow-md p-6 flex justify-between items-center">
+        <div>
+          <p class="text-gray-500 text-sm">今日預約</p>
+          <p id="todayBookings" class="text-3xl font-bold text-gray-800">0</p>
         </div>
-      </div>
-
-      <div class="bg-white rounded-xl shadow-md p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-gray-500 text-sm">本月預約</p>
-            <p id="monthBookings" class="text-3xl font-bold text-gray-800">0</p>
-          </div>
-          <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-            <i class="fas fa-chart-line text-purple-600 text-xl"></i>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl shadow-md p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-gray-500 text-sm">營運狀態</p>
-            <p id="systemStatus" class="text-3xl font-bold text-green-600">正常</p>
-          </div>
-          <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-            <i class="fas fa-check-circle text-green-600 text-xl"></i>
-          </div>
+        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+          <i class="fas fa-calendar-check text-green-600 text-xl"></i>
         </div>
       </div>
     </div>
 
-    <!-- 功能選單 -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-      <div class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition cursor-pointer" onclick="showSection('realtime')">
-        <div class="flex items-center gap-4">
-          <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-            <i class="fas fa-tachometer-alt text-red-600 text-xl"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-gray-800">即時預約看板</h3>
-            <p class="text-sm text-gray-600">監控即時預約狀況</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition cursor-pointer" onclick="showSection('members')">
-        <div class="flex items-center gap-4">
-          <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-            <i class="fas fa-user-friends text-blue-600 text-xl"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-gray-800">會員管理</h3>
-            <p class="text-sm text-gray-600">查看註冊會員資料</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition cursor-pointer" onclick="showSection('bookings')">
-        <div class="flex items-center gap-4">
-          <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-            <i class="fas fa-list-alt text-green-600 text-xl"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-gray-800">預約查詢</h3>
-            <p class="text-sm text-gray-600">歷史預約記錄查詢</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- 🆕 班次管理按鈕 -->
-      <div class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition cursor-pointer" onclick="showSection('routesManage')">
-        <div class="flex items-center gap-4">
-          <div class="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
-            <i class="fas fa-clock text-teal-600 text-xl"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-gray-800">班次管理</h3>
-            <p class="text-sm text-gray-600">設定班次時間與名額</p>
-          </div>
-        </div>
-      </div>
+    <!-- 即時班次 -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-blue-50 rounded-lg p-4 text-center"><p>A1</p><p id="a1Count" class="text-2xl font-bold">0/6</p></div>
+      <div class="bg-green-50 rounded-lg p-4 text-center"><p>B1</p><p id="b1Count" class="text-2xl font-bold">0/6</p></div>
+      <div class="bg-purple-50 rounded-lg p-4 text-center"><p>A2</p><p id="a2Count" class="text-2xl font-bold">0/6</p></div>
+      <div class="bg-orange-50 rounded-lg p-4 text-center"><p>B2</p><p id="b2Count" class="text-2xl font-bold">0/6</p></div>
     </div>
 
-    <!-- Section: 班次管理 -->
-    <div id="routesManageSection" class="section hidden">
-      <div class="bg-white rounded-xl shadow-md p-6">
-        <h2 class="text-xl font-bold text-gray-800 mb-4">班次管理</h2>
+    <!-- 最新預約 -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+      <h2 class="text-xl font-bold mb-3">最新預約紀錄</h2>
+      <div id="realtimeBookings" class="divide-y"></div>
+    </div>
 
-        <div class="overflow-x-auto">
-          <table class="min-w-full border border-gray-200 text-sm text-gray-700">
-            <thead class="bg-gray-50 text-gray-800">
-              <tr>
-                <th class="py-2 px-4 text-left">班次名稱</th>
-                <th class="py-2 px-4 text-left">方向</th>
-                <th class="py-2 px-4 text-left">時間</th>
-                <th class="py-2 px-4 text-center">容量</th>
-                <th class="py-2 px-4 text-center">今日預約</th>
-                <th class="py-2 px-4 text-center">設定</th>
-              </tr>
-            </thead>
-            <tbody id="routesManageTable" class="divide-y"></tbody>
-          </table>
+    <!-- 會員管理 -->
+    <div class="bg-white rounded-xl shadow-md p-6">
+      <h2 class="text-xl font-bold mb-3">會員管理</h2>
+      <div class="border rounded-lg overflow-hidden">
+        <div class="bg-gray-50 px-4 py-3 border-b grid grid-cols-12 gap-4 text-sm font-semibold">
+          <div class="col-span-3">姓名</div>
+          <div class="col-span-2">學號</div>
+          <div class="col-span-3">科系</div>
+          <div class="col-span-2">電話</div>
+          <div class="col-span-2">註冊時間</div>
         </div>
+        <div id="membersTable" class="divide-y max-h-96 overflow-y-auto"></div>
       </div>
     </div>
   </div>
 
 <script>
-/*********************************************
- * 系統設定
- *********************************************/
-const CONFIG = {
-  GITHUB_TOKEN: "ghp_XXXXXX", // 改成你的 Token
-  GIST_ID: "802416482763775c3c17680ffea14e7e",
-};
+const GAS_URL = '👉 你剛剛部署的 GAS 網址 👈';
 
-let routeConfigs = [
-  { id: 'A1', name: 'A1', direction: '暨大→埔里總站', time: '22:00-22:30', capacity: 6 },
-  { id: 'B1', name: 'B1', direction: '埔里總站→暨大', time: '22:30-23:00', capacity: 6 },
-  { id: 'A2', name: 'A2', direction: '暨大→埔里總站', time: '23:00-23:30', capacity: 6 },
-  { id: 'B2', name: 'B2', direction: '埔里總站→暨大', time: '23:30-24:00', capacity: 6 }
-];
-
-let editingRouteId = null;
-
-/*********************************************
- * 功能切換
- *********************************************/
-function showSection(sectionName) {
-  document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
-  const section = document.getElementById(sectionName + 'Section');
-  if (section) {
-    section.classList.remove('hidden');
-    loadSectionContent(sectionName);
-  }
+async function getMembersData() {
+  const res = await fetch(`${GAS_URL}?mode=members`);
+  const data = await res.json();
+  return data.members || [];
 }
 
-async function loadSectionContent(sectionName) {
-  switch(sectionName){
-    case 'routesManage': await loadRoutesManageData(); break;
-    case 'realtime': await loadRealtimeData(); break;
-    case 'members': await loadMembersData(); break;
-    case 'bookings': await loadBookingsData(); break;
-  }
+async function getBookingsData() {
+  const res = await fetch(`${GAS_URL}?mode=bookings`);
+  const data = await res.json();
+  return data.bookings || [];
 }
 
-/*********************************************
- * 班次管理邏輯
- *********************************************/
-async function loadRoutesManageData(){
-  const data = await getGistData();
-  const bookings = data.bookings || [];
+async function loadRealtimeData() {
+  const bookings = await getBookingsData();
+  const members = await getMembersData();
   const today = new Date().toISOString().split('T')[0];
-  const tbody = document.getElementById('routesManageTable');
-  tbody.innerHTML = '';
 
-  routeConfigs.forEach(route => {
-    const count = bookings.filter(b => b.routeName && b.routeName.includes(route.name) && b.date === today).length;
-    tbody.innerHTML += `
-      <tr>
-        <td class="py-2 px-4">${route.name}</td>
-        <td class="py-2 px-4">${route.direction}</td>
-        <td class="py-2 px-4">${route.time}</td>
-        <td class="py-2 px-4 text-center">${route.capacity}</td>
-        <td class="py-2 px-4 text-center">${count}</td>
-        <td class="py-2 px-4 text-center">
-          <button onclick="openEditModal('${route.id}')" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs">
-            <i class="fas fa-pen mr-1"></i> 編輯
-          </button>
-        </td>
-      </tr>
-    `;
-  });
-}
+  // 統計
+  const todayBookings = bookings.filter(b => b.date === today);
+  document.getElementById('todayBookings').textContent = todayBookings.length;
+  document.getElementById('totalUsers').textContent = members.length;
 
-function openEditModal(id){
-  const route = routeConfigs.find(r => r.id === id);
-  if(!route) return;
-  editingRouteId = id;
-  const modal = document.createElement('div');
-  modal.id = 'editModal';
-  modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-  modal.innerHTML = `
-    <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm">
-      <h3 class="text-lg font-bold mb-4">修改班次設定</h3>
-      <div class="space-y-3">
-        <div>
-          <label class="block text-sm font-medium text-gray-600 mb-1">班次名稱</label>
-          <input type="text" id="editName" readonly value="${route.name}" class="w-full border rounded px-3 py-2 bg-gray-100">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-600 mb-1">時間</label>
-          <input type="text" id="editTime" value="${route.time}" class="w-full border rounded px-3 py-2">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-600 mb-1">容量</label>
-          <input type="number" id="editCapacity" value="${route.capacity}" class="w-full border rounded px-3 py-2">
-        </div>
-        <div class="flex justify-end gap-2 pt-4">
-          <button onclick="closeEditModal()" class="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">取消</button>
-          <button onclick="saveRouteConfig()" class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700">儲存</button>
-        </div>
+  // 班次
+  document.getElementById('a1Count').textContent = `${todayBookings.filter(b => b.route === 'A1').length}/6`;
+  document.getElementById('b1Count').textContent = `${todayBookings.filter(b => b.route === 'B1').length}/6`;
+  document.getElementById('a2Count').textContent = `${todayBookings.filter(b => b.route === 'A2').length}/6`;
+  document.getElementById('b2Count').textContent = `${todayBookings.filter(b => b.route === 'B2').length}/6`;
+
+  // 最新 10 筆預約
+  const recent = todayBookings.slice(-10).reverse();
+  const container = document.getElementById('realtimeBookings');
+  container.innerHTML = recent.map(b => `
+    <div class="px-4 py-3 flex justify-between">
+      <div>
+        <p class="font-medium">${b.name}</p>
+        <p class="text-sm text-gray-500">${b.route} • ${b.date}</p>
+      </div>
+      <div>
+        <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">已預約</span>
       </div>
     </div>
-  `;
-  document.body.appendChild(modal);
+  `).join('');
 }
 
-function closeEditModal(){
-  const modal = document.getElementById('editModal');
-  if(modal) modal.remove();
+async function loadMembersData() {
+  const members = await getMembersData();
+  const container = document.getElementById('membersTable');
+  container.innerHTML = members.map(m => `
+    <div class="px-4 py-3 grid grid-cols-12 gap-4 text-sm">
+      <div class="col-span-3">${m.name}</div>
+      <div class="col-span-2">${m.studentId}</div>
+      <div class="col-span-3">${m.department}</div>
+      <div class="col-span-2">${m.phone}</div>
+      <div class="col-span-2">${m.registerTime}</div>
+    </div>
+  `).join('');
 }
 
-function saveRouteConfig(){
-  const route = routeConfigs.find(r => r.id === editingRouteId);
-  if(!route) return;
-  route.time = document.getElementById('editTime').value;
-  route.capacity = parseInt(document.getElementById('editCapacity').value);
-  closeEditModal();
-  loadRoutesManageData();
-  alert('✅ 班次設定已更新');
-}
-
-/*********************************************
- * Gist資料存取
- *********************************************/
-async function getGistData(){
-  const res = await fetch(`https://api.github.com/gists/${CONFIG.GIST_ID}`, {
-    headers:{'Authorization':`token ${CONFIG.GITHUB_TOKEN}`}
-  });
-  const gist = await res.json();
-  return JSON.parse(gist.files['data.json'].content);
-}
-
-/*********************************************
- * 其他功能（時間、自動更新）
- *********************************************/
-function updateCurrentTime(){
+function updateCurrentTime() {
   const now = new Date();
-  document.getElementById('currentTime').textContent = now.toLocaleString('zh-TW', {
-    year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'
-  });
+  document.getElementById('currentTime').textContent = now.toLocaleString('zh-TW', { hour12: false });
 }
-window.addEventListener('load',()=>{
+
+window.addEventListener('load', () => {
   updateCurrentTime();
-  setInterval(updateCurrentTime,1000);
-  loadRoutesManageData();
+  setInterval(updateCurrentTime, 1000);
+  loadRealtimeData();
+  loadMembersData();
+  setInterval(loadRealtimeData, 30000);
 });
 </script>
 </body>
