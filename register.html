@@ -1,197 +1,49 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>暨大接駁車｜LINE 登入註冊</title>
-
-  <!-- Tailwind + LIFF SDK -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>學生註冊</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
-
-<body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen flex items-center justify-center p-6">
-  <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
-    <!-- 登入區 -->
-    <div id="loginSection" class="text-center">
-      <h1 class="text-2xl font-bold mb-2">歡迎使用 LINE 登入</h1>
-      <p class="text-gray-500 mb-6">請先登入 LINE 以完成註冊</p>
-      <button id="loginBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-xl w-full">
-        使用 LINE 登入
-      </button>
-    </div>
-
-    <!-- 表單區 -->
-    <div id="formSection" class="hidden">
-      <h1 class="text-2xl font-bold mb-4">完成註冊</h1>
-
-      <div id="userInfo" class="flex items-center gap-3 mb-4 bg-gray-50 p-3 rounded-xl"></div>
-
-      <form id="registrationForm" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700">姓名 *</label>
-          <input id="displayName" type="text" class="w-full border p-2 rounded" required />
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700">電話 *</label>
-          <input id="phone" type="tel" class="w-full border p-2 rounded" placeholder="0912345678" required />
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700">學號 *</label>
-          <input id="studentId" type="text" class="w-full border p-2 rounded" placeholder="例如：109320555" required />
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700">科系 *</label>
-          <input id="department" type="text" class="w-full border p-2 rounded" placeholder="例如：資訊工程系" required />
-        </div>
-
-        <button id="submitBtn" type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold">
-          送出註冊
-        </button>
-        <p id="errorMsg" class="text-red-500 text-sm hidden"></p>
-      </form>
-    </div>
-
-    <!-- 成功區 -->
-    <div id="successSection" class="hidden text-center py-10">
-      <div class="text-5xl text-green-500 mb-4">✓</div>
-      <h2 class="text-xl font-bold mb-2">註冊成功！</h2>
-      <p class="text-gray-500">感謝您完成註冊。</p>
-    </div>
-  </div>
+<body>
+  <h2>學生註冊</h2>
+  <input id="email" type="email" placeholder="請輸入 Email"><br>
+  <button onclick="register()">註冊</button>
 
   <script>
-    /*******************************************
-     🟢 基本設定區（請依照說明修改以下三項）
-    ********************************************/
-    const CONFIG = {
-      LIFF_ID: "2006590746-KJodGOda", 
-      // 例："2006590746-KJodGOda"
+    const GAS_URL = "👉請貼上你的 GAS /exec 網址👈";
 
-      APPS_SCRIPT_URL: "https://delicate-math-7e61.fangwl591021.workers.dev/",
-      // 例："https://delicate-math-7e61.fangwl591021.workers.dev/"
-
-      DEBUG_MODE: true, // 🟢 若要關閉 Console 訊息可改 false
-    };
-
-    /*******************************************
-     🔹 全域變數
-    ********************************************/
-    let userData = {
-      lineUserId: "",
-      displayName: "",
-      pictureUrl: "",
-      email: "",
-    };
-
-    /*******************************************
-     🔹 初始化 LIFF
-    ********************************************/
-    async function initLiff() {
-      try {
-        await liff.init({ liffId: CONFIG.LIFF_ID });
-
-        if (!liff.isLoggedIn()) {
-          document.getElementById("loginBtn").onclick = () => liff.login();
-        } else {
-          const profile = await liff.getProfile();
-          userData.lineUserId = profile.userId;
-          userData.displayName = profile.displayName;
-          userData.pictureUrl = profile.pictureUrl;
-
-          if (CONFIG.DEBUG_MODE) console.log("✅ LINE 登入成功：", userData);
-
-          showForm();
-        }
-      } catch (err) {
-        console.error("❌ LIFF 初始化錯誤：", err);
-        alert("初始化失敗，請檢查 LIFF ID");
+    async function main() {
+      await liff.init({ liffId: "2006590746-KJodGOda" });
+      if (!liff.isLoggedIn()) {
+        liff.login();
       }
     }
 
-    /*******************************************
-     🔹 顯示表單畫面
-    ********************************************/
-    function showForm() {
-      document.getElementById("loginSection").classList.add("hidden");
-      document.getElementById("formSection").classList.remove("hidden");
-
-      const avatar = userData.pictureUrl
-        ? `<img src="${userData.pictureUrl}" class="w-14 h-14 rounded-full">`
-        : `<div class="w-14 h-14 bg-green-500 text-white flex items-center justify-center rounded-full text-2xl">👤</div>`;
-
-      document.getElementById("userInfo").innerHTML = `
-        ${avatar}
-        <div>
-          <h3 class="font-bold">${userData.displayName}</h3>
-          <p class="text-sm text-gray-500">已登入 LINE 帳號</p>
-        </div>
-      `;
-
-      // 預設姓名填入 LINE 名稱
-      document.getElementById("displayName").value = userData.displayName || "";
-    }
-
-    /*******************************************
-     🔹 送出表單資料
-    ********************************************/
-    document.getElementById("registrationForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById("submitBtn");
-      const msg = document.getElementById("errorMsg");
-      msg.classList.add("hidden");
-      btn.disabled = true;
-      btn.textContent = "送出中...";
-
-      const formData = {
-        lineUserId: userData.lineUserId || "unknown_user_" + Date.now(),
-        displayName: document.getElementById("displayName").value.trim(),
-        phone: document.getElementById("phone").value.trim(),
-        studentId: document.getElementById("studentId").value.trim(),
-        department: document.getElementById("department").value.trim(),
+    async function register() {
+      const profile = await liff.getProfile();
+      const userData = {
+        userId: profile.userId,
+        name: profile.displayName,
+        email: document.getElementById('email').value
       };
 
-      if (CONFIG.DEBUG_MODE) console.log("📤 送出資料：", formData);
+      const res = await fetch(GAS_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData)
+      });
 
-      try {
-        const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        });
-
-        const result = await res.json();
-        if (CONFIG.DEBUG_MODE) console.log("📥 回應結果：", result);
-
-        if (result.status === "success" || result.success) {
-          showSuccess();
-        } else {
-          throw new Error(result.message || "寫入失敗");
-        }
-      } catch (err) {
-        msg.textContent = "送出失敗：" + err.message;
-        msg.classList.remove("hidden");
-        btn.disabled = false;
-        btn.textContent = "送出註冊";
-        console.error("❌ 錯誤：", err);
+      const result = await res.json();
+      if (result.status === 'success') {
+        alert('✅ 註冊成功！');
+      } else {
+        alert('❌ 錯誤：' + result.message);
       }
-    });
-
-    /*******************************************
-     🔹 顯示成功畫面
-    ********************************************/
-    function showSuccess() {
-      document.getElementById("formSection").classList.add("hidden");
-      document.getElementById("successSection").classList.remove("hidden");
     }
 
-    /*******************************************
-     🔹 啟動 LIFF
-    ********************************************/
-    window.onload = initLiff;
+    main();
   </script>
 </body>
 </html>
