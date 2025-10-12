@@ -24,6 +24,13 @@
       font-size: 13px;
       margin-bottom: 20px;
     }
+    .calendar-header {
+      padding: 8px 0;
+      font-weight: bold;
+      background: #f0f0f0;
+      border-radius: 3px;
+      font-size: 12px;
+    }
     .calendar-day {
       padding: 8px 0;
       min-height: 45px;
@@ -37,8 +44,18 @@
       transition: background 0.2s;
     }
     .calendar-day:hover { background:#eaf5ea; }
-    .calendar-day.disabled { background:#eee; color:#aaa; cursor:not-allowed; }
+    .calendar-day.disabled { 
+      background:#ffe6e6; 
+      color:#999; 
+      cursor:not-allowed; 
+    }
+    .calendar-day.past { 
+      background:#f5f5f5; 
+      color:#ccc; 
+      cursor:not-allowed; 
+    }
     .calendar-day.selected { background:#3c8050; color:#fff; font-weight:bold; }
+    .calendar-day.other-month { color:#ccc; }
 
     /* 橫向輪播式預約卡片 */
     .carousel-container {
@@ -64,7 +81,7 @@
       display: none;
     }
     .reservation-bubble {
-      min-width: 200px;
+      min-width: 240px;  /* 已經調整為較緊湊的寬度 */
       background: white;
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -114,7 +131,7 @@
 
     /* 沒有預約的提示 */
     .no-reservation {
-      text-align: start;
+      text-align: center;
       color: #666;
       padding: 40px 20px;
       background: white;
@@ -258,12 +275,14 @@
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+const CALENDAR_ID = '86eee89e759f27d2a2c7a44853868f7be880aa8e745ba3839933ec84b562631e@group.calendar.google.com';
 let selectedDate = null;
 let selectedRoute = null;
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
 let userData = null;
 let existingReservations = [];
+let noServiceDates = {}; // 新增：儲存停駛日期
 
 const stopsOutbound = ["行政大樓","中餐廳","科技學院","學人會館","中城","下城","坪頂","愛蘭橋","大成國小","中山安七街口","榮民診所","埔里酒廠","埔里總站"];
 const stopsReturn = [...stopsOutbound].reverse();
@@ -275,12 +294,31 @@ const routeTimes = {
   'B2': { time: '23:30-24:00', direction: '埔里總站→暨大' }
 };
 
+// === 載入停駛日期 ===
+async function loadNoServiceDates() {
+  try {
+    const start = formatDateToLocal(new Date(currentYear, currentMonth - 1, 1));
+    const end = formatDateToLocal(new Date(currentYear, currentMonth + 2, 0));
+    const res = await fetch(`${WORKER_URL}?mode=calendar&start=${start}&end=${end}&calendarId=${encodeURIComponent(CALENDAR_ID)}`);
+    const result = await res.json();
+    noServiceDates = {};
+    if (Array.isArray(result.holidays)) {
+      result.holidays.forEach(d => noServiceDates[d.substring(0,10)] = true);
+    }
+    console.log('停駛日期:', noServiceDates);
+  } catch (e) {
+    console.error('🚨 載入停駛日期失敗:', e);
+    noServiceDates = {};
+  }
+}
+
 // === 📅 月曆開關 ===
-function toggleCalendar() {
+async function toggleCalendar() {
   const container = document.getElementById('calendarContainer');
   const btn = document.getElementById('calendarBtn');
 
   if (container.style.display === 'none') {
+    await loadNoServiceDates(); // 載入停駛日期
     renderCalendar();
     container.style.display = 'block';
     btn.textContent = '📅 關閉月曆';
@@ -295,27 +333,79 @@ function toggleCalendar() {
 function renderCalendar() {
   const calendar = document.getElementById('calendar');
   calendar.innerHTML = '';
+  
+  // 添加星期標題
+  const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+  weekdays.forEach(day => {
+    const header = document.createElement('div');
+    header.className = 'calendar-header';
+    header.textContent = day;
+    calendar.appendChild(header);
+  });
+
   const firstDay = new Date(currentYear, currentMonth, 1);
   const lastDay = new Date(currentYear, currentMonth + 1, 0);
-  document.getElementById('calendarTitle').textContent = `${currentYear} 年 ${currentMonth + 1} 月`;
+  const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+  document.getElementById('calendarTitle').textContent = `${currentYear}年 ${monthNames[currentMonth]}`;
 
   const startDay = firstDay.getDay();
   const daysInMonth = lastDay.getDate();
+  const today = new Date();
+  const todayStr = formatDateToLocal(today);
 
-  for (let i = 0; i < startDay; i++) {
+  // 上個月的日期
+  const prevLastDay = new Date(currentYear, currentMonth, 0).getDate();
+  for (let i = startDay - 1; i >= 0; i--) {
     const empty = document.createElement('div');
-    empty.className = 'calendar-day disabled';
+    empty.className = 'calendar-day other-month';
+    empty.textContent = prevLastDay - i;
     calendar.appendChild(empty);
   }
 
+  // 這個月的日期
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(currentYear, currentMonth, day);
     const dateStr = formatDateToLocal(date);
     const div = document.createElement('div');
     div.className = 'calendar-day';
-    div.textContent = day;
-    div.onclick = () => selectDate(dateStr);
+    
+    // 檢查是否為過去日期
+    const isPast = date < today && dateStr !== todayStr;
+    // 檢查是否為停駛日期
+    const isNoService = noServiceDates[dateStr];
+    
+    if (isPast) {
+      div.classList.add('past');
+      div.innerHTML = `${day}<br><small>已過期</small>`;
+    } else if (isNoService) {
+      div.classList.add('disabled');
+      div.innerHTML = `${day}<br><small>停駛</small>`;
+    } else {
+      div.textContent = day;
+      div.onclick = () => selectDate(dateStr);
+    }
+    
+    // 標記今天
+    if (dateStr === todayStr) {
+      div.style.border = '2px solid #3c8050';
+    }
+    
+    // 標記已選擇的日期
+    if (selectedDate === dateStr) {
+      div.classList.add('selected');
+    }
+    
     calendar.appendChild(div);
+  }
+
+  // 下個月的日期
+  const totalCells = 42; // 6行 x 7列
+  const remaining = totalCells - (startDay + daysInMonth);
+  for (let day = 1; day <= remaining; day++) {
+    const empty = document.createElement('div');
+    empty.className = 'calendar-day other-month';
+    empty.textContent = day;
+    calendar.appendChild(empty);
   }
 }
 
@@ -332,6 +422,33 @@ function changeMonth(delta) {
 }
 
 function selectDate(dateStr) {
+  // 檢查是否為停駛日期
+  if (noServiceDates[dateStr]) {
+    document.getElementById('holidayNotice').style.display = 'block';
+    document.getElementById('holidayNotice').textContent = `🚫 ${dateStr} 為停駛日，無法預約`;
+    document.getElementById('selectedDate').style.display = 'none';
+    selectedDate = null;
+    document.getElementById('routeSection').style.display = 'none';
+    document.getElementById('stopSection').style.display = 'none';
+    document.getElementById('submitBtn').style.display = 'none';
+    return;
+  }
+  
+  // 檢查是否為過去日期
+  const selected = new Date(dateStr);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (selected < today) {
+    document.getElementById('holidayNotice').style.display = 'block';
+    document.getElementById('holidayNotice').textContent = `🚫 ${dateStr} 為過去日期，無法預約`;
+    document.getElementById('selectedDate').style.display = 'none';
+    selectedDate = null;
+    document.getElementById('routeSection').style.display = 'none';
+    document.getElementById('stopSection').style.display = 'none';
+    document.getElementById('submitBtn').style.display = 'none';
+    return;
+  }
+  
   selectedDate = dateStr;
   
   // 重置選擇狀態
@@ -340,7 +457,7 @@ function selectDate(dateStr) {
   
   // 顯示選擇的日期
   document.getElementById('selectedDate').style.display = 'block';
-  document.getElementById('selectedDate').textContent = `📅 已選擇日期：${dateStr}`;
+  document.getElementById('selectedDate').textContent = `✅ 已選擇日期：${dateStr}`;
   document.getElementById('holidayNotice').style.display = 'none';
   
   // 關閉月曆
@@ -481,6 +598,7 @@ function resetReservationForm() {
   document.getElementById('stopSection').style.display = 'none';
   document.getElementById('submitBtn').style.display = 'none';
   document.getElementById('selectedDate').style.display = 'none';
+  document.getElementById('holidayNotice').style.display = 'none';
   
   // 重置選擇
   selectedDate = null;
