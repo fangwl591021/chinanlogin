@@ -26,32 +26,41 @@
     .notice.error { background:#fdecea; color:#b71c1c; border:1px solid #f5c2c7; }
     .notice.success { background:#e8f5e9; color:#2e7d32; border:1px solid #81c784; }
 
-    /* 月曆 */
-    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap:4px; text-align:center; font-size:14px; }
-    .calendar-header { padding:8px 0; font-weight:bold; background:#f0f0f0; border-radius:4px; }
-    .calendar-day { padding:8px 0; border-radius:6px; background:#fff; border:1px solid #e0e0e0; cursor:pointer; min-height:40px; display:flex; flex-direction:column; justify-content:center; }
+    /* 月曆 - 降低高度 */
+    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap:3px; text-align:center; font-size:13px; }
+    .calendar-header { padding:6px 0; font-weight:bold; background:#f0f0f0; border-radius:3px; font-size:12px; }
+    .calendar-day { padding:4px 0; border-radius:4px; background:#fff; border:1px solid #e0e0e0; cursor:pointer; min-height:30px; display:flex; flex-direction:column; justify-content:center; }
     .calendar-day:hover { background:#e8f5e9; }
     .calendar-day.holiday { background:#ffe6e6; color:#999; cursor:not-allowed; }
     .calendar-day.selected { background:#3c8050; color:#fff; font-weight:bold; }
     .calendar-day.other-month { color:#ccc; }
     .calendar-day.today { border:2px solid #3c8050; }
+    .calendar-day small { font-size:9px; }
 
-    /* 班次按鈕 - 修正版 */
-    #routeButtons { display:flex; flex-wrap:wrap; gap:6px; justify-content:space-between; }
-    .route-btn {
-      flex:0 0 calc(50% - 6px); 
-      padding:6px 4px; 
-      border-radius:6px; 
-      text-align:left;
-      border:1px solid #ddd; 
-      font-size:12px; 
-      cursor:pointer; 
-      transition:0.2s;
-      min-height:70px; 
+    /* 班次按鈕 - 修正寬度 */
+    #routeButtons { 
       display:flex; 
+      flex-wrap:wrap; 
+      gap:4px;
+      justify-content:space-between;
+      margin: 0 -2px;
+    }
+    .route-btn {
+      flex: 0 0 calc(50% - 4px);
+      margin: 0 2px;
+      padding: 4px 2px;
+      border-radius:6px;
+      text-align:left;
+      border:1px solid #ddd;
+      font-size:12px;
+      cursor:pointer;
+      transition:0.2s;
+      min-height:65px;
+      display:flex;
       align-items:center;
       background:#fff;
-      color:#000; /* 預設黑色文字 */
+      color:#000;
+      box-sizing: border-box;
     }
     
     /* 未選中時的邊框顏色 */
@@ -68,7 +77,7 @@
     
     /* 選中時的樣式 - 全部變白色文字 */
     .route-btn.selected { 
-      color:#fff !important; /* 強制白色文字 */
+      color:#fff !important;
     }
     .route-btn.selected.A1, .route-btn.selected.B1 { 
       background:#2e7d32; 
@@ -84,8 +93,8 @@
       display: flex; 
       flex-direction: column; 
       gap: 2px; 
-      width: 95%;
-      padding: 0 4px;
+      width: 100%;
+      padding: 0 2px;
     }
     .route-time { 
       font-weight: bold; 
@@ -95,7 +104,7 @@
     .route-direction { 
       font-size: 11px; 
       line-height: 1.2;
-      margin: 2px 0;
+      margin: 1px 0;
     }
     .route-seats { 
       font-size: 11px; 
@@ -112,21 +121,21 @@
 
     @media (max-width:480px){
       .route-btn {
-        flex:0 0 calc(40% - 6px);
-        min-height:65px;
-        padding:4px 3px;
+        flex: 0 0 calc(50% - 4px);
+        min-height:60px;
+        padding:3px 2px;
       }
       .route-content {
-        padding: 0 3px;
+        padding: 0 1px;
       }
-      .route-time { font-size: 14px; }
-      .route-direction { font-size: 14px; }
-      .route-seats { font-size: 14px; }
+      .route-time { font-size: 11px; }
+      .route-direction { font-size: 10px; }
+      .route-seats { font-size: 10px; }
     }
 
     @media (max-width:360px){
       .route-btn {
-        min-height:60px;
+        min-height:55px;
       }
       .route-time { font-size: 10px; }
       .route-direction { font-size: 9px; }
@@ -147,7 +156,7 @@
     <div id="calendarContainer" style="display:none;margin-top:10px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <button onclick="changeMonth(-1)" style="width:auto; padding:5px 10px;">◀ 上個月</button>
-        <h3 id="calendarTitle" style="margin:0;"></h3>
+        <h3 id="calendarTitle" style="margin:0; font-size:16px;"></h3>
         <button onclick="changeMonth(1)" style="width:auto; padding:5px 10px;">下個月 ▶</button>
       </div>
       <div id="calendar" class="calendar"></div>
@@ -167,11 +176,13 @@
 
 <script>
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+const CALENDAR_ID = '86eee89e759f27d2a2c7a44853868f7be880aa8e745ba3839933ec84b562631e@group.calendar.google.com';
 let selectedDate = null;
 let selectedRoute = null;
 let userData = null;
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
+let holidays = {}; // 儲存停駛日期
 
 const stopsOutbound = ["行政大樓","中餐廳","科技學院","學人會館","中城","下城","坪頂","愛蘭橋","大成國小","中山安七街口","榮民診所","埔里酒廠","埔里總站"];
 const stopsReturn = ["埔里總站","埔里酒廠","榮民診所","中山安七街口","大成國小","愛蘭橋","坪頂","下城","中城","學人會館","科技學院","中餐廳","行政大樓"];
@@ -184,7 +195,6 @@ const routeTimes = {
   'B2': { time: '23:30-24:00', direction: '埔里總站→暨大' }
 };
 
-
 // === 初始化 ===
 (async function init(){
   // 模擬使用者資料
@@ -194,9 +204,30 @@ const routeTimes = {
     userId: 'test123'
   };
   
+  // 載入停駛日期
+  await loadHolidays();
+  
   // 初始化班次顯示
   loadSeatStatus();
 })();
+
+// === 載入停駛日期 ===
+async function loadHolidays() {
+  try {
+    // 載入當月停駛日期
+    const startDate = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
+    const endDate = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
+    
+    const res = await fetch(`${WORKER_URL}?mode=calendar&start=${startDate}&end=${endDate}&calendarId=${CALENDAR_ID}`);
+    const result = await res.json();
+    
+    if (result.holidays) {
+      holidays = result.holidays;
+    }
+  } catch (error) {
+    console.error('載入停駛日期失敗:', error);
+  }
+}
 
 // === 月曆功能 ===
 async function toggleCalendar() {
@@ -218,6 +249,9 @@ async function changeMonth(direction) {
     currentMonth = 0;
     currentYear++;
   }
+  
+  // 載入新月份的停駛日期
+  await loadHolidays();
   await renderCalendar();
 }
 
@@ -267,16 +301,19 @@ async function renderCalendar() {
       dayElement.classList.add('today');
     }
     
-    // 檢查是否為停駛日 (週六、週日)
+    // 檢查是否為停駛日 (從日曆API取得或週末)
     const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+    const isHoliday = holidays[formatted] || isWeekend;
     
     // 檢查是否為過去日期
     const isPast = date < today && date.toDateString() !== today.toDateString();
     
-    if (isWeekend || isPast) {
+    if (isHoliday || isPast) {
       dayElement.classList.add('holiday');
-      if (isWeekend) {
+      if (isHoliday) {
         dayElement.innerHTML = `${d}<br><small>停駛</small>`;
+      } else if (isPast) {
+        dayElement.innerHTML = `${d}<br><small>已過期</small>`;
       }
     } else {
       dayElement.textContent = d;
@@ -302,6 +339,18 @@ async function renderCalendar() {
 }
 
 async function selectDate(date) {
+  // 檢查選擇的日期是否為停駛日
+  const isWeekend = new Date(date).getDay() === 0 || new Date(date).getDay() === 6;
+  const isHoliday = holidays[date] || isWeekend;
+  
+  if (isHoliday) {
+    document.getElementById('holidayNotice').style.display = 'block';
+    document.getElementById('holidayNotice').innerText = `🚫 ${date} 為停駛日，請選擇其他日期`;
+    document.getElementById('selectedDate').style.display = 'none';
+    selectedDate = null;
+    return;
+  }
+  
   selectedDate = date;
   document.getElementById('calendarContainer').style.display = 'none';
   document.getElementById('selectedDate').innerHTML = '✅ 已選擇日期：' + date;
@@ -384,19 +433,46 @@ async function submitForm() {
   btn.disabled = true;
   btn.classList.add('loading');
 
-  // 模擬預約過程
-  setTimeout(() => {
+  try {
+    const routeInfo = routeTimes[selectedRoute];
+    const data = {
+      type: 'reserve',
+      userId: userData.userId,
+      name: userData.name,
+      studentId: userData.studentId,
+      route: selectedRoute,
+      routeName: routeInfo.direction,
+      fromStop: selectedRoute.includes('A') ? '行政大樓' : '埔里總站',
+      toStop: toStop,
+      date: selectedDate
+    };
+
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    });
+    
+    const result = await res.json();
+    
+    if(result.status === 'success'){
+      document.getElementById('result').innerHTML = 
+        `<div class="notice success">
+          ✅ 預約成功<br>
+          ${selectedDate}｜${selectedRoute} ${routeInfo.time}<br>
+          ${routeInfo.direction.split('→')[0]} → ${toStop}
+        </div>`;
+    } else {
+      document.getElementById('result').innerHTML =
+        `<div class="notice error">❌ 預約失敗：${result.message || '請稍後再試'}</div>`;
+    }
+  } catch (error) {
+    document.getElementById('result').innerHTML =
+      `<div class="notice error">❌ 預約失敗，請檢查網路連線</div>`;
+  } finally {
     btn.disabled = false;
     btn.classList.remove('loading');
-    
-    const routeInfo = routeTimes[selectedRoute];
-    document.getElementById('result').innerHTML = 
-      `<div class="notice success">
-        ✅ 預約成功<br>
-        ${selectedDate}｜${selectedRoute} ${routeInfo.time}<br>
-        ${routeInfo.direction.split('→')[0]} → ${toStop}
-      </div>`;
-  }, 1000);
+  }
 }
 </script>
 </body>
