@@ -42,39 +42,50 @@
     }
 
     async function registerUser() {
-      const profile = await liff.getProfile();
-      const data = {
-        userId: profile.userId,
-        name: document.getElementById('name').value.trim(),
-        phone: document.getElementById('phone').value.trim(),
-        studentId: document.getElementById('studentId').value.trim(),
-        department: document.getElementById('department').value.trim()
-      };
+  const profile = await liff.getProfile();
+  const data = {
+    userId: profile.userId,
+    name: document.getElementById('name').value.trim(),
+    phone: document.getElementById('phone').value.trim(),
+    studentId: document.getElementById('studentId').value.trim(),
+    department: document.getElementById('department').value.trim()
+  };
 
-      if (!data.name || !data.phone || !data.studentId || !data.department) {
-        alert('⚠️ 請完整填寫所有欄位');
-        return;
-      }
+  console.log('📤 送出資料', data);
 
-      try {
-        const res = await fetch(GAS_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        });
+  try {
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
 
-        const result = await res.json();
-        if (result.status === 'success') {
-          alert('✅ 註冊成功，感謝使用！');
-          liff.closeWindow();
-        } else {
-          alert('❌ 發生錯誤：' + result.message);
-        }
-      } catch (error) {
-        console.error(error);
-        alert('❌ 註冊失敗，請稍後再試');
-      }
+    console.log('📡 Response status:', res.status);
+    const raw = await res.text();
+    console.log('📩 Raw response:', raw);
+
+    let result;
+    try {
+      result = JSON.parse(raw);
+    } catch (parseErr) {
+      console.error('❌ JSON parse 失敗:', parseErr);
+      alert('⚠️ 系統已收到資料，但回傳格式有誤。');
+      return;
     }
+
+    if (result.status === 'success') {
+      alert('✅ 註冊成功！');
+      liff.closeWindow();
+    } else {
+      alert('❌ 註冊失敗：' + (result.message || '未知錯誤'));
+    }
+
+  } catch (error) {
+    console.error('🚨 Fetch error:', error);
+    alert('❌ 無法連線伺服器');
+  }
+}
+
 
     main();
   </script>
