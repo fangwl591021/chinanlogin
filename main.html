@@ -318,11 +318,7 @@ function createLocalDate(year, month, day) {
 async function init() {
   try {
     console.log('開始初始化 LIFF...');
-
-    await liff.init({ 
-      liffId: "2006590746-KJodGOda" 
-    });
-    console.log('LIFF 初始化成功');
+    await liff.init({ liffId: "2006590746-KJodGOda" });
 
     if (!liff.isLoggedIn()) {
       console.log('使用者未登入，開始登入...');
@@ -332,11 +328,8 @@ async function init() {
 
     console.log('使用者已登入，取得使用者資料...');
     const profile = await liff.getProfile();
-    console.log('取得使用者 Profile:', profile);
-
     const res = await fetch(`${WORKER_URL}?check=${profile.userId}`);
     const result = await res.json();
-    console.log('註冊檢查結果:', result);
 
     if (!result.registered) {
       console.log('使用者未註冊，導向註冊頁面');
@@ -345,38 +338,54 @@ async function init() {
     }
 
     userData = result.user;
-    console.log('使用者資料:', userData);
+    document.getElementById('userInfo').innerHTML =
+      `👤 ${userData.name}<br>🏫 ${userData.department}｜${userData.studentId}`;
 
-    document.getElementById('userInfo').innerHTML = `👤 ${userData.name}<br>🏫 ${userData.department}｜${userData.studentId}`;
-
-    document.getElementById('calendarBtn').disabled = false;
-    document.getElementById('calendarBtn').textContent = '📅 打開月曆';
-
-    await loadNoServiceDates();
     await loadExistingReservations();
-
-    console.log('系統初始化完成');
-
   } catch (error) {
-    console.error('初始化失敗:', error);
-
-    document.getElementById('userInfo').innerHTML = 
-      '<div class="notice error">❌ 系統發生錯誤，請重新整理頁面或稍後再試<br><small>錯誤: ' + error.message + '</small></div>';
-
-    document.getElementById('calendarBtn').disabled = false;
-    document.getElementById('calendarBtn').textContent = '📅 打開月曆（離線模式）';
-
+    console.error('❌ 初始化失敗:', error);
+    document.getElementById('userInfo').innerHTML =
+      `👤 測試使用者<br>🏫 測試學系｜00000000<br><small style="color:#666;">離線模式</small>`;
     userData = {
-      userId: 'offline-user',
+      userId: 'offline',
       name: '測試使用者',
       department: '測試學系',
       studentId: '00000000',
       phone: '0900000000'
     };
-
-    document.getElementById('userInfo').innerHTML = `👤 ${userData.name}<br>🏫 ${userData.department}｜${userData.studentId}<br><small style="color: #666;">離線模式</small>`;
+  } finally {
+    // ✅ 無論登入成功與否都會執行這裡
+    await loadNoServiceDates();
+    document.getElementById('calendarBtn').disabled = false;
+    document.getElementById('calendarBtn').textContent = '📅 打開月曆';
   }
 }
+
+window.addEventListener('load', init);
+
+// === 載入停駛日期 ===
+async function loadNoServiceDates() {
+  try {
+    const startDate = formatDateToLocal(new Date(currentYear, currentMonth - 1, 1));
+    const endDate = formatDateToLocal(new Date(currentYear, currentMonth + 2, 0));
+    const res = await fetch(`${WORKER_URL}?mode=calendar&start=${startDate}&end=${endDate}&calendarId=${encodeURIComponent(CALENDAR_ID)}`);
+    const result = await res.json();
+
+    noServiceDates = {};
+    if (Array.isArray(result.holidays)) {
+      result.holidays.forEach(date => {
+        if (typeof date === 'string') {
+          noServiceDates[date.substring(0, 10)] = true;
+        }
+      });
+    }
+    console.log('✅ 已載入停駛日期:', Object.keys(noServiceDates));
+  } catch (error) {
+    console.error('🚨 載入停駛日期失敗:', error);
+    noServiceDates = {};
+  }
+}
+
 
 init();
 
