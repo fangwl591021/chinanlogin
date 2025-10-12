@@ -151,5 +151,86 @@ window.addEventListener('load', () => {
   setInterval(loadRealtimeData, 30000);
 });
 </script>
+  <script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxZVsRBh71_GoN-JLCDgodODbRUObcPC1ZDzvXwvwEIpXiZOnZWTPl45ZYvhWe2BIvnOQ/exec';
+
+// 抓會員資料
+async function getMembersData() {
+  const res = await fetch(`${GAS_URL}?mode=members`, { mode: 'cors' });
+  const data = await res.json();
+  return data.members || [];
+}
+
+// 抓預約資料
+async function getBookingsData() {
+  const res = await fetch(`${GAS_URL}?mode=bookings`, { mode: 'cors' });
+  const data = await res.json();
+  return data.bookings || [];
+}
+
+// 載入即時資料（統計 & 最新預約）
+async function loadRealtimeData() {
+  const bookings = await getBookingsData();
+  const members = await getMembersData();
+  const today = new Date().toISOString().split('T')[0];
+
+  // ✅ 修正日期比對（使用 startsWith）
+  const todayBookings = bookings.filter(b => b.date.startsWith(today));
+  document.getElementById('todayBookings').textContent = todayBookings.length;
+  document.getElementById('totalUsers').textContent = members.length;
+
+  // ✅ 統計班次
+  document.getElementById('a1Count').textContent = `${todayBookings.filter(b => b.route === 'A1').length}/6`;
+  document.getElementById('b1Count').textContent = `${todayBookings.filter(b => b.route === 'B1').length}/6`;
+  document.getElementById('a2Count').textContent = `${todayBookings.filter(b => b.route === 'A2').length}/6`;
+  document.getElementById('b2Count').textContent = `${todayBookings.filter(b => b.route === 'B2').length}/6`;
+
+  // ✅ 最新 10 筆預約
+  const recent = todayBookings.slice(-10).reverse();
+  const container = document.getElementById('realtimeBookings');
+  container.innerHTML = recent.map(b => `
+    <div class="px-4 py-3 flex justify-between">
+      <div>
+        <p class="font-medium">${b.name}</p>
+        <p class="text-sm text-gray-500">${b.route} • ${b.date}</p>
+      </div>
+      <div>
+        <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">已預約</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// 載入會員資料（會員管理區塊）
+async function loadMembersData() {
+  const members = await getMembersData();
+  const container = document.getElementById('membersTable');
+  container.innerHTML = members.map(m => `
+    <div class="px-4 py-3 grid grid-cols-12 gap-4 text-sm">
+      <div class="col-span-3">${m.name}</div>
+      <div class="col-span-2">${m.studentId}</div>
+      <div class="col-span-3">${m.department}</div>
+      <div class="col-span-2">${m.phone}</div>
+      <div class="col-span-2">${m.registerTime}</div>
+    </div>
+  `).join('');
+}
+
+// 即時時鐘
+function updateCurrentTime() {
+  const now = new Date();
+  document.getElementById('currentTime').textContent = now.toLocaleString('zh-TW', { hour12: false });
+}
+
+// 初始化
+window.addEventListener('load', () => {
+  updateCurrentTime();
+  setInterval(updateCurrentTime, 1000);
+  loadRealtimeData();
+  loadMembersData();
+  setInterval(loadRealtimeData, 30000);
+});
+</script>
+
 </body>
 </html>
