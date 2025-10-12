@@ -661,29 +661,37 @@ async function submitReservation() {
     };
     
     const res = await fetch(WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    
-    const result = await res.json();
-    
-    if (result.status === 'success') {
-      alert('✅ 預約成功！');
-      resetReservationForm();
-      await loadExistingReservations();
-    } else {
-      alert('❌ 預約失敗：' + (result.message || '請稍後再試'));
-    }
-    
-  } catch (error) {
-    console.error('預約錯誤:', error);
-    alert('❌ 預約失敗，請檢查網路連線');
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = '送出預約';
-  }
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(data)
+});
+
+const result = await res.json();
+
+if (result.status === 'success') {
+  alert('✅ 預約成功！');
+
+  // ✅ 新增這段 → Flex Bubble 群組通知
+  await fetch(WORKER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'pushLine',
+      title: '✅ 預約成功通知',
+      name: userData.name,
+      date: selectedDate,
+      route: `${selectedRoute} | ${routeTimes[selectedRoute].time} ${routeTimes[selectedRoute].direction}`,
+      fromStop: selectedRoute.includes('A') ? '行政大樓' : '埔里總站',
+      toStop: toStop
+    })
+  });
+
+  resetReservationForm();
+  await loadExistingReservations();
+} else {
+  alert('❌ 預約失敗：' + (result.message || '請稍後再試'));
 }
+
 
 function resetReservationForm() {
   document.getElementById('routeSection').style.display = 'none';
