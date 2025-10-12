@@ -129,13 +129,15 @@
     async function registerUser() {
       const profile = await liff.getProfile();
       const data = {
-        userId: profile.userId,
-        displayName: profile.displayName,
-        name: document.getElementById('name').value,
-        phone: document.getElementById('phone').value,
-        studentId: document.getElementById('studentId').value,
-        department: document.getElementById('department').value
-      };
+  type: 'register',
+  userId: profile.userId,
+  displayName: profile.displayName,
+  name: document.getElementById('name').value,
+  phone: document.getElementById('phone').value,
+  studentId: document.getElementById('studentId').value,
+  department: document.getElementById('department').value
+};
+
 
       // 必填驗證
       if (!data.name || !data.phone || !data.studentId || !data.department) {
