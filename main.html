@@ -75,11 +75,17 @@ async function init() {
     document.getElementById('calendarBtn').disabled = false;
     document.getElementById('calendarBtn').textContent = '📅 打開月曆';
     
-    // 載入停駛日期
-    await loadNoServiceDates();
+    // 先載入月曆，不需要等待停駛日期
+    await renderCalendar();
     
-    // 載入現有預約
-    await loadExistingReservations();
+    // 非同步載入停駛日期和預約
+    loadNoServiceDates().then(() => {
+      console.log('停駛日期載入完成');
+      // 重新渲染月曆以顯示停駛狀態
+      renderCalendar();
+    });
+    
+    loadExistingReservations();
     
     console.log('系統初始化完成');
     
@@ -101,6 +107,9 @@ async function init() {
     };
     
     document.getElementById('userInfo').innerHTML = `👤 ${userData.name}<br>🏫 ${userData.department}｜${userData.studentId}<br><small style="color: #666;">離線模式</small>`;
+    
+    // 離線模式下直接渲染月曆
+    renderCalendar();
   }
 }
 
@@ -303,21 +312,11 @@ async function loadNoServiceDates() {
       console.log('已載入停駛日期:', Object.keys(noServiceDates));
     } else {
       console.warn('⚠️ 沒有找到停駛日期資料或API回傳失敗');
-      noServiceDates = {
-        '2025-10-01': true,
-        '2025-10-10': true,
-        '2025-10-25': true
-      };
-      console.log('使用測試停駛日期:', Object.keys(noServiceDates));
+      noServiceDates = {};
     }
   } catch (error) {
     console.error('❌ 載入停駛日期失敗:', error);
-    noServiceDates = {
-      '2025-10-01': true,
-      '2025-10-10': true,
-      '2025-10-25': true
-    };
-    console.log('使用備用測試停駛日期:', Object.keys(noServiceDates));
+    noServiceDates = {};
   }
 }
 
@@ -325,10 +324,15 @@ async function loadNoServiceDates() {
 async function toggleCalendar() {
   const c = document.getElementById('calendarContainer');
   if (c.style.display === 'none') {
-    await renderCalendar();
+    // 確保月曆已經渲染
+    if (document.getElementById('calendar').innerHTML === '') {
+      await renderCalendar();
+    }
     c.style.display = 'block';
+    document.getElementById('calendarBtn').textContent = '📅 關閉月曆';
   } else {
     c.style.display = 'none';
+    document.getElementById('calendarBtn').textContent = '📅 打開月曆';
   }
 }
 
@@ -342,16 +346,25 @@ async function changeMonth(direction) {
     currentYear++;
   }
   
+  // 載入新月份的停駛日期
   await loadNoServiceDates();
   await renderCalendar();
 }
 
 async function renderCalendar() {
+  console.log('開始渲染月曆:', currentYear, '年', currentMonth + 1, '月');
+  
   const cal = document.getElementById('calendar');
   const title = document.getElementById('calendarTitle');
   
   const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
   title.textContent = `${currentYear}年 ${monthNames[currentMonth]}`;
+  
+  // 顯示載中狀態
+  cal.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;">載入中...</div>';
+  
+  // 給一點時間顯示載入狀態
+  await new Promise(resolve => setTimeout(resolve, 10));
   
   cal.innerHTML = '';
   
@@ -368,6 +381,14 @@ async function renderCalendar() {
   const lastDay = createLocalDate(currentYear, currentMonth + 1, 0);
   const startWeekday = firstDay.getDay();
   const totalDays = lastDay.getDate();
+
+  console.log('月曆資訊:', {
+    firstDay,
+    lastDay,
+    startWeekday,
+    totalDays,
+    noServiceDates
+  });
 
   // 上個月的日期
   const prevMonthLastDay = createLocalDate(currentYear, currentMonth, 0).getDate();
@@ -392,6 +413,8 @@ async function renderCalendar() {
     
     const isPast = date < today && formatted !== todayFormatted;
     const isNoService = noServiceDates[formatted];
+    
+    console.log(`日期 ${formatted}:`, { isPast, isNoService });
     
     if (isNoService || isPast) {
       dayElement.classList.add('no-service');
@@ -420,6 +443,8 @@ async function renderCalendar() {
     dayElement.textContent = d;
     cal.appendChild(dayElement);
   }
+  
+  console.log('月曆渲染完成');
 }
 
 async function selectDate(date, dayNumber) {
@@ -442,6 +467,7 @@ async function selectDate(date, dayNumber) {
   document.getElementById('selectedDate').innerHTML = `✅ 已選擇日期：${date} (${currentYear}年${currentMonth + 1}月${dayNumber}日)`;
   document.getElementById('selectedDate').style.display = 'block';
   document.getElementById('holidayNotice').style.display = 'none';
+  document.getElementById('calendarBtn').textContent = '📅 打開月曆';
   
   document.getElementById('routeSection').style.display = 'block';
   loadSeatStatus();
