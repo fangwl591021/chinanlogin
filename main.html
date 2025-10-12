@@ -233,10 +233,13 @@ async function loadExistingReservations() {
   }
 }
 
-// === 顯示當前預約卡片 ===
+// === 顯示當前預約卡片（支援取消） ===
 function renderCurrentReservationCard() {
   const section = document.getElementById('currentReservationCard');
   const formSection = document.getElementById('reservationFormSection');
+
+  // 清空現有卡片
+  section.innerHTML = '';
 
   if (existingReservations.length === 0) {
     showEmptyReservationCard();
@@ -245,38 +248,61 @@ function renderCurrentReservationCard() {
 
   const today = formatDateToLocal(new Date());
   const activeReservations = existingReservations
-    .filter(reservation => reservation.date >= today && reservation.status !== 'cancelled')
+    .filter(res => res.date >= today && res.status !== '已取消')
     .sort((a, b) => a.date.localeCompare(b.date));
-  
+
   if (activeReservations.length === 0) {
     showEmptyReservationCard();
     return;
   }
-  
-  // 顯示最近的預約
-  const latestReservation = activeReservations[0];
-  
-  // 更新卡片內容 - 使用真實的預約數據
-  document.getElementById('reservationDate').textContent = latestReservation.date + ' 08:00:00';
-  
-  // 解析路線資訊
-  let routeDisplay = '';
-  if (latestReservation.routeName) {
-    routeDisplay = latestReservation.routeName.replace('→', '→');
-  } else {
-    const routeInfo = routeTimes[latestReservation.route] || { time: '', direction: '' };
-    routeDisplay = `${latestReservation.route} | ${routeInfo.time} ${routeInfo.direction}`;
-  }
-  document.getElementById('reservationRoute').textContent = routeDisplay;
-  
-  document.getElementById('reservationName').textContent = latestReservation.name;
-  document.getElementById('reservationPhone').textContent = latestReservation.phone || userData.phone || '';
-  document.getElementById('reservationFrom').textContent = latestReservation.fromStop;
-  document.getElementById('reservationTo').textContent = latestReservation.toStop;
-  
+
+  activeReservations.forEach(res => {
+    // ✅ 格式化日期（只保留 YYYY-MM-DD）
+    const dateOnly = res.date.split('T')[0];
+
+    // ✅ 解析班次
+    const routeInfo = routeTimes[res.route] || { time: '', direction: '' };
+    const routeDisplay = `${res.route} | ${routeInfo.time} ${routeInfo.direction}`;
+
+    // ✅ 建立卡片
+    const card = document.createElement('div');
+    card.className = 'reservation-card';
+    card.innerHTML = `
+      <div class="reservation-header">穿山甲專車預約</div>
+      <div class="reservation-body">
+        <div class="reservation-line">
+          <span class="reservation-label">日期：</span>
+          <span class="reservation-value">${dateOnly}</span>
+        </div>
+        <div class="reservation-line">
+          <span class="reservation-label">班次：</span>
+          <span class="reservation-value">${routeDisplay}</span>
+        </div>
+        <div class="reservation-line">
+          <span class="reservation-label">姓名：</span>
+          <span class="reservation-value">${res.name}</span>
+        </div>
+        <div class="reservation-line">
+          <span class="reservation-label">電話：</span>
+          <span class="reservation-value">${res.phone || ''}</span>
+        </div>
+        <div class="reservation-line">
+          <span class="reservation-label">上車：</span>
+          <span class="reservation-value">${res.fromStop}</span>
+          <span style="margin-left:20px;"></span>
+          <span class="reservation-label">下車：</span>
+          <span class="reservation-value">${res.toStop}</span>
+        </div>
+        <button class="cancel-btn" onclick="cancelReservation('${res.id}')">❌ 取消預約</button>
+      </div>
+    `;
+    section.appendChild(card);
+  });
+
   section.style.display = 'block';
   formSection.style.display = 'none';
 }
+
 
 // === 顯示空預約卡片 ===
 function showEmptyReservationCard() {
