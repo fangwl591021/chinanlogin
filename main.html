@@ -31,7 +31,7 @@
     .calendar-header { padding:6px 0; font-weight:bold; background:#f0f0f0; border-radius:3px; font-size:12px; }
     .calendar-day { padding:4px 0; border-radius:4px; background:#fff; border:1px solid #e0e0e0; cursor:pointer; min-height:30px; display:flex; flex-direction:column; justify-content:center; }
     .calendar-day:hover { background:#e8f5e9; }
-    .calendar-day.holiday { background:#ffe6e6; color:#999; cursor:not-allowed; }
+    .calendar-day.no-service { background:#ffe6e6; color:#999; cursor:not-allowed; }
     .calendar-day.selected { background:#3c8050; color:#fff; font-weight:bold; }
     .calendar-day.other-month { color:#ccc; }
     .calendar-day.today { border:2px solid #3c8050; }
@@ -191,7 +191,7 @@ let selectedRoute = null;
 let userData = null;
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
-let holidays = {}; // 儲存停駛日期
+let noServiceDates = {}; // 儲存真正停駛的日期
 
 const stopsOutbound = ["行政大樓","中餐廳","科技學院","學人會館","中城","下城","坪頂","愛蘭橋","大成國小","中山安七街口","榮民診所","埔里酒廠","埔里總站"];
 const stopsReturn = ["埔里總站","埔里酒廠","榮民診所","中山安七街口","大成國小","愛蘭橋","坪頂","下城","中城","學人會館","科技學院","中餐廳","行政大樓"];
@@ -226,12 +226,14 @@ const routeTimes = {
   document.getElementById('userInfo').innerText = `👤 ${userData.name}\n🏫 ${userData.department}｜${userData.studentId}`;
   
   // 載入停駛日期
-  await loadHolidays();
+  await loadNoServiceDates();
 })();
 
-// === 載入停駛日期 ===
-async function loadHolidays() {
+// === 載入真正停駛的日期 ===
+async function loadNoServiceDates() {
   try {
+    console.log('正在載入停駛日期，日曆ID:', CALENDAR_ID);
+    
     // 載入當月停駛日期
     const startDate = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
     const endDate = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
@@ -239,8 +241,16 @@ async function loadHolidays() {
     const res = await fetch(`${WORKER_URL}?mode=calendar&start=${startDate}&end=${endDate}&calendarId=${CALENDAR_ID}`);
     const result = await res.json();
     
-    if (result.holidays) {
-      holidays = result.holidays;
+    console.log('日曆API回傳結果:', result);
+    
+    if (result.holidays && Array.isArray(result.holidays)) {
+      // 將停駛日期陣列轉換為物件方便查詢
+      result.holidays.forEach(date => {
+        noServiceDates[date] = true;
+      });
+      console.log('停駛日期:', noServiceDates);
+    } else {
+      console.log('沒有停駛日期或格式不正確');
     }
   } catch (error) {
     console.error('載入停駛日期失敗:', error);
@@ -269,7 +279,7 @@ async function changeMonth(direction) {
   }
   
   // 載入新月份的停駛日期
-  await loadHolidays();
+  await loadNoServiceDates();
   await renderCalendar();
 }
 
@@ -319,16 +329,15 @@ async function renderCalendar() {
       dayElement.classList.add('today');
     }
     
-    // 檢查是否為停駛日 (從日曆API取得或週末)
-    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-    const isHoliday = holidays[formatted] || isWeekend;
-    
     // 檢查是否為過去日期
     const isPast = date < today && date.toDateString() !== today.toDateString();
     
-    if (isHoliday || isPast) {
-      dayElement.classList.add('holiday');
-      if (isHoliday) {
+    // 檢查是否為真正停駛日 (從日曆API取得)
+    const isNoService = noServiceDates[formatted];
+    
+    if (isNoService || isPast) {
+      dayElement.classList.add('no-service');
+      if (isNoService) {
         dayElement.innerHTML = `${d}<br><small>停駛</small>`;
       } else if (isPast) {
         dayElement.innerHTML = `${d}<br><small>已過期</small>`;
@@ -357,11 +366,10 @@ async function renderCalendar() {
 }
 
 async function selectDate(date) {
-  // 檢查選擇的日期是否為停駛日
-  const isWeekend = new Date(date).getDay() === 0 || new Date(date).getDay() === 6;
-  const isHoliday = holidays[date] || isWeekend;
+  // 檢查選擇的日期是否為真正停駛日
+  const isNoService = noServiceDates[date];
   
-  if (isHoliday) {
+  if (isNoService) {
     document.getElementById('holidayNotice').style.display = 'block';
     document.getElementById('holidayNotice').innerText = `🚫 ${date} 為停駛日，請選擇其他日期`;
     document.getElementById('selectedDate').style.display = 'none';
