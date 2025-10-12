@@ -129,7 +129,7 @@
       background: #fff;
       border-radius: 8px;
       padding: 0;
-      margin: 8px 0;
+      margin: 16px 0;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       border: 1px solid #e0e0e0;
       overflow: hidden;
@@ -198,6 +198,13 @@
       color: #c62828;
     }
 
+    /* 分隔線 */
+    .divider {
+      height: 1px;
+      background: #e0e0e0;
+      margin: 20px 0;
+    }
+
     @media (max-width:450px){
       .route-btn {
         flex: 0 0 calc(45% - 4px);
@@ -241,6 +248,13 @@
 
     <!-- 預約成功訊息 -->
     <div id="result" style="margin-top:10px;"></div>
+
+    <!-- 新預約卡片顯示區域 - 在月曆按鈕下方 -->
+    <div id="currentReservationCard" style="display:none;">
+      <div class="divider"></div>
+      <h3 style="margin:0 0 15px 0; color:#2e7d32;">🚌 當前預約</h3>
+      <div id="reservationCardContent"></div>
+    </div>
 
     <div id="calendarContainer" style="display:none;margin-top:10px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -375,19 +389,21 @@ async function loadExistingReservations() {
     if (result.success && result.reservations) {
       existingReservations = result.reservations;
       console.log('現有預約:', existingReservations);
+      renderCurrentReservationCard();
       renderExistingReservations();
     } else {
       console.log('沒有現有預約');
+      document.getElementById('currentReservationCard').style.display = 'none';
     }
   } catch (error) {
     console.error('載入預約失敗:', error);
   }
 }
 
-// === 顯示現有預約 - Flex Message 風格 ===
-function renderExistingReservations() {
-  const container = document.getElementById('reservationsList');
-  const section = document.getElementById('existingReservations');
+// === 顯示當前預約卡片 - 在月曆按鈕下方 ===
+function renderCurrentReservationCard() {
+  const container = document.getElementById('reservationCardContent');
+  const section = document.getElementById('currentReservationCard');
 
   if (existingReservations.length === 0) {
     section.style.display = 'none';
@@ -395,11 +411,11 @@ function renderExistingReservations() {
   }
 
   const today = formatDateToLocal(new Date());
-  const futureReservations = existingReservations
-    .filter(reservation => reservation.date >= today)
+  const activeReservations = existingReservations
+    .filter(reservation => reservation.date >= today && reservation.status !== 'cancelled')
     .sort((a, b) => a.date.localeCompare(b.date));
   
-  if (futureReservations.length === 0) {
+  if (activeReservations.length === 0) {
     section.style.display = 'none';
     return;
   }
@@ -407,63 +423,64 @@ function renderExistingReservations() {
   section.style.display = 'block';
   container.innerHTML = '';
   
-  futureReservations.forEach(reservation => {
-    const card = document.createElement('div');
-    card.className = 'reservation-card';
-    
-    // 解析路線資訊
-    const routeParts = reservation.routeName ? reservation.routeName.split('|') : [reservation.route, ''];
-    const routeCode = routeParts[0].trim();
-    const timeAndDirection = routeParts[1] ? routeParts[1].trim() : '';
-    
-    const status = reservation.status === 'cancelled' ? '已取消' : '預約成功';
-    const statusClass = reservation.status === 'cancelled' ? 'status-cancelled' : 'status-active';
-    
-    card.innerHTML = `
-      <div class="reservation-header">
-        🚌 穿山甲專車預約
-        <span class="status-badge ${statusClass}">${status}</span>
+  // 只顯示最近的預約
+  const latestReservation = activeReservations[0];
+  
+  const card = document.createElement('div');
+  card.className = 'reservation-card';
+  
+  // 解析路線資訊
+  const routeParts = latestReservation.routeName ? latestReservation.routeName.split('|') : [latestReservation.route, ''];
+  const routeCode = routeParts[0].trim();
+  const timeAndDirection = routeParts[1] ? routeParts[1].trim() : '';
+  
+  const status = latestReservation.status === 'cancelled' ? '已取消' : '預約成功';
+  const statusClass = latestReservation.status === 'cancelled' ? 'status-cancelled' : 'status-active';
+  
+  card.innerHTML = `
+    <div class="reservation-header">
+      🚌 穿山甲專車新預約
+      <span class="status-badge ${statusClass}">${status}</span>
+    </div>
+    <div class="reservation-body">
+      <div class="reservation-detail">
+        <span class="reservation-detail-label">日期：</span>
+        <span class="reservation-detail-value">${latestReservation.date}</span>
       </div>
-      <div class="reservation-body">
-        <div class="reservation-detail">
-          <span class="reservation-detail-label">日期：</span>
-          <span class="reservation-detail-value">${reservation.date}</span>
-        </div>
-        <div class="reservation-detail">
-          <span class="reservation-detail-label">班次：</span>
-          <span class="reservation-detail-value">${routeCode} | ${timeAndDirection}</span>
-        </div>
-        <div class="reservation-detail">
-          <span class="reservation-detail-label">姓名：</span>
-          <span class="reservation-detail-value">${reservation.name}</span>
-        </div>
-        <div class="reservation-detail">
-          <span class="reservation-detail-label">電話：</span>
-          <span class="reservation-detail-value">${reservation.phone || ''}</span>
-        </div>
-        <div class="reservation-detail">
-          <span class="reservation-detail-label">上車：</span>
-          <span class="reservation-detail-value">${reservation.fromStop}</span>
-        </div>
-        <div class="reservation-detail">
-          <span class="reservation-detail-label">下車：</span>
-          <span class="reservation-detail-value">${reservation.toStop}</span>
-        </div>
+      <div class="reservation-detail">
+        <span class="reservation-detail-label">班次：</span>
+        <span class="reservation-detail-value">${routeCode} | ${timeAndDirection}</span>
       </div>
-      <div class="reservation-footer">
-        ${reservation.status !== 'cancelled' ? 
-          `<button class="cancel-btn" onclick="cancelReservation('${reservation.id || reservation.reservationId}', '${reservation.date}', '${reservation.route}')">取消預約</button>` : 
-          '<button class="cancel-btn" disabled>已取消</button>'
-        }
+      <div class="reservation-detail">
+        <span class="reservation-detail-label">姓名：</span>
+        <span class="reservation-detail-value">${latestReservation.name}</span>
       </div>
-    `;
-    
-    container.appendChild(card);
-  });
+      <div class="reservation-detail">
+        <span class="reservation-detail-label">電話：</span>
+        <span class="reservation-detail-value">${latestReservation.phone || ''}</span>
+      </div>
+      <div class="reservation-detail">
+        <span class="reservation-detail-label">上車：</span>
+        <span class="reservation-detail-value">${latestReservation.fromStop}</span>
+      </div>
+      <div class="reservation-detail">
+        <span class="reservation-detail-label">下車：</span>
+        <span class="reservation-detail-value">${latestReservation.toStop}</span>
+      </div>
+    </div>
+    <div class="reservation-footer">
+      ${latestReservation.status !== 'cancelled' ? 
+        `<button class="cancel-btn" onclick="cancelCurrentReservation('${latestReservation.id || latestReservation.reservationId}', '${latestReservation.date}', '${latestReservation.route}')">取消預約</button>` : 
+        '<button class="cancel-btn" disabled>已取消</button>'
+      }
+    </div>
+  `;
+  
+  container.appendChild(card);
 }
 
-// === 取消預約 ===
-async function cancelReservation(reservationId, date, route) {
+// === 取消當前預約 ===
+async function cancelCurrentReservation(reservationId, date, route) {
   if (!confirm('確定要取消這個預約嗎？')) {
     return;
   }
@@ -496,6 +513,119 @@ async function cancelReservation(reservationId, date, route) {
         reservation.status = 'cancelled';
       }
       
+      await loadExistingReservations();
+      document.getElementById('result').innerHTML = 
+        `<div class="notice success">✅ 已成功取消預約</div>`;
+      setTimeout(() => {
+        document.getElementById('result').innerHTML = '';
+      }, 3000);
+    } else {
+      document.getElementById('result').innerHTML =
+        `<div class="notice error">❌ 取消預約失敗：${result.message || '請稍後再試'}</div>`;
+    }
+  } catch (error) {
+    console.error('取消預約錯誤:', error);
+    document.getElementById('result').innerHTML =
+      `<div class="notice error">❌ 取消預約失敗，請檢查網路連線</div>`;
+  }
+}
+
+// === 顯示歷史預約記錄 ===
+function renderExistingReservations() {
+  const container = document.getElementById('reservationsList');
+  const section = document.getElementById('existingReservations');
+
+  if (existingReservations.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  const today = formatDateToLocal(new Date());
+  const futureReservations = existingReservations
+    .filter(reservation => reservation.date >= today)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  
+  if (futureReservations.length <= 1) { // 只有當前預約或沒有預約時隱藏歷史記錄
+    section.style.display = 'none';
+    return;
+  }
+  
+  section.style.display = 'block';
+  container.innerHTML = '';
+  
+  // 跳過第一個（當前預約），顯示其他預約
+  futureReservations.slice(1).forEach(reservation => {
+    const card = document.createElement('div');
+    card.className = 'reservation-card';
+    
+    const routeParts = reservation.routeName ? reservation.routeName.split('|') : [reservation.route, ''];
+    const routeCode = routeParts[0].trim();
+    const timeAndDirection = routeParts[1] ? routeParts[1].trim() : '';
+    
+    const status = reservation.status === 'cancelled' ? '已取消' : '預約成功';
+    const statusClass = reservation.status === 'cancelled' ? 'status-cancelled' : 'status-active';
+    
+    card.innerHTML = `
+      <div class="reservation-header">
+        🚌 穿山甲專車預約
+        <span class="status-badge ${statusClass}">${status}</span>
+      </div>
+      <div class="reservation-body">
+        <div class="reservation-detail">
+          <span class="reservation-detail-label">日期：</span>
+          <span class="reservation-detail-value">${reservation.date}</span>
+        </div>
+        <div class="reservation-detail">
+          <span class="reservation-detail-label">班次：</span>
+          <span class="reservation-detail-value">${routeCode} | ${timeAndDirection}</span>
+        </div>
+        <div class="reservation-detail">
+          <span class="reservation-detail-label">上車：</span>
+          <span class="reservation-detail-value">${reservation.fromStop}</span>
+        </div>
+        <div class="reservation-detail">
+          <span class="reservation-detail-label">下車：</span>
+          <span class="reservation-detail-value">${reservation.toStop}</span>
+        </div>
+      </div>
+      <div class="reservation-footer">
+        ${reservation.status !== 'cancelled' ? 
+          `<button class="cancel-btn" onclick="cancelReservation('${reservation.id || reservation.reservationId}', '${reservation.date}', '${reservation.route}')">取消預約</button>` : 
+          '<button class="cancel-btn" disabled>已取消</button>'
+        }
+      </div>
+    `;
+    
+    container.appendChild(card);
+  });
+}
+
+// === 取消預約（歷史記錄用）===
+async function cancelReservation(reservationId, date, route) {
+  if (!confirm('確定要取消這個預約嗎？')) {
+    return;
+  }
+
+  try {
+    const data = {
+      type: 'cancel',
+      reservationId: reservationId,
+      userId: userData.userId,
+      date: date,
+      route: route
+    };
+
+    console.log('取消預約資料:', data);
+
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    });
+
+    const result = await res.json();
+
+    if(result.status === 'success'){
       await loadExistingReservations();
       document.getElementById('result').innerHTML = 
         `<div class="notice success">✅ 已成功取消預約</div>`;
