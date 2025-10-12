@@ -16,15 +16,69 @@
     </div>
 
     <div class="space-y-3">
-      <input id="name" type="text" placeholder="姓名" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
-      <input id="phone" type="tel" placeholder="電話" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
-      <input id="studentId" type="text" placeholder="學號" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
-      <input id="department" type="text" placeholder="科系" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
+  <input id="name" type="text" placeholder="姓名" 
+    class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
+  
+  <input id="phone" type="tel" placeholder="電話" 
+    class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
+  
+  <input id="studentId" type="text" placeholder="學號" 
+    class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
+  
+  <!-- ✅ 下拉式選單（取代原本的 input） -->
+  <select id="department" 
+    class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
+    <option value="">請選擇科系</option>
 
-      <button onclick="registerUser()" class="w-full bg-green-500 text-white py-2 rounded-lg font-bold text-lg hover:bg-green-600 transition">
-        立即註冊
-      </button>
-    </div>
+    <optgroup label="人文學院" style="color:green;">
+      <option value="中國語文學系">中國語文學系</option>
+      <option value="外國語文學系">外國語文學系</option>
+      <option value="社會政策與社會工作學系">社會政策與社會工作學系</option>
+      <option value="公共行政與政策學系">公共行政與政策學系</option>
+      <option value="歷史學系">歷史學系</option>
+      <option value="東南亞學系">東南亞學系</option>
+      <option value="原鄉發展跨領域學士學位學程原住民專班">原鄉發展跨領域學士學位學程原住民專班</option>
+    </optgroup>
+
+    <optgroup label="管理學院" style="color:green;">
+      <option value="國際企業學系">國際企業學系</option>
+      <option value="經濟學系">經濟學系</option>
+      <option value="財務金融學系">財務金融學系</option>
+      <option value="資訊管理學系">資訊管理學系</option>
+      <option value="觀光休閒與餐旅管理學系">觀光休閒與餐旅管理學系</option>
+      <option value="管理學院學士班">管理學院學士班</option>
+    </optgroup>
+
+    <optgroup label="科技學院" style="color:green;">
+      <option value="資訊工程學系">資訊工程學系</option>
+      <option value="土木工程學系">土木工程學系</option>
+      <option value="電機工程學系">電機工程學系</option>
+      <option value="應用化學系">應用化學系</option>
+      <option value="應用材料及光電工程學系">應用材料及光電工程學系</option>
+      <option value="科技學院學士班">科技學院學士班</option>
+    </optgroup>
+
+    <optgroup label="教育學院" style="color:green;">
+      <option value="國際文教與比較教育學系">國際文教與比較教育學系</option>
+      <option value="教育政策與行政學系">教育政策與行政學系</option>
+      <option value="諮商心理與人力資源發展學系">諮商心理與人力資源發展學系</option>
+    </optgroup>
+
+    <optgroup label="水沙連學院" style="color:green;">
+      <option value="水沙連學院學士班">水沙連學院學士班</option>
+    </optgroup>
+
+    <optgroup label="護理暨健康福祉學院" style="color:green;">
+      <option value="護理學系">護理學系</option>
+    </optgroup>
+  </select>
+
+  <button onclick="registerUser()" 
+    class="w-full bg-green-500 text-white py-2 rounded-lg font-bold text-lg hover:bg-green-600 transition">
+    立即註冊
+  </button>
+</div>
+
 
     <div class="mt-4 text-center text-sm text-gray-500">
       本系統僅用於接駁車服務，不對外公開個資。
@@ -43,13 +97,11 @@
 
     async function registerUser() {
   const profile = await liff.getProfile();
-  const data = {
-    userId: profile.userId,
-    name: document.getElementById('name').value.trim(),
-    phone: document.getElementById('phone').value.trim(),
-    studentId: document.getElementById('studentId').value.trim(),
-    department: document.getElementById('department').value.trim()
-  };
+  department: document.getElementById('department').value
+if (!data.department) {
+  alert('⚠️ 請選擇科系');
+  return;
+}
 
   console.log('📤 送出資料', data);
 
