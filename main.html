@@ -211,6 +211,20 @@ const routeTimes = {
   'B2': { time: '23:30-24:00', direction: '埔里總站→暨大' }
 };
 
+// === 日期工具函數 - 修正時區問題 ===
+function formatDateToLocal(date) {
+  // 使用本地時間格式化日期，避免時區問題
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function createLocalDate(year, month, day) {
+  // 創建本地時間的日期物件
+  return new Date(year, month, day);
+}
+
 // === 初始化 ===
 async function init() {
   try {
@@ -286,14 +300,13 @@ async function init() {
 init();
 
 // === 載入真正停駛的日期 ===
-// === 載入真正停駛的日期 ===
 async function loadNoServiceDates() {
   try {
     console.log('正在載入停駛日期，日曆ID:', CALENDAR_ID);
     
-    // 載入當月和前後月份的停駛日期（避免跨月問題）
-    const startDate = new Date(currentYear, currentMonth - 1, 1).toISOString().split('T')[0];
-    const endDate = new Date(currentYear, currentMonth + 2, 0).toISOString().split('T')[0];
+    // 使用本地時間計算日期範圍
+    const startDate = formatDateToLocal(new Date(currentYear, currentMonth - 1, 1));
+    const endDate = formatDateToLocal(new Date(currentYear, currentMonth + 2, 0));
     
     console.log('查詢日期範圍:', startDate, '到', endDate);
     
@@ -391,13 +404,13 @@ async function renderCalendar() {
   });
 
   const today = new Date();
-  const firstDay = new Date(currentYear, currentMonth, 1);
-  const lastDay = new Date(currentYear, currentMonth + 1, 0);
+  const firstDay = createLocalDate(currentYear, currentMonth, 1);
+  const lastDay = createLocalDate(currentYear, currentMonth + 1, 0);
   const startWeekday = firstDay.getDay();
   const totalDays = lastDay.getDate();
 
   // 上個月的日期
-  const prevMonthLastDay = new Date(currentYear, currentMonth, 0).getDate();
+  const prevMonthLastDay = createLocalDate(currentYear, currentMonth, 0).getDate();
   for (let i = startWeekday - 1; i >= 0; i--) {
     const dayElement = document.createElement('div');
     dayElement.className = 'calendar-day other-month';
@@ -407,18 +420,19 @@ async function renderCalendar() {
 
   // 這個月的日期
   for (let d = 1; d <= totalDays; d++) {
-    const date = new Date(currentYear, currentMonth, d);
-    const formatted = date.toISOString().split('T')[0];
+    const date = createLocalDate(currentYear, currentMonth, d);
+    const formatted = formatDateToLocal(date); // 使用本地時間格式化
     const dayElement = document.createElement('div');
     dayElement.className = 'calendar-day';
     
-    // 檢查是否為今天
-    if (date.toDateString() === today.toDateString()) {
+    // 檢查是否為今天 - 使用本地時間比較
+    const todayFormatted = formatDateToLocal(today);
+    if (formatted === todayFormatted) {
       dayElement.classList.add('today');
     }
     
-    // 檢查是否為過去日期
-    const isPast = date < today && date.toDateString() !== today.toDateString();
+    // 檢查是否為過去日期 - 使用本地時間比較
+    const isPast = date < today && formatted !== todayFormatted;
     
     // 檢查是否為真正停駛日 (從日曆API取得)
     const isNoService = noServiceDates[formatted];
@@ -432,7 +446,7 @@ async function renderCalendar() {
       }
     } else {
       dayElement.textContent = d;
-      dayElement.onclick = () => selectDate(formatted);
+      dayElement.onclick = () => selectDate(formatted, d); // 傳遞日期和日期數字
     }
     
     // 標記已選擇的日期
@@ -453,7 +467,9 @@ async function renderCalendar() {
   }
 }
 
-async function selectDate(date) {
+async function selectDate(date, dayNumber) {
+  console.log('選擇日期:', date, '對應的日曆數字:', dayNumber);
+  
   // 檢查選擇的日期是否為真正停駛日
   const isNoService = noServiceDates[date];
   
@@ -470,7 +486,7 @@ async function selectDate(date) {
   
   selectedDate = date;
   document.getElementById('calendarContainer').style.display = 'none';
-  document.getElementById('selectedDate').innerHTML = '✅ 已選擇日期：' + date;
+  document.getElementById('selectedDate').innerHTML = `✅ 已選擇日期：${date} (${currentYear}年${currentMonth + 1}月${dayNumber}日)`;
   document.getElementById('selectedDate').style.display = 'block';
   document.getElementById('holidayNotice').style.display = 'none';
   
