@@ -1,18 +1,38 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>學生註冊</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>暨大接駁車 - 學生註冊</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h2>學生註冊</h2>
-  <input id="email" type="email" placeholder="請輸入 Email"><br>
-  <button onclick="register()">註冊</button>
+<body class="bg-gradient-to-br from-green-100 to-blue-100 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+    <div class="text-center mb-6">
+      <img src="https://scdn.line-apps.com/n/line_logo.png" alt="LINE" class="w-16 mx-auto mb-3">
+      <h1 class="text-2xl font-bold text-gray-800">接駁車學生註冊</h1>
+      <p class="text-gray-500 text-sm mt-1">請使用 LINE 登入並填寫資料</p>
+    </div>
+
+    <div class="space-y-3">
+      <input id="name" type="text" placeholder="姓名" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
+      <input id="phone" type="tel" placeholder="電話" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
+      <input id="studentId" type="text" placeholder="學號" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
+      <input id="department" type="text" placeholder="科系" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
+
+      <button onclick="registerUser()" class="w-full bg-green-500 text-white py-2 rounded-lg font-bold text-lg hover:bg-green-600 transition">
+        立即註冊
+      </button>
+    </div>
+
+    <div class="mt-4 text-center text-sm text-gray-500">
+      本系統僅用於接駁車服務，不對外公開個資。
+    </div>
+  </div>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwORinczKDXCIeWrd1f9AoDgr-Gbzir1QO6LoT5c6uM5Z0lh57xzI1WsYkQgY9uQXYTHw/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzReT08J4bIlmuGfkANn0hCHsPuVu5G07tAufEd15Kt-xn79Km75KsPUWoPoUUjxNVJ1g/exec"; // 👈 貼上剛剛部署的 GAS 網址
 
     async function main() {
       await liff.init({ liffId: "2006590746-KJodGOda" });
@@ -21,25 +41,38 @@
       }
     }
 
-    async function register() {
+    async function registerUser() {
       const profile = await liff.getProfile();
-      const userData = {
+      const data = {
         userId: profile.userId,
-        name: profile.displayName,
-        email: document.getElementById('email').value
+        name: document.getElementById('name').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        studentId: document.getElementById('studentId').value.trim(),
+        department: document.getElementById('department').value.trim()
       };
 
-      const res = await fetch(GAS_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userData)
-      });
+      if (!data.name || !data.phone || !data.studentId || !data.department) {
+        alert('⚠️ 請完整填寫所有欄位');
+        return;
+      }
 
-      const result = await res.json();
-      if (result.status === 'success') {
-        alert('✅ 註冊成功！');
-      } else {
-        alert('❌ 錯誤：' + result.message);
+      try {
+        const res = await fetch(GAS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+        if (result.status === 'success') {
+          alert('✅ 註冊成功，感謝使用！');
+          liff.closeWindow();
+        } else {
+          alert('❌ 發生錯誤：' + result.message);
+        }
+      } catch (error) {
+        console.error(error);
+        alert('❌ 註冊失敗，請稍後再試');
       }
     }
 
