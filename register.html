@@ -6,19 +6,25 @@
   <title>暨大接駁車 - 學生註冊</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .fade-in { animation: fadeIn 0.5s ease-in-out forwards; }
+    @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+  </style>
 </head>
-<body class="bg-gradient-to-br from-green-100 to-blue-100 min-h-screen flex items-center justify-center p-4">
+<body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen flex items-center justify-center p-4">
 
-  <!-- ⏳ 登入中畫面 -->
-  <div id="loading" class="text-center">
-    <div class="mb-4 text-green-700 text-xl font-bold">登入中，請稍候...</div>
-    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600 mx-auto"></div>
+  <!-- 🟢 開場 LOGO + Loading -->
+  <div id="splash" class="flex flex-col items-center justify-center w-full h-screen fade-in">
+    <img src="https://aiwe.cc/wp-content/uploads/2025/10/5d7b9adcbe1c629ec722529dd12e5129.png" alt="LOGO" class="w-40 mb-6 animate-bounce">
+    <div class="flex items-center space-x-2 text-green-700 font-semibold text-lg">
+      <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
+      <span>登入中，請稍候...</span>
+    </div>
   </div>
 
   <!-- 📝 註冊表單 -->
-  <div id="registerForm" class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm hidden">
+  <div id="registerForm" class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm hidden fade-in">
     <div class="text-center mb-6">
-      <img src="https://scdn.line-apps.com/n/line_logo.png" alt="LINE" class="w-16 mx-auto mb-3">
       <h1 class="text-2xl font-bold text-gray-800">接駁車學生註冊</h1>
       <p class="text-gray-500 text-sm mt-1">請填寫資料完成註冊</p>
     </div>
@@ -79,7 +85,6 @@
 
 <script>
 const GAS_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
-
 let currentUserId = null;
 
 (async function init() {
@@ -89,25 +94,27 @@ let currentUserId = null;
       liff.login();
       return;
     }
+
     const profile = await liff.getProfile();
     currentUserId = profile.userId;
+
+    // 模擬 Loading 開場 2~3 秒
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     // 👉 登入後先檢查是否註冊
     const res = await fetch(`${GAS_URL}?check=${currentUserId}`);
     const result = await res.json();
 
     if (result.registered) {
-      // 已註冊 → 直接導頁
       window.location.href = 'main.html';
     } else {
-      // 未註冊 → 顯示表單
-      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('splash').style.display = 'none';
       document.getElementById('registerForm').classList.remove('hidden');
     }
 
   } catch (err) {
     console.error('登入檢查錯誤', err);
-    alert('系統發生錯誤，請稍後再試');
+    alert('⚠️ 系統發生錯誤，請稍後再試');
   }
 })();
 
@@ -139,7 +146,6 @@ async function registerUser() {
     });
     const result = await res.json();
     if (result.status === 'success') {
-      alert('✅ 註冊成功！');
       window.location.href = 'main.html';
     } else {
       alert('❌ 註冊失敗，請稍後再試');
