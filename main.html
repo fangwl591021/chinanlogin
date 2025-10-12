@@ -643,7 +643,149 @@ function selectRoute(btn, id, direction) {
   btn.classList.add('selected');
   updateStops(direction);
 }
+// 產生預約記錄的 Flex Message
+function generateReservationFlexMessage(reservation) {
+  // 解析路線資訊
+  const routeParts = reservation.route.split('|');
+  const routeCode = routeParts[0].trim(); // A1
+  const timeAndDirection = routeParts[1] ? routeParts[1].trim() : '';
+  const [time, direction] = timeAndDirection.split(' ');
+  
+  return {
+    type: "bubble",
+    header: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "text",
+          text: "🚌 穿山甲專車新預約",
+          weight: "bold",
+          color: "#ffffff",
+          size: "lg"
+        }
+      ],
+      backgroundColor: "#3c8050",
+      paddingAll: "15px"
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "text",
+          text: `日期：${reservation.date}`,
+          size: "sm",
+          color: "#555555",
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: `班次：${routeCode} | ${time}`,
+          size: "sm",
+          color: "#555555",
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: `姓名：${reservation.name}`,
+          size: "sm",
+          color: "#555555",
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: `電話：${reservation.phone}`,
+          size: "sm",
+          color: "#555555",
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: `上車：${reservation.fromStop}`,
+          size: "sm",
+          color: "#555555",
+          margin: "md"
+        },
+        {
+          type: "text",
+          text: `下車：${reservation.toStop}`,
+          size: "sm",
+          color: "#555555",
+          margin: "md"
+        }
+      ],
+      spacing: "md",
+      paddingAll: "15px"
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          action: {
+            type: "uri",
+            label: "取消預約",
+            uri: `https://liff.line.me/2006590746-KJodGOda?cancel=${reservation.id}`
+          },
+          style: "primary",
+          color: "#f44336",
+          height: "sm"
+        }
+      ],
+      spacing: "sm",
+      paddingAll: "15px"
+    }
+  };
+}
 
+// 發送所有預約記錄的 Flex Messages
+async function sendReservationFlexMessages(reservations) {
+  if (!reservations || reservations.length === 0) {
+    return;
+  }
+
+  const flexMessages = reservations.map(reservation => 
+    generateReservationFlexMessage(reservation)
+  );
+
+  try {
+    await liff.sendMessages([
+      {
+        type: 'flex',
+        altText: '您的預約記錄',
+        contents: {
+          type: 'carousel',
+          contents: flexMessages
+        }
+      }
+    ]);
+    console.log('Flex Messages 發送成功');
+  } catch (error) {
+    console.error('發送 Flex Messages 失敗:', error);
+  }
+}
+
+// 使用範例：在載入預約後發送 Flex Message
+async function loadAndSendReservations() {
+  try {
+    const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
+    const result = await res.json();
+
+    if (result.success && result.reservations && result.reservations.length > 0) {
+      existingReservations = result.reservations;
+      
+      // 發送 Flex Message
+      await sendReservationFlexMessages(result.reservations);
+      
+      // 也在網頁上顯示
+      renderExistingReservations();
+    }
+  } catch (error) {
+    console.error('載入預約失敗:', error);
+  }
+}
 function updateStops(routeDirection) {
   const toStop = document.getElementById('toStop');
   toStop.innerHTML = '<option value="">請選擇下車站</option>';
