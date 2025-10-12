@@ -124,6 +124,13 @@
       display: none;
     }
 
+    /* 載入狀態 */
+    .loading-state {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+
     @media (max-width:480px){
       .route-btn {
         flex: 0 0 calc(50% - 4px);
@@ -153,11 +160,11 @@
 
   <div class="card">
     <div id="userInfo" style="margin-bottom:15px;line-height:1.5;color:#2e7d32;font-weight:bold;">
-      👤 使用者資訊載入中...
+      <div class="loading-state">⏳ 系統初始化中...</div>
     </div>
 
     <label><center>選擇搭乘日期</center></label>
-    <button onclick="toggleCalendar()">📅 打開月曆</button>
+    <button id="calendarBtn" onclick="toggleCalendar()" disabled>📅 載入中...</button>
     <div id="calendarContainer" style="display:none;margin-top:10px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <button onclick="changeMonth(-1)" style="width:auto; padding:5px 10px;">◀ 上個月</button>
@@ -205,29 +212,78 @@ const routeTimes = {
 };
 
 // === 初始化 ===
-(async function init(){
-  await liff.init({ liffId: "2006590746-KJodGOda" });
-  if (!liff.isLoggedIn()) {
-    liff.login();
-    return;
-  }
+async function init() {
+  try {
+    console.log('開始初始化 LIFF...');
+    
+    // 初始化 LIFF
+    await liff.init({ 
+      liffId: "2006590746-KJodGOda" 
+    });
+    console.log('LIFF 初始化成功');
 
-  const profile = await liff.getProfile();
-  const res = await fetch(`${WORKER_URL}?check=${profile.userId}`);
-  const result = await res.json();
-  
-  if (!result.registered) {
-    window.location.href = 'register.html';
-    return;
+    if (!liff.isLoggedIn()) {
+      console.log('使用者未登入，開始登入...');
+      liff.login();
+      return;
+    }
+
+    console.log('使用者已登入，取得使用者資料...');
+    const profile = await liff.getProfile();
+    console.log('取得使用者 Profile:', profile);
+
+    // 檢查使用者是否已註冊
+    console.log('檢查使用者註冊狀態...');
+    const res = await fetch(`${WORKER_URL}?check=${profile.userId}`);
+    const result = await res.json();
+    console.log('註冊檢查結果:', result);
+    
+    if (!result.registered) {
+      console.log('使用者未註冊，導向註冊頁面');
+      window.location.href = 'register.html';
+      return;
+    }
+    
+    userData = result.user;
+    console.log('使用者資料:', userData);
+    
+    // 顯示完整的使用者資訊
+    document.getElementById('userInfo').innerHTML = `👤 ${userData.name}<br>🏫 ${userData.department}｜${userData.studentId}`;
+    
+    // 啟用月曆按鈕
+    document.getElementById('calendarBtn').disabled = false;
+    document.getElementById('calendarBtn').textContent = '📅 打開月曆';
+    
+    // 載入停駛日期
+    await loadNoServiceDates();
+    
+    console.log('系統初始化完成');
+    
+  } catch (error) {
+    console.error('初始化失敗:', error);
+    
+    // 顯示錯誤訊息
+    document.getElementById('userInfo').innerHTML = 
+      '<div class="notice error">❌ 系統發生錯誤，請重新整理頁面或稍後再試<br><small>錯誤: ' + error.message + '</small></div>';
+    
+    // 啟用月曆按鈕（離線模式）
+    document.getElementById('calendarBtn').disabled = false;
+    document.getElementById('calendarBtn').textContent = '📅 打開月曆（離線模式）';
+    
+    // 使用模擬資料
+    userData = {
+      userId: 'offline-user',
+      name: '測試使用者',
+      department: '測試學系',
+      studentId: '00000000'
+    };
+    
+    document.getElementById('userInfo').innerHTML = `👤 ${userData.name}<br>🏫 ${userData.department}｜${userData.studentId}<br><small style="color: #666;">離線模式</small>`;
   }
-  
-  userData = result.user;
-  // 顯示完整的使用者資訊
-  document.getElementById('userInfo').innerText = `👤 ${userData.name}\n🏫 ${userData.department}｜${userData.studentId}`;
-  
-  // 載入停駛日期
-  await loadNoServiceDates();
-})();
+}
+
+// 啟動初始化
+init();
 
 // === 載入真正停駛的日期 ===
 async function loadNoServiceDates() {
@@ -254,6 +310,8 @@ async function loadNoServiceDates() {
     }
   } catch (error) {
     console.error('載入停駛日期失敗:', error);
+    // 如果載入失敗，使用空物件（沒有停駛日）
+    noServiceDates = {};
   }
 }
 
