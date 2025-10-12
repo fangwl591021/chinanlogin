@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>穿山甲專車預約</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
 body { font-family: system-ui, sans-serif; background:#f5f6f7; margin:0; padding:0; }
 header { background:#3c8050; color:#fff; text-align:center; padding:15px; font-size:22px; font-weight:bold; }
@@ -59,7 +60,7 @@ label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
 
 <div class="card">
   <div id="userInfo" style="margin-bottom:15px;line-height:1.5;color:#2e7d32;font-weight:bold;">
-    👤 王子齊 bit.ly/遊戲達人<br>🏫 電機工程學系｜114230145
+    👤 載入中...
   </div>
 
   <!-- 日期選擇 -->
@@ -84,13 +85,35 @@ label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
 </div>
 
 <script>
+const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/'; // ✅ 換成你的 Worker 網址
+let userData = null;
 let selectedDate = null;
 let selectedRoute = null;
 
-// 模擬使用者資料
-const userData = { name: "王子齊 bit.ly/遊戲達人", phone: "0912345678", dept: "電機工程學系", schoolId: "114230145" };
+// === 初始化 LINE 登入 ===
+async function initLogin() {
+  await liff.init({ liffId: "2006590746-KJodGOda" });
+  if (!liff.isLoggedIn()) {
+    liff.login();
+    return;
+  }
+  const profile = await liff.getProfile();
+  const res = await fetch(`${WORKER_URL}?check=${profile.userId}`);
+  const result = await res.json();
 
-// 停靠站（正向/返程）
+  if (!result.registered) {
+    window.location.href = 'register.html';
+    return;
+  }
+
+  userData = result.user;
+  document.getElementById('userInfo').innerHTML =
+    `👤 ${userData.name}<br>🏫 ${userData.department}｜${userData.studentId}`;
+}
+
+initLogin();
+
+// === 停靠站（正向/返程） ===
 const stopsOutbound = ["行政大樓","中餐廳","科技學院","學人會館","中城","下城","坪頂","愛蘭橋","大成國小","中山安七街口","榮民診所","埔里酒廠","埔里總站"];
 const stopsReturn = ["埔里總站","埔里酒廠","榮民診所","中山安七街口","大成國小","愛蘭橋","坪頂","下城","中城","學人會館","科技學院","中餐廳","行政大樓"];
 
@@ -190,7 +213,7 @@ function updateStops(routeName){
 }
 
 // === 預約 ===
-function submitForm(){
+async function submitForm(){
   const toStop=document.getElementById('toStop').value;
   const btn=document.getElementById('submitBtn');
   if(!selectedDate||!selectedRoute||!toStop){
@@ -198,17 +221,43 @@ function submitForm(){
     return;
   }
   btn.disabled=true; btn.classList.add('loading');
-  setTimeout(()=>{
-    btn.disabled=false; btn.classList.remove('loading');
-    document.getElementById('result').innerHTML=
-      `<div class="notice success">
-        ✅ ${userData.name}<br>
-        日期：${selectedDate}<br>
-        班次：${selectedRoute}<br>
-        下車站：${toStop}<br>
-        <b>預約成功！</b>
-      </div>`;
-  },1000);
+
+  const payload = {
+    type: 'reserve',
+    userId: userData.userId,
+    name: userData.name,
+    phone: userData.phone,
+    route: selectedRoute,
+    fromStop: selectedRoute.includes('A') ? '行政大樓' : '埔里總站',
+    toStop: toStop,
+    date: selectedDate
+  };
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if(result.status === 'success'){
+      document.getElementById('result').innerHTML=
+        `<div class="notice success">
+          ✅ ${userData.name}<br>
+          日期：${selectedDate}<br>
+          班次：${selectedRoute}<br>
+          下車站：${toStop}<br>
+          <b>預約成功！</b>
+        </div>`;
+    } else {
+      alert('預約失敗，請稍後再試');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('系統連線錯誤');
+  }
+
+  btn.disabled=false; btn.classList.remove('loading');
 }
 </script>
 </body>
