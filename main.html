@@ -5,14 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>穿山甲專車預約</title>
   <style>
-    /* 原有的 CSS 樣式保持不變 */
     body { font-family: system-ui, sans-serif; background:#f5f6f7; margin:0; padding:0; }
     header { background:#3c8050; color:#fff; text-align:center; padding:15px; font-size:22px; font-weight:bold; }
     #calendarBtn { 
       width:calc(100% - 32px); background:#3c8050; color:#fff; border:none; 
       padding:12px; border-radius:6px; font-size:16px; font-weight:bold; 
-      margin:10px 16px; cursor:pointer; 
-      position: relative;
+      margin:10px 16px; cursor:pointer; position: relative;
     }
     .loading-dots {
       display: inline-block;
@@ -27,8 +25,6 @@
       40% { content: '..'; }
       60%, 100% { content: '...'; }
     }
-
-    /* 其他原有樣式保持不變 */
     .calendar {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -69,8 +65,6 @@
     }
     .calendar-day.selected { background:#3c8050; color:#fff; font-weight:bold; }
     .calendar-day.other-month { color:#ccc; }
-
-    /* 其他樣式保持不變 */
     .carousel-container { padding: 16px; margin: 20px 0; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin: 20px 16px; }
     .carousel-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #333; text-align: center; }
     .carousel { display: flex; overflow-x: auto; gap: 15px; padding: 10px 5px; scrollbar-width: none; -ms-overflow-style: none; }
@@ -92,7 +86,6 @@
     .route-btn { padding: 12px; border: 2px solid #3c8050; border-radius: 8px; background: white; cursor: pointer; text-align: center; transition: all 0.2s; }
     .route-btn:hover { background: #eaf5ea; }
     .route-btn.selected { background: #3c8050; color: white; }
-    .route-time { font-weight: bold; font-size: 14px; }
     .route-direction { font-size: 12px; margin-top: 4px; }
     .stop-selector { padding: 0 16px; margin: 20px 0; }
     select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; margin-top: 8px; }
@@ -110,18 +103,15 @@
 <body>
   <header>穿山甲專車預約</header>
 
-  <!-- 使用者資訊 -->
   <div id="userInfo" class="user-section">
     <div class="loading-state">⏳ 系統初始化中...</div>
   </div>
 
-  <!-- 📅 月曆按鈕 -->
   <button id="calendarBtn" onclick="toggleCalendar()">
     📅 打開月曆
     <span id="calendarLoading" class="loading-dots" style="display:none"></span>
   </button>
 
-  <!-- 📅 月曆容器 -->
   <div id="calendarContainer" style="display:none;margin-top:10px; padding:0 16px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
       <button onclick="changeMonth(-1)" style="width:auto; padding:5px 10px;">◀ 上個月</button>
@@ -134,13 +124,11 @@
   <div id="selectedDate" class="notice success" style="display:none;"></div>
   <div id="holidayNotice" class="notice error" style="display:none;"></div>
 
-  <!-- 🚌 班次選擇區域 -->
   <div id="routeSection" class="route-section" style="display:none;">
     <h3>請選擇搭乘班次</h3>
     <div id="routeButtons" class="route-buttons"></div>
   </div>
 
-  <!-- 🚏 車站選擇區域 -->
   <div id="stopSection" class="stop-selector" style="display:none;">
     <h3>請選擇下車站</h3>
     <select id="toStop">
@@ -148,10 +136,8 @@
     </select>
   </div>
 
-  <!-- 📝 送出按鈕 -->
   <button id="submitBtn" class="submit-btn" onclick="submitReservation()" style="display:none;">送出預約</button>
 
-  <!-- 🧾 橫向輪播式預約卡片 -->
   <div id="currentReservationCard" style="display:none;"></div>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -165,8 +151,8 @@ let currentYear = new Date().getFullYear();
 let userData = null;
 let existingReservations = [];
 let noServiceDates = {};
-let calendarDataLoaded = false; // 新增：標記月曆資料是否已載入
-let calendarLoading = false; // 新增：標記是否正在載入月曆
+let calendarDataLoaded = false;
+let calendarLoading = false;
 
 const stopsOutbound = ["行政大樓","中餐廳","科技學院","學人會館","中城","下城","坪頂","愛蘭橋","大成國小","中山安七街口","榮民診所","埔里酒廠","埔里總站"];
 const stopsReturn = [...stopsOutbound].reverse();
@@ -180,14 +166,14 @@ const routeTimes = {
 
 async function init() {
   try {
-    console.log('🚀 开始初始化 LIFF...');
+    console.log('🚀 開始初始化 LIFF...');
     
     if (typeof liff === 'undefined') {
-      console.error('❌ LIFF SDK 未加载');
+      console.error('❌ LIFF SDK 未加載');
       document.getElementById('userInfo').innerHTML = `
         <div style="color: red; text-align: center;">
-          <p>❌ 系统加载失败</p>
-          <p>请在 LINE App 中打开此页面</p>
+          <p>❌ 系統加載失敗</p>
+          <p>請在 LINE App 中打開此頁面</p>
         </div>
       `;
       return;
@@ -197,23 +183,23 @@ async function init() {
     console.log('✅ LIFF 初始化成功');
     
     if (!liff.isLoggedIn()) {
-      console.log('🔐 用户未登录，执行登录...');
+      console.log('🔐 用戶未登錄，執行登錄...');
       liff.login();
       return;
     }
     
-    console.log('👤 获取用户信息...');
+    console.log('👤 獲取用戶信息...');
     const profile = await liff.getProfile();
-    console.log('用户信息:', profile);
+    console.log('用戶信息:', profile);
     
-    // === 優化：同時進行用戶驗證和月曆資料載入 ===
+    // 同時進行用戶驗證和月曆資料載入
     const [userCheckResult] = await Promise.all([
       fetch(`${WORKER_URL}?check=${profile.userId}`).then(r => r.json()),
-      preloadCalendarData() // 背景載入月曆資料
+      preloadCalendarData()
     ]);
     
     if (!userCheckResult.registered) {
-      console.log('📝 用户未注册，跳转到注册页面');
+      console.log('📝 用戶未註冊，跳轉到註冊頁面');
       location.href = 'register.html';
       return;
     }
@@ -225,21 +211,20 @@ async function init() {
     `;
     
     await loadExistingReservations();
-    console.log('🎉 系统初始化完成');
+    console.log('🎉 系統初始化完成');
     
   } catch (error) {
-    console.error('💥 初始化错误:', error);
+    console.error('💥 初始化錯誤:', error);
     document.getElementById('userInfo').innerHTML = `
       <div style="color: red; text-align: center;">
-        <p>❌ 系统初始化失败</p>
-        <p>错误: ${error.message}</p>
-        <button onclick="location.reload()" style="padding: 10px; margin: 10px;">重新加载</button>
+        <p>❌ 系統初始化失敗</p>
+        <p>錯誤: ${error.message}</p>
+        <button onclick="location.reload()" style="padding: 10px; margin: 10px;">重新加載</button>
       </div>
     `;
   }
 }
 
-// === 新增：預載月曆資料函數 ===
 async function preloadCalendarData() {
   if (calendarDataLoaded || calendarLoading) return;
   
@@ -257,33 +242,27 @@ async function preloadCalendarData() {
   }
 }
 
-// === 修改：toggleCalendar 函數，現在立即顯示 ===
 async function toggleCalendar() {
   const container = document.getElementById('calendarContainer');
   const btn = document.getElementById('calendarBtn');
   const loadingSpan = document.getElementById('calendarLoading');
 
   if (container.style.display === 'none') {
-    // 顯示載入狀態
     loadingSpan.style.display = 'inline-block';
     btn.disabled = true;
     
-    // 如果資料還沒載入完成，等待載入
     if (!calendarDataLoaded && !calendarLoading) {
       await preloadCalendarData();
     } else if (calendarLoading) {
-      // 如果正在載入，等待一下
       let waitCount = 0;
-      while (calendarLoading && waitCount < 50) { // 最多等待5秒
+      while (calendarLoading && waitCount < 50) {
         await new Promise(resolve => setTimeout(resolve, 100));
         waitCount++;
       }
     }
     
-    // 渲染月曆
     renderCalendar();
     
-    // 隱藏載入狀態，顯示月曆
     loadingSpan.style.display = 'none';
     btn.disabled = false;
     container.style.display = 'block';
@@ -295,23 +274,7 @@ async function toggleCalendar() {
   }
 }
 
-// === 修改：loadNoServiceDates 函數，加入快取機制 ===
 async function loadNoServiceDates() {
-  // 檢查是否有快取的資料（5分鐘內有效）
-  const cacheKey = `calendarCache_${currentYear}_${currentMonth}`;
-  const cached = localStorage.getItem(cacheKey);
-  const now = Date.now();
-  
-  if (cached) {
-    const { data, timestamp } = JSON.parse(cached);
-    // 5分鐘內使用快取
-    if (now - timestamp < 5 * 60 * 1000) {
-      console.log('📅 使用快取的月曆資料');
-      noServiceDates = data;
-      return;
-    }
-  }
-  
   try {
     const start = formatDateToLocal(new Date(currentYear, currentMonth - 1, 1));
     const end = formatDateToLocal(new Date(currentYear, currentMonth + 2, 0));
@@ -322,19 +285,12 @@ async function loadNoServiceDates() {
       result.holidays.forEach(d => noServiceDates[d.substring(0,10)] = true);
     }
     console.log('停駛日期:', noServiceDates);
-    
-    // 儲存到快取
-    localStorage.setItem(cacheKey, JSON.stringify({
-      data: noServiceDates,
-      timestamp: now
-    }));
   } catch (e) {
     console.error('🚨 載入停駛日期失敗:', e);
     noServiceDates = {};
   }
 }
 
-// === 修改：changeMonth 函數，切換月份時重新載入資料 ===
 async function changeMonth(delta) {
   currentMonth += delta;
   if (currentMonth < 0) {
@@ -345,69 +301,286 @@ async function changeMonth(delta) {
     currentYear++;
   }
   
-  // 標記需要重新載入資料
   calendarDataLoaded = false;
-  
-  // 顯示載中狀態
   const loadingSpan = document.getElementById('calendarLoading');
   loadingSpan.style.display = 'inline-block';
   
-  // 載入新月份的資料
   await loadNoServiceDates();
   calendarDataLoaded = true;
   
-  // 隱藏載入狀態，渲染月曆
   loadingSpan.style.display = 'none';
   renderCalendar();
 }
 
-// === 其他函數保持不變 ===
-function renderCurrentReservationCard() {
-  // ... 保持不變
-}
-
 function renderCalendar() {
-  // ... 保持不變
+  const cal = document.getElementById('calendar');
+  const title = document.getElementById('calendarTitle');
+  
+  title.textContent = `${currentYear}年 ${currentMonth + 1}月`;
+  
+  const firstDay = new Date(currentYear, currentMonth, 1);
+  const lastDay = new Date(currentYear, currentMonth + 1, 0);
+  const prevLastDay = new Date(currentYear, currentMonth, 0);
+  const startWeekday = firstDay.getDay();
+  const daysInMonth = lastDay.getDate();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  let html = '';
+  ['日', '一', '二', '三', '四', '五', '六'].forEach(d => {
+    html += `<div class="calendar-header">${d}</div>`;
+  });
+  
+  for (let i = startWeekday - 1; i >= 0; i--) {
+    const day = prevLastDay.getDate() - i;
+    html += `<div class="calendar-day other-month">${day}</div>`;
+  }
+  
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateObj = new Date(currentYear, currentMonth, day);
+    const dateStr = formatDateToLocal(dateObj);
+    let classes = 'calendar-day';
+    
+    if (dateObj < today) {
+      classes += ' past';
+    } else if (noServiceDates[dateStr]) {
+      classes += ' disabled';
+    }
+    
+    if (selectedDate === dateStr) {
+      classes += ' selected';
+    }
+    
+    const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+    const dayLabel = isWeekend ? `${day}<br><small style="font-size:10px;">週末</small>` : day;
+    
+    html += `<div class="${classes}" onclick="selectDate('${dateStr}')">${dayLabel}</div>`;
+  }
+  
+  const remainingDays = 7 - ((startWeekday + daysInMonth) % 7);
+  if (remainingDays < 7) {
+    for (let i = 1; i <= remainingDays; i++) {
+      html += `<div class="calendar-day other-month">${i}</div>`;
+    }
+  }
+  
+  cal.innerHTML = html;
 }
 
 function selectDate(dateStr) {
-  // ... 保持不變
+  const dateObj = new Date(dateStr);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  if (dateObj < today) {
+    alert('不能選擇過去的日期');
+    return;
+  }
+  
+  if (noServiceDates[dateStr]) {
+    document.getElementById('holidayNotice').style.display = 'block';
+    document.getElementById('holidayNotice').textContent = '❌ 此日期停駛，請選擇其他日期';
+    return;
+  }
+  
+  document.getElementById('holidayNotice').style.display = 'none';
+  selectedDate = dateStr;
+  renderCalendar();
+  
+  const d = new Date(dateStr);
+  const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+  document.getElementById('selectedDate').style.display = 'block';
+  document.getElementById('selectedDate').textContent = `✅ 已選擇: ${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 (週${weekdays[d.getDay()]})`;
+  
+  showRouteSelection();
 }
 
 function showRouteSelection() {
-  // ... 保持不變
+  document.getElementById('routeSection').style.display = 'block';
+  const container = document.getElementById('routeButtons');
+  
+  let html = '';
+  for (const [id, info] of Object.entries(routeTimes)) {
+    html += `
+      <div class="route-btn" onclick="selectRoute('${id}', '${info.direction}')">
+        <div class="route-time">${info.time}</div>
+        <div class="route-direction">${info.direction}</div>
+      </div>
+    `;
+  }
+  
+  container.innerHTML = html;
+  document.getElementById('stopSection').style.display = 'none';
+  document.getElementById('submitBtn').style.display = 'none';
 }
 
 function selectRoute(routeId, direction) {
-  // ... 保持不變
+  selectedRoute = routeId;
+  
+  document.querySelectorAll('.route-btn').forEach(btn => btn.classList.remove('selected'));
+  event.target.closest('.route-btn').classList.add('selected');
+  
+  showStopSelection(direction);
 }
 
 function showStopSelection(direction) {
-  // ... 保持不變
+  document.getElementById('stopSection').style.display = 'block';
+  const select = document.getElementById('toStop');
+  
+  const stops = direction.includes('埔里總站') && direction.startsWith('暨大') ? stopsOutbound : stopsReturn;
+  
+  let html = '<option value="">請選擇下車站</option>';
+  stops.forEach(stop => {
+    html += `<option value="${stop}">${stop}</option>`;
+  });
+  
+  select.innerHTML = html;
+  select.onchange = () => {
+    document.getElementById('submitBtn').style.display = select.value ? 'block' : 'none';
+  };
 }
 
 async function submitReservation() {
-  // ... 保持不變
+  const toStop = document.getElementById('toStop').value;
+  if (!selectedDate || !selectedRoute || !toStop) {
+    alert('請完整填寫所有資訊');
+    return;
+  }
+  
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '送出中...';
+  
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: userData.userId,
+        name: userData.name,
+        studentId: userData.studentId,
+        department: userData.department,
+        date: selectedDate,
+        route: selectedRoute,
+        toStop: toStop
+      })
+    });
+    
+    const result = await res.json();
+    
+    if (result.success) {
+      alert('✅ 預約成功！');
+      resetReservationForm();
+      await loadExistingReservations();
+    } else {
+      alert('❌ 預約失敗：' + (result.message || '未知錯誤'));
+    }
+  } catch (error) {
+    console.error('預約失敗:', error);
+    alert('❌ 預約失敗：' + error.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '送出預約';
+  }
 }
 
 function resetReservationForm() {
-  // ... 保持不變
+  selectedDate = null;
+  selectedRoute = null;
+  document.getElementById('selectedDate').style.display = 'none';
+  document.getElementById('routeSection').style.display = 'none';
+  document.getElementById('stopSection').style.display = 'none';
+  document.getElementById('submitBtn').style.display = 'none';
+  document.getElementById('calendarContainer').style.display = 'none';
+  document.getElementById('calendarBtn').textContent = '📅 打開月曆';
+  renderCalendar();
 }
 
 async function cancelReservation(reservationId) {
-  // ... 保持不變
+  if (!confirm('確定要取消這筆預約嗎？')) return;
+  
+  try {
+    const res = await fetch(`${WORKER_URL}?cancel=${reservationId}`, { method: 'DELETE' });
+    const result = await res.json();
+    
+    if (result.success) {
+      alert('✅ 預約已取消');
+      await loadExistingReservations();
+    } else {
+      alert('❌ 取消失敗：' + (result.message || '未知錯誤'));
+    }
+  } catch (error) {
+    console.error('取消失敗:', error);
+    alert('❌ 取消失敗：' + error.message);
+  }
 }
 
 async function loadExistingReservations() {
-  // ... 保持不變
+  try {
+    const res = await fetch(`${WORKER_URL}?userId=${userData.userId}`);
+    const result = await res.json();
+    existingReservations = result.reservations || [];
+    renderCurrentReservationCard();
+  } catch (error) {
+    console.error('載入預約失敗:', error);
+  }
 }
 
-// === 頁面載入 ===
+function renderCurrentReservationCard() {
+  const container = document.getElementById('currentReservationCard');
+  
+  if (!existingReservations || existingReservations.length === 0) {
+    container.innerHTML = '<div class="no-reservation">目前沒有預約紀錄</div>';
+    container.style.display = 'block';
+    return;
+  }
+  
+  let html = '<div class="carousel-container">';
+  html += '<div class="carousel-title">🧾 我的預約</div>';
+  html += '<div class="carousel">';
+  
+  existingReservations.forEach(r => {
+    const routeInfo = routeTimes[r.route] || { time: r.route, direction: '未知路線' };
+    html += `
+      <div class="reservation-bubble">
+        <div class="bubble-header">${r.date} (${getDayOfWeek(r.date)})</div>
+        <div class="bubble-body">
+          <div class="bubble-line">
+            <strong>班次</strong>
+            <span class="route-time">${routeInfo.time}</span>
+          </div>
+          <div class="bubble-line">
+            <strong>路線</strong>
+            <span>${routeInfo.direction}</span>
+          </div>
+          <div class="bubble-line">
+            <strong>下車站</strong>
+            <span>${r.toStop}</span>
+          </div>
+        </div>
+        <div class="bubble-footer">
+          <button class="cancel-btn-small" onclick="cancelReservation('${r.id}')">取消預約</button>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += '</div></div>';
+  container.innerHTML = html;
+  container.style.display = 'block';
+}
+
+function getDayOfWeek(dateStr) {
+  const d = new Date(dateStr);
+  const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+  return '週' + weekdays[d.getDay()];
+}
+
+function formatDateToLocal(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 window.addEventListener('load', init);
-
-function formatDateToLocal(date){
-  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
-}
 </script>
 </body>
 </html>
