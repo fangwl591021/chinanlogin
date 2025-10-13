@@ -815,14 +815,6 @@ function formatDateToLocal(date){
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
 }
 
-// === 預約規則設定 ===
-const RESERVATION_RULES = {
-  MAX_DAYS_AHEAD: 7,
-  MAX_CAPACITY_PER_ROUTE: 6,
-  DAILY_DEADLINE: '19:00',
-  MAX_RESERVATIONS_PER_DAY: 1
-};
-
 // === 預約規則驗證函數 ===
 class ReservationValidator {
   // R4: 過去日期檢查
