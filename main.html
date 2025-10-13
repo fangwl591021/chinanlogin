@@ -5,30 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>穿山甲專車預約</title>
   <style>
-    /* 原有的 CSS 樣式保持不變 */
     body { font-family: system-ui, sans-serif; background:#f5f6f7; margin:0; padding:0; }
     header { background:#3c8050; color:#fff; text-align:center; padding:15px; font-size:22px; font-weight:bold; }
+
+    /* 月曆按鈕 */
     #calendarBtn { 
-      width:calc(100% - 32px); background:#3c8050; color:#fff; border:none; 
+      width:100%; background:#3c8050; color:#fff; border:none; 
       padding:12px; border-radius:6px; font-size:16px; font-weight:bold; 
-      margin:10px 16px; cursor:pointer; 
-      position: relative;
-    }
-    .loading-dots {
-      display: inline-block;
-      margin-left: 5px;
-    }
-    .loading-dots::after {
-      content: '...';
-      animation: dots 1.5s steps(4, end) infinite;
-    }
-    @keyframes dots {
-      0%, 20% { content: '.'; }
-      40% { content: '..'; }
-      60%, 100% { content: '...'; }
+      margin:10px 0; cursor:pointer; 
     }
 
-    /* 其他原有樣式保持不變 */
+    /* 📅 月曆 */
     .calendar {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -70,56 +57,187 @@
     .calendar-day.selected { background:#3c8050; color:#fff; font-weight:bold; }
     .calendar-day.other-month { color:#ccc; }
 
-    /* 其他樣式保持不變 */
-    .carousel-container { padding: 16px; margin: 20px 0; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin: 20px 16px; }
-    .carousel-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #333; text-align: center; }
-    .carousel { display: flex; overflow-x: auto; gap: 15px; padding: 10px 5px; scrollbar-width: none; -ms-overflow-style: none; }
-    .carousel::-webkit-scrollbar { display: none; }
-    .reservation-bubble { min-width: 280px; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #e0e0e0; overflow: hidden; flex-shrink: 0; }
-    .bubble-header { background: #27ACB2; color: white; padding: 12px 15px; font-weight: bold; font-size: 14px; text-align: center; }
-    .bubble-body { padding: 15px; }
-    .bubble-line { margin-bottom: 8px; font-size: 13px; line-height: 1.4; display: flex; justify-content: space-between; }
-    .bubble-line:last-child { margin-bottom: 0; }
-    .bubble-line strong { color: #666; min-width: 60px; }
-    .bubble-line span { color: #333; text-align: right; flex: 1; }
-    .route-time { font-weight: bold; color: #333; }
-    .bubble-footer { padding: 12px; border-top: 1px solid #f0f0f0; text-align: center; background: #fafafa; }
-    .cancel-btn-small { background: #ff4444; color: white; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; padding: 8px 16px; font-weight: bold; transition: background 0.2s; }
-    .cancel-btn-small:hover { background: #cc0000; }
-    .no-reservation { text-align: center; color: #666; padding: 40px 20px; background: white; border-radius: 8px; margin: 20px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    .route-section { padding: 0 16px; margin: 20px 0; }
-    .route-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
-    .route-btn { padding: 12px; border: 2px solid #3c8050; border-radius: 8px; background: white; cursor: pointer; text-align: center; transition: all 0.2s; }
-    .route-btn:hover { background: #eaf5ea; }
-    .route-btn.selected { background: #3c8050; color: white; }
-    .route-time { font-weight: bold; font-size: 14px; }
-    .route-direction { font-size: 12px; margin-top: 4px; }
-    .stop-selector { padding: 0 16px; margin: 20px 0; }
-    select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; margin-top: 8px; }
-    .user-section { background: white; margin: 16px; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    .user-name { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 5px; }
-    .user-info { font-size: 14px; color: #666; }
-    .submit-btn { background: #3c8050; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin: 20px 16px; width: calc(100% - 32px); }
-    .submit-btn:hover { background: #2d6140; }
-    .submit-btn:disabled { background: #ccc; cursor: not-allowed; }
-    .notice { padding: 10px 16px; margin: 10px 16px; border-radius: 6px; }
-    .notice.success { background: #e8f5e9; color: #2e7d32; border: 1px solid #81c784; }
-    .notice.error { background: #fdecea; color: #b71c1c; border: 1px solid #f5c2c7; }
+    /* 橫向輪播式預約卡片 */
+    .carousel-container {
+      padding: 16px;
+      margin: 20px 0;
+    }
+    .carousel-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #333;
+      text-align: center;
+    }
+    .carousel {
+      display: flex;
+      overflow-x: auto;
+      gap: 15px;
+      padding: 10px 0;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .carousel::-webkit-scrollbar {
+      display: none;
+    }
+    .reservation-bubble {
+      min-width: 240px;  /* 已經調整為較緊湊的寬度 */
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border: 1px solid #e0e0e0;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .bubble-header {
+      background: #27ACB2;
+      color: white;
+      padding: 12px 15px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .bubble-body {
+      padding: 12px;
+    }
+    .bubble-line {
+      margin-bottom: 6px;
+      font-size: 12px;
+      line-height: 1.3;
+    }
+    .bubble-line:last-child {
+      margin-bottom: 0;
+    }
+    .route-time {
+      font-weight: bold;
+      color: #333;
+    }
+    .bubble-footer {
+      padding: 8px;
+      border-top: 1px solid #f0f0f0;
+      text-align: center;
+    }
+    .cancel-btn-small {
+      background: none;
+      border: none;
+      color: #FF0000;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 5px 10px;
+    }
+    .cancel-btn-small:hover {
+      background: #ffe6e6;
+      border-radius: 4px;
+    }
+
+    /* 沒有預約的提示 */
+    .no-reservation {
+      text-align: center;
+      color: #666;
+      padding: 40px 20px;
+      background: white;
+      border-radius: 8px;
+      margin: 20px 16px;
+    }
+
+    /* 班次選擇區域 */
+    .route-section {
+      padding: 0 16px;
+      margin: 20px 0;
+    }
+    .route-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 10px 0;
+    }
+    .route-btn {
+      padding: 12px;
+      border: 2px solid #3c8050;
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .route-btn:hover {
+      background: #eaf5ea;
+    }
+    .route-btn.selected {
+      background: #3c8050;
+      color: white;
+    }
+    .route-time {
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .route-direction {
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    /* 車站選擇 */
+    .stop-selector {
+      padding: 0 16px;
+      margin: 20px 0;
+    }
+    select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    /* 送出按鈕 */
+    .submit-btn {
+      background: #3c8050;
+      color: white;
+      border: none;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 20px 16px;
+      width: calc(100% - 32px);
+    }
+    .submit-btn:hover {
+      background: #2d6140;
+    }
+    .submit-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* 提示訊息 */
+    .notice {
+      padding: 10px 16px;
+      margin: 10px 0;
+      border-radius: 6px;
+    }
+    .notice.success {
+      background: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #81c784;
+    }
+    .notice.error {
+      background: #fdecea;
+      color: #b71c1c;
+      border: 1px solid #f5c2c7;
+    }
   </style>
 </head>
 <body>
   <header>穿山甲專車預約</header>
 
   <!-- 使用者資訊 -->
-  <div id="userInfo" class="user-section">
+  <div id="userInfo" class="user-section" style="padding:16px;">
     <div class="loading-state">⏳ 系統初始化中...</div>
   </div>
 
   <!-- 📅 月曆按鈕 -->
-  <button id="calendarBtn" onclick="toggleCalendar()">
-    📅 打開月曆
-    <span id="calendarLoading" class="loading-dots" style="display:none"></span>
-  </button>
+  <button id="calendarBtn" onclick="toggleCalendar()">📅 打開月曆</button>
 
   <!-- 📅 月曆容器 -->
   <div id="calendarContainer" style="display:none;margin-top:10px; padding:0 16px;">
@@ -164,9 +282,7 @@ let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
 let userData = null;
 let existingReservations = [];
-let noServiceDates = {};
-let calendarDataLoaded = false; // 新增：標記月曆資料是否已載入
-let calendarLoading = false; // 新增：標記是否正在載入月曆
+let noServiceDates = {}; // 新增：儲存停駛日期
 
 const stopsOutbound = ["行政大樓","中餐廳","科技學院","學人會館","中城","下城","坪頂","愛蘭橋","大成國小","中山安七街口","榮民診所","埔里酒廠","埔里總站"];
 const stopsReturn = [...stopsOutbound].reverse();
@@ -178,141 +294,8 @@ const routeTimes = {
   'B2': { time: '23:30-24:00', direction: '埔里總站→暨大' }
 };
 
-// === 修改：在初始化時就開始預載月曆資料 ===
-async function init() {
-  try {
-    console.log('🚀 开始初始化 LIFF...');
-    
-    if (typeof liff === 'undefined') {
-      console.error('❌ LIFF SDK 未加载');
-      document.getElementById('userInfo').innerHTML = `
-        <div style="color: red; text-align: center;">
-          <p>❌ 系统加载失败</p>
-          <p>请在 LINE App 中打开此页面</p>
-        </div>
-      `;
-      return;
-    }
-    
-    await liff.init({ liffId: "2006590746-KJodGOda" });
-    console.log('✅ LIFF 初始化成功');
-    
-    if (!liff.isLoggedIn()) {
-      console.log('🔐 用户未登录，执行登录...');
-      liff.login();
-      return;
-    }
-    
-    console.log('👤 获取用户信息...');
-    const profile = await liff.getProfile();
-    console.log('用户信息:', profile);
-    
-    const res = await fetch(`${WORKER_URL}?check=${profile.userId}`);
-    const result = await res.json();
-    
-    if (!result.registered) {
-      console.log('📝 用户未注册，跳转到注册页面');
-      location.href = 'register.html';
-      return;
-    }
-    
-    userData = result.user;
-    document.getElementById('userInfo').innerHTML = `
-      <div class="user-name">${userData.name}</div>
-      <div class="user-info">${userData.department} | ${userData.studentId}</div>
-    `;
-
-    // === 新增：立即開始預載月曆資料 ===
-    preloadCalendarData();
-    
-    await loadExistingReservations();
-    console.log('🎉 系统初始化完成');
-    
-  } catch (error) {
-    console.error('💥 初始化错误:', error);
-    document.getElementById('userInfo').innerHTML = `
-      <div style="color: red; text-align: center;">
-        <p>❌ 系统初始化失败</p>
-        <p>错误: ${error.message}</p>
-        <button onclick="location.reload()" style="padding: 10px; margin: 10px;">重新加载</button>
-      </div>
-    `;
-  }
-}
-
-// === 新增：預載月曆資料函數 ===
-async function preloadCalendarData() {
-  if (calendarDataLoaded || calendarLoading) return;
-  
-  calendarLoading = true;
-  console.log('📅 開始預載月曆資料...');
-  
-  try {
-    await loadNoServiceDates();
-    calendarDataLoaded = true;
-    calendarLoading = false;
-    console.log('✅ 月曆資料預載完成');
-  } catch (error) {
-    calendarLoading = false;
-    console.error('❌ 月曆資料預載失敗:', error);
-  }
-}
-
-// === 修改：toggleCalendar 函數，現在立即顯示 ===
-async function toggleCalendar() {
-  const container = document.getElementById('calendarContainer');
-  const btn = document.getElementById('calendarBtn');
-  const loadingSpan = document.getElementById('calendarLoading');
-
-  if (container.style.display === 'none') {
-    // 顯示載入狀態
-    loadingSpan.style.display = 'inline-block';
-    btn.disabled = true;
-    
-    // 如果資料還沒載入完成，等待載入
-    if (!calendarDataLoaded && !calendarLoading) {
-      await preloadCalendarData();
-    } else if (calendarLoading) {
-      // 如果正在載入，等待一下
-      let waitCount = 0;
-      while (calendarLoading && waitCount < 50) { // 最多等待5秒
-        await new Promise(resolve => setTimeout(resolve, 100));
-        waitCount++;
-      }
-    }
-    
-    // 渲染月曆
-    renderCalendar();
-    
-    // 隱藏載入狀態，顯示月曆
-    loadingSpan.style.display = 'none';
-    btn.disabled = false;
-    container.style.display = 'block';
-    btn.textContent = '📅 關閉月曆';
-    container.scrollIntoView({ behavior: 'smooth' });
-  } else {
-    container.style.display = 'none';
-    btn.textContent = '📅 打開月曆';
-  }
-}
-
-// === 修改：loadNoServiceDates 函數，加入快取機制 ===
+// === 載入停駛日期 ===
 async function loadNoServiceDates() {
-  // 檢查是否有快取的資料（5分鐘內有效）
-  const cacheKey = `calendarCache_${currentYear}_${currentMonth}`;
-  const cached = localStorage.getItem(cacheKey);
-  const now = Date.now();
-  
-  if (cached) {
-    const { data, timestamp } = JSON.parse(cached);
-    // 5分鐘內使用快取
-    if (now - timestamp < 5 * 60 * 1000) {
-      console.log('📅 使用快取的月曆資料');
-      noServiceDates = data;
-      return;
-    }
-  }
-  
   try {
     const start = formatDateToLocal(new Date(currentYear, currentMonth - 1, 1));
     const end = formatDateToLocal(new Date(currentYear, currentMonth + 2, 0));
@@ -323,20 +306,110 @@ async function loadNoServiceDates() {
       result.holidays.forEach(d => noServiceDates[d.substring(0,10)] = true);
     }
     console.log('停駛日期:', noServiceDates);
-    
-    // 儲存到快取
-    localStorage.setItem(cacheKey, JSON.stringify({
-      data: noServiceDates,
-      timestamp: now
-    }));
   } catch (e) {
     console.error('🚨 載入停駛日期失敗:', e);
     noServiceDates = {};
   }
 }
 
-// === 修改：changeMonth 函數，切換月份時重新載入資料 ===
-async function changeMonth(delta) {
+// === 📅 月曆開關 ===
+async function toggleCalendar() {
+  const container = document.getElementById('calendarContainer');
+  const btn = document.getElementById('calendarBtn');
+
+  if (container.style.display === 'none') {
+    await loadNoServiceDates(); // 載入停駛日期
+    renderCalendar();
+    container.style.display = 'block';
+    btn.textContent = '📅 關閉月曆';
+    container.scrollIntoView({ behavior: 'smooth' });
+  } else {
+    container.style.display = 'none';
+    btn.textContent = '📅 打開月曆';
+  }
+}
+
+// === 📅 月曆產生 ===
+function renderCalendar() {
+  const calendar = document.getElementById('calendar');
+  calendar.innerHTML = '';
+  
+  // 添加星期標題
+  const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+  weekdays.forEach(day => {
+    const header = document.createElement('div');
+    header.className = 'calendar-header';
+    header.textContent = day;
+    calendar.appendChild(header);
+  });
+
+  const firstDay = new Date(currentYear, currentMonth, 1);
+  const lastDay = new Date(currentYear, currentMonth + 1, 0);
+  const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+  document.getElementById('calendarTitle').textContent = `${currentYear}年 ${monthNames[currentMonth]}`;
+
+  const startDay = firstDay.getDay();
+  const daysInMonth = lastDay.getDate();
+  const today = new Date();
+  const todayStr = formatDateToLocal(today);
+
+  // 上個月的日期
+  const prevLastDay = new Date(currentYear, currentMonth, 0).getDate();
+  for (let i = startDay - 1; i >= 0; i--) {
+    const empty = document.createElement('div');
+    empty.className = 'calendar-day other-month';
+    empty.textContent = prevLastDay - i;
+    calendar.appendChild(empty);
+  }
+
+  // 這個月的日期
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(currentYear, currentMonth, day);
+    const dateStr = formatDateToLocal(date);
+    const div = document.createElement('div');
+    div.className = 'calendar-day';
+    
+    // 檢查是否為過去日期
+    const isPast = date < today && dateStr !== todayStr;
+    // 檢查是否為停駛日期
+    const isNoService = noServiceDates[dateStr];
+    
+    if (isPast) {
+      div.classList.add('past');
+      div.innerHTML = `${day}<br><small>已過期</small>`;
+    } else if (isNoService) {
+      div.classList.add('disabled');
+      div.innerHTML = `${day}<br><small>停駛</small>`;
+    } else {
+      div.textContent = day;
+      div.onclick = () => selectDate(dateStr);
+    }
+    
+    // 標記今天
+    if (dateStr === todayStr) {
+      div.style.border = '2px solid #3c8050';
+    }
+    
+    // 標記已選擇的日期
+    if (selectedDate === dateStr) {
+      div.classList.add('selected');
+    }
+    
+    calendar.appendChild(div);
+  }
+
+  // 下個月的日期
+  const totalCells = 42; // 6行 x 7列
+  const remaining = totalCells - (startDay + daysInMonth);
+  for (let day = 1; day <= remaining; day++) {
+    const empty = document.createElement('div');
+    empty.className = 'calendar-day other-month';
+    empty.textContent = day;
+    calendar.appendChild(empty);
+  }
+}
+
+function changeMonth(delta) {
   currentMonth += delta;
   if (currentMonth < 0) {
     currentMonth = 11;
@@ -345,65 +418,449 @@ async function changeMonth(delta) {
     currentMonth = 0;
     currentYear++;
   }
-  
-  // 標記需要重新載入資料
-  calendarDataLoaded = false;
-  
-  // 顯示載中狀態
-  const loadingSpan = document.getElementById('calendarLoading');
-  loadingSpan.style.display = 'inline-block';
-  
-  // 載入新月份的資料
-  await loadNoServiceDates();
-  calendarDataLoaded = true;
-  
-  // 隱藏載入狀態，渲染月曆
-  loadingSpan.style.display = 'none';
   renderCalendar();
 }
 
-// === 其他函數保持不變 ===
-function renderCurrentReservationCard() {
-  // ... 保持不變
-}
-
-function renderCalendar() {
-  // ... 保持不變
-}
-
 function selectDate(dateStr) {
-  // ... 保持不變
+  // 檢查是否為停駛日期
+  if (noServiceDates[dateStr]) {
+    document.getElementById('holidayNotice').style.display = 'block';
+    document.getElementById('holidayNotice').textContent = `🚫 ${dateStr} 為停駛日，無法預約`;
+    document.getElementById('selectedDate').style.display = 'none';
+    selectedDate = null;
+    document.getElementById('routeSection').style.display = 'none';
+    document.getElementById('stopSection').style.display = 'none';
+    document.getElementById('submitBtn').style.display = 'none';
+    return;
+  }
+  
+  // 檢查是否為過去日期
+  const selected = new Date(dateStr);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (selected < today) {
+    document.getElementById('holidayNotice').style.display = 'block';
+    document.getElementById('holidayNotice').textContent = `🚫 ${dateStr} 為過去日期，無法預約`;
+    document.getElementById('selectedDate').style.display = 'none';
+    selectedDate = null;
+    document.getElementById('routeSection').style.display = 'none';
+    document.getElementById('stopSection').style.display = 'none';
+    document.getElementById('submitBtn').style.display = 'none';
+    return;
+  }
+  
+  selectedDate = dateStr;
+  
+  // 重置選擇狀態
+  document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
+  event.target.classList.add('selected');
+  
+  // 顯示選擇的日期
+  document.getElementById('selectedDate').style.display = 'block';
+  document.getElementById('selectedDate').textContent = `✅ 已選擇日期：${dateStr}`;
+  document.getElementById('holidayNotice').style.display = 'none';
+  
+  // 關閉月曆
+  document.getElementById('calendarContainer').style.display = 'none';
+  document.getElementById('calendarBtn').textContent = '📅 打開月曆';
+  
+  // 顯示班次選擇
+  showRouteSelection();
 }
 
+// === 🚌 顯示班次選擇 ===
 function showRouteSelection() {
-  // ... 保持不變
+  const routeSection = document.getElementById('routeSection');
+  const routeButtons = document.getElementById('routeButtons');
+  
+  routeButtons.innerHTML = '';
+  
+  // 建立所有班次按鈕
+  Object.entries(routeTimes).forEach(([routeId, info]) => {
+    const button = document.createElement('div');
+    button.className = 'route-btn';
+    button.innerHTML = `
+      <div class="route-time">${routeId} ${info.time}</div>
+      <div class="route-direction">${info.direction}</div>
+    `;
+    button.onclick = () => selectRoute(routeId, info.direction);
+    routeButtons.appendChild(button);
+  });
+  
+  routeSection.style.display = 'block';
+  routeSection.scrollIntoView({ behavior: 'smooth' });
 }
 
+// === 🚌 選擇班次 ===
 function selectRoute(routeId, direction) {
-  // ... 保持不變
+  selectedRoute = routeId;
+  
+  // 更新按鈕選擇狀態
+  document.querySelectorAll('.route-btn').forEach(btn => btn.classList.remove('selected'));
+  event.target.classList.add('selected');
+  
+  // 顯示車站選擇
+  showStopSelection(direction);
 }
 
+// === 🚏 顯示車站選擇 ===
 function showStopSelection(direction) {
-  // ... 保持不變
+  const stopSection = document.getElementById('stopSection');
+  const toStopSelect = document.getElementById('toStop');
+  
+  toStopSelect.innerHTML = '<option value="">請選擇下車站</option>';
+  
+  // 根據方向決定車站列表
+  const isOutbound = direction.includes('暨大→');
+  const stops = isOutbound ? stopsOutbound : stopsReturn;
+  const fromStop = isOutbound ? '行政大樓' : '埔里總站';
+  
+  // 過濾掉上車站
+  stops.filter(stop => stop !== fromStop).forEach(stop => {
+    const option = document.createElement('option');
+    option.value = stop;
+    option.textContent = stop;
+    toStopSelect.appendChild(option);
+  });
+  
+  stopSection.style.display = 'block';
+  
+  // 顯示送出按鈕
+  document.getElementById('submitBtn').style.display = 'block';
+  stopSection.scrollIntoView({ behavior: 'smooth' });
 }
 
+// === 📝 送出預約（含推播通知 v4.3） ===
 async function submitReservation() {
-  // ... 保持不變
+  const toStop = document.getElementById('toStop').value;
+  const submitBtn = document.getElementById('submitBtn');
+  
+  if (!selectedDate || !selectedRoute || !toStop) {
+    alert('請完整選擇日期、班次與下車站');
+    return;
+  }
+  
+  try {
+    submitBtn.disabled = true;
+    submitBtn.textContent = '預約中...';
+    
+    const info = routeTimes[selectedRoute];
+    const fromStop = selectedRoute.includes('A') ? '行政大樓' : '埔里總站';
+    
+    const data = {
+      type: 'reserve',
+      userId: userData.userId,
+      name: userData.name,
+      studentId: userData.studentId,
+      department: userData.department,
+      phone: userData.phone || '',
+      route: selectedRoute,
+      routeName: `${selectedRoute} | ${info.time} ${info.direction}`,
+      fromStop: fromStop,
+      toStop: toStop,
+      date: selectedDate
+    };
+    
+    // ✅ 寫入 GAS
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    
+    const result = await res.json();
+    
+    if (result.status === 'success') {
+      alert('✅ 預約成功！');
+
+      // 🚀 LINE 群組推播通知（新預約）
+      try {
+        const flexPayload = {
+          type: "pushLine",
+          flex: {
+            type: "flex",
+            altText: "穿山甲專車新預約通知",
+            contents: {
+              type: "bubble",
+              size: "mega",
+              body: {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                  // 綠底標題
+                  {
+                    type: "box",
+                    layout: "vertical",
+                    backgroundColor: "#3c8050",
+                    paddingAll: "10px",
+                    contents: [
+                      {
+                        type: "text",
+                        text: "🚌 穿山甲專車新預約",
+                        color: "#ffffff",
+                        weight: "bold",
+                        size: "md",
+                        align: "center"
+                      }
+                    ]
+                  },
+                  // 白底內容
+                  {
+                    type: "box",
+                    layout: "vertical",
+                    backgroundColor: "#ffffff",
+                    paddingAll: "12px",
+                    spacing: "sm",
+                    contents: [
+                      { type: "text", text: `日期：${selectedDate}`, size: "sm", color: "#333" },
+                      { type: "text", text: `班次：${selectedRoute}｜${info.time} ${info.direction}`, size: "sm", color: "#333" },
+                      { type: "text", text: `姓名：${userData.name}`, size: "sm", color: "#333" },
+                      { type: "text", text: `電話：${userData.phone || "未填"}`, size: "sm", color: "#333" },
+                      { type: "text", text: `上車：${fromStop}`, size: "sm", color: "#333" },
+                      { type: "text", text: `下車：${toStop}`, size: "sm", color: "#333" }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        };
+
+        await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(flexPayload)
+        });
+        console.log('✅ 群組推播：新預約通知成功');
+      } catch (err) {
+        console.error('❌ 推播錯誤:', err);
+      }
+
+      // 重置畫面
+      resetReservationForm();
+      await loadExistingReservations();
+      
+    } else {
+      alert('❌ 預約失敗：' + (result.message || '請稍後再試'));
+    }
+    
+  } catch (error) {
+    console.error('預約錯誤:', error);
+    alert('❌ 預約失敗，請檢查網路連線');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = '送出預約';
+  }
 }
 
+
+
+// === 🔄 重置預約表單 ===
 function resetReservationForm() {
-  // ... 保持不變
+  // 隱藏所有預約相關區塊
+  document.getElementById('routeSection').style.display = 'none';
+  document.getElementById('stopSection').style.display = 'none';
+  document.getElementById('submitBtn').style.display = 'none';
+  document.getElementById('selectedDate').style.display = 'none';
+  document.getElementById('holidayNotice').style.display = 'none';
+  
+  // 重置選擇
+  selectedDate = null;
+  selectedRoute = null;
+  document.getElementById('toStop').innerHTML = '<option value="">請先選擇班次</option>';
+  document.querySelectorAll('.route-btn').forEach(btn => btn.classList.remove('selected'));
+  document.querySelectorAll('.calendar-day').forEach(day => day.classList.remove('selected'));
 }
 
+// === 📅 橫向輪播式預約卡片 ===
+function renderCurrentReservationCard() {
+  const section = document.getElementById('currentReservationCard');
+  section.innerHTML = '';
+
+  const today = formatDateToLocal(new Date());
+  const activeReservations = existingReservations
+    .filter(res => res.date >= today && res.status !== '已取消')
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  if (activeReservations.length === 0) {
+    section.innerHTML = `
+      <div class="no-reservation">
+        <div style="font-size: 48px; margin-bottom: 10px;">📭</div>
+        <div style="font-size: 16px; color: #666;">目前沒有預約紀錄</div>
+      </div>
+    `;
+    section.style.display = 'block';
+    return;
+  }
+
+  // 建立輪播容器
+  const carouselContainer = document.createElement('div');
+  carouselContainer.className = 'carousel-container';
+  
+  const carouselTitle = document.createElement('div');
+  carouselTitle.className = 'carousel-title';
+  carouselTitle.textContent = `我的預約 (${activeReservations.length} 筆)`;
+  carouselContainer.appendChild(carouselTitle);
+  
+  const carousel = document.createElement('div');
+  carousel.className = 'carousel';
+  
+  // 為每個預約建立泡泡卡片
+  activeReservations.forEach(reservation => {
+    const dateOnly = reservation.date.split('T')[0];
+    const routeInfo = routeTimes[reservation.route] || { time: '', direction: '' };
+    
+    const bubble = document.createElement('div');
+    bubble.className = 'reservation-bubble';
+    bubble.innerHTML = `
+      <div class="bubble-header">
+        日期: ${dateOnly}
+      </div>
+      <div class="bubble-body">
+        <div class="bubble-line route-time">${reservation.route} | ${routeInfo.time}</div>
+        <div class="bubble-line">${routeInfo.direction}</div>
+        <div class="bubble-line">姓名: ${reservation.name}</div>
+        <div class="bubble-line">上車: ${reservation.fromStop}</div>
+        <div class="bubble-line">下車: ${reservation.toStop}</div>
+      </div>
+      <div class="bubble-footer">
+        <button class="cancel-btn-small" onclick="cancelReservation('${reservation.id}')">
+          ❌ 取消預約
+        </button>
+      </div>
+    `;
+    carousel.appendChild(bubble);
+  });
+  
+  carouselContainer.appendChild(carousel);
+  section.appendChild(carouselContainer);
+  section.style.display = 'block';
+}
+
+// === 取消預約（含推播通知 v4.3） ===
 async function cancelReservation(reservationId) {
-  // ... 保持不變
+  if (!confirm('確定要取消這筆預約嗎？')) return;
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'cancel', id: reservationId, userId: userData.userId })
+    });
+
+    const result = await res.json();
+    if (result.status === 'success') {
+      alert('✅ 已取消預約');
+
+      // 🚀 LINE 群組推播通知（取消預約）
+      try {
+        const canceled = existingReservations.find(r => r.id === reservationId);
+        if (canceled) {
+          const info = routeTimes[canceled.route] || {};
+          const flexPayload = {
+            type: "pushLine",
+            flex: {
+              type: "flex",
+              altText: "穿山甲專車取消預約通知",
+              contents: {
+                type: "bubble",
+                size: "mega",
+                body: {
+                  type: "box",
+                  layout: "vertical",
+                  contents: [
+                    // 綠底標題
+                    {
+                      type: "box",
+                      layout: "vertical",
+                      backgroundColor: "#b71c1c",
+                      paddingAll: "10px",
+                      contents: [
+                        {
+                          type: "text",
+                          text: "❌ 穿山甲專車預約取消",
+                          color: "#ffffff",
+                          weight: "bold",
+                          size: "md",
+                          align: "center"
+                        }
+                      ]
+                    },
+                    // 白底內容
+                    {
+                      type: "box",
+                      layout: "vertical",
+                      backgroundColor: "#ffffff",
+                      paddingAll: "12px",
+                      spacing: "sm",
+                      contents: [
+                        { type: "text", text: `日期：${canceled.date.split('T')[0]}`, size: "sm", color: "#333" },
+                        { type: "text", text: `班次：${canceled.route}｜${info.time || ""} ${info.direction || ""}`, size: "sm", color: "#333" },
+                        { type: "text", text: `姓名：${canceled.name}`, size: "sm", color: "#333" },
+                        { type: "text", text: `上車：${canceled.fromStop}`, size: "sm", color: "#333" },
+                        { type: "text", text: `下車：${canceled.toStop}`, size: "sm", color: "#333" }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          };
+
+          await fetch(WORKER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(flexPayload)
+          });
+          console.log('🚫 群組推播：取消預約通知成功');
+        }
+      } catch (pushErr) {
+        console.error('❌ 取消推播錯誤:', pushErr);
+      }
+
+      await loadExistingReservations();
+    } else {
+      alert('❌ 取消失敗：' + (result.message || '請稍後再試'));
+    }
+  } catch (e) {
+    console.error('取消預約錯誤', e);
+    alert('❌ 取消預約時發生錯誤');
+  }
 }
 
+
+// === 載入預約 ===
 async function loadExistingReservations() {
-  // ... 保持不變
+  try {
+    const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
+    const result = await res.json();
+    existingReservations = result.reservations || [];
+    renderCurrentReservationCard();
+  } catch (e) {
+    console.error('載入預約失敗', e);
+    existingReservations = [];
+    renderCurrentReservationCard();
+  }
 }
 
-// === 頁面載入 ===
+// === 初始化 LIFF ===
+async function init() {
+  await liff.init({ liffId: "2006590746-KJodGOda" });
+  if (!liff.isLoggedIn()) return liff.login();
+  const profile = await liff.getProfile();
+  const res = await fetch(`${WORKER_URL}?check=${profile.userId}`);
+  const result = await res.json();
+  if (!result.registered) return location.href = 'register.html';
+  userData = result.user;
+
+  document.getElementById('userInfo').innerHTML = `
+    <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">穿山甲專車預約</div>
+    <div class="user-name">${userData.name}</div>
+    <div class="user-info"><strong>${userData.department} | ${userData.studentId}</strong></div>
+  `;
+
+  await loadExistingReservations();
+}
 window.addEventListener('load', init);
 
 function formatDateToLocal(date){
@@ -412,4 +869,5 @@ function formatDateToLocal(date){
 </script>
 </body>
 </html>
+
 
