@@ -5,22 +5,280 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>穿山甲專車預約</title>
   <style>
-    /* 原有樣式保持不變 */
     body { font-family: system-ui, sans-serif; background:#f5f6f7; margin:0; padding:0; }
     header { background:#3c8050; color:#fff; text-align:center; padding:15px; font-size:22px; font-weight:bold; }
-    /* ... 其他樣式保持不變 ... */
+
+    /* 月曆按鈕 */
+    #calendarBtn { 
+      width:calc(100% - 32px); background:#3c8050; color:#fff; border:none; 
+      padding:12px; border-radius:6px; font-size:16px; font-weight:bold; 
+      margin:10px 16px; cursor:pointer; 
+    }
+
+    /* 📅 月曆 */
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+      text-align: center;
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+    .calendar-header {
+      padding: 8px 0;
+      font-weight: bold;
+      background: #f0f0f0;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+    .calendar-day {
+      padding: 8px 0;
+      min-height: 45px;
+      border-radius: 4px;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    .calendar-day:hover { background:#eaf5ea; }
+    .calendar-day.disabled { 
+      background:#ffe6e6; 
+      color:#999; 
+      cursor:not-allowed; 
+    }
+    .calendar-day.past { 
+      background:#f5f5f5; 
+      color:#ccc; 
+      cursor:not-allowed; 
+    }
+    .calendar-day.selected { background:#3c8050; color:#fff; font-weight:bold; }
+    .calendar-day.other-month { color:#ccc; }
+
+    /* 🎯 修復：橫向輪播式預約卡片 */
+    .carousel-container {
+      padding: 16px;
+      margin: 20px 0;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin: 20px 16px;
+    }
+    .carousel-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #333;
+      text-align: center;
+    }
+    .carousel {
+      display: flex;
+      overflow-x: auto;
+      gap: 15px;
+      padding: 10px 5px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .carousel::-webkit-scrollbar {
+      display: none;
+    }
+    .reservation-bubble {
+      min-width: 280px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border: 1px solid #e0e0e0;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .bubble-header {
+      background: #27ACB2;
+      color: white;
+      padding: 12px 15px;
+      font-weight: bold;
+      font-size: 14px;
+      text-align: center;
+    }
+    .bubble-body {
+      padding: 15px;
+    }
+    .bubble-line {
+      margin-bottom: 8px;
+      font-size: 13px;
+      line-height: 1.4;
+      display: flex;
+      justify-content: space-between;
+    }
+    .bubble-line:last-child {
+      margin-bottom: 0;
+    }
+    .bubble-line strong {
+      color: #666;
+      min-width: 60px;
+    }
+    .bubble-line span {
+      color: #333;
+      text-align: right;
+      flex: 1;
+    }
+    .route-time {
+      font-weight: bold;
+      color: #333;
+    }
+    .bubble-footer {
+      padding: 12px;
+      border-top: 1px solid #f0f0f0;
+      text-align: center;
+      background: #fafafa;
+    }
+    .cancel-btn-small {
+      background: #ff4444;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 8px 16px;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    .cancel-btn-small:hover {
+      background: #cc0000;
+    }
+
+    /* 沒有預約的提示 */
+    .no-reservation {
+      text-align: center;
+      color: #666;
+      padding: 40px 20px;
+      background: white;
+      border-radius: 8px;
+      margin: 20px 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    /* 班次選擇區域 */
+    .route-section {
+      padding: 0 16px;
+      margin: 20px 0;
+    }
+    .route-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 10px 0;
+    }
+    .route-btn {
+      padding: 12px;
+      border: 2px solid #3c8050;
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .route-btn:hover {
+      background: #eaf5ea;
+    }
+    .route-btn.selected {
+      background: #3c8050;
+      color: white;
+    }
+    .route-time {
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .route-direction {
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    /* 車站選擇 */
+    .stop-selector {
+      padding: 0 16px;
+      margin: 20px 0;
+    }
+    select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    /* 使用者資訊 */
+    .user-section {
+      background: white;
+      margin: 16px;
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .user-name {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 5px;
+    }
+    .user-info {
+      font-size: 14px;
+      color: #666;
+    }
+
+    /* 送出按鈕 */
+    .submit-btn {
+      background: #3c8050;
+      color: white;
+      border: none;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 20px 16px;
+      width: calc(100% - 32px);
+    }
+    .submit-btn:hover {
+      background: #2d6140;
+    }
+    .submit-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* 提示訊息 */
+    .notice {
+      padding: 10px 16px;
+      margin: 10px 16px;
+      border-radius: 6px;
+    }
+    .notice.success {
+      background: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #81c784;
+    }
+    .notice.error {
+      background: #fdecea;
+      color: #b71c1c;
+      border: 1px solid #f5c2c7;
+    }
   </style>
 </head>
 <body>
-  <!-- 原有 HTML 結構保持不變 -->
   <header>穿山甲專車預約</header>
 
-  <div id="userInfo" class="user-section" style="padding:16px;">
+  <!-- 使用者資訊 -->
+  <div id="userInfo" class="user-section">
     <div class="loading-state">⏳ 系統初始化中...</div>
   </div>
 
+  <!-- 📅 月曆按鈕 -->
   <button id="calendarBtn" onclick="toggleCalendar()">📅 打開月曆</button>
 
+  <!-- 📅 月曆容器 -->
   <div id="calendarContainer" style="display:none;margin-top:10px; padding:0 16px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
       <button onclick="changeMonth(-1)" style="width:auto; padding:5px 10px;">◀ 上個月</button>
@@ -33,11 +291,13 @@
   <div id="selectedDate" class="notice success" style="display:none;"></div>
   <div id="holidayNotice" class="notice error" style="display:none;"></div>
 
+  <!-- 🚌 班次選擇區域 -->
   <div id="routeSection" class="route-section" style="display:none;">
     <h3>請選擇搭乘班次</h3>
     <div id="routeButtons" class="route-buttons"></div>
   </div>
 
+  <!-- 🚏 車站選擇區域 -->
   <div id="stopSection" class="stop-selector" style="display:none;">
     <h3>請選擇下車站</h3>
     <select id="toStop">
@@ -45,8 +305,10 @@
     </select>
   </div>
 
+  <!-- 📝 送出按鈕 -->
   <button id="submitBtn" class="submit-btn" onclick="submitReservation()" style="display:none;">送出預約</button>
 
+  <!-- 🧾 橫向輪播式預約卡片 -->
   <div id="currentReservationCard" style="display:none;"></div>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -100,9 +362,8 @@ async function init() {
     }
 
     document.getElementById('userInfo').innerHTML = `
-      <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">穿山甲專車預約</div>
       <div class="user-name">${userData.name}</div>
-      <div class="user-info"><strong>${userData.department} | ${userData.studentId}</strong></div>
+      <div class="user-info">${userData.department} | ${userData.studentId}</div>
     `;
 
     await loadExistingReservations();
@@ -111,6 +372,95 @@ async function init() {
     alert('系統初始化失敗，請重新開啟');
   }
 }
+
+// === 📅 橫向輪播式預約卡片 - 修復版 ===
+function renderCurrentReservationCard() {
+  const section = document.getElementById('currentReservationCard');
+  section.innerHTML = '';
+
+  const today = formatDateToLocal(new Date());
+  
+  // 修復：正確過濾有效預約
+  const activeReservations = existingReservations.filter(res => {
+    const reservationDate = res.date.split('T')[0]; // 處理可能包含時間的日期格式
+    return reservationDate >= today && res.status !== '已取消';
+  }).sort((a, b) => a.date.localeCompare(b.date));
+
+  if (activeReservations.length === 0) {
+    section.innerHTML = `
+      <div class="no-reservation">
+        <div style="font-size: 48px; margin-bottom: 10px;">📭</div>
+        <div style="font-size: 16px; color: #666;">目前沒有預約紀錄</div>
+      </div>
+    `;
+    section.style.display = 'block';
+    return;
+  }
+
+  // 建立輪播容器
+  const carouselContainer = document.createElement('div');
+  carouselContainer.className = 'carousel-container';
+  
+  const carouselTitle = document.createElement('div');
+  carouselTitle.className = 'carousel-title';
+  carouselTitle.textContent = `我的預約 (${activeReservations.length} 筆)`;
+  carouselContainer.appendChild(carouselTitle);
+  
+  const carousel = document.createElement('div');
+  carousel.className = 'carousel';
+  
+  // 為每個預約建立泡泡卡片 - 修復格式
+  activeReservations.forEach(reservation => {
+    const dateOnly = reservation.date.split('T')[0]; // 確保只顯示日期部分
+    const routeInfo = routeTimes[reservation.route] || { time: '', direction: '' };
+    
+    const bubble = document.createElement('div');
+    bubble.className = 'reservation-bubble';
+    bubble.innerHTML = `
+      <div class="bubble-header">
+        ${dateOnly} | ${reservation.route}
+      </div>
+      <div class="bubble-body">
+        <div class="bubble-line">
+          <strong>班次：</strong>
+          <span>${routeInfo.time}</span>
+        </div>
+        <div class="bubble-line">
+          <strong>路線：</strong>
+          <span>${routeInfo.direction}</span>
+        </div>
+        <div class="bubble-line">
+          <strong>姓名：</strong>
+          <span>${reservation.name}</span>
+        </div>
+        <div class="bubble-line">
+          <strong>上車：</strong>
+          <span>${reservation.fromStop}</span>
+        </div>
+        <div class="bubble-line">
+          <strong>下車：</strong>
+          <span>${reservation.toStop}</span>
+        </div>
+        <div class="bubble-line">
+          <strong>狀態：</strong>
+          <span>${reservation.status || '已預約'}</span>
+        </div>
+      </div>
+      <div class="bubble-footer">
+        <button class="cancel-btn-small" onclick="cancelReservation('${reservation.id || reservation.timestamp}')">
+          ❌ 取消預約
+        </button>
+      </div>
+    `;
+    carousel.appendChild(bubble);
+  });
+  
+  carouselContainer.appendChild(carousel);
+  section.appendChild(carouselContainer);
+  section.style.display = 'block';
+}
+
+// 其餘 JavaScript 函數保持不變（loadNoServiceDates, toggleCalendar, renderCalendar, changeMonth, selectDate, showRouteSelection, selectRoute, showStopSelection, submitReservation, resetReservationForm, cancelReservation, loadExistingReservations, formatDateToLocal）
 
 // === 載入停駛日期 ===
 async function loadNoServiceDates() {
@@ -462,75 +812,6 @@ function resetReservationForm() {
   document.getElementById('toStop').innerHTML = '<option value="">請先選擇班次</option>';
   document.querySelectorAll('.route-btn').forEach(btn => btn.classList.remove('selected'));
   document.querySelectorAll('.calendar-day').forEach(day => day.classList.remove('selected'));
-}
-
-// === 📅 橫向輪播式預約卡片 - 修復版 ===
-function renderCurrentReservationCard() {
-  const section = document.getElementById('currentReservationCard');
-  section.innerHTML = '';
-
-  const today = formatDateToLocal(new Date());
-  
-  // 修復：正確過濾有效預約
-  const activeReservations = existingReservations.filter(res => {
-    const reservationDate = res.date.split('T')[0]; // 處理可能包含時間的日期格式
-    return reservationDate >= today && res.status !== '已取消';
-  }).sort((a, b) => a.date.localeCompare(b.date));
-
-  if (activeReservations.length === 0) {
-    section.innerHTML = `
-      <div class="no-reservation">
-        <div style="font-size: 48px; margin-bottom: 10px;">📭</div>
-        <div style="font-size: 16px; color: #666;">目前沒有預約紀錄</div>
-      </div>
-    `;
-    section.style.display = 'block';
-    return;
-  }
-
-  // 建立輪播容器
-  const carouselContainer = document.createElement('div');
-  carouselContainer.className = 'carousel-container';
-  
-  const carouselTitle = document.createElement('div');
-  carouselTitle.className = 'carousel-title';
-  carouselTitle.textContent = `我的預約 (${activeReservations.length} 筆)`;
-  carouselContainer.appendChild(carouselTitle);
-  
-  const carousel = document.createElement('div');
-  carousel.className = 'carousel';
-  
-  // 為每個預約建立泡泡卡片 - 修復格式
-  activeReservations.forEach(reservation => {
-    const dateOnly = reservation.date.split('T')[0]; // 確保只顯示日期部分
-    const routeInfo = routeTimes[reservation.route] || { time: '', direction: '' };
-    
-    const bubble = document.createElement('div');
-    bubble.className = 'reservation-bubble';
-    bubble.innerHTML = `
-      <div class="bubble-header">
-        ${dateOnly} | ${reservation.route}
-      </div>
-      <div class="bubble-body">
-        <div class="bubble-line"><strong>班次：</strong>${routeInfo.time}</div>
-        <div class="bubble-line"><strong>路線：</strong>${routeInfo.direction}</div>
-        <div class="bubble-line"><strong>姓名：</strong>${reservation.name}</div>
-        <div class="bubble-line"><strong>上車：</strong>${reservation.fromStop}</div>
-        <div class="bubble-line"><strong>下車：</strong>${reservation.toStop}</div>
-        <div class="bubble-line"><strong>狀態：</strong>${reservation.status || '已預約'}</div>
-      </div>
-      <div class="bubble-footer">
-        <button class="cancel-btn-small" onclick="cancelReservation('${reservation.id || reservation.timestamp}')">
-          ❌ 取消預約
-        </button>
-      </div>
-    `;
-    carousel.appendChild(bubble);
-  });
-  
-  carouselContainer.appendChild(carousel);
-  section.appendChild(carouselContainer);
-  section.style.display = 'block';
 }
 
 // === 取消預約 - 修復版 ===
