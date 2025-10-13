@@ -169,15 +169,41 @@
       } catch (error) {
         console.error('LIFF 初始化失敗:', error);
         showPopup('❌ 系統初始化失敗，請重新開啟');
+        // 初始化失敗時仍然顯示表單
+        hideLoading();
+        showForm();
       }
     }
 
-    // ✅ 檢查註冊狀態
+    // ✅ 檢查註冊狀態 - 修復資料格式
     async function checkRegistrationStatus() {
       try {
-        const checkUrl = `${GAS_URL}?action=check&userId=${userId}`;
-        const response = await fetch(checkUrl);
-        const result = await response.json();
+        console.log('檢查註冊狀態，用戶ID:', userId);
+        
+        const requestData = {
+          type: 'check',
+          userId: userId
+        };
+
+        const response = await fetch(GAS_URL, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(requestData)
+        });
+
+        let result;
+        try {
+          const rawText = await response.text();
+          console.log('檢查回應原始資料:', rawText);
+          result = rawText ? JSON.parse(rawText) : {};
+        } catch (parseError) {
+          console.error('JSON 解析錯誤:', parseError);
+          throw new Error('伺服器回應格式錯誤');
+        }
+
+        console.log('檢查註冊狀態結果:', result);
 
         if (result.registered) {
           // 已註冊，跳轉到主頁面
@@ -211,17 +237,17 @@
       document.getElementById('department').value = '資訊工程學系';
     }
 
-    // ✅ 註冊功能
+    // ✅ 註冊功能 - 修復資料格式
     async function registerUser() {
       const submitBtn = document.getElementById('submitBtn');
       
       // 防止重複提交
       if (submitBtn.disabled) return;
       
-      // 收集表單資料
+      // 收集表單資料 - 使用與檢查時相同的格式
       const formData = {
+        type: 'register',  // 明確指定操作類型
         userId: userId,
-        displayName: userProfile?.displayName || '',
         name: document.getElementById('name').value.trim(),
         phone: document.getElementById('phone').value.trim(),
         studentId: document.getElementById('studentId').value.trim(),
@@ -246,26 +272,27 @@
         submitBtn.textContent = '註冊中...';
         submitBtn.classList.add('bg-gray-400');
 
+        console.log('發送註冊資料:', formData);
+
         const response = await fetch(GAS_URL, {
           method: "POST",
           headers: { 
-            "Content-Type": "application/json",
-            "Accept": "application/json"
+            "Content-Type": "application/json"
           },
-          body: JSON.stringify({
-            action: 'register',
-            ...formData
-          })
+          body: JSON.stringify(formData)
         });
 
         let result;
         try {
           const rawText = await response.text();
+          console.log('註冊回應原始資料:', rawText);
           result = rawText ? JSON.parse(rawText) : {};
         } catch (parseError) {
           console.error('JSON 解析錯誤:', parseError);
           throw new Error('伺服器回應格式錯誤');
         }
+
+        console.log('註冊結果:', result);
 
         if (result.status === 'success') {
           showPopup('✅ 註冊成功！', true);
