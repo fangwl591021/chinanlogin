@@ -7,18 +7,19 @@
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .fade-in { animation: fadeIn 0.5s ease-in-out forwards; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
     @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen flex items-center justify-center p-4">
 
   <!-- 🟢 開場 LOGO + Loading -->
   <div id="splash" class="flex flex-col items-center justify-center w-full h-screen fade-in">
-    <img src="https://aiwe.cc/wp-content/uploads/2025/10/6446d860dbbfe540e9e2cbab5f98f1e3-1.png">
-    <div class="flex items-center space-x-2 text-green-700 font-semibold text-lg">
+    <img src="https://aiwe.cc/wp-content/uploads/2025/10/6446d860dbbfe540e9e2cbab5f98f1e3-1.png" alt="暨大接駁車" class="w-32 h-32">
+    <div class="flex items-center space-x-2 text-green-700 font-semibold text-lg mt-4">
       <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
-      <span>登入中，請稍候...</span>
+      <span>登入中...</span>
     </div>
   </div>
 
@@ -30,13 +31,13 @@
     </div>
 
     <div class="space-y-3">
-      <input id="name" type="text" placeholder="姓名" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
-      <input id="phone" type="tel" placeholder="電話" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
-      <input id="studentId" type="text" placeholder="學號" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
+      <input id="name" type="text" placeholder="姓名" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none transition-all duration-200">
+      <input id="phone" type="tel" placeholder="電話" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none transition-all duration-200">
+      <input id="studentId" type="text" placeholder="學號" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none transition-all duration-200">
       
-      <select id="department" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none">
+      <select id="department" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none transition-all duration-200">
         <option value="">請選擇科系</option>
-        <optgroup label="人文學院" style="color:green;">
+        <optgroup label="人文學院">
           <option>中國語文學系</option>
           <option>外國語文學系</option>
           <option>社會政策與社會工作學系</option>
@@ -45,7 +46,7 @@
           <option>東南亞學系</option>
           <option>原鄉發展跨領域學士學位學程原住民專班</option>
         </optgroup>
-        <optgroup label="管理學院" style="color:green;">
+        <optgroup label="管理學院">
           <option>國際企業學系</option>
           <option>經濟學系</option>
           <option>財務金融學系</option>
@@ -53,7 +54,7 @@
           <option>觀光休閒與餐旅管理學系</option>
           <option>管理學院學士班</option>
         </optgroup>
-        <optgroup label="科技學院" style="color:green;">
+        <optgroup label="科技學院">
           <option>資訊工程學系</option>
           <option>土木工程學系</option>
           <option>電機工程學系</option>
@@ -61,21 +62,22 @@
           <option>應用材料及光電工程學系</option>
           <option>科技學院學士班</option>
         </optgroup>
-        <optgroup label="教育學院" style="color:green;">
+        <optgroup label="教育學院">
           <option>國際文教與比較教育學系</option>
           <option>教育政策與行政學系</option>
           <option>諮商心理與人力資源發展學系</option>
         </optgroup>
-        <optgroup label="水沙連學院" style="color:green;">
+        <optgroup label="水沙連學院">
           <option>水沙連學院學士班</option>
         </optgroup>
-        <optgroup label="護理暨健康福祉學院" style="color:green;">
+        <optgroup label="護理暨健康福祉學院">
           <option>護理學系</option>
         </optgroup>
       </select>
 
-      <button onclick="registerUser()" class="w-full bg-green-500 text-white py-2 rounded-lg font-bold text-lg hover:bg-green-600 transition">
-        立即註冊
+      <button id="registerBtn" onclick="registerUser()" class="w-full bg-green-500 text-white py-2 rounded-lg font-bold text-lg hover:bg-green-600 transition-all duration-200 active:scale-95">
+        <span id="btnText">立即註冊</span>
+        <div id="btnSpinner" class="hidden animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>
       </button>
     </div>
     <div class="mt-4 text-center text-sm text-gray-500">
@@ -86,10 +88,60 @@
 <script>
 const GAS_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 let currentUserId = null;
+let startTime = Date.now();
+
+// 性能優化：預加載資源
+function preloadResources() {
+  // 預加載主頁面
+  const preloadLink = document.createElement('link');
+  preloadLink.rel = 'prefetch';
+  preloadLink.href = 'main.html';
+  document.head.appendChild(preloadLink);
+}
+
+// 顯示表單
+function showForm() {
+  document.getElementById('splash').classList.add('hidden');
+  document.getElementById('registerForm').classList.remove('hidden');
+}
+
+// 顯示錯誤
+function showError(message) {
+  document.getElementById('splash').classList.add('hidden');
+  alert('⚠️ ' + message);
+}
+
+// 優化註冊按鈕狀態
+function setButtonLoading(loading) {
+  const btn = document.getElementById('registerBtn');
+  const btnText = document.getElementById('btnText');
+  const spinner = document.getElementById('btnSpinner');
+  
+  if (loading) {
+    btn.disabled = true;
+    btnText.classList.add('hidden');
+    spinner.classList.remove('hidden');
+    btn.classList.add('opacity-75');
+  } else {
+    btn.disabled = false;
+    btnText.classList.remove('hidden');
+    spinner.classList.add('hidden');
+    btn.classList.remove('opacity-75');
+  }
+}
 
 (async function init() {
   try {
-    await liff.init({ liffId: "2006590746-KJodGOda" });
+    startTime = Date.now();
+    preloadResources();
+    
+    // 並行初始化 LIFF 和檢查用戶狀態
+    const [liffInit] = await Promise.all([
+      liff.init({ liffId: "2006590746-KJodGOda" }),
+      // 添加小延遲讓用戶看到載入畫面
+      new Promise(resolve => setTimeout(resolve, 800))
+    ]);
+    
     if (!liff.isLoggedIn()) {
       liff.login();
       return;
@@ -97,35 +149,50 @@ let currentUserId = null;
 
     const profile = await liff.getProfile();
     currentUserId = profile.userId;
+    
+    console.log(`LIFF初始化完成，耗時: ${Date.now() - startTime}ms`);
 
-    // 模擬 Loading 開場 2~3 秒
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // 👉 登入後先檢查是否註冊
+    // 檢查是否已註冊
+    const checkStart = Date.now();
     const res = await fetch(`${GAS_URL}?check=${currentUserId}`);
     const result = await res.json();
+    
+    console.log(`檢查註冊狀態完成，耗時: ${Date.now() - checkStart}ms`);
 
     if (result.registered) {
+      // 直接跳轉，不顯示過渡畫面
       window.location.href = 'main.html';
     } else {
-      document.getElementById('splash').style.display = 'none';
-      document.getElementById('registerForm').classList.remove('hidden');
+      showForm();
     }
+    
+    console.log(`總初始化時間: ${Date.now() - startTime}ms`);
 
   } catch (err) {
-    console.error('登入檢查錯誤', err);
-    alert('⚠️ 系統發生錯誤，請稍後再試');
+    console.error('初始化錯誤', err);
+    showError('系統發生錯誤，請稍後再試');
   }
 })();
 
 async function registerUser() {
-  const name = document.getElementById('name').value;
-  const phone = document.getElementById('phone').value;
-  const studentId = document.getElementById('studentId').value;
+  const name = document.getElementById('name').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const studentId = document.getElementById('studentId').value.trim();
   const department = document.getElementById('department').value;
 
   if (!name || !phone || !studentId || !department) {
     alert('⚠️ 請完整填寫所有欄位');
+    return;
+  }
+
+  // 簡單驗證
+  if (phone.length < 7) {
+    alert('⚠️ 請輸入有效的電話號碼');
+    return;
+  }
+
+  if (studentId.length < 3) {
+    alert('⚠️ 請輸入有效的學號');
     return;
   }
 
@@ -138,23 +205,55 @@ async function registerUser() {
     department
   };
 
+  setButtonLoading(true);
+
   try {
+    const registerStart = Date.now();
     const res = await fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
+    
     const result = await res.json();
+    console.log(`註冊請求完成，耗時: ${Date.now() - registerStart}ms`);
+    
     if (result.status === 'success') {
-      window.location.href = 'main.html';
+      // 顯示成功訊息後跳轉
+      const btn = document.getElementById('registerBtn');
+      btn.classList.remove('bg-green-500', 'hover:bg-green-600');
+      btn.classList.add('bg-green-600');
+      document.getElementById('btnText').textContent = '註冊成功！';
+      
+      // 短暫顯示成功狀態後跳轉
+      setTimeout(() => {
+        window.location.href = 'main.html';
+      }, 600);
     } else {
       alert('❌ 註冊失敗，請稍後再試');
+      setButtonLoading(false);
     }
   } catch (err) {
     console.error('註冊失敗', err);
-    alert('❌ 連線錯誤');
+    alert('❌ 連線錯誤，請檢查網路後重試');
+    setButtonLoading(false);
   }
 }
+
+// 添加表單快速填寫功能（開發用）
+document.addEventListener('DOMContentLoaded', function() {
+  // 在開發環境中快速填寫表單
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    setTimeout(() => {
+      if (document.getElementById('name') && !document.getElementById('name').value) {
+        document.getElementById('name').value = '測試學生';
+        document.getElementById('phone').value = '0912345678';
+        document.getElementById('studentId').value = 'D1234567';
+        document.getElementById('department').value = '資訊工程學系';
+      }
+    }, 1000);
+  }
+});
 </script>
 </body>
 </html>
