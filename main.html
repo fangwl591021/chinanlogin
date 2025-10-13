@@ -655,39 +655,7 @@ async function submitReservation() {
 
 
         
-        const pushRes = await fetch(WORKER_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(flexPayload)
-        });
-
-        const pushResult = await pushRes.json();
-        if (pushResult.status === 'success') {
-          console.log('✅ 已通知群組：穿山甲專車預約成功');
-        } else {
-          console.warn('⚠️ 群組推播失敗:', pushResult);
-        }
-
-      } catch (pushErr) {
-        console.error('❌ 群組推播錯誤:', pushErr);
-      }
-
-      // 重置表單
-      resetReservationForm();
-      // 重新載入預約記錄
-      await loadExistingReservations();
-      
-    } else {
-      alert('❌ 預約失敗：' + (result.message || '請稍後再試'));
-    }
-    
-  } catch (error) {
-    console.error('預約錯誤:', error);
-    alert('❌ 預約失敗，請檢查網路連線');
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = '送出預約';
-  }
+        
 }
 
 
