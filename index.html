@@ -5,35 +5,138 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>穿山甲專車登入</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 80px 20px;
+      background: #f5f6f7;
+    }
+    .loading-spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3c8050;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .error-message {
+      background: #fdecea;
+      color: #b71c1c;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px;
+      border: 1px solid #f5c2c7;
+    }
+    .retry-btn {
+      background: #3c8050;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px;
+    }
+  </style>
 </head>
-<body style="font-family:sans-serif;text-align:center;margin-top:80px">
+<body>
   <h2>🚌 穿山甲專車系統</h2>
-  <p>登入中，請稍候…</p>
+  <div id="loadingSection">
+    <div class="loading-spinner"></div>
+    <p>登入中，請稍候…</p>
+  </div>
+  
+  <div id="errorSection" style="display: none;"></div>
 
 <script>
   const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
-  const REGISTER_PAGE = 'register.html';
-  const MAIN_PAGE = 'main.html';
 
   async function init() {
-    await liff.init({ liffId: "2006590746-KJodGOda" });
-    if (!liff.isLoggedIn()) {
-      liff.login();
-      return;
-    }
+    try {
+      console.log('🚀 開始初始化...');
+      
+      // 檢查 LIFF SDK
+      if (typeof liff === 'undefined') {
+        throw new Error('LIFF SDK 加載失敗，請在 LINE App 中開啟');
+      }
 
-    const profile = await liff.getProfile();
-    const res = await fetch(`${WORKER_URL}?check=${profile.userId}`);
-    const result = await res.json();
+      // 初始化 LIFF
+      console.log('🔧 初始化 LIFF...');
+      await liff.init({ 
+        liffId: "2006590746-KJodGOda"
+      });
+      console.log('✅ LIFF 初始化成功');
 
-    if (result.registered) {
-      window.location.href = MAIN_PAGE;
-    } else {
-      window.location.href = REGISTER_PAGE;
+      // 檢查登入狀態
+      console.log('🔐 檢查登入狀態...');
+      if (!liff.isLoggedIn()) {
+        console.log('🔄 執行登入...');
+        liff.login();
+        return;
+      }
+
+      // 獲取用戶資料
+      console.log('👤 獲取用戶資料...');
+      const profile = await liff.getProfile();
+      console.log('用戶資料:', profile);
+
+      // 檢查用戶註冊狀態
+      console.log('📡 檢查註冊狀態...');
+      const response = await fetch(`${WORKER_URL}?check=${profile.userId}`);
+      
+      if (!response.ok) {
+        throw new Error(`伺服器錯誤: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log('註冊檢查結果:', result);
+
+      // 根據結果跳轉
+      if (result.registered) {
+        console.log('✅ 已註冊，跳轉到主頁面');
+        window.location.href = 'main.html';
+      } else {
+        console.log('📝 未註冊，跳轉到註冊頁面');
+        window.location.href = 'register.html';
+      }
+
+    } catch (error) {
+      console.error('💥 初始化錯誤:', error);
+      showError(error.message);
     }
   }
 
-  init();
+  function showError(message) {
+    document.getElementById('loadingSection').style.display = 'none';
+    const errorSection = document.getElementById('errorSection');
+    errorSection.style.display = 'block';
+    errorSection.innerHTML = `
+      <div class="error-message">
+        <h3>❌ 系統錯誤</h3>
+        <p>${message}</p>
+        <button class="retry-btn" onclick="retryInit()">重新嘗試</button>
+        <button class="retry-btn" onclick="location.href='debug.html'">詳細調試</button>
+      </div>
+    `;
+  }
+
+  function retryInit() {
+    document.getElementById('errorSection').style.display = 'none';
+    document.getElementById('loadingSection').style.display = 'block';
+    setTimeout(init, 1000);
+  }
+
+  // 頁面載入時初始化
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(init, 500);
+  });
 </script>
 </body>
 </html>
