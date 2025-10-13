@@ -367,136 +367,73 @@ function showStopSelection(dir){
   document.getElementById('submitBtn').style.display='block';
 }
 
-// 預約送出
+// === 📝 預約送出（含重複檢查） ===
 async function submitReservation(){
-  const to=document.getElementById('toStop').value;
-  const btn=document.getElementById('submitBtn');
-  if(!selectedDate||!selectedRoute||!to)return alert('請完整選擇日期、班次與下車站');
-  
-  try{
-    btn.disabled=true;
-    btn.textContent='預約中...';
-    
-    const info=routeTimes[selectedRoute];
-    const from=selectedRoute.includes('A')?'行政大樓':'埔里總站';
-    const payload={
-      type:'reserve',
-      userId:userData.userId,
-      name:userData.name,
-      studentId:userData.studentId,
-      department:userData.department,
-      phone:userData.phone||'',
-      route:selectedRoute,
-      routeName:`${selectedRoute} | ${info.time} ${info.direction}`,
-      fromStop:from,
-      toStop:to,
-      date:selectedDate
+  const to = document.getElementById('toStop').value;
+  const btn = document.getElementById('submitBtn');
+
+  if (!selectedDate || !selectedRoute || !to) {
+    alert('請完整選擇日期、班次與下車站');
+    return;
+  }
+
+  // 🚫【新增】重複預約檢查邏輯
+  const duplicate = existingReservations.find(r => 
+    r.date === selectedDate && 
+    r.route === selectedRoute &&
+    r.status !== '已取消'
+  );
+  if (duplicate) {
+    alert(`⚠️ 您已預約 ${selectedDate} ${selectedRoute} 班次，請勿重複預約！`);
+    return;
+  }
+
+  try {
+    btn.disabled = true;
+    btn.textContent = '預約中...';
+
+    const info = routeTimes[selectedRoute];
+    const from = selectedRoute.includes('A') ? '行政大樓' : '埔里總站';
+
+    const payload = {
+      type: 'reserve',
+      userId: userData.userId,
+      name: userData.name,
+      studentId: userData.studentId,
+      department: userData.department,
+      phone: userData.phone || '',
+      route: selectedRoute,
+      routeName: `${selectedRoute} | ${info.time} ${info.direction}`,
+      fromStop: from,
+      toStop: to,
+      date: selectedDate
     };
-    
-    const res=await fetch(WORKER_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload)
+
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
-    const result=await res.json();
-    
-    if(result.status==='success'){
+
+    const result = await res.json();
+
+    if (result.status === 'success') {
       alert('✅ 預約成功！');
       localStorage.removeItem('pangolinReservations');
       await loadExistingReservations();
-    }else{
-      alert('❌ 預約失敗：'+(result.message||'請稍後再試'));
+    } else {
+      alert('❌ 預約失敗：' + (result.message || '請稍後再試'));
     }
-  }catch(e){
+
+  } catch (e) {
+    console.error('預約錯誤', e);
     alert('❌ 預約失敗，請稍後再試');
-  }finally{
-    btn.disabled=false;
-    btn.textContent='送出預約';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '送出預約';
   }
 }
 
-// 卡片顯示 - 優化版
-function renderCurrentReservationCard(){
-  const s=document.getElementById('currentReservationCard');
-  const today=formatDateToLocal(new Date());
-  const list=existingReservations.filter(r=>r.date>=today&&r.status!=='已取消').sort((a,b)=>a.date.localeCompare(b.date));
-  
-  if(!list.length){
-    s.innerHTML=`<div class='no-reservation'><div style='font-size:48px'>📭</div>目前沒有預約紀錄</div>`;
-    s.style.display='block';
-    return;
-  }
-  
-  const fragment=document.createDocumentFragment();
-  const c=document.createElement('div');
-  c.className='carousel-container';
-  
-  const t=document.createElement('div');
-  t.className='carousel-title';
-  t.textContent=`我的預約 (${list.length} 筆)`;
-  c.appendChild(t);
-  
-  const car=document.createElement('div');
-  car.className='carousel';
-  
-  list.forEach(r=>{
-    const info=routeTimes[r.route]||{time:'',direction:''};
-    const b=document.createElement('div');
-    b.className='reservation-bubble';
-    b.innerHTML=`<div class='bubble-header'>日期:${r.date.split('T')[0]}</div>
-    <div class='bubble-body'>
-      <div class='bubble-line route-time'>${r.route} | ${info.time}</div>
-      <div class='bubble-line'>${info.direction}</div>
-      <div class='bubble-line'>姓名:${r.name}</div>
-      <div class='bubble-line'>上車:${r.fromStop}</div>
-      <div class='bubble-line'>下車:${r.toStop}</div>
-    </div>
-    <div class='bubble-footer'>
-      <button class='cancel-btn-small' onclick="cancelReservation('${r.id}')">❌ 取消預約</button>
-    </div>`;
-    car.appendChild(b);
-  });
-  
-  c.appendChild(car);
-  fragment.appendChild(c);
-  s.innerHTML='';
-  s.appendChild(fragment);
-  s.style.display='block';
-}
-
-// 取消預約
-async function cancelReservation(id){
-  if(!confirm('確定要取消嗎？'))return;
-  
-  try{
-    const reservationToCancel=existingReservations.find(r=>r.id===id);
-    if(!reservationToCancel)return alert('❌ 找不到預約資料');
-    
-    const res=await fetch(WORKER_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        type:'cancel',
-        id:id,
-        userId:userData.userId,
-        reservationData:reservationToCancel
-      })
-    });
-    
-    const result=await res.json();
-    
-    if(result.status==='success'||result.success===true){
-      alert('✅ 已取消預約');
-      localStorage.removeItem('pangolinReservations');
-      await loadExistingReservations();
-    }else{
-      alert('❌ 取消失敗：'+(result.message||'請稍後再試'));
-    }
-  }catch(e){
-    console.error('取消預約錯誤',e);
-    alert('❌ 取消預約時發生錯誤');
-  }
-}
 
 // 日期格式
 function formatDateToLocal(d){
