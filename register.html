@@ -9,11 +9,19 @@
 </head>
 
 <body class="bg-gradient-to-br from-green-100 to-blue-100 min-h-screen flex items-center justify-center p-4">
-  <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+  <!-- 載入畫面 -->
+  <div id="loading" class="fixed inset-0 flex items-center justify-center bg-white bg-opacity-90 z-50">
+    <div class="text-center">
+      <div class="w-16 h-16 border-4 border-green-200 border-t-green-500 rounded-full animate-spin mx-auto mb-4"></div>
+      <p class="text-gray-600">載入中...</p>
+    </div>
+  </div>
+
+  <div id="form" class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm hidden">
     <div class="text-center mb-6">
       <img src="https://scdn.line-apps.com/n/line_logo.png" alt="LINE" class="w-16 mx-auto mb-3">
       <h1 class="text-2xl font-bold text-gray-800">接駁車學生註冊</h1>
-      <p class="text-gray-500 text-sm mt-1">請使用 LINE 登入並填寫資料</p>
+      <p class="text-gray-500 text-sm mt-1">請填寫資料完成註冊</p>
     </div>
 
     <!-- ✅ 註冊欄位 -->
@@ -75,8 +83,8 @@
         </optgroup>
       </select>
 
-      <button onclick="registerUser()" 
-        class="w-full bg-green-500 text-white py-2 rounded-lg font-bold text-lg hover:bg-green-600 transition">
+      <button onclick="registerUser()" id="submitBtn"
+        class="w-full bg-green-500 text-white py-2 rounded-lg font-bold text-lg hover:bg-green-600 transition disabled:bg-gray-400 disabled:cursor-not-allowed">
         立即註冊
       </button>
     </div>
@@ -98,15 +106,9 @@
   </div>
 
   <script>
-    const GAS_URL = "https://delicate-math-7e61.fangwl591021.workers.dev/"; // 👈 Cloudflare Worker
-
-    // 初始化 LINE Login
-    async function main() {
-      await liff.init({ liffId: "2006590746-KJodGOda" });
-      if (!liff.isLoggedIn()) {
-        liff.login();
-      }
-    }
+    const GAS_URL = "https://delicate-math-7e61.fangwl591021.workers.dev/";
+    let userId = null;
+    let userProfile = null;
 
     // ✅ 自訂彈窗
     function showPopup(message, autoClose = false) {
@@ -116,63 +118,185 @@
       if (autoClose) {
         setTimeout(() => {
           closePopup();
-        }, 1500);
+        }, 2000);
       }
     }
 
     function closePopup() {
       document.getElementById('popup').classList.add('hidden');
-      liff.closeWindow();
     }
 
-    // ✅ 註冊
+    // ✅ 顯示/隱藏載入畫面
+    function showLoading() {
+      document.getElementById('loading').classList.remove('hidden');
+    }
+
+    function hideLoading() {
+      document.getElementById('loading').classList.add('hidden');
+    }
+
+    // ✅ 顯示表單
+    function showForm() {
+      document.getElementById('form').classList.remove('hidden');
+    }
+
+    // ✅ 初始化 LINE Login
+    async function initializeLiff() {
+      try {
+        showLoading();
+        
+        await liff.init({ 
+          liffId: "2006590746-KJodGOda" 
+        });
+
+        console.log('LIFF 初始化成功');
+
+        if (!liff.isLoggedIn()) {
+          console.log('未登入，開始登入流程');
+          liff.login();
+          return;
+        }
+
+        // 獲取用戶資料
+        userProfile = await liff.getProfile();
+        userId = userProfile.userId;
+        
+        console.log('用戶資料獲取成功:', userProfile.displayName);
+
+        // 檢查是否已註冊
+        await checkRegistrationStatus();
+
+      } catch (error) {
+        console.error('LIFF 初始化失敗:', error);
+        showPopup('❌ 系統初始化失敗，請重新開啟');
+      }
+    }
+
+    // ✅ 檢查註冊狀態
+    async function checkRegistrationStatus() {
+      try {
+        const checkUrl = `${GAS_URL}?action=check&userId=${userId}`;
+        const response = await fetch(checkUrl);
+        const result = await response.json();
+
+        if (result.registered) {
+          // 已註冊，跳轉到主頁面
+          showPopup('✅ 您已註冊過，即將跳轉...', true);
+          setTimeout(() => {
+            window.location.href = 'main.html';
+          }, 1500);
+        } else {
+          // 未註冊，顯示表單
+          hideLoading();
+          showForm();
+          
+          // 開發環境自動填充測試資料
+          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            autoFillTestData();
+          }
+        }
+      } catch (error) {
+        console.error('檢查註冊狀態失敗:', error);
+        // 檢查失敗時仍然顯示表單
+        hideLoading();
+        showForm();
+      }
+    }
+
+    // ✅ 開發環境自動填充測試資料
+    function autoFillTestData() {
+      document.getElementById('name').value = '測試學生';
+      document.getElementById('phone').value = '0912345678';
+      document.getElementById('studentId').value = 'D1234567';
+      document.getElementById('department').value = '資訊工程學系';
+    }
+
+    // ✅ 註冊功能
     async function registerUser() {
-      const profile = await liff.getProfile();
-      const data = {
-        userId: profile.userId,
-        displayName: profile.displayName,
-        name: document.getElementById('name').value,
-        phone: document.getElementById('phone').value,
-        studentId: document.getElementById('studentId').value,
+      const submitBtn = document.getElementById('submitBtn');
+      
+      // 防止重複提交
+      if (submitBtn.disabled) return;
+      
+      // 收集表單資料
+      const formData = {
+        userId: userId,
+        displayName: userProfile?.displayName || '',
+        name: document.getElementById('name').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        studentId: document.getElementById('studentId').value.trim(),
         department: document.getElementById('department').value
       };
 
       // 必填驗證
-      if (!data.name || !data.phone || !data.studentId || !data.department) {
+      if (!formData.name || !formData.phone || !formData.studentId || !formData.department) {
         showPopup('⚠️ 請填寫所有欄位');
         return;
       }
 
+      // 電話號碼格式驗證（至少7位數字）
+      if (!/^[0-9]{7,}$/.test(formData.phone)) {
+        showPopup('⚠️ 請輸入有效的電話號碼');
+        return;
+      }
+
       try {
-        const res = await fetch(GAS_URL, {
+        // 禁用按鈕並顯示載入狀態
+        submitBtn.disabled = true;
+        submitBtn.textContent = '註冊中...';
+        submitBtn.classList.add('bg-gray-400');
+
+        const response = await fetch(GAS_URL, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
+          headers: { 
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify({
+            action: 'register',
+            ...formData
+          })
         });
 
-        const raw = await res.text();
         let result;
         try {
-          result = JSON.parse(raw);
-        } catch {
-          showPopup('⚠️ 系統已收到資料，但回傳格式有誤。');
-          return;
+          const rawText = await response.text();
+          result = rawText ? JSON.parse(rawText) : {};
+        } catch (parseError) {
+          console.error('JSON 解析錯誤:', parseError);
+          throw new Error('伺服器回應格式錯誤');
         }
 
         if (result.status === 'success') {
           showPopup('✅ 註冊成功！', true);
+          // 註冊成功後跳轉到主頁面
+          setTimeout(() => {
+            window.location.href = 'main.html';
+          }, 2000);
         } else {
-          showPopup('❌ 註冊失敗，請稍後再試');
+          throw new Error(result.message || '註冊失敗');
         }
 
       } catch (error) {
-        console.error('🚨 Fetch error:', error);
-        showPopup('❌ 無法連線伺服器');
+        console.error('註冊錯誤:', error);
+        showPopup(`❌ ${error.message || '註冊失敗，請稍後再試'}`);
+        
+        // 重新啟用按鈕
+        submitBtn.disabled = false;
+        submitBtn.textContent = '立即註冊';
+        submitBtn.classList.remove('bg-gray-400');
       }
     }
 
-    main();
+    // 頁面載入完成後初始化
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeLiff();
+    });
+
+    // 錯誤處理
+    window.addEventListener('error', function(e) {
+      console.error('全局錯誤:', e.error);
+    });
   </script>
 </body>
 </html>
-
