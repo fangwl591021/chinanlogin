@@ -64,7 +64,12 @@ select{width:100%;padding:12px;border:1px solid #ccc;border-radius:6px;font-size
 <div id="routeSection" class="route-section" style="display:none"><h3>請選擇搭乘班次</h3><div id="routeButtons" class="route-buttons"></div></div>
 <div id="stopSection" class="stop-selector" style="display:none"><h3>請選擇下車站</h3><select id="toStop"><option value="">請先選擇班次</option></select></div>
 <button id="submitBtn" class="submit-btn" onclick="submitReservation()" style="display:none">送出預約</button>
-<div id="currentReservationCard" style="display:none"></div>
+
+<!-- 修正：將預約卡片移到更明顯的位置 -->
+<div class="carousel-container">
+  <div class="carousel-title">我的預約</div>
+  <div id="currentReservationCard" class="carousel"></div>
+</div>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
@@ -90,6 +95,9 @@ const cache={
   },
   set(key,value){
     localStorage.setItem(key,JSON.stringify({value,timestamp:Date.now()}));
+  },
+  remove(key){
+    localStorage.removeItem(key);
   }
 };
 
@@ -102,85 +110,188 @@ const debounce=(fn,delay)=>{
   };
 };
 
-// 初始化 - 優化版
+// 初始化 - 修復版
 async function init(){
   try{
-    const cachedUser=cache.get('pangolinUser');
-    if(cachedUser){
-      userData=cachedUser;
-      renderUser(userData);
-      loadExistingReservations();
-    }
+    console.log('開始初始化...');
     
+    // 先顯示載入狀態
+    document.getElementById('userInfo').innerHTML='<div class="loading-state">⏳ 系統初始化中...</div>';
+    
+    // 初始化 LIFF
     await liff.init({liffId:"2006590746-KJodGOda"});
-    if(!liff.isLoggedIn())return liff.login();
+    console.log('LIFF 初始化成功');
+    
+    if(!liff.isLoggedIn()){
+      console.log('未登入，跳轉登入');
+      liff.login();
+      return;
+    }
     
     const profile=await liff.getProfile();
+    console.log('取得用戶資料:', profile.userId);
     
-    // 並行請求優化
-    const [userCheck,reservations]=await Promise.allSettled([
-      fetch(`${WORKER_URL}?check=${profile.userId}`).then(r=>r.json()),
-      cachedUser?fetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`).then(r=>r.json()):null
-    ]);
+    // 檢查用戶是否已註冊
+    const userCheckResponse = await fetch(`${WORKER_URL}?check=${profile.userId}`);
+    const userResult = await userCheckResponse.json();
+    console.log('用戶檢查結果:', userResult);
     
-    if(userCheck.status==='fulfilled'){
-      const result=userCheck.value;
-      if(!result.registered)return location.href='register.html';
-      userData=result.user;
-      cache.set('pangolinUser',userData);
-      renderUser(userData);
+    if(!userResult.registered){
+      console.log('用戶未註冊，跳轉註冊頁面');
+      location.href='register.html';
+      return;
     }
     
-    if(reservations.status==='fulfilled'&&reservations.value){
-      existingReservations=reservations.value.reservations||[];
-      cache.set('pangolinReservations',existingReservations);
-      renderCurrentReservationCard();
-    }else if(!cachedUser){
-      await loadExistingReservations();
-    }
-  }catch(e){
-    console.error("登入錯誤",e);
-    document.getElementById('userInfo').innerHTML=`<div class='notice error'>登入失敗，請重新載入</div>`;
+    userData = userResult.user;
+    console.log('用戶資料:', userData);
+    
+    // 渲染用戶資訊
+    renderUser(userData);
+    
+    // 載入現有預約
+    await loadExistingReservations();
+    
+  }catch(error){
+    console.error('初始化錯誤:', error);
+    document.getElementById('userInfo').innerHTML=`<div class='notice error'>系統錯誤: ${error.message}</div>`;
   }
 }
 
-function renderUser(u){
+function renderUser(user){
   document.getElementById('userInfo').innerHTML=`
-  <div style="font-size:18px;font-weight:bold">${u.name}</div>
-  <div>${u.department} | ${u.studentId}</div>`;
+    <div style="font-size:18px;font-weight:bold">${user.name}</div>
+    <div>${user.department} | ${user.studentId}</div>
+  `;
 }
 
-// 載入預約 - 優化版
-async function loadExistingReservations(retry=0){
-  const section=document.getElementById('currentReservationCard');
+// 載入預約 - 修復版
+async function loadExistingReservations(retry = 0){
+  console.log('開始載入預約...');
+  const container = document.getElementById('currentReservationCard');
   
-  // 先顯示快取資料
-  const cached=cache.get('pangolinReservations');
-  if(cached){
-    existingReservations=cached;
+  try{
+    // 顯示載中狀態
+    container.innerHTML = `<div class='no-reservation'>📡 載入預約資料中...</div>`;
+    
+    const response = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
+    console.log('預約API回應狀態:', response.status);
+    
+    if(!response.ok){
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('預約資料:', result);
+    
+    existingReservations = result.reservations || [];
+    
+    // 快取預約資料
+    cache.set('pangolinReservations', existingReservations);
+    
+    // 渲染預約卡片
     renderCurrentReservationCard();
-  }else{
-    section.innerHTML=`<div class='no-reservation'>📡 載入預約資料中...</div>`;
-    section.style.display='block';
+    
+  }catch(error){
+    console.error('載入預約失敗:', error);
+    
+    // 嘗試使用快取資料
+    const cached = cache.get('pangolinReservations');
+    if(cached && cached.length > 0){
+      console.log('使用快取預約資料');
+      existingReservations = cached;
+      renderCurrentReservationCard();
+    }else{
+      // 顯示錯誤訊息
+      if(retry < 2){
+        console.log(`重試載入預約... (${retry + 1}/3)`);
+        setTimeout(() => loadExistingReservations(retry + 1), 1000);
+      }else{
+        container.innerHTML = `<div class='no-reservation'>⚠️ 無法載入預約資料，請檢查網路連線</div>`;
+      }
+    }
+  }
+}
+
+// 渲染預約卡片 - 修復版
+function renderCurrentReservationCard(){
+  const container = document.getElementById('currentReservationCard');
+  
+  if(!existingReservations || existingReservations.length === 0){
+    container.innerHTML = `<div class='no-reservation'>📭 尚無預約記錄</div>`;
+    return;
+  }
+  
+  // 過濾出有效的預約（未取消的）
+  const validReservations = existingReservations.filter(r => r.status !== '已取消');
+  
+  if(validReservations.length === 0){
+    container.innerHTML = `<div class='no-reservation'>📭 尚無有效預約</div>`;
+    return;
+  }
+  
+  console.log('渲染有效預約:', validReservations);
+  
+  const fragment = document.createDocumentFragment();
+  
+  validReservations.forEach(reservation => {
+    const bubble = document.createElement('div');
+    bubble.className = 'reservation-bubble';
+    
+    bubble.innerHTML = `
+      <div class="bubble-header">${reservation.routeName || reservation.route}</div>
+      <div class="bubble-body">
+        <div class="bubble-line"><strong>日期：</strong>${reservation.date}</div>
+        <div class="bubble-line"><strong>路線：</strong>${reservation.fromStop} → ${reservation.toStop}</div>
+        <div class="bubble-line"><strong>狀態：</strong>${reservation.status || '已預約'}</div>
+      </div>
+      <div class="bubble-footer">
+        <button class="cancel-btn-small" onclick="cancelReservation('${reservation.id || reservation.timestamp}')">
+          ❌ 取消預約
+        </button>
+      </div>
+    `;
+    
+    fragment.appendChild(bubble);
+  });
+  
+  container.innerHTML = '';
+  container.appendChild(fragment);
+}
+
+// 取消預約函數
+async function cancelReservation(reservationId){
+  if(!confirm('確定要取消這個預約嗎？')){
+    return;
   }
   
   try{
-    const res=await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
-    const result=await res.json();
-    existingReservations=result.reservations||[];
-    cache.set('pangolinReservations',existingReservations);
-    renderCurrentReservationCard();
-  }catch(e){
-    console.warn("預約載入失敗",e);
-    if(retry<2){
-      setTimeout(()=>loadExistingReservations(retry+1),800);
-    }else if(!cached){
-      section.innerHTML=`<div class='no-reservation'>⚠️ 無法載入預約資料</div>`;
+    const response = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        type: 'cancel',
+        reservationId: reservationId,
+        userId: userData.userId
+      })
+    });
+    
+    const result = await response.json();
+    
+    if(result.status === 'success'){
+      alert('✅ 預約已取消');
+      // 清除快取並重新載入
+      cache.remove('pangolinReservations');
+      await loadExistingReservations();
+    }else{
+      alert('❌ 取消失敗：' + (result.message || '請稍後再試'));
     }
+  }catch(error){
+    console.error('取消預約錯誤:', error);
+    alert('❌ 取消失敗，請檢查網路連線');
   }
 }
 
-// 停駛日 - 優化版
+// 停駛日 - 修復版
 async function loadNoServiceDates(){
   const cacheKey=`noService_${currentYear}_${currentMonth}`;
   const cached=cache.get(cacheKey);
@@ -200,11 +311,12 @@ async function loadNoServiceDates(){
     }
     cache.set(cacheKey,noServiceDates);
   }catch(e){
+    console.warn('載入停駛日失敗:', e);
     noServiceDates={};
   }
 }
 
-// 月曆切換 - 優化版
+// 月曆切換
 const toggleCalendar=debounce(async function(){
   const c=document.getElementById('calendarContainer');
   const b=document.getElementById('calendarBtn');
@@ -220,7 +332,7 @@ const toggleCalendar=debounce(async function(){
   }
 },150);
 
-// 月曆渲染 - 優化版（使用 Fragment 減少 reflow）
+// 月曆渲染
 function renderCalendar(){
   const cal=document.getElementById('calendar');
   const fragment=document.createDocumentFragment();
@@ -367,7 +479,7 @@ function showStopSelection(dir){
   document.getElementById('submitBtn').style.display='block';
 }
 
-// === 📝 預約送出（含禁止重複時段預約） ===
+// 預約送出
 async function submitReservation() {
   const to = document.getElementById('toStop').value;
   const btn = document.getElementById('submitBtn');
@@ -377,12 +489,12 @@ async function submitReservation() {
     return;
   }
 
-  // 🚫【新增】禁止重複預約檢查（同日同班次）
+  // 禁止重複預約檢查
   const duplicate = existingReservations.find(r =>
-    r.userId === userData.userId &&          // 同一使用者
-    r.date === selectedDate &&               // 同一天
-    r.route === selectedRoute &&             // 同班次
-    r.status !== '已取消'                    // 排除已取消
+    r.userId === userData.userId &&
+    r.date === selectedDate &&
+    r.route === selectedRoute &&
+    r.status !== '已取消'
   );
 
   if (duplicate) {
@@ -420,8 +532,16 @@ async function submitReservation() {
 
     if (result.status === 'success') {
       alert('✅ 預約成功！');
-      localStorage.removeItem('pangolinReservations');
+      cache.remove('pangolinReservations');
       await loadExistingReservations();
+      
+      // 重置表單
+      selectedDate = null;
+      selectedRoute = null;
+      document.getElementById('selectedDate').style.display = 'none';
+      document.getElementById('routeSection').style.display = 'none';
+      document.getElementById('stopSection').style.display = 'none';
+      document.getElementById('submitBtn').style.display = 'none';
     } else {
       alert('❌ 預約失敗：' + (result.message || '請稍後再試'));
     }
@@ -434,8 +554,6 @@ async function submitReservation() {
     btn.textContent = '送出預約';
   }
 }
-
-
 
 // 日期格式
 function formatDateToLocal(d){
