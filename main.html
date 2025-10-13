@@ -337,7 +337,13 @@ const routeTimes = {
   'A2': { time: '23:00-23:30', direction: '暨大→埔里總站' },
   'B2': { time: '23:30-24:00', direction: '埔里總站→暨大' }
 };
-
+// ↓↓↓ 在這裡加入 ↓↓↓
+const RESERVATION_RULES = {
+  MAX_DAYS_AHEAD: 7,
+  MAX_CAPACITY_PER_ROUTE: 6,
+  DAILY_DEADLINE: '19:00',
+  MAX_RESERVATIONS_PER_DAY: 1
+};
 // === 初始化 LIFF ===
 async function init() {
   try {
@@ -807,6 +813,156 @@ async function loadExistingReservations() {
 
 function formatDateToLocal(date){
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
+
+// === 預約規則設定 ===
+const RESERVATION_RULES = {
+  MAX_DAYS_AHEAD: 7,
+  MAX_CAPACITY_PER_ROUTE: 6,
+  DAILY_DEADLINE: '19:00',
+  MAX_RESERVATIONS_PER_DAY: 1
+};
+
+// === 預約規則驗證函數 ===
+class ReservationValidator {
+  // R4: 過去日期檢查
+  static isPastDate(dateStr) {
+    const selected = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return selected < today;
+  }
+
+  // R5: 停駛日檢查
+  static isNoServiceDate(dateStr) {
+    return noServiceDates[dateStr] === true;
+  }
+
+  // R7: 預約截止時間檢查
+  static isAfterDeadline(dateStr) {
+    const today = new Date();
+    const selected = new Date(dateStr);
+    
+    // 如果是今天，檢查是否超過19:00
+    if (this.isToday(dateStr)) {
+      const now = new Date();
+      const [deadlineHour, deadlineMinute] = RESERVATION_RULES.DAILY_DEADLINE.split(':');
+      const deadline = new Date();
+      deadline.setHours(parseInt(deadlineHour), parseInt(deadlineMinute), 0, 0);
+      return now > deadline;
+    }
+    return false;
+  }
+
+  // R13: 未來天數限制
+  static isWithinBookingWindow(dateStr) {
+    const selected = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const maxDate = new Date();
+    maxDate.setDate(today.getDate() + RESERVATION_RULES.MAX_DAYS_AHEAD);
+    maxDate.setHours(23, 59, 59, 999);
+    
+    return selected >= today && selected <= maxDate;
+  }
+
+  // 輔助函數：檢查是否為今天
+  static isToday(dateStr) {
+    const today = formatDateToLocal(new Date());
+    return dateStr === today;
+  }
+
+  // 方案B核心：重複預約檢查 - 每天只能有1筆預約
+  static hasExistingReservation(userId, dateStr) {
+    const userReservations = existingReservations.filter(
+      res => res.userId === userId && 
+             res.date.split('T')[0] === dateStr && 
+             res.status !== '已取消'
+    );
+    return userReservations.length >= RESERVATION_RULES.MAX_RESERVATIONS_PER_DAY;
+  }
+
+  // R8: 班次容量檢查
+  static async isRouteFull(dateStr, route) {
+    try {
+      const res = await fetch(`${WORKER_URL}?mode=routeCapacity&date=${dateStr}&route=${route}`);
+      const result = await res.json();
+      return result.count >= RESERVATION_RULES.MAX_CAPACITY_PER_ROUTE;
+    } catch (error) {
+      console.error('容量檢查失敗:', error);
+      return false;
+    }
+  }
+
+  // R11, R12: 站點驗證
+  static validateStops(route, fromStop, toStop) {
+    const isValidFromStop = route.includes('A') ? 
+      fromStop === '行政大樓' : fromStop === '埔里總站';
+    
+    const stops = route.includes('A') ? stopsOutbound : stopsReturn;
+    const isValidToStop = stops.includes(toStop) && toStop !== fromStop;
+    
+    return isValidFromStop && isValidToStop;
+  }
+
+  // 綜合驗證函數
+  static async validateReservation(userId, dateStr, route, fromStop, toStop) {
+    const errors = [];
+
+    if (this.isPastDate(dateStr)) {
+      errors.push('無法預約過去日期');
+    }
+
+    if (this.isNoServiceDate(dateStr)) {
+      errors.push('該日期為停駛日，無法預約');
+    }
+
+    if (!this.isWithinBookingWindow(dateStr)) {
+      errors.push(`只能預約未來 ${RESERVATION_RULES.MAX_DAYS_AHEAD} 天內的班次`);
+    }
+
+    if (this.isAfterDeadline(dateStr)) {
+      errors.push(`今日預約已截止（${RESERVATION_RULES.DAILY_DEADLINE}）`);
+    }
+
+    // 方案B核心規則：每天只能預約1個班次
+    if (this.hasExistingReservation(userId, dateStr)) {
+      errors.push('每天只能預約一個班次，您當天已有預約');
+    }
+
+    // 檢查容量
+    const isFull = await this.isRouteFull(dateStr, route);
+    if (isFull) {
+      errors.push('該班次已額滿');
+    }
+
+    // 檢查站點
+    if (!this.validateStops(route, fromStop, toStop)) {
+      errors.push('站點選擇無效');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors: errors
+    };
+  }
+}
+
+// 錯誤顯示輔助函數
+function showError(message) {
+  document.getElementById('holidayNotice').style.display = 'block';
+  document.getElementById('holidayNotice').textContent = message;
+  document.getElementById('selectedDate').style.display = 'none';
+  resetSelection();
+}
+
+function resetSelection() {
+  selectedDate = null;
+  selectedRoute = null;
+  document.getElementById('routeSection').style.display = 'none';
+  document.getElementById('stopSection').style.display = 'none';
+  document.getElementById('submitBtn').style.display = 'none';
 }
 
 // 頁面載入時初始化
