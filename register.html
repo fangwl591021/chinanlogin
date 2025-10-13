@@ -140,7 +140,7 @@ function setButtonLoading(loading) {
     const [liffInit] = await Promise.all([
       liff.init({ liffId: "2006590746-KJodGOda" }),
       // 添加小延遲讓用戶看到載入畫面
-      new Promise(resolve => setTimeout(resolve, 800))
+      new Promise(resolve => setTimeout(resolve, 200))
     ]);
     
     if (!liff.isLoggedIn()) {
