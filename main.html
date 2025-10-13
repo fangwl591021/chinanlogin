@@ -525,33 +525,48 @@ function changeMonth(delta) {
 }
 
 function selectDate(dateStr) {
-  // 檢查是否為停駛日期
-  if (noServiceDates[dateStr]) {
-    document.getElementById('holidayNotice').style.display = 'block';
-    document.getElementById('holidayNotice').textContent = `🚫 ${dateStr} 為停駛日，無法預約`;
-    document.getElementById('selectedDate').style.display = 'none';
-    selectedDate = null;
-    document.getElementById('routeSection').style.display = 'none';
-    document.getElementById('stopSection').style.display = 'none';
-    document.getElementById('submitBtn').style.display = 'none';
+  // 使用新的驗證規則檢查日期
+  const dateValidation = {
+    past: ReservationValidator.isPastDate(dateStr),
+    noService: ReservationValidator.isNoServiceDate(dateStr),
+    withinWindow: ReservationValidator.isWithinBookingWindow(dateStr),
+    afterDeadline: ReservationValidator.isAfterDeadline(dateStr),
+    hasReservation: ReservationValidator.hasExistingReservation(userData.userId, dateStr)
+  };
+
+  // 檢查日期有效性
+  if (dateValidation.past) {
+    showError('🚫 無法預約過去日期');
     return;
   }
-  
-  // 檢查是否為過去日期
-  const selected = new Date(dateStr);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  if (selected < today) {
-    document.getElementById('holidayNotice').style.display = 'block';
-    document.getElementById('holidayNotice').textContent = `🚫 ${dateStr} 為過去日期，無法預約`;
-    document.getElementById('selectedDate').style.display = 'none';
-    selectedDate = null;
-    document.getElementById('routeSection').style.display = 'none';
-    document.getElementById('stopSection').style.display = 'none';
-    document.getElementById('submitBtn').style.display = 'none';
+
+  if (dateValidation.noService) {
+    showError('🚫 該日期為停駛日，無法預約');
     return;
   }
-  
+
+  if (!dateValidation.withinWindow) {
+    showError(`🚫 只能預約未來 ${RESERVATION_RULES.MAX_DAYS_AHEAD} 天內的班次`);
+    return;
+  }
+
+  if (dateValidation.afterDeadline) {
+    showError(`🚫 今日預約已截止（${RESERVATION_RULES.DAILY_DEADLINE}）`);
+    return;
+  }
+
+  // 檢查是否已有預約
+  if (dateValidation.hasReservation) {
+    const existingReservation = existingReservations.find(
+      res => res.userId === userData.userId && 
+             res.date.split('T')[0] === dateStr && 
+             res.status !== '已取消'
+    );
+    
+    showError(`您已在 ${dateStr} 預約了 ${existingReservation?.route || ''} 班次，每天只能預約一個班次`);
+    return;
+  }
+
   selectedDate = dateStr;
   
   // 重置選擇狀態
