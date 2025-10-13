@@ -702,7 +702,7 @@ async function submitReservation() {
     const fromStop = selectedRoute.includes('A') ? '行政大樓' : '埔里總站';
     
     const data = {
-      type: 'reserve',
+      type: 'reserve', // 明確指定類型
       userId: userData.userId,
       name: userData.name,
       studentId: userData.studentId,
@@ -712,9 +712,11 @@ async function submitReservation() {
       routeName: `${selectedRoute} | ${info.time} ${info.direction}`,
       fromStop: fromStop,
       toStop: toStop,
-      date: selectedDate
+      date: selectedDate,
+      timestamp: Date.now() // 添加時間戳確保唯一性
     };
     
+    console.log('📤 發送預約請求:', data);
     const res = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -726,9 +728,15 @@ async function submitReservation() {
     }
     
     const result = await res.json();
+    console.log('📥 預約回應:', result);
     
     if (result.status === 'success') {
-      alert('✅ 預約成功！');
+      // 檢查是否有推播失敗的警告
+      if (result.message && result.message.includes('推播通知失敗')) {
+        alert('✅ 預約成功！但推播通知發送失敗');
+      } else {
+        alert('✅ 預約成功！');
+      }
       resetReservationForm();
       await loadExistingReservations();
     } else {
