@@ -530,7 +530,7 @@ function showStopSelection(direction) {
   stopSection.scrollIntoView({ behavior: 'smooth' });
 }
 
-// === 📝 送出預約 ===
+// === 📝 送出預約（含推播通知 v4.1） ===
 async function submitReservation() {
   const toStop = document.getElementById('toStop').value;
   const submitBtn = document.getElementById('submitBtn');
@@ -561,6 +561,7 @@ async function submitReservation() {
       date: selectedDate
     };
     
+    // ✅ 寫入 GAS
     const res = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -571,10 +572,51 @@ async function submitReservation() {
     
     if (result.status === 'success') {
       alert('✅ 預約成功！');
-      
+
+      // 🚀 LINE 群組推播通知
+      try {
+        const flexPayload = {
+          type: "pushLine",
+          flex: {
+            type: "flex",
+            altText: "穿山甲專車預約通知",
+            contents: {
+              type: "bubble",
+              size: "mega",
+              body: {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                  { type: "text", text: "🚌 穿山甲專車預約通知", weight: "bold", size: "lg", color: "#3c8050" },
+                  { type: "text", text: `👤 ${userData.name}`, size: "sm", wrap: true },
+                  { type: "text", text: `📅 ${selectedDate}`, size: "sm", wrap: true },
+                  { type: "text", text: `🚌 ${selectedRoute} | ${info.time}`, size: "sm", wrap: true },
+                  { type: "text", text: `🏁 下車：${toStop}`, size: "sm", wrap: true }
+                ]
+              }
+            }
+          }
+        };
+        
+        const pushRes = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(flexPayload)
+        });
+
+        const pushResult = await pushRes.json();
+        if (pushResult.status === 'success') {
+          console.log('✅ 已通知群組：穿山甲專車預約成功');
+        } else {
+          console.warn('⚠️ 群組推播失敗:', pushResult);
+        }
+
+      } catch (pushErr) {
+        console.error('❌ 群組推播錯誤:', pushErr);
+      }
+
       // 重置表單
       resetReservationForm();
-      
       // 重新載入預約記錄
       await loadExistingReservations();
       
@@ -590,6 +632,7 @@ async function submitReservation() {
     submitBtn.textContent = '送出預約';
   }
 }
+
 
 // === 🔄 重置預約表單 ===
 function resetReservationForm() {
