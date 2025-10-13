@@ -1,260 +1,251 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>暨大接駁車 - 學生註冊</title>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>暨大穿山甲專車註冊</title>
+  <link rel="prefetch" href="main.html">
+  <link rel="dns-prefetch" href="https://delicate-math-7e61.fangwl591021.workers.dev">
+  <link rel="dns-prefetch" href="https://static.line-scdn.net">
   <style>
-    .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
-    @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
-    .hidden { display: none !important; }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:system-ui,sans-serif;background:linear-gradient(135deg,#f0fdf4 0%,#dbeafe 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+    .splash{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:inherit;z-index:50;transition:opacity .2s}
+    .splash.hide{opacity:0;pointer-events:none}
+    .splash img{width:120px;margin-bottom:20px}
+    .spinner{width:24px;height:24px;border:3px solid #d1fae5;border-top-color:#10b981;border-radius:50%;animation:spin .6s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .form-container{background:#fff;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.1);padding:24px;width:100%;max-w:400px;opacity:0;transform:translateY(10px);transition:all .3s cubic-bezier(.4,0,.2,1)}
+    .form-container.show{opacity:1;transform:translateY(0)}
+    h1{font-size:24px;font-weight:700;color:#111;text-align:center;margin-bottom:8px}
+    .subtitle{color:#6b7280;font-size:14px;text-align:center;margin-bottom:24px}
+    .input-group{margin-bottom:12px}
+    input,select{width:100%;padding:12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;transition:all .2s}
+    input:focus,select:focus{outline:none;border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.1)}
+    select{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E") no-repeat right 12px center;padding-right:32px}
+    .btn{width:100%;padding:14px;background:#10b981;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:8px}
+    .btn:hover{background:#059669;transform:translateY(-1px);box-shadow:0 4px 12px rgba(16,185,129,.3)}
+    .btn:active{transform:translateY(0)}
+    .btn:disabled{background:#d1d5db;cursor:not-allowed;transform:none}
+    .btn-loading{display:flex;align-items:center;justify-content:center;gap:8px}
+    .footer{margin-top:16px;text-align:center;font-size:12px;color:#9ca3af}
+    .error{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#fee;border:1px solid #fcc;color:#c00;padding:12px 24px;border-radius:8px;font-size:14px;z-index:100;animation:slideDown .3s}
+    @keyframes slideDown{from{transform:translateX(-50%) translateY(-20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
   </style>
 </head>
-<body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen flex items-center justify-center p-4">
-
-   <!-- 🟢 開場 LOGO + Loading -->
-  <div id="splash" class="flex flex-col items-center justify-center w-full h-screen fade-in">
-    <img src="https://aiwe.cc/wp-content/uploads/2025/10/6446d860dbbfe540e9e2cbab5f98f1e3-1.png">
-    <div class="flex items-center space-x-2 text-green-700 font-semibold text-lg">
-      <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
-      <span>登入中，請稍候...</span>
-    </div>
+<body>
+  <div id="splash" class="splash">
+    <img src="https://aiwe.cc/wp-content/uploads/2025/10/6446d860dbbfe540e9e2cbab5f98f1e3-1.png" alt="Logo">
+    <div class="spinner"></div>
   </div>
 
-
-  <!-- 📝 註冊表單 -->
-  <div id="registerForm" class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm hidden fade-in">
-    <div class="text-center mb-6">
-      <h1 class="text-2xl font-bold text-gray-800">接駁車學生註冊</h1>
-      <p class="text-gray-500 text-sm mt-1">請填寫資料完成註冊</p>
-    </div>
-
-    <div class="space-y-3">
-      <input id="name" type="text" placeholder="姓名" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none transition-all duration-200">
-      <input id="phone" type="tel" placeholder="電話" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none transition-all duration-200">
-      <input id="studentId" type="text" placeholder="學號" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none transition-all duration-200">
-      
-      <select id="department" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none transition-all duration-200">
-        <option value="">請選擇科系</option>
-        <optgroup label="人文學院">
-          <option>中國語文學系</option>
-          <option>外國語文學系</option>
-          <option>社會政策與社會工作學系</option>
-          <option>公共行政與政策學系</option>
-          <option>歷史學系</option>
-          <option>東南亞學系</option>
-          <option>原鄉發展跨領域學士學位學程原住民專班</option>
-        </optgroup>
-        <optgroup label="管理學院">
-          <option>國際企業學系</option>
-          <option>經濟學系</option>
-          <option>財務金融學系</option>
-          <option>資訊管理學系</option>
-          <option>觀光休閒與餐旅管理學系</option>
-          <option>管理學院學士班</option>
-        </optgroup>
-        <optgroup label="科技學院">
-          <option>資訊工程學系</option>
-          <option>土木工程學系</option>
-          <option>電機工程學系</option>
-          <option>應用化學系</option>
-          <option>應用材料及光電工程學系</option>
-          <option>科技學院學士班</option>
-        </optgroup>
-        <optgroup label="教育學院">
-          <option>國際文教與比較教育學系</option>
-          <option>教育政策與行政學系</option>
-          <option>諮商心理與人力資源發展學系</option>
-        </optgroup>
-        <optgroup label="水沙連學院">
-          <option>水沙連學院學士班</option>
-        </optgroup>
-        <optgroup label="護理暨健康福祉學院">
-          <option>護理學系</option>
-        </optgroup>
-      </select>
-
-      <button id="registerBtn" onclick="registerUser()" class="w-full bg-green-500 text-white py-2 rounded-lg font-bold text-lg hover:bg-green-600 transition-all duration-200 active:scale-95">
+  <div id="form" class="form-container">
+    <h1>預約專車學生註冊</h1>
+    <p class="subtitle">請填寫資料完成註冊</p>
+    <form id="registerForm" onsubmit="registerUser(event)">
+      <div class="input-group">
+        <input id="name" type="text" placeholder="姓名" required autocomplete="name">
+      </div>
+      <div class="input-group">
+        <input id="phone" type="tel" placeholder="電話" required pattern="[0-9]{7,}" autocomplete="tel">
+      </div>
+      <div class="input-group">
+        <input id="studentId" type="text" placeholder="學號" required minlength="3" autocomplete="off">
+      </div>
+      <div class="input-group">
+        <select id="department" required>
+          <option value="">請選擇科系</option>
+          <optgroup label="人文學院">
+            <option>中國語文學系</option>
+            <option>外國語文學系</option>
+            <option>社會政策與社會工作學系</option>
+            <option>公共行政與政策學系</option>
+            <option>歷史學系</option>
+            <option>東南亞學系</option>
+            <option>原鄉發展跨領域學士學位學程原住民專班</option>
+          </optgroup>
+          <optgroup label="管理學院">
+            <option>國際企業學系</option>
+            <option>經濟學系</option>
+            <option>財務金融學系</option>
+            <option>資訊管理學系</option>
+            <option>觀光休閒與餐旅管理學系</option>
+            <option>管理學院學士班</option>
+          </optgroup>
+          <optgroup label="科技學院">
+            <option>資訊工程學系</option>
+            <option>土木工程學系</option>
+            <option>電機工程學系</option>
+            <option>應用化學系</option>
+            <option>應用材料及光電工程學系</option>
+            <option>科技學院學士班</option>
+          </optgroup>
+          <optgroup label="教育學院">
+            <option>國際文教與比較教育學系</option>
+            <option>教育政策與行政學系</option>
+            <option>諮商心理與人力資源發展學系</option>
+          </optgroup>
+          <optgroup label="水沙連學院">
+            <option>水沙連學院學士班</option>
+          </optgroup>
+          <optgroup label="護理暨健康福祉學院">
+            <option>護理學系</option>
+          </optgroup>
+        </select>
+      </div>
+      <button type="submit" class="btn" id="submitBtn">
         <span id="btnText">立即註冊</span>
-        <div id="btnSpinner" class="hidden animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>
       </button>
-    </div>
-    <div class="mt-4 text-center text-sm text-gray-500">
-      本系統僅用於接駁車服務，不對外公開個資。
-    </div>
+    </form>
+    <div class="footer">本系統僅用於接駁車服務，不對外公開個資</div>
   </div>
 
-<script>
-const GAS_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
-let currentUserId = null;
-let startTime = Date.now();
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script>
+    const URL='https://delicate-math-7e61.fangwl591021.workers.dev/';
+    let userId=null;
+    const t0=performance.now();
 
-// 性能優化：預加載資源
-function preloadResources() {
-  // 預加載主頁面
-  const preloadLink = document.createElement('link');
-  preloadLink.rel = 'prefetch';
-  preloadLink.href = 'main.html';
-  document.head.appendChild(preloadLink);
-}
-
-// 顯示表單
-function showForm() {
-  document.getElementById('splash').classList.add('hidden');
-  document.getElementById('registerForm').classList.remove('hidden');
-}
-
-// 顯示錯誤
-function showError(message) {
-  document.getElementById('splash').classList.add('hidden');
-  alert('⚠️ ' + message);
-}
-
-// 優化註冊按鈕狀態
-function setButtonLoading(loading) {
-  const btn = document.getElementById('registerBtn');
-  const btnText = document.getElementById('btnText');
-  const spinner = document.getElementById('btnSpinner');
-  
-  if (loading) {
-    btn.disabled = true;
-    btnText.classList.add('hidden');
-    spinner.classList.remove('hidden');
-    btn.classList.add('opacity-75');
-  } else {
-    btn.disabled = false;
-    btnText.classList.remove('hidden');
-    spinner.classList.add('hidden');
-    btn.classList.remove('opacity-75');
-  }
-}
-
-(async function init() {
-  try {
-    startTime = Date.now();
-    preloadResources();
-    
-    // 並行初始化 LIFF 和檢查用戶狀態
-    const [liffInit] = await Promise.all([
-      liff.init({ liffId: "2006590746-KJodGOda" }),
-      // 添加小延遲讓用戶看到載入畫面
-      new Promise(resolve => setTimeout(resolve, 800))
-    ]);
-    
-    if (!liff.isLoggedIn()) {
-      liff.login();
-      return;
+    // 極速錯誤顯示
+    function showError(msg){
+      const e=document.createElement('div');
+      e.className='error';
+      e.textContent='⚠️ '+msg;
+      document.body.appendChild(e);
+      setTimeout(()=>e.remove(),3000);
     }
 
-    const profile = await liff.getProfile();
-    currentUserId = profile.userId;
-    
-    console.log(`LIFF初始化完成，耗時: ${Date.now() - startTime}ms`);
+    // 極速初始化
+    (async()=>{
+      try{
+        // 立即開始預連線
+        const preConnect=fetch(URL+'?check=preflight',{method:'HEAD'}).catch(()=>{});
+        
+        // LIFF 初始化（最小延遲）
+        await liff.init({liffId:"2006590746-KJodGOda"});
+        
+        if(!liff.isLoggedIn()){
+          liff.login();
+          return;
+        }
 
-    // 檢查是否已註冊
-    const checkStart = Date.now();
-    const res = await fetch(`${GAS_URL}?check=${currentUserId}`);
-    const result = await res.json();
-    
-    console.log(`檢查註冊狀態完成，耗時: ${Date.now() - checkStart}ms`);
+        const profile=await liff.getProfile();
+        userId=profile.userId;
+        
+        console.log(`LIFF: ${(performance.now()-t0).toFixed(0)}ms`);
 
-    if (result.registered) {
-      // 直接跳轉，不顯示過渡畫面
-      window.location.href = 'main.html';
-    } else {
-      showForm();
-    }
-    
-    console.log(`總初始化時間: ${Date.now() - startTime}ms`);
+        // 並行檢查註冊狀態
+        const [checkRes]=await Promise.all([
+          fetch(`${URL}?check=${userId}`),
+          preConnect
+        ]);
+        
+        const result=await checkRes.json();
+        
+        console.log(`Check: ${(performance.now()-t0).toFixed(0)}ms`);
 
-  } catch (err) {
-    console.error('初始化錯誤', err);
-    showError('系統發生錯誤，請稍後再試');
-  }
-})();
-
-async function registerUser() {
-  const name = document.getElementById('name').value.trim();
-  const phone = document.getElementById('phone').value.trim();
-  const studentId = document.getElementById('studentId').value.trim();
-  const department = document.getElementById('department').value;
-
-  if (!name || !phone || !studentId || !department) {
-    alert('⚠️ 請完整填寫所有欄位');
-    return;
-  }
-
-  // 簡單驗證
-  if (phone.length < 7) {
-    alert('⚠️ 請輸入有效的電話號碼');
-    return;
-  }
-
-  if (studentId.length < 3) {
-    alert('⚠️ 請輸入有效的學號');
-    return;
-  }
-
-  const data = {
-    type: 'register',
-    userId: currentUserId,
-    name,
-    phone,
-    studentId,
-    department
-  };
-
-  setButtonLoading(true);
-
-  try {
-    const registerStart = Date.now();
-    const res = await fetch(GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    
-    const result = await res.json();
-    console.log(`註冊請求完成，耗時: ${Date.now() - registerStart}ms`);
-    
-    if (result.status === 'success') {
-      // 顯示成功訊息後跳轉
-      const btn = document.getElementById('registerBtn');
-      btn.classList.remove('bg-green-500', 'hover:bg-green-600');
-      btn.classList.add('bg-green-600');
-      document.getElementById('btnText').textContent = '註冊成功！';
-      
-      // 短暫顯示成功狀態後跳轉
-      setTimeout(() => {
-        window.location.href = 'main.html';
-      }, 600);
-    } else {
-      alert('❌ 註冊失敗，請稍後再試');
-      setButtonLoading(false);
-    }
-  } catch (err) {
-    console.error('註冊失敗', err);
-    alert('❌ 連線錯誤，請檢查網路後重試');
-    setButtonLoading(false);
-  }
-}
-
-// 添加表單快速填寫功能（開發用）
-document.addEventListener('DOMContentLoaded', function() {
-  // 在開發環境中快速填寫表單
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    setTimeout(() => {
-      if (document.getElementById('name') && !document.getElementById('name').value) {
-        document.getElementById('name').value = '測試學生';
-        document.getElementById('phone').value = '0912345678';
-        document.getElementById('studentId').value = 'D1234567';
-        document.getElementById('department').value = '資訊工程學系';
+        if(result.registered){
+          // 已註冊：立即跳轉（無過渡）
+          location.replace('main.html');
+        }else{
+          // 未註冊：顯示表單
+          const splash=document.getElementById('splash');
+          const form=document.getElementById('form');
+          splash.classList.add('hide');
+          form.classList.add('show');
+          
+          // 清理 splash（節省記憶體）
+          setTimeout(()=>splash.remove(),300);
+          
+          // 自動聚焦第一個輸入框
+          document.getElementById('name').focus();
+        }
+        
+        console.log(`Total: ${(performance.now()-t0).toFixed(0)}ms`);
+        
+      }catch(err){
+        console.error('Init error:',err);
+        showError('系統錯誤，請重新載入');
+        document.getElementById('splash').classList.add('hide');
+        document.getElementById('form').classList.add('show');
       }
-    }, 1000);
-  }
-});
-</script>
+    })();
+
+    // 極速註冊
+    async function registerUser(e){
+      e.preventDefault();
+      
+      const btn=document.getElementById('submitBtn');
+      const btnText=document.getElementById('btnText');
+      
+      if(btn.disabled)return;
+      
+      // 快速驗證
+      const name=document.getElementById('name').value.trim();
+      const phone=document.getElementById('phone').value.trim();
+      const studentId=document.getElementById('studentId').value.trim();
+      const department=document.getElementById('department').value;
+      
+      if(!name||!phone||!studentId||!department){
+        showError('請完整填寫所有欄位');
+        return;
+      }
+
+      // 立即更新 UI
+      btn.disabled=true;
+      btnText.innerHTML='<div class="btn-loading"><div class="spinner" style="width:20px;height:20px;border-width:2px"></div><span>註冊中</span></div>';
+      
+      const regStart=performance.now();
+      
+      try{
+        const res=await fetch(URL,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            type:'register',
+            userId,
+            name,
+            phone,
+            studentId,
+            department
+          })
+        });
+        
+        const result=await res.json();
+        
+        console.log(`Register: ${(performance.now()-regStart).toFixed(0)}ms`);
+        
+        if(result.status==='success'){
+          // 成功回饋
+          btn.style.background='#059669';
+          btnText.textContent='✓ 註冊成功';
+          
+          // 快速跳轉
+          setTimeout(()=>location.replace('main.html'),400);
+        }else{
+          throw new Error(result.message||'註冊失敗');
+        }
+      }catch(err){
+        console.error('Register error:',err);
+        showError(err.message||'註冊失敗，請重試');
+        btn.disabled=false;
+        btnText.textContent='立即註冊';
+      }
+    }
+
+    // 開發環境快速填充
+    if(location.hostname==='localhost'||location.hostname==='127.0.0.1'){
+      window.addEventListener('load',()=>{
+        setTimeout(()=>{
+          if(document.getElementById('form').classList.contains('show')){
+            document.getElementById('name').value='測試';
+            document.getElementById('phone').value='0912345678';
+            document.getElementById('studentId').value='D1234567';
+            document.getElementById('department').value='資訊工程學系';
+          }
+        },500);
+      });
+    }
+  </script>
 </body>
 </html>
