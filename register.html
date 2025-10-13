@@ -131,29 +131,6 @@ function setButtonLoading(loading) {
   }
 }
 
-// 檢查註冊狀態 - 修復：使用 POST 請求
-async function checkRegistrationStatus(userId) {
-  try {
-    const checkStart = Date.now();
-    const response = await fetch(GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'check',
-        userId: userId
-      })
-    });
-    
-    const result = await response.json();
-    console.log(`檢查註冊狀態完成，耗時: ${Date.now() - checkStart}ms`, result);
-    
-    return result;
-  } catch (error) {
-    console.error('檢查註冊狀態失敗:', error);
-    throw error;
-  }
-}
-
 (async function init() {
   try {
     startTime = Date.now();
@@ -176,9 +153,13 @@ async function checkRegistrationStatus(userId) {
     
     console.log(`LIFF初始化完成，耗時: ${Date.now() - startTime}ms`);
 
-    // 檢查是否已註冊 - 使用修復後的方法
-    const result = await checkRegistrationStatus(currentUserId);
+    // 檢查是否已註冊
+    const checkStart = Date.now();
+    const res = await fetch(`${GAS_URL}?check=${currentUserId}`);
+    const result = await res.json();
     
+    console.log(`檢查註冊狀態完成，耗時: ${Date.now() - checkStart}ms`);
+
     if (result.registered) {
       // 直接跳轉，不顯示過渡畫面
       window.location.href = 'main.html';
@@ -190,9 +171,7 @@ async function checkRegistrationStatus(userId) {
 
   } catch (err) {
     console.error('初始化錯誤', err);
-    // 即使檢查失敗也顯示表單，讓用戶可以嘗試註冊
-    showForm();
-    showError('系統發生錯誤，請嘗試註冊或稍後再試');
+    showError('系統發生錯誤，請稍後再試');
   }
 })();
 
@@ -238,7 +217,7 @@ async function registerUser() {
     });
     
     const result = await res.json();
-    console.log(`註冊請求完成，耗時: ${Date.now() - registerStart}ms`, result);
+    console.log(`註冊請求完成，耗時: ${Date.now() - registerStart}ms`);
     
     if (result.status === 'success') {
       // 顯示成功訊息後跳轉
@@ -252,7 +231,7 @@ async function registerUser() {
         window.location.href = 'main.html';
       }, 600);
     } else {
-      alert('❌ 註冊失敗: ' + (result.message || '請稍後再試'));
+      alert('❌ 註冊失敗，請稍後再試');
       setButtonLoading(false);
     }
   } catch (err) {
@@ -279,3 +258,5 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 </body>
 </html>
+
+
