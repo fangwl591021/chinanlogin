@@ -220,6 +220,8 @@ async function registerUser() {
     console.log(`註冊請求完成，耗時: ${Date.now() - registerStart}ms`);
     
     if (result.status === 'success') {
+      // ✅ 新增這一行 - 標記用戶已註冊
+      localStorage.setItem('pangolin_registered', 'true');
       // 顯示成功訊息後跳轉
       const btn = document.getElementById('registerBtn');
       btn.classList.remove('bg-green-500', 'hover:bg-green-600');
