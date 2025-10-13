@@ -333,43 +333,64 @@ const routeTimes = {
   'B2': { time: '23:30-24:00', direction: '埔里總站→暨大' }
 };
 
-// === 初始化 LIFF - 加入本地儲存優化 ===
+// 修改 init 函数，增加更详细的错误处理
 async function init() {
   try {
-    await liff.init({ liffId: "2006590746-KJodGOda" });
-    if (!liff.isLoggedIn()) return liff.login();
-    const profile = await liff.getProfile();
+    console.log('🚀 开始初始化 LIFF...');
     
-    // ✅ 新增：先檢查本地儲存，避免不必要的 API 呼叫
-    if (localStorage.getItem('pangolin_registered') === 'true') {
-      console.log('✅ 本地儲存顯示已註冊，跳過 API 檢查');
-      // 直接載入用戶資料（需要從其他地方獲取，這裡暫時還是呼叫 API）
-      const res = await fetch(`${WORKER_URL}?check=${profile.userId}`);
-      const result = await res.json();
-      if (result.registered) {
-        userData = result.user;
-      } else {
-        // 如果 API 檢查發現未註冊，清除本地標記並跳轉
-        localStorage.removeItem('pangolin_registered');
-        return location.href = 'register.html';
-      }
-    } else {
-      // 原有的 API 檢查
-      const res = await fetch(`${WORKER_URL}?check=${profile.userId}`);
-      const result = await res.json();
-      if (!result.registered) return location.href = 'register.html';
-      userData = result.user;
+    // 先检查是否在 LINE 环境中
+    if (typeof liff === 'undefined') {
+      console.error('❌ LIFF SDK 未加载');
+      document.getElementById('userInfo').innerHTML = `
+        <div style="color: red; text-align: center;">
+          <p>❌ 系统加载失败</p>
+          <p>请在 LINE App 中打开此页面</p>
+        </div>
+      `;
+      return;
     }
-
+    
+    await liff.init({ liffId: "2006590746-KJodGOda" });
+    console.log('✅ LIFF 初始化成功');
+    
+    if (!liff.isLoggedIn()) {
+      console.log('🔐 用户未登录，执行登录...');
+      liff.login();
+      return;
+    }
+    
+    console.log('👤 获取用户信息...');
+    const profile = await liff.getProfile();
+    console.log('用户信息:', profile);
+    
+    // 继续原有的注册检查流程...
+    const res = await fetch(`${WORKER_URL}?check=${profile.userId}`);
+    const result = await res.json();
+    
+    if (!result.registered) {
+      console.log('📝 用户未注册，跳转到注册页面');
+      location.href = 'register.html';
+      return;
+    }
+    
+    userData = result.user;
     document.getElementById('userInfo').innerHTML = `
       <div class="user-name">${userData.name}</div>
       <div class="user-info">${userData.department} | ${userData.studentId}</div>
     `;
 
     await loadExistingReservations();
+    console.log('🎉 系统初始化完成');
+    
   } catch (error) {
-    console.error('初始化錯誤:', error);
-    alert('系統初始化失敗，請重新開啟');
+    console.error('💥 初始化错误:', error);
+    document.getElementById('userInfo').innerHTML = `
+      <div style="color: red; text-align: center;">
+        <p>❌ 系统初始化失败</p>
+        <p>错误: ${error.message}</p>
+        <button onclick="location.reload()" style="padding: 10px; margin: 10px;">重新加载</button>
+      </div>
+    `;
   }
 }
 
