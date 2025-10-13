@@ -1,234 +1,222 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>穿山甲專車 - 管理後台</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>穿山甲專車管理後台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body { background:#f9fafb; font-family: system-ui, sans-serif; }
+.card { background:white; border-radius:12px; padding:20px; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
+.section-title { font-weight:bold; font-size:18px; color:#2d3748; margin-bottom:10px; display:flex; align-items:center; }
+.section-title::before { content:""; display:inline-block; width:6px; height:20px; background:#3c8050; border-radius:3px; margin-right:8px; }
+button { transition:background .2s; }
+</style>
 </head>
-<body class="bg-gray-50">
-  <nav class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-      <div class="flex items-center gap-3">
-        <i class="fas fa-bus text-2xl"></i>
-        <div>
-          <h1 class="text-xl font-bold">暨大接駁車管理後台</h1>
-          <p class="text-sm text-purple-200">穿山甲專車預約系統</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-4">
-        <span id="currentTime" class="text-sm"></span>
-      </div>
-    </div>
-  </nav>
+<body class="p-4">
 
-  <div class="max-w-7xl mx-auto p-6">
-    <!-- 統計卡片 -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-      <div class="bg-white rounded-xl shadow-md p-6 flex justify-between items-center">
-        <div>
-          <p class="text-gray-500 text-sm">註冊會員</p>
-          <p id="totalUsers" class="text-3xl font-bold text-gray-800">0</p>
-        </div>
-        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-          <i class="fas fa-users text-blue-600 text-xl"></i>
-        </div>
-      </div>
+<header class="bg-green-700 text-white text-center py-4 rounded-lg shadow-md mb-6">
+  <h1 class="text-2xl font-bold">🚌 穿山甲專車後台管理系統</h1>
+  <p class="text-sm opacity-80">營運設定 · 數據儀表 · 預約查詢</p>
+</header>
 
-      <div class="bg-white rounded-xl shadow-md p-6 flex justify-between items-center">
-        <div>
-          <p class="text-gray-500 text-sm">今日預約</p>
-          <p id="todayBookings" class="text-3xl font-bold text-gray-800">0</p>
-        </div>
-        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-          <i class="fas fa-calendar-check text-green-600 text-xl"></i>
-        </div>
-      </div>
+<div class="grid gap-6 md:grid-cols-3">
+
+  <!-- 🔧 區塊 A：營運設定中心 -->
+  <div class="card md:col-span-1">
+    <div class="section-title">🔧 營運設定中心</div>
+
+    <label class="block font-semibold mb-2">運營模式：</label>
+    <div class="flex gap-3 mb-4">
+      <label><input type="radio" name="mode" value="S3" class="mr-1"> 單趟制（S3）</label>
+      <label><input type="radio" name="mode" value="S4" class="mr-1"> 來回制（S4）</label>
     </div>
 
-    <!-- 即時班次 -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-      <div class="bg-blue-50 rounded-lg p-4 text-center"><p>A1</p><p id="a1Count" class="text-2xl font-bold">0/6</p></div>
-      <div class="bg-green-50 rounded-lg p-4 text-center"><p>B1</p><p id="b1Count" class="text-2xl font-bold">0/6</p></div>
-      <div class="bg-purple-50 rounded-lg p-4 text-center"><p>A2</p><p id="a2Count" class="text-2xl font-bold">0/6</p></div>
-      <div class="bg-orange-50 rounded-lg p-4 text-center"><p>B2</p><p id="b2Count" class="text-2xl font-bold">0/6</p></div>
+    <label class="block font-semibold mb-2">名額設定：</label>
+    <div class="grid grid-cols-2 gap-2 mb-4">
+      <div>A1：<input id="capA1" type="number" class="border rounded px-2 w-20"></div>
+      <div>A2：<input id="capA2" type="number" class="border rounded px-2 w-20"></div>
+      <div>B1：<input id="capB1" type="number" class="border rounded px-2 w-20"></div>
+      <div>B2：<input id="capB2" type="number" class="border rounded px-2 w-20"></div>
     </div>
 
-    <!-- 最新預約 -->
-    <div class="bg-white rounded-xl shadow-md p-6 mb-8">
-      <h2 class="text-xl font-bold mb-3">最新預約紀錄</h2>
-      <div id="realtimeBookings" class="divide-y"></div>
+    <label class="block font-semibold mb-2">功能開關：</label>
+    <div class="space-y-1 mb-4">
+      <label><input type="checkbox" id="enableBooking" class="mr-1"> 開放預約</label><br>
+      <label><input type="checkbox" id="enableCancel" class="mr-1"> 允許取消</label>
     </div>
 
-    <!-- 會員管理 -->
-    <div class="bg-white rounded-xl shadow-md p-6">
-      <h2 class="text-xl font-bold mb-3">會員管理</h2>
-      <div class="border rounded-lg overflow-hidden">
-        <div class="bg-gray-50 px-4 py-3 border-b grid grid-cols-12 gap-4 text-sm font-semibold">
-          <div class="col-span-3">姓名</div>
-          <div class="col-span-2">學號</div>
-          <div class="col-span-3">科系</div>
-          <div class="col-span-2">電話</div>
-          <div class="col-span-2">註冊時間</div>
-        </div>
-        <div id="membersTable" class="divide-y max-h-96 overflow-y-auto"></div>
-      </div>
-    </div>
+    <label class="block font-semibold mb-2">公告文字：</label>
+    <textarea id="announcement" rows="3" class="w-full border rounded px-2 py-1 mb-4"></textarea>
+
+    <button id="saveConfig" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded w-full">
+      💾 儲存設定
+    </button>
   </div>
 
+  <!-- 📊 區塊 B：數據儀表板 -->
+  <div class="card md:col-span-2">
+    <div class="section-title">📊 營運數據儀表板</div>
+
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <div>
+        <p class="font-semibold">今日總預約數：</p>
+        <p id="todayTotal" class="text-2xl font-bold text-green-700">--</p>
+      </div>
+      <div>
+        <p class="font-semibold">剩餘名額：</p>
+        <p id="remainingSeats" class="text-2xl font-bold text-blue-600">--</p>
+      </div>
+    </div>
+
+    <canvas id="chartTrips" height="120"></canvas>
+  </div>
+</div>
+
+<!-- 🧾 區塊 C：預約查詢與管理 -->
+<div class="card mt-6">
+  <div class="section-title">🧾 預約查詢與管理</div>
+  <div class="flex items-center gap-3 mb-3">
+    <input id="searchInput" placeholder="輸入姓名 / 日期 / 班次搜尋..." class="border rounded px-3 py-1 w-full">
+    <button id="exportCsv" class="bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700">📤 匯出CSV</button>
+  </div>
+  <div id="reservationTable" class="overflow-x-auto text-sm">
+    <table class="min-w-full border">
+      <thead class="bg-green-700 text-white">
+        <tr>
+          <th class="p-2 border">日期</th>
+          <th class="p-2 border">班次</th>
+          <th class="p-2 border">姓名</th>
+          <th class="p-2 border">系所</th>
+          <th class="p-2 border">電話</th>
+          <th class="p-2 border">狀態</th>
+          <th class="p-2 border">動作</th>
+        </tr>
+      </thead>
+      <tbody id="reservationBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 🚀 JS 控制區 -->
 <script>
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxZVsRBh71_GoN-JLCDgodODbRUObcPC1ZDzvXwvwEIpXiZOnZWTPl45ZYvhWe2BIvnOQ/exec';
+const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 
-async function getMembersData() {
-  const res = await fetch(`${GAS_URL}?mode=members`);
+// 1️⃣ 初始化設定
+async function loadConfig(){
+  const res = await fetch(`${WORKER_URL}?mode=config`);
+  const cfg = await res.json();
+  document.querySelector(`input[value="${cfg.operationMode}"]`).checked = true;
+  ['A1','A2','B1','B2'].forEach(k=>{
+    document.getElementById('cap'+k).value = cfg['capacity'+k] || 0;
+  });
+  document.getElementById('enableBooking').checked = cfg.enableBooking;
+  document.getElementById('enableCancel').checked = cfg.enableCancel;
+  document.getElementById('announcement').value = cfg.announcement || '';
+}
+
+// 2️⃣ 儲存設定
+document.getElementById('saveConfig').onclick = async ()=>{
+  const data = {
+    operationMode: document.querySelector('input[name="mode"]:checked').value,
+    capacityA1: +document.getElementById('capA1').value,
+    capacityA2: +document.getElementById('capA2').value,
+    capacityB1: +document.getElementById('capB1').value,
+    capacityB2: +document.getElementById('capB2').value,
+    enableBooking: document.getElementById('enableBooking').checked,
+    enableCancel: document.getElementById('enableCancel').checked,
+    announcement: document.getElementById('announcement').value
+  };
+  const res = await fetch(WORKER_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({type:'updateConfig', data})
+  });
+  const result = await res.json();
+  alert(result.status === 'success' ? '✅ 設定已儲存' : '❌ 儲存失敗');
+};
+
+// 3️⃣ 載入儀表板數據
+async function loadDashboard(){
+  const res = await fetch(`${WORKER_URL}?mode=dashboard`);
   const data = await res.json();
-  return data.members || [];
+  document.getElementById('todayTotal').textContent = data.todayTotal || 0;
+  document.getElementById('remainingSeats').textContent = data.remainingSeats || 0;
+  renderChart(data.chartData || {});
 }
 
-async function getBookingsData() {
-  const res = await fetch(`${GAS_URL}?mode=bookings`);
-  const data = await res.json();
-  return data.bookings || [];
+// 4️⃣ 繪製圖表
+function renderChart(dataset){
+  const ctx = document.getElementById('chartTrips');
+  new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:dataset.labels || ['A1','A2','B1','B2'],
+      datasets:[{
+        label:'預約數',
+        data:dataset.values || [0,0,0,0],
+        backgroundColor:['#4caf50','#81c784','#64b5f6','#2196f3']
+      }]
+    },
+    options:{
+      plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true}}
+    }
+  });
 }
 
-async function loadRealtimeData() {
-  const bookings = await getBookingsData();
-  const members = await getMembersData();
-  const today = new Date().toISOString().split('T')[0];
-
-  // 統計
-  const todayBookings = bookings.filter(b => b.date === today);
-  document.getElementById('todayBookings').textContent = todayBookings.length;
-  document.getElementById('totalUsers').textContent = members.length;
-
-  // 班次
-  document.getElementById('a1Count').textContent = `${todayBookings.filter(b => b.route === 'A1').length}/6`;
-  document.getElementById('b1Count').textContent = `${todayBookings.filter(b => b.route === 'B1').length}/6`;
-  document.getElementById('a2Count').textContent = `${todayBookings.filter(b => b.route === 'A2').length}/6`;
-  document.getElementById('b2Count').textContent = `${todayBookings.filter(b => b.route === 'B2').length}/6`;
-
-  // 最新 10 筆預約
-  const recent = todayBookings.slice(-10).reverse();
-  const container = document.getElementById('realtimeBookings');
-  container.innerHTML = recent.map(b => `
-    <div class="px-4 py-3 flex justify-between">
-      <div>
-        <p class="font-medium">${b.name}</p>
-        <p class="text-sm text-gray-500">${b.route} • ${b.date}</p>
-      </div>
-      <div>
-        <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">已預約</span>
-      </div>
-    </div>
-  `).join('');
+// 5️⃣ 預約查詢
+async function loadReservations(){
+  const res = await fetch(`${WORKER_URL}?mode=reservationsAll`);
+  const list = await res.json();
+  const tbody = document.getElementById('reservationBody');
+  tbody.innerHTML = '';
+  list.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="border p-1">${r.date}</td>
+      <td class="border p-1">${r.route}</td>
+      <td class="border p-1">${r.name}</td>
+      <td class="border p-1">${r.department}</td>
+      <td class="border p-1">${r.phone}</td>
+      <td class="border p-1">${r.status}</td>
+      <td class="border p-1 text-center">
+        <button class="text-red-600" onclick="cancelReservation('${r.id}')">取消</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
 }
 
-async function loadMembersData() {
-  const members = await getMembersData();
-  const container = document.getElementById('membersTable');
-  container.innerHTML = members.map(m => `
-    <div class="px-4 py-3 grid grid-cols-12 gap-4 text-sm">
-      <div class="col-span-3">${m.name}</div>
-      <div class="col-span-2">${m.studentId}</div>
-      <div class="col-span-3">${m.department}</div>
-      <div class="col-span-2">${m.phone}</div>
-      <div class="col-span-2">${m.registerTime}</div>
-    </div>
-  `).join('');
-}
+// 6️⃣ 匯出CSV
+document.getElementById('exportCsv').onclick=()=>{
+  const rows=[...document.querySelectorAll('#reservationBody tr')].map(tr=>[...tr.children].map(td=>td.innerText));
+  const csv = '日期,班次,姓名,系所,電話,狀態\n'+rows.map(r=>r.join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='reservations.csv';
+  a.click();
+};
 
-function updateCurrentTime() {
-  const now = new Date();
-  document.getElementById('currentTime').textContent = now.toLocaleString('zh-TW', { hour12: false });
-}
-
-window.addEventListener('load', () => {
-  updateCurrentTime();
-  setInterval(updateCurrentTime, 1000);
-  loadRealtimeData();
-  loadMembersData();
-  setInterval(loadRealtimeData, 30000);
-});
-</script>
-  <script>
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxZVsRBh71_GoN-JLCDgodODbRUObcPC1ZDzvXwvwEIpXiZOnZWTPl45ZYvhWe2BIvnOQ/exec';
-
-// 抓會員資料
-async function getMembersData() {
-  const res = await fetch(`${GAS_URL}?mode=members`, { mode: 'cors' });
-  const data = await res.json();
-  return data.members || [];
-}
-
-// 抓預約資料
-async function getBookingsData() {
-  const res = await fetch(`${GAS_URL}?mode=bookings`, { mode: 'cors' });
-  const data = await res.json();
-  return data.bookings || [];
-}
-
-// 載入即時資料（統計 & 最新預約）
-async function loadRealtimeData() {
-  const bookings = await getBookingsData();
-  const members = await getMembersData();
-  const today = new Date().toISOString().split('T')[0];
-
-  // ✅ 修正日期比對（使用 startsWith）
-  const todayBookings = bookings.filter(b => b.date.startsWith(today));
-  document.getElementById('todayBookings').textContent = todayBookings.length;
-  document.getElementById('totalUsers').textContent = members.length;
-
-  // ✅ 統計班次
-  document.getElementById('a1Count').textContent = `${todayBookings.filter(b => b.route === 'A1').length}/6`;
-  document.getElementById('b1Count').textContent = `${todayBookings.filter(b => b.route === 'B1').length}/6`;
-  document.getElementById('a2Count').textContent = `${todayBookings.filter(b => b.route === 'A2').length}/6`;
-  document.getElementById('b2Count').textContent = `${todayBookings.filter(b => b.route === 'B2').length}/6`;
-
-  // ✅ 最新 10 筆預約
-  const recent = todayBookings.slice(-10).reverse();
-  const container = document.getElementById('realtimeBookings');
-  container.innerHTML = recent.map(b => `
-    <div class="px-4 py-3 flex justify-between">
-      <div>
-        <p class="font-medium">${b.name}</p>
-        <p class="text-sm text-gray-500">${b.route} • ${b.date}</p>
-      </div>
-      <div>
-        <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">已預約</span>
-      </div>
-    </div>
-  `).join('');
-}
-
-// 載入會員資料（會員管理區塊）
-async function loadMembersData() {
-  const members = await getMembersData();
-  const container = document.getElementById('membersTable');
-  container.innerHTML = members.map(m => `
-    <div class="px-4 py-3 grid grid-cols-12 gap-4 text-sm">
-      <div class="col-span-3">${m.name}</div>
-      <div class="col-span-2">${m.studentId}</div>
-      <div class="col-span-3">${m.department}</div>
-      <div class="col-span-2">${m.phone}</div>
-      <div class="col-span-2">${m.registerTime}</div>
-    </div>
-  `).join('');
-}
-
-// 即時時鐘
-function updateCurrentTime() {
-  const now = new Date();
-  document.getElementById('currentTime').textContent = now.toLocaleString('zh-TW', { hour12: false });
+// 7️⃣ 取消預約
+async function cancelReservation(id){
+  if(!confirm('確定取消這筆預約嗎？'))return;
+  const res = await fetch(WORKER_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({type:'cancelAdmin',id})
+  });
+  const result = await res.json();
+  alert(result.status==='success'?'✅ 已取消':'❌ 取消失敗');
+  loadReservations();
 }
 
 // 初始化
-window.addEventListener('load', () => {
-  updateCurrentTime();
-  setInterval(updateCurrentTime, 1000);
-  loadRealtimeData();
-  loadMembersData();
-  setInterval(loadRealtimeData, 30000);
+window.addEventListener('load',()=>{
+  loadConfig();
+  loadDashboard();
+  loadReservations();
 });
 </script>
 
