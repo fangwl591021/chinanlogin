@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>穿山甲專車 - 乘客明細查詢</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #f5f6f7; font-family: system-ui, "Microsoft JhengHei", sans-serif; }
+    .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); padding: 16px; margin: 16px 0; }
+    .route-badge { background: #3c8050; color: white; border-radius: 6px; padding: 2px 8px; font-weight: bold; font-size: 14px; }
+    .time { color: #666; font-size: 13px; }
+    .empty { text-align: center; color: #777; padding: 40px 0; font-size: 16px; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center">
+
+  <header class="w-full bg-green-700 text-white text-center py-4 text-xl font-bold">
+    🚌 穿山甲專車 - 乘客明細查詢
+  </header>
+
+  <div class="w-full max-w-md p-4">
+    <!-- 日期選擇 -->
+    <div class="flex justify-between items-center mb-4">
+      <label for="date" class="font-bold">選擇日期：</label>
+      <input id="date" type="date" class="border border-gray-300 rounded px-3 py-2 w-2/3" onchange="loadReservations()">
+    </div>
+
+    <!-- 班次乘客列表 -->
+    <div id="listContainer"></div>
+  </div>
+
+  <script>
+    const WORKER_URL = "https://delicate-math-7e61.fangwl591021.workers.dev/";
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const today = new Date().toISOString().split("T")[0];
+      document.getElementById("date").value = today;
+      loadReservations();
+    });
+
+    async function loadReservations() {
+      const date = document.getElementById("date").value;
+      const container = document.getElementById("listContainer");
+      container.innerHTML = `<div class="text-center text-gray-500 py-10">載入中...</div>`;
+
+      try {
+        const res = await fetch(`${WORKER_URL}?mode=driver&date=${date}`);
+        const data = await res.json();
+
+        if (!data.reservations || data.reservations.length === 0) {
+          container.innerHTML = `<div class="empty">📭 ${date} 無預約紀錄</div>`;
+          return;
+        }
+
+        // 按班次分組
+        const grouped = {};
+        data.reservations.forEach(r => {
+          if (!grouped[r.route]) grouped[r.route] = [];
+          grouped[r.route].push(r);
+        });
+
+        // 顯示每個班次
+        container.innerHTML = "";
+        for (const route of Object.keys(grouped)) {
+          const passengers = grouped[route];
+          const time = passengers[0].time || "";
+
+          const block = document.createElement("div");
+          block.className = "card";
+
+          let html = `
+            <div class="flex justify-between items-center mb-2">
+              <div class="route-badge">${route}</div>
+              <div class="time">${time}</div>
+            </div>
+            <table class="w-full text-sm border-t border-gray-200">
+              <thead class="bg-gray-100 text-gray-700">
+                <tr>
+                  <th class="py-1">姓名</th>
+                  <th class="py-1">上車</th>
+                  <th class="py-1">下車</th>
+                  <th class="py-1">電話</th>
+                </tr>
+              </thead>
+              <tbody>
+          `;
+
+          passengers.forEach(p => {
+            html += `
+              <tr class="border-t">
+                <td class="py-1 text-center">${p.name || "-"}</td>
+                <td class="py-1 text-center">${p.fromStop || "-"}</td>
+                <td class="py-1 text-center">${p.toStop || "-"}</td>
+                <td class="py-1 text-center">${p.phone || "-"}</td>
+              </tr>
+            `;
+          });
+
+          html += "</tbody></table>";
+          block.innerHTML = html;
+          container.appendChild(block);
+        }
+      } catch (error) {
+        console.error("🚨 查詢錯誤:", error);
+        container.innerHTML = `<div class="text-red-600 text-center py-8">❌ 查詢失敗，請稍後再試</div>`;
+      }
+    }
+  </script>
+</body>
+</html>
