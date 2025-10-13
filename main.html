@@ -367,8 +367,8 @@ function showStopSelection(dir){
   document.getElementById('submitBtn').style.display='block';
 }
 
-// === 📝 預約送出（含重複檢查） ===
-async function submitReservation(){
+// === 📝 預約送出（含禁止重複時段預約） ===
+async function submitReservation() {
   const to = document.getElementById('toStop').value;
   const btn = document.getElementById('submitBtn');
 
@@ -377,14 +377,16 @@ async function submitReservation(){
     return;
   }
 
-  // 🚫【新增】重複預約檢查邏輯
-  const duplicate = existingReservations.find(r => 
-    r.date === selectedDate && 
-    r.route === selectedRoute &&
-    r.status !== '已取消'
+  // 🚫【新增】禁止重複預約檢查（同日同班次）
+  const duplicate = existingReservations.find(r =>
+    r.userId === userData.userId &&          // 同一使用者
+    r.date === selectedDate &&               // 同一天
+    r.route === selectedRoute &&             // 同班次
+    r.status !== '已取消'                    // 排除已取消
   );
+
   if (duplicate) {
-    alert(`⚠️ 您已預約 ${selectedDate} ${selectedRoute} 班次，請勿重複預約！`);
+    alert(`⚠️ 您已於 ${selectedDate} 預約 ${selectedRoute} 班次（${duplicate.toStop}），請勿重複預約！`);
     return;
   }
 
@@ -394,7 +396,6 @@ async function submitReservation(){
 
     const info = routeTimes[selectedRoute];
     const from = selectedRoute.includes('A') ? '行政大樓' : '埔里總站';
-
     const payload = {
       type: 'reserve',
       userId: userData.userId,
@@ -433,6 +434,7 @@ async function submitReservation(){
     btn.textContent = '送出預約';
   }
 }
+
 
 
 // 日期格式
