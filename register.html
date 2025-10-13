@@ -102,69 +102,70 @@
 
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script>
-    const URL='https://delicate-math-7e61.fangwl591021.workers.dev/';
-    let userId=null;
-    const t0=performance.now();
+    // 修復：將 URL 改名為 API_URL 避免與內建 URL 構造函數衝突
+    const API_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+    let userId = null;
+    const t0 = performance.now();
 
     // 極速錯誤顯示
     function showError(msg){
-      const e=document.createElement('div');
-      e.className='error';
-      e.textContent='⚠️ '+msg;
+      const e = document.createElement('div');
+      e.className = 'error';
+      e.textContent = '⚠️ ' + msg;
       document.body.appendChild(e);
-      setTimeout(()=>e.remove(),3000);
+      setTimeout(() => e.remove(), 3000);
     }
 
     // 極速初始化
-    (async()=>{
+    (async() => {
       try{
         // 立即開始預連線
-        const preConnect=fetch(URL+'?check=preflight',{method:'HEAD'}).catch(()=>{});
+        const preConnect = fetch(API_URL + '?check=preflight', {method: 'HEAD'}).catch(() => {});
         
         // LIFF 初始化（最小延遲）
-        await liff.init({liffId:"2006590746-KJodGOda"});
+        await liff.init({liffId: "2006590746-KJodGOda"});
         
         if(!liff.isLoggedIn()){
           liff.login();
           return;
         }
 
-        const profile=await liff.getProfile();
-        userId=profile.userId;
+        const profile = await liff.getProfile();
+        userId = profile.userId;
         
-        console.log(`LIFF: ${(performance.now()-t0).toFixed(0)}ms`);
+        console.log(`LIFF: ${(performance.now() - t0).toFixed(0)}ms`);
 
         // 並行檢查註冊狀態
-        const [checkRes]=await Promise.all([
-          fetch(`${URL}?check=${userId}`),
+        const [checkRes] = await Promise.all([
+          fetch(`${API_URL}?check=${userId}`),
           preConnect
         ]);
         
-        const result=await checkRes.json();
+        const result = await checkRes.json();
         
-        console.log(`Check: ${(performance.now()-t0).toFixed(0)}ms`);
+        console.log(`Check: ${(performance.now() - t0).toFixed(0)}ms`);
 
         if(result.registered){
           // 已註冊：立即跳轉（無過渡）
           location.replace('main.html');
         }else{
           // 未註冊：顯示表單
-          const splash=document.getElementById('splash');
-          const form=document.getElementById('form');
+          const splash = document.getElementById('splash');
+          const form = document.getElementById('form');
           splash.classList.add('hide');
           form.classList.add('show');
           
           // 清理 splash（節省記憶體）
-          setTimeout(()=>splash.remove(),300);
+          setTimeout(() => splash.remove(), 300);
           
           // 自動聚焦第一個輸入框
           document.getElementById('name').focus();
         }
         
-        console.log(`Total: ${(performance.now()-t0).toFixed(0)}ms`);
+        console.log(`Total: ${(performance.now() - t0).toFixed(0)}ms`);
         
       }catch(err){
-        console.error('Init error:',err);
+        console.error('Init error:', err);
         showError('系統錯誤，請重新載入');
         document.getElementById('splash').classList.add('hide');
         document.getElementById('form').classList.add('show');
@@ -175,34 +176,34 @@
     async function registerUser(e){
       e.preventDefault();
       
-      const btn=document.getElementById('submitBtn');
-      const btnText=document.getElementById('btnText');
+      const btn = document.getElementById('submitBtn');
+      const btnText = document.getElementById('btnText');
       
-      if(btn.disabled)return;
+      if(btn.disabled) return;
       
       // 快速驗證
-      const name=document.getElementById('name').value.trim();
-      const phone=document.getElementById('phone').value.trim();
-      const studentId=document.getElementById('studentId').value.trim();
-      const department=document.getElementById('department').value;
+      const name = document.getElementById('name').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const studentId = document.getElementById('studentId').value.trim();
+      const department = document.getElementById('department').value;
       
-      if(!name||!phone||!studentId||!department){
+      if(!name || !phone || !studentId || !department){
         showError('請完整填寫所有欄位');
         return;
       }
 
       // 立即更新 UI
-      btn.disabled=true;
-      btnText.innerHTML='<div class="btn-loading"><div class="spinner" style="width:20px;height:20px;border-width:2px"></div><span>註冊中</span></div>';
+      btn.disabled = true;
+      btnText.innerHTML = '<div class="btn-loading"><div class="spinner" style="width:20px;height:20px;border-width:2px"></div><span>註冊中</span></div>';
       
-      const regStart=performance.now();
+      const regStart = performance.now();
       
       try{
-        const res=await fetch(URL,{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({
-            type:'register',
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            type: 'register',
             userId,
             name,
             phone,
@@ -211,39 +212,39 @@
           })
         });
         
-        const result=await res.json();
+        const result = await res.json();
         
-        console.log(`Register: ${(performance.now()-regStart).toFixed(0)}ms`);
+        console.log(`Register: ${(performance.now() - regStart).toFixed(0)}ms`);
         
-        if(result.status==='success'){
+        if(result.status === 'success'){
           // 成功回饋
-          btn.style.background='#059669';
-          btnText.textContent='✓ 註冊成功';
+          btn.style.background = '#059669';
+          btnText.textContent = '✓ 註冊成功';
           
           // 快速跳轉
-          setTimeout(()=>location.replace('main.html'),400);
+          setTimeout(() => location.replace('main.html'), 400);
         }else{
-          throw new Error(result.message||'註冊失敗');
+          throw new Error(result.message || '註冊失敗');
         }
       }catch(err){
-        console.error('Register error:',err);
-        showError(err.message||'註冊失敗，請重試');
-        btn.disabled=false;
-        btnText.textContent='立即註冊';
+        console.error('Register error:', err);
+        showError(err.message || '註冊失敗，請重試');
+        btn.disabled = false;
+        btnText.textContent = '立即註冊';
       }
     }
 
     // 開發環境快速填充
-    if(location.hostname==='localhost'||location.hostname==='127.0.0.1'){
-      window.addEventListener('load',()=>{
-        setTimeout(()=>{
+    if(location.hostname === 'localhost' || location.hostname === '127.0.0.1'){
+      window.addEventListener('load', () => {
+        setTimeout(() => {
           if(document.getElementById('form').classList.contains('show')){
-            document.getElementById('name').value='測試';
-            document.getElementById('phone').value='0912345678';
-            document.getElementById('studentId').value='D1234567';
-            document.getElementById('department').value='資訊工程學系';
+            document.getElementById('name').value = '測試';
+            document.getElementById('phone').value = '0912345678';
+            document.getElementById('studentId').value = 'D1234567';
+            document.getElementById('department').value = '資訊工程學系';
           }
-        },500);
+        }, 500);
       });
     }
   </script>
