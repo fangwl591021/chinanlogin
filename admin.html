@@ -1,65 +1,68 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>穿山甲專車管理後台 v2.0</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>穿山甲專車後台 v3</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-body { background:#f3f4f6; font-family: "Noto Sans TC", system-ui, sans-serif; }
-.card { background:white; border-radius:14px; padding:22px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
-.section-title { font-weight:700; font-size:20px; color:#2d3748; margin-bottom:12px; display:flex; align-items:center; }
-.section-title::before { content:""; display:inline-block; width:6px; height:20px; background:#3c8050; border-radius:3px; margin-right:8px; }
-label, th, td, button, input, textarea { font-size:16px !important; }
-button { transition:background .2s; }
+body { background: #f3f4f6; font-family: "Noto Sans TC", system-ui, sans-serif; }
+.card { background: white; border-radius: 14px; padding: 20px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); }
+.sidebar-btn { display:block; width:100%; text-align:left; padding:12px 16px; font-size:18px; border-radius:8px; transition:all .2s; }
+.sidebar-btn:hover { background:#e0f2e9; color:#256d3f; }
+.sidebar-btn.active { background:#3c8050; color:white; font-weight:700; }
 </style>
 </head>
-<body class="p-6">
+<body class="flex h-screen">
 
-<header class="bg-green-700 text-white text-center py-5 rounded-lg shadow-md mb-8">
-  <h1 class="text-3xl font-bold">🚌 穿山甲專車後台管理系統</h1>
-  <p class="text-lg opacity-90">營運設定 · 數據儀表 · 預約查詢 · 司機班表</p>
-</header>
+<!-- 🧭 左側導覽區 -->
+<aside class="w-64 bg-white border-r shadow-lg flex flex-col">
+  <div class="p-5 border-b text-center bg-green-700 text-white">
+    <h1 class="text-2xl font-bold">🚌 後台管理</h1>
+    <p class="text-sm opacity-90">穿山甲專車系統</p>
+  </div>
 
-<div class="grid gap-8 md:grid-cols-3">
+  <nav class="flex-1 p-3 space-y-2">
+    <button class="sidebar-btn active" data-target="config">🔧 營運設定</button>
+    <button class="sidebar-btn" data-target="dashboard">📊 儀表板</button>
+    <button class="sidebar-btn" data-target="reservations">🧾 預約查詢</button>
+    <button class="sidebar-btn" data-target="drivers">🚐 司機班表</button>
+  </nav>
 
-  <!-- 🔧 A. 營運設定中心 -->
-  <div class="card md:col-span-1">
-    <div class="section-title">🔧 營運設定中心</div>
+  <div class="p-4 border-t text-center text-gray-600 text-sm">
+    ⚙️ <a href="#" class="underline">重新整理資料</a>
+  </div>
+</aside>
 
+<!-- 🖥️ 右側內容區 -->
+<main class="flex-1 p-6 overflow-y-auto">
+  
+  <!-- 🔧 營運設定 -->
+  <section id="config" class="card block">
+    <h2 class="text-2xl font-bold mb-4">🔧 營運設定中心</h2>
     <label class="block font-semibold mb-2">運營模式：</label>
-    <div class="flex gap-4 mb-4">
-      <label class="font-medium"><input type="radio" name="mode" value="S3" class="mr-1"> 單趟制（S3）</label>
-      <label class="font-medium"><input type="radio" name="mode" value="S4" class="mr-1"> 來回制（S4）</label>
+    <div class="flex gap-4 mb-4 text-lg">
+      <label><input type="radio" name="mode" value="S3" class="mr-1" /> 單趟制（S3）</label>
+      <label><input type="radio" name="mode" value="S4" class="mr-1" /> 來回制（S4）</label>
     </div>
-
-    <label class="block font-semibold mb-2">名額設定：</label>
-    <div class="grid grid-cols-2 gap-3 mb-5">
+    <div class="grid grid-cols-2 gap-3 mb-5 text-lg">
       <div>A1：<input id="capA1" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
       <div>A2：<input id="capA2" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
       <div>B1：<input id="capB1" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
       <div>B2：<input id="capB2" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
     </div>
-
-    <label class="block font-semibold mb-2">功能開關：</label>
-    <div class="space-y-2 mb-5">
+    <div class="space-y-2 mb-4">
       <label><input type="checkbox" id="enableBooking" class="mr-1"> 開放預約</label><br>
       <label><input type="checkbox" id="enableCancel" class="mr-1"> 允許取消</label>
     </div>
+    <textarea id="announcement" rows="3" class="w-full border rounded px-2 py-2 mb-4 text-lg" placeholder="公告訊息..."></textarea>
+    <button id="saveConfig" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded w-full text-lg">💾 儲存設定</button>
+  </section>
 
-    <label class="block font-semibold mb-2">公告文字：</label>
-    <textarea id="announcement" rows="3" class="w-full border rounded px-2 py-1 mb-4 text-lg"></textarea>
-
-    <button id="saveConfig" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded w-full text-lg">
-      💾 儲存設定
-    </button>
-  </div>
-
-  <!-- 📊 B. 營運儀表板 -->
-  <div class="card md:col-span-2">
-    <div class="section-title">📊 營運數據儀表板</div>
-
+  <!-- 📊 儀表板 -->
+  <section id="dashboard" class="card hidden">
+    <h2 class="text-2xl font-bold mb-4">📊 營運儀表板</h2>
     <div class="grid grid-cols-2 gap-6 mb-6">
       <div>
         <p class="font-semibold text-lg">今日總預約數：</p>
@@ -70,171 +73,65 @@ button { transition:background .2s; }
         <p id="remainingSeats" class="text-3xl font-bold text-blue-700 mt-1">--</p>
       </div>
     </div>
-
     <canvas id="chartTrips" height="120"></canvas>
-  </div>
-</div>
+  </section>
 
-<!-- 🧾 C. 預約查詢與管理 -->
-<div class="card mt-8">
-  <div class="section-title">🧾 預約查詢與管理</div>
-  <div class="flex items-center gap-3 mb-4">
-    <input id="searchInput" placeholder="輸入姓名 / 日期 / 班次搜尋..." class="border rounded px-3 py-2 w-full text-lg">
-    <button id="exportCsv" class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 text-lg">📤 匯出CSV</button>
-  </div>
-  <div id="reservationTable" class="overflow-x-auto text-base">
-    <table class="min-w-full border">
-      <thead class="bg-green-700 text-white">
-        <tr>
-          <th class="p-3 border">日期</th>
-          <th class="p-3 border">班次</th>
-          <th class="p-3 border">姓名</th>
-          <th class="p-3 border">系所</th>
-          <th class="p-3 border">電話</th>
-          <th class="p-3 border">狀態</th>
-          <th class="p-3 border">動作</th>
-        </tr>
-      </thead>
-      <tbody id="reservationBody"></tbody>
-    </table>
-  </div>
-</div>
+  <!-- 🧾 預約查詢 -->
+  <section id="reservations" class="card hidden">
+    <h2 class="text-2xl font-bold mb-4">🧾 預約查詢與管理</h2>
+    <div class="flex gap-3 mb-4">
+      <input id="searchInput" placeholder="輸入姓名 / 日期 / 班次搜尋..." class="border rounded px-3 py-2 w-full text-lg">
+      <button id="exportCsv" class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 text-lg">📤 匯出CSV</button>
+    </div>
+    <div id="reservationTable" class="overflow-x-auto text-base">
+      <table class="min-w-full border">
+        <thead class="bg-green-700 text-white">
+          <tr>
+            <th class="p-3 border">日期</th>
+            <th class="p-3 border">班次</th>
+            <th class="p-3 border">姓名</th>
+            <th class="p-3 border">系所</th>
+            <th class="p-3 border">電話</th>
+            <th class="p-3 border">狀態</th>
+          </tr>
+        </thead>
+        <tbody id="reservationBody"></tbody>
+      </table>
+    </div>
+  </section>
 
-<!-- 🧍‍♂️ D. 司機班表 -->
-<div class="card mt-8">
-  <div class="section-title">🚐 司機班表（每日運行）</div>
-  <div class="overflow-x-auto">
+  <!-- 🚐 司機班表 -->
+  <section id="drivers" class="card hidden">
+    <h2 class="text-2xl font-bold mb-4">🚐 司機班表</h2>
     <table class="min-w-full border text-base">
       <thead class="bg-blue-700 text-white">
         <tr>
           <th class="p-3 border">日期</th>
-          <th class="p-3 border">A1（22:00→22:30）</th>
-          <th class="p-3 border">A2（23:00→23:30）</th>
-          <th class="p-3 border">B1（22:30→23:00）</th>
-          <th class="p-3 border">B2（23:30→24:00）</th>
+          <th class="p-3 border">A1 (22:00→22:30)</th>
+          <th class="p-3 border">A2 (23:00→23:30)</th>
+          <th class="p-3 border">B1 (22:30→23:00)</th>
+          <th class="p-3 border">B2 (23:30→24:00)</th>
         </tr>
       </thead>
       <tbody id="driverTable">
-        <tr class="text-center">
-          <td class="p-2 border">2025-10-13</td>
-          <td class="p-2 border">王大明</td>
-          <td class="p-2 border">李小美</td>
-          <td class="p-2 border">張志強</td>
-          <td class="p-2 border">林佩芬</td>
-        </tr>
-        <tr class="text-center">
-          <td class="p-2 border">2025-10-14</td>
-          <td class="p-2 border">王大明</td>
-          <td class="p-2 border">王大明</td>
-          <td class="p-2 border">陳惠婷</td>
-          <td class="p-2 border">陳惠婷</td>
-        </tr>
+        <tr class="text-center"><td class="p-2 border">2025-10-13</td><td class="p-2 border">王大明</td><td class="p-2 border">李小美</td><td class="p-2 border">張志強</td><td class="p-2 border">林佩芬</td></tr>
       </tbody>
     </table>
-  </div>
-</div>
+  </section>
+</main>
 
-<!-- 🚀 JS 控制 -->
+<!-- JS -->
 <script>
-const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
-
-async function loadConfig(){
-  try{
-    const res = await fetch(`${WORKER_URL}?mode=config`);
-    const cfg = await res.json();
-    document.querySelector(`input[value="${cfg.operationMode}"]`).checked = true;
-    ['A1','A2','B1','B2'].forEach(k=>{
-      document.getElementById('cap'+k).value = cfg['capacity'+k] || 6;
+const sections = document.querySelectorAll("main section");
+document.querySelectorAll(".sidebar-btn").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll(".sidebar-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    const target=btn.dataset.target;
+    sections.forEach(sec=>{
+      sec.id===target ? sec.classList.remove("hidden") : sec.classList.add("hidden");
     });
-    document.getElementById('enableBooking').checked = cfg.enableBooking;
-    document.getElementById('enableCancel').checked = cfg.enableCancel;
-    document.getElementById('announcement').value = cfg.announcement || '';
-  }catch(e){ console.warn('讀取設定失敗',e); }
-}
-
-document.getElementById('saveConfig').onclick = async ()=>{
-  const data = {
-    operationMode: document.querySelector('input[name="mode"]:checked').value,
-    capacityA1: +document.getElementById('capA1').value,
-    capacityA2: +document.getElementById('capA2').value,
-    capacityB1: +document.getElementById('capB1').value,
-    capacityB2: +document.getElementById('capB2').value,
-    enableBooking: document.getElementById('enableBooking').checked,
-    enableCancel: document.getElementById('enableCancel').checked,
-    announcement: document.getElementById('announcement').value
-  };
-  const res = await fetch(WORKER_URL,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({type:'updateConfig',data})
   });
-  const result = await res.json();
-  alert(result.status==='success'?'✅ 設定已儲存':'❌ 儲存失敗');
-};
-
-async function loadDashboard(){
-  const res = await fetch(`${WORKER_URL}?mode=dashboard`);
-  const data = await res.json();
-  document.getElementById('todayTotal').textContent = data.todayTotal || 0;
-  document.getElementById('remainingSeats').textContent = data.remainingSeats || 0;
-  renderChart(data.chartData || {});
-}
-
-function renderChart(dataset){
-  const ctx = document.getElementById('chartTrips');
-  new Chart(ctx,{
-    type:'bar',
-    data:{
-      labels:dataset.labels || ['A1','A2','B1','B2'],
-      datasets:[{
-        label:'預約數',
-        data:dataset.values || [0,0,0,0],
-        backgroundColor:['#4caf50','#81c784','#64b5f6','#2196f3']
-      }]
-    },
-    options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
-  });
-}
-
-async function loadReservations(){
-  const res = await fetch(`${WORKER_URL}?mode=reservationsAll`);
-  const list = await res.json();
-  const tbody = document.getElementById('reservationBody');
-  tbody.innerHTML='';
-  list.forEach(r=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
-      <td class="border p-2">${r.date}</td>
-      <td class="border p-2">${r.route}</td>
-      <td class="border p-2">${r.name}</td>
-      <td class="border p-2">${r.department}</td>
-      <td class="border p-2">${r.phone}</td>
-      <td class="border p-2">${r.status}</td>
-      <td class="border p-2 text-center"><button class="text-red-600" onclick="cancelReservation('${r.id}')">取消</button></td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-document.getElementById('exportCsv').onclick=()=>{
-  const rows=[...document.querySelectorAll('#reservationBody tr')].map(tr=>[...tr.children].map(td=>td.innerText));
-  const csv='日期,班次,姓名,系所,電話,狀態\n'+rows.map(r=>r.join(',')).join('\n');
-  const blob=new Blob([csv],{type:'text/csv'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='reservations.csv';a.click();
-};
-
-async function cancelReservation(id){
-  if(!confirm('確定取消這筆預約嗎？'))return;
-  const res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'cancelAdmin',id})});
-  const result=await res.json();
-  alert(result.status==='success'?'✅ 已取消':'❌ 取消失敗');
-  loadReservations();
-}
-
-// 初始化
-window.addEventListener('load',()=>{
-  loadConfig();
-  loadDashboard();
-  loadReservations();
 });
 </script>
 </body>
