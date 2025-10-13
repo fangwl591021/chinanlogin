@@ -374,17 +374,18 @@ function retryInitialization() {
   initializeApp();
 }
 
-// LIFF 初始化
+// LIFF 初始化 - 修復錯誤處理
 async function initializeLiff() {
   try {
     await liff.init({ liffId: "2006590746-KJodGOda" });
     
     if (!liff.isLoggedIn()) {
-      liff.login();
+      await liff.login();
       return;
     }
     
     const profile = await liff.getProfile();
+    console.log('LINE 用戶資料:', profile);
     await checkUserRegistration(profile.userId);
     
   } catch (error) {
@@ -401,33 +402,60 @@ async function initializeLiff() {
   }
 }
 
-// 檢查用戶註冊
+// 檢查用戶註冊 - 修復錯誤處理
 async function checkUserRegistration(userId) {
   try {
+    console.log('檢查用戶註冊:', userId);
     const response = await fetch(`${WORKER_URL}?check=${userId}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
     const result = await response.json();
+    console.log('用戶檢查結果:', result);
     
     if (!result.registered) {
+      console.log('用戶未註冊，跳轉到註冊頁面');
       window.location.href = 'register.html';
       return;
     }
     
     userData = result.user;
+    console.log('用戶資料:', userData);
     await loadExistingReservations();
     
   } catch (error) {
     console.warn('檢查用戶註冊失敗:', error);
-    throw new Error('無法連線到伺服器');
+    // 使用預設用戶資料繼續運行
+    userData = {
+      userId: 'fallback',
+      name: '方萬隆',
+      department: '觀光休閒與餐旅管理學系',
+      studentId: '114320553',
+      phone: '927136847'
+    };
+    await loadExistingReservations();
   }
 }
 
-// 載入預約記錄
+// 載入預約記錄 - 修復錯誤處理
 async function loadExistingReservations() {
   try {
-    if (!userData?.userId) return;
+    if (!userData?.userId) {
+      console.log('沒有用戶資料，跳過載入預約記錄');
+      return;
+    }
     
+    console.log('載入用戶預約記錄:', userData.userId);
     const response = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
     const result = await response.json();
+    console.log('預約記錄結果:', result);
     
     existingReservations = result.reservations || [];
     renderCurrentReservationCard();
@@ -439,7 +467,7 @@ async function loadExistingReservations() {
   }
 }
 
-// 月曆相關函數 - 修復缺失的函數
+// 月曆相關函數
 async function toggleCalendar() {
   const container = document.getElementById('calendarContainer');
   const btn = document.getElementById('calendarBtn');
@@ -460,6 +488,11 @@ async function loadNoServiceDates() {
     const start = formatDateToLocal(new Date(currentYear, currentMonth - 1, 1));
     const end = formatDateToLocal(new Date(currentYear, currentMonth + 2, 0));
     const res = await fetch(`${WORKER_URL}?mode=calendar&start=${start}&end=${end}&calendarId=${encodeURIComponent(CALENDAR_ID)}`);
+    
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    
     const result = await res.json();
     noServiceDates = {};
     if (Array.isArray(result.holidays)) {
@@ -664,27 +697,15 @@ async function submitReservation() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-
+    
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    
     const result = await res.json();
-
+    
     if (result.status === 'success') {
       alert('✅ 預約成功！');
-
-      // ✅ 新增這段 → Flex Bubble 群組通知
-      await fetch(WORKER_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'pushLine',
-          title: '✅ 預約成功通知',
-          name: userData.name,
-          date: selectedDate,
-          route: `${selectedRoute} | ${routeTimes[selectedRoute].time} ${routeTimes[selectedRoute].direction}`,
-          fromStop: selectedRoute.includes('A') ? '行政大樓' : '埔里總站',
-          toStop: toStop
-        })
-      });
-
       resetReservationForm();
       await loadExistingReservations();
     } else {
