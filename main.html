@@ -576,27 +576,92 @@ async function submitReservation() {
       // 🚀 LINE 群組推播通知
       try {
         const flexPayload = {
-          type: "pushLine",
-          flex: {
-            type: "flex",
-            altText: "穿山甲專車預約通知",
-            contents: {
-              type: "bubble",
-              size: "mega",
-              body: {
-                type: "box",
-                layout: "vertical",
-                contents: [
-                  { type: "text", text: "🚌 穿山甲專車預約通知", weight: "bold", size: "lg", color: "#3c8050" },
-                  { type: "text", text: `👤 ${userData.name}`, size: "sm", wrap: true },
-                  { type: "text", text: `📅 ${selectedDate}`, size: "sm", wrap: true },
-                  { type: "text", text: `🚌 ${selectedRoute} | ${info.time}`, size: "sm", wrap: true },
-                  { type: "text", text: `🏁 下車：${toStop}`, size: "sm", wrap: true }
-                ]
+  type: "pushLine",
+  flex: {
+    type: "flex",
+    altText: "穿山甲專車新預約通知",
+    contents: {
+      type: "bubble",
+      size: "mega",
+      body: {
+        type: "box",
+        layout: "vertical",
+        contents: [
+          // ===== 綠底標題區 =====
+          {
+            type: "box",
+            layout: "baseline",
+            backgroundColor: "#3c8050",
+            cornerRadius: "8px 8px 0 0",
+            paddingAll: "10px",
+            contents: [
+              {
+                type: "text",
+                text: "🚌 穿山甲專車新預約",
+                color: "#ffffff",
+                weight: "bold",
+                size: "md",
               }
-            }
+            ]
+          },
+          // ===== 白底內容區 =====
+          {
+            type: "box",
+            layout: "vertical",
+            backgroundColor: "#ffffff",
+            cornerRadius: "0 0 8px 8px",
+            paddingAll: "12px",
+            contents: [
+              {
+                type: "text",
+                text: `日期：${selectedDate}`,
+                size: "sm",
+                color: "#333333",
+                wrap: true
+              },
+              {
+                type: "text",
+                text: `班次：${selectedRoute} | ${info.time} ${info.direction}`,
+                size: "sm",
+                color: "#333333",
+                wrap: true
+              },
+              {
+                type: "text",
+                text: `姓名：${userData.name}`,
+                size: "sm",
+                color: "#333333",
+                wrap: true
+              },
+              {
+                type: "text",
+                text: `電話：${userData.phone || "未填"}`,
+                size: "sm",
+                color: "#333333",
+                wrap: true
+              },
+              {
+                type: "text",
+                text: `上車：${fromStop}`,
+                size: "sm",
+                color: "#333333",
+                wrap: true
+              },
+              {
+                type: "text",
+                text: `下車：${toStop}`,
+                size: "sm",
+                color: "#333333",
+                wrap: true
+              }
+            ]
           }
-        };
+        ]
+      }
+    }
+  }
+};
+
         
         const pushRes = await fetch(WORKER_URL, {
           method: 'POST',
