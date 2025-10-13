@@ -131,6 +131,43 @@ function setButtonLoading(loading) {
   }
 }
 
+// 檢查註冊狀態 - 修復：使用 GET 請求並正確解析回應
+async function checkRegistrationStatus(userId) {
+  try {
+    const checkStart = Date.now();
+    
+    // 使用 GET 請求檢查註冊狀態
+    const response = await fetch(`${GAS_URL}?check=${encodeURIComponent(userId)}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const rawText = await response.text();
+    console.log('檢查回應原始資料:', rawText);
+    
+    let result;
+    try {
+      result = rawText ? JSON.parse(rawText) : {};
+    } catch (parseError) {
+      console.error('JSON 解析錯誤:', parseError);
+      // 如果解析失敗，嘗試檢查回應內容
+      if (rawText.includes('registered') || rawText.includes('true')) {
+        return { registered: true };
+      }
+      throw new Error('無效的回應格式');
+    }
+    
+    console.log(`檢查註冊狀態完成，耗時: ${Date.now() - checkStart}ms`, result);
+    
+    return result;
+  } catch (error) {
+    console.error('檢查註冊狀態失敗:', error);
+    // 檢查失敗時，返回未註冊狀態，讓用戶可以嘗試註冊
+    return { registered: false, error: error.message };
+  }
+}
+
 (async function init() {
   try {
     startTime = Date.now();
@@ -151,19 +188,19 @@ function setButtonLoading(loading) {
     const profile = await liff.getProfile();
     currentUserId = profile.userId;
     
-    console.log(`LIFF初始化完成，耗時: ${Date.now() - startTime}ms`);
+    console.log(`LIFF初始化完成，用戶ID: ${currentUserId}，耗時: ${Date.now() - startTime}ms`);
 
-    // 檢查是否已註冊
-    const checkStart = Date.now();
-    const res = await fetch(`${GAS_URL}?check=${currentUserId}`);
-    const result = await res.json();
+    // 檢查是否已註冊 - 使用修復後的方法
+    const result = await checkRegistrationStatus(currentUserId);
     
-    console.log(`檢查註冊狀態完成，耗時: ${Date.now() - checkStart}ms`);
-
-    if (result.registered) {
+    console.log('註冊檢查結果:', result);
+    
+    if (result.registered === true) {
+      console.log('用戶已註冊，跳轉到主頁面');
       // 直接跳轉，不顯示過渡畫面
       window.location.href = 'main.html';
     } else {
+      console.log('用戶未註冊，顯示註冊表單');
       showForm();
     }
     
@@ -171,7 +208,9 @@ function setButtonLoading(loading) {
 
   } catch (err) {
     console.error('初始化錯誤', err);
-    showError('系統發生錯誤，請稍後再試');
+    // 即使初始化失敗也顯示表單，讓用戶可以嘗試註冊
+    showForm();
+    showError('系統發生錯誤，請嘗試註冊或稍後再試');
   }
 })();
 
@@ -217,7 +256,7 @@ async function registerUser() {
     });
     
     const result = await res.json();
-    console.log(`註冊請求完成，耗時: ${Date.now() - registerStart}ms`);
+    console.log(`註冊請求完成，耗時: ${Date.now() - registerStart}ms`, result);
     
     if (result.status === 'success') {
       // 顯示成功訊息後跳轉
@@ -231,7 +270,7 @@ async function registerUser() {
         window.location.href = 'main.html';
       }, 600);
     } else {
-      alert('❌ 註冊失敗，請稍後再試');
+      alert('❌ 註冊失敗: ' + (result.message || '請稍後再試'));
       setButtonLoading(false);
     }
   } catch (err) {
@@ -258,5 +297,3 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 </body>
 </html>
-
-
