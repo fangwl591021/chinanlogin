@@ -420,10 +420,10 @@ async function initializeLiff() {
   }
 }
 
-// 檢查用戶註冊
+// 改進的用戶檢查函數
 async function checkUserRegistration(userId) {
   try {
-    console.log('檢查用戶註冊:', userId);
+    console.log('🔍 檢查用戶註冊:', userId);
     const response = await fetch(`${WORKER_URL}?check=${userId}`);
     
     if (!response.ok) {
@@ -431,62 +431,122 @@ async function checkUserRegistration(userId) {
     }
     
     const result = await response.json();
-    console.log('用戶檢查結果:', result);
+    console.log('👤 用戶檢查完整結果:', result);
     
-    if (!result.registered) {
-      console.log('用戶未註冊，跳轉到註冊頁面');
-      window.location.href = 'register.html';
+    // 處理各種錯誤情況
+    if (result.error) {
+      console.warn('⚠️ 註冊檢查服務錯誤:', result.error);
+      // 服務錯誤時，嘗試繞過檢查
+      return await handleRegistrationBypass(userId, result.error);
+    }
+    
+    // 如果已註冊，載入用戶資料
+    if (result.registered && result.user) {
+      userData = result.user;
+      console.log('✅ 用戶已註冊，資料:', userData);
+      updateUserInterface();
+      await loadExistingReservations();
       return;
     }
     
-    userData = result.user;
-    console.log('用戶資料:', userData);
+    // 如果已註冊但沒有用戶資料
+    if (result.registered) {
+      console.warn('⚠️ 標記為已註冊但缺少用戶資料');
+      userData = {
+        userId: userId,
+        name: '已註冊用戶',
+        studentId: '資料載入中',
+        department: '資料載入中',
+        phone: ''
+      };
+      updateUserInterface();
+      await loadExistingReservations();
+      return;
+    }
     
-    // 更新用戶介面顯示
-    updateUserInterface();
-    
-    await loadExistingReservations();
+    // 未註冊，跳轉到註冊頁面
+    console.log('👤 用戶未註冊，跳轉到註冊頁面');
+    window.location.href = 'register.html';
     
   } catch (error) {
-    console.warn('檢查用戶註冊失敗:', error);
-    // 使用預設用戶資料繼續運行
-    userData = {
-      userId: 'fallback',
-      name: '訪客用戶',
-      department: '未設定',
-      studentId: '未設定',
-      phone: ''
-    };
-    updateUserInterface();
-    await loadExistingReservations();
+    console.warn('❌ 檢查用戶註冊失敗:', error);
+    // 發生錯誤時使用繞過模式
+    await handleRegistrationBypass(userId, error.message);
   }
 }
 
-// 載入預約記錄
-async function loadExistingReservations() {
-  try {
-    if (!userData?.userId) {
-      console.log('沒有用戶資料，跳過載入預約記錄');
-      return;
+// 處理註冊檢查繞過
+async function handleRegistrationBypass(userId, errorMessage) {
+  console.log('🚨 使用繞過模式，原因:', errorMessage);
+  
+  // 檢查是否已有用戶資料
+  if (userData && userData.userId) {
+    console.log('✅ 使用現有用戶資料繼續');
+    updateUserInterface();
+    await loadExistingReservations();
+    return;
+  }
+  
+  // 建立臨時用戶資料
+  userData = {
+    userId: userId,
+    name: '臨時用戶',
+    studentId: 'N/A',
+    department: '系統維護中',
+    phone: ''
+  };
+  
+  updateUserInterface();
+  await loadExistingReservations();
+  
+  // 顯示友好提示
+  showTemporaryMessage('系統維護中，部分功能可能受限');
+}
+
+// 顯示臨時訊息
+function showTemporaryMessage(message) {
+  const existingMsg = document.getElementById('tempMessage');
+  if (existingMsg) existingMsg.remove();
+  
+  const msgDiv = document.createElement('div');
+  msgDiv.id = 'tempMessage';
+  msgDiv.style.cssText = `
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 12px;
+    margin: 10px 16px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 14px;
+  `;
+  msgDiv.textContent = message;
+  
+  const userSection = document.getElementById('userInfo');
+  userSection.parentNode.insertBefore(msgDiv, userSection.nextSibling);
+  
+  // 5秒後自動消失
+  setTimeout(() => {
+    if (msgDiv.parentNode) {
+      msgDiv.parentNode.removeChild(msgDiv);
     }
-    
-    console.log('載入用戶預約記錄:', userData.userId);
-    const response = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const result = await response.json();
-    console.log('預約記錄結果:', result);
-    
-    existingReservations = result.reservations || [];
-    renderCurrentReservationCard();
-    
-  } catch (error) {
-    console.warn('載入預約記錄失敗:', error);
-    existingReservations = [];
-    renderCurrentReservationCard();
+  }, 5000);
+}
+
+// 更新用戶介面顯示
+function updateUserInterface() {
+  const userContent = document.getElementById('userContent');
+  if (!userContent) return;
+  
+  if (userData && userData.name) {
+    userContent.innerHTML = `
+      <div class="user-name">${userData.name}</div>
+      <div class="user-info">
+        <strong>${userData.department} | ${userData.studentId}</strong>
+      </div>
+    `;
+  } else {
+    userContent.innerHTML = '⏳ 載入用戶資料中...';
   }
 }
 
