@@ -243,15 +243,45 @@ function renderCurrentReservationCard(){
  c.appendChild(car);s.appendChild(c);s.style.display='block';
 }
 
-/* === 取消預約 === */
+/* === 取消預約 - 修正版本 === */
 async function cancelReservation(id){
  if(!confirm('確定要取消嗎？'))return;
+ 
  try{
-   const res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'cancel',id,userId:userData.userId})});
-   const result=await res.json();
-   if(result.status==='success'){alert('✅ 已取消預約');await loadExistingReservations();}
-   else alert('❌ 取消失敗：'+(result.message||'請稍後再試'));
- }catch(e){alert('❌ 取消預約錯誤');}
+   // 先找到要取消的預約資料
+   const reservationToCancel = existingReservations.find(r => r.id === id);
+   if (!reservationToCancel) {
+     alert('❌ 找不到預約資料');
+     return;
+   }
+   
+   console.log('📦 取消的預約資料:', reservationToCancel);
+   
+   const res = await fetch(WORKER_URL, {
+     method: 'POST',
+     headers: {'Content-Type': 'application/json'},
+     body: JSON.stringify({
+       type: 'cancel',
+       id: id,
+       userId: userData.userId,
+       // 🔧 關鍵修復：傳遞完整的預約資料
+       reservationData: reservationToCancel
+     })
+   });
+   
+   const result = await res.json();
+   console.log('📊 取消回應:', result);
+   
+   if(result.status === 'success' || result.success === true){
+     alert('✅ 已取消預約');
+     await loadExistingReservations();
+   } else {
+     alert('❌ 取消失敗：' + (result.message || '請稍後再試'));
+   }
+ } catch(e){
+   console.error('取消預約錯誤', e);
+   alert('❌ 取消預約時發生錯誤');
+ }
 }
 
 /* === 日期格式 === */
