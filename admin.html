@@ -3,21 +3,99 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v3</title>
+<title>穿山甲專車後台 v3.2</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
-body { background: #f3f4f6; font-family: "Noto Sans TC", system-ui, sans-serif; }
-.card { background: white; border-radius: 14px; padding: 20px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); }
-.sidebar-btn { display:block; width:100%; text-align:left; padding:12px 16px; font-size:18px; border-radius:8px; transition:all .2s; }
+:root {
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 28px;
+}
+body {
+  background:#f8fafc;
+  font-family: "Noto Sans TC", system-ui, sans-serif;
+  font-size: var(--text-lg);
+  line-height:1.6;
+  color:#334155;
+}
+
+/* ===== 左側選單 ===== */
+aside {
+  width: 260px;
+  background:#ffffff;
+  border-right:1px solid #e5e7eb;
+  box-shadow: 2px 0 6px rgba(0,0,0,0.05);
+}
+.sidebar-btn {
+  display:block;
+  width:100%;
+  padding:14px 18px;
+  text-align:left;
+  font-size:var(--text-lg);
+  border-radius:8px;
+  transition:background .2s;
+}
 .sidebar-btn:hover { background:#e0f2e9; color:#256d3f; }
 .sidebar-btn.active { background:#3c8050; color:white; font-weight:700; }
+
+/* ===== 主內容區 ===== */
+.card {
+  background:white;
+  border-radius:16px;
+  padding:28px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.08);
+  max-width:1080px;
+  margin:auto;
+}
+.section-title {
+  font-weight:800;
+  font-size:var(--text-xl);
+  color:#14532d;
+  margin-bottom:16px;
+  display:flex;
+  align-items:center;
+}
+.section-title::before {
+  content:"";
+  display:inline-block;
+  width:8px;
+  height:24px;
+  background:#22c55e;
+  border-radius:3px;
+  margin-right:10px;
+}
+
+/* ===== 表單樣式 ===== */
+input, textarea, select {
+  font-size: var(--text-lg);
+  border-radius:8px;
+  padding:8px 10px;
+  border:1px solid #cbd5e1;
+}
+button {
+  font-size: var(--text-lg);
+  font-weight:600;
+  border-radius:10px;
+  padding:12px 16px;
+  transition: all .2s;
+}
+button:hover { opacity:0.9; }
+table { font-size: var(--text-lg); }
+
+/* ===== 響應式 ===== */
+@media (max-width: 1024px) {
+  aside { width:220px; }
+  .card { padding:20px; }
+}
 </style>
 </head>
-<body class="flex h-screen">
+
+<body class="flex h-screen overflow-hidden">
 
 <!-- 🧭 左側導覽區 -->
-<aside class="w-64 bg-white border-r shadow-lg flex flex-col">
+<aside class="flex flex-col">
   <div class="p-5 border-b text-center bg-green-700 text-white">
     <h1 class="text-2xl font-bold">🚌 後台管理</h1>
     <p class="text-sm opacity-90">穿山甲專車系統</p>
@@ -35,42 +113,49 @@ body { background: #f3f4f6; font-family: "Noto Sans TC", system-ui, sans-serif; 
   </div>
 </aside>
 
-<!-- 🖥️ 右側內容區 -->
-<main class="flex-1 p-6 overflow-y-auto">
-  
+<!-- 🖥️ 右側主內容 -->
+<main class="flex-1 overflow-y-auto p-8">
+
   <!-- 🔧 營運設定 -->
   <section id="config" class="card block">
-    <h2 class="text-2xl font-bold mb-4">🔧 營運設定中心</h2>
+    <h2 class="section-title">🔧 營運設定中心</h2>
+
     <label class="block font-semibold mb-2">運營模式：</label>
-    <div class="flex gap-4 mb-4 text-lg">
+    <div class="flex gap-6 mb-4 text-lg">
       <label><input type="radio" name="mode" value="S3" class="mr-1" /> 單趟制（S3）</label>
-      <label><input type="radio" name="mode" value="S4" class="mr-1" /> 來回制（S4）</label>
+      <label><input type="radio" name="mode" value="S4" class="mr-1" checked /> 來回制（S4）</label>
     </div>
-    <div class="grid grid-cols-2 gap-3 mb-5 text-lg">
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 text-lg">
       <div>A1：<input id="capA1" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
       <div>A2：<input id="capA2" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
       <div>B1：<input id="capB1" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
       <div>B2：<input id="capB2" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
     </div>
-    <div class="space-y-2 mb-4">
+
+    <div class="space-y-3 mb-6">
       <label><input type="checkbox" id="enableBooking" class="mr-1"> 開放預約</label><br>
       <label><input type="checkbox" id="enableCancel" class="mr-1"> 允許取消</label>
     </div>
-    <textarea id="announcement" rows="3" class="w-full border rounded px-2 py-2 mb-4 text-lg" placeholder="公告訊息..."></textarea>
-    <button id="saveConfig" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded w-full text-lg">💾 儲存設定</button>
+
+    <textarea id="announcement" rows="3" class="w-full border rounded px-2 py-2 mb-6 text-lg" placeholder="公告訊息..."></textarea>
+
+    <button id="saveConfig" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded w-full text-lg">
+      💾 儲存設定
+    </button>
   </section>
 
   <!-- 📊 儀表板 -->
   <section id="dashboard" class="card hidden">
-    <h2 class="text-2xl font-bold mb-4">📊 營運儀表板</h2>
+    <h2 class="section-title">📊 營運儀表板</h2>
     <div class="grid grid-cols-2 gap-6 mb-6">
       <div>
         <p class="font-semibold text-lg">今日總預約數：</p>
-        <p id="todayTotal" class="text-3xl font-bold text-green-700 mt-1">--</p>
+        <p id="todayTotal" class="text-4xl font-bold text-green-700 mt-1">--</p>
       </div>
       <div>
         <p class="font-semibold text-lg">剩餘名額：</p>
-        <p id="remainingSeats" class="text-3xl font-bold text-blue-700 mt-1">--</p>
+        <p id="remainingSeats" class="text-4xl font-bold text-blue-700 mt-1">--</p>
       </div>
     </div>
     <canvas id="chartTrips" height="120"></canvas>
@@ -78,10 +163,10 @@ body { background: #f3f4f6; font-family: "Noto Sans TC", system-ui, sans-serif; 
 
   <!-- 🧾 預約查詢 -->
   <section id="reservations" class="card hidden">
-    <h2 class="text-2xl font-bold mb-4">🧾 預約查詢與管理</h2>
+    <h2 class="section-title">🧾 預約查詢與管理</h2>
     <div class="flex gap-3 mb-4">
       <input id="searchInput" placeholder="輸入姓名 / 日期 / 班次搜尋..." class="border rounded px-3 py-2 w-full text-lg">
-      <button id="exportCsv" class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 text-lg">📤 匯出CSV</button>
+      <button id="exportCsv" class="bg-gray-700 text-white px-5 py-3 rounded hover:bg-gray-800 text-lg">📤 匯出CSV</button>
     </div>
     <div id="reservationTable" class="overflow-x-auto text-base">
       <table class="min-w-full border">
@@ -102,7 +187,7 @@ body { background: #f3f4f6; font-family: "Noto Sans TC", system-ui, sans-serif; 
 
   <!-- 🚐 司機班表 -->
   <section id="drivers" class="card hidden">
-    <h2 class="text-2xl font-bold mb-4">🚐 司機班表</h2>
+    <h2 class="section-title">🚐 司機班表</h2>
     <table class="min-w-full border text-base">
       <thead class="bg-blue-700 text-white">
         <tr>
@@ -114,10 +199,17 @@ body { background: #f3f4f6; font-family: "Noto Sans TC", system-ui, sans-serif; 
         </tr>
       </thead>
       <tbody id="driverTable">
-        <tr class="text-center"><td class="p-2 border">2025-10-13</td><td class="p-2 border">王大明</td><td class="p-2 border">李小美</td><td class="p-2 border">張志強</td><td class="p-2 border">林佩芬</td></tr>
+        <tr class="text-center">
+          <td class="p-2 border">2025-10-13</td>
+          <td class="p-2 border">王大明</td>
+          <td class="p-2 border">李小美</td>
+          <td class="p-2 border">張志強</td>
+          <td class="p-2 border">林佩芬</td>
+        </tr>
       </tbody>
     </table>
   </section>
+
 </main>
 
 <!-- JS -->
@@ -134,5 +226,6 @@ document.querySelectorAll(".sidebar-btn").forEach(btn=>{
   });
 });
 </script>
+
 </body>
 </html>
