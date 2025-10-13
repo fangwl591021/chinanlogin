@@ -347,16 +347,33 @@ async function initializeApp() {
   }
 }
 
-// 顯示基本UI
+// 顯示基本UI - 修正：使用實際用戶資料
 function showBasicUI() {
   const userContent = document.getElementById('userContent');
-  userContent.innerHTML = `
-    <div class="user-name">方萬隆</div>
-    <div class="user-info"><strong>觀光休閒與餐旅管理學系 | 114320553</strong></div>
-  `;
+  
+  // 如果已經有用戶資料，顯示實際資料，否則顯示載入中
+  if (userData && userData.name) {
+    userContent.innerHTML = `
+      <div class="user-name">${userData.name}</div>
+      <div class="user-info"><strong>${userData.department} | ${userData.studentId}</strong></div>
+    `;
+  } else {
+    userContent.innerHTML = '⏳ 系統初始化中...';
+  }
   
   // 啟用月曆按鈕
   document.getElementById('calendarBtn').disabled = false;
+}
+
+// 更新用戶介面 - 新增函數
+function updateUserInterface() {
+  if (userData && userData.name) {
+    const userContent = document.getElementById('userContent');
+    userContent.innerHTML = `
+      <div class="user-name">${userData.name}</div>
+      <div class="user-info"><strong>${userData.department} | ${userData.studentId}</strong></div>
+    `;
+  }
 }
 
 // 顯示錯誤狀態
@@ -374,7 +391,7 @@ function retryInitialization() {
   initializeApp();
 }
 
-// LIFF 初始化 - 修復錯誤處理
+// LIFF 初始化
 async function initializeLiff() {
   try {
     await liff.init({ liffId: "2006590746-KJodGOda" });
@@ -393,16 +410,17 @@ async function initializeLiff() {
     // 使用離線模式
     userData = {
       userId: 'offline',
-      name: '方萬隆',
-      department: '觀光休閒與餐旅管理學系',
-      studentId: '114320553',
-      phone: '927136847'
+      name: '訪客用戶',
+      department: '未設定',
+      studentId: '未設定',
+      phone: ''
     };
+    updateUserInterface();
     await loadExistingReservations();
   }
 }
 
-// 檢查用戶註冊 - 修復錯誤處理
+// 檢查用戶註冊
 async function checkUserRegistration(userId) {
   try {
     console.log('檢查用戶註冊:', userId);
@@ -423,6 +441,10 @@ async function checkUserRegistration(userId) {
     
     userData = result.user;
     console.log('用戶資料:', userData);
+    
+    // 更新用戶介面顯示
+    updateUserInterface();
+    
     await loadExistingReservations();
     
   } catch (error) {
@@ -430,16 +452,17 @@ async function checkUserRegistration(userId) {
     // 使用預設用戶資料繼續運行
     userData = {
       userId: 'fallback',
-      name: '方萬隆',
-      department: '觀光休閒與餐旅管理學系',
-      studentId: '114320553',
-      phone: '927136847'
+      name: '訪客用戶',
+      department: '未設定',
+      studentId: '未設定',
+      phone: ''
     };
+    updateUserInterface();
     await loadExistingReservations();
   }
 }
 
-// 載入預約記錄 - 修復錯誤處理
+// 載入預約記錄
 async function loadExistingReservations() {
   try {
     if (!userData?.userId) {
