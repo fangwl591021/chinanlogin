@@ -678,14 +678,17 @@ async function cancelReservation(reservationId) {
   }
 }
 
+// === 載入預約 ===
 async function loadExistingReservations() {
   try {
-    const res = await fetch(`${WORKER_URL}?userId=${userData.userId}`);
+    const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
     const result = await res.json();
     existingReservations = result.reservations || [];
+    renderCurrentReservationCard();  // ← 這裡會渲染 Flex 卡片
+  } catch (e) {
+    console.error('載入預約失敗', e);
+    existingReservations = [];
     renderCurrentReservationCard();
-  } catch (error) {
-    console.error('載入預約失敗:', error);
   }
 }
 
