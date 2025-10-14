@@ -635,42 +635,58 @@ function selectDate(dateStr) {
 // 在班次選擇時批次取得容量
 // === 🚌 顯示班次選擇 ===
 async function showRouteSelection() {
+  console.log('開始顯示班次選擇，日期:', selectedDate); // 除錯用
+  
   const routeSection = document.getElementById('routeSection');
   const routeButtons = document.getElementById('routeButtons');
   
-  routeButtons.innerHTML = '';
+  // 顯示載中狀態
+  routeButtons.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">⏳ 載入班次中...</div>';
+  routeSection.style.display = 'block';
   
-  // 批次取得所有班次的容量
-  const capacityPromises = Object.keys(routeTimes).map(routeId => 
-    getRouteReservationCount(selectedDate, routeId)
-  );
-  const capacities = await Promise.all(capacityPromises);
-  
-  let index = 0;
-  for (const [routeId, info] of Object.entries(routeTimes)) {
-    const currentCount = capacities[index];
-    const remainingSeats = RESERVATION_RULES.MAX_CAPACITY_PER_ROUTE - currentCount;
-    const isFull = remainingSeats <= 0;
-    index++;
+  try {
+    // 批次取得所有班次的容量
+    const capacityPromises = Object.keys(routeTimes).map(routeId => 
+      getRouteReservationCount(selectedDate, routeId)
+    );
+    const capacities = await Promise.all(capacityPromises);
     
-    const button = document.createElement('div');
-    button.className = `route-btn ${isFull ? 'disabled' : ''}`;
-    button.innerHTML = `
-      <div class="route-time">${routeId} ${info.time}</div>
-      <div class="route-direction">${info.direction}</div>
-      <div class="route-direction" style="font-size:10px; color:${isFull ? '#ff4444' : '#666'}">
-        ${isFull ? '❌ 已額滿' : `✅ 剩餘 ${remainingSeats} 位`}
-      </div>
-    `;
+    console.log('班次容量資料:', capacities); // 除錯用
     
-    if (!isFull) {
-      button.onclick = () => selectRoute(routeId, info.direction);
+    // 清空並重新渲染按鈕
+    routeButtons.innerHTML = '';
+    
+    let index = 0;
+    for (const [routeId, info] of Object.entries(routeTimes)) {
+      const currentCount = capacities[index];
+      const remainingSeats = RESERVATION_RULES.MAX_CAPACITY_PER_ROUTE - currentCount;
+      const isFull = remainingSeats <= 0;
+      index++;
+      
+      const button = document.createElement('div');
+      button.className = `route-btn ${isFull ? 'disabled' : ''}`;
+      button.innerHTML = `
+        <div class="route-time">${routeId} ${info.time}</div>
+        <div class="route-direction">${info.direction}</div>
+        <div class="route-direction" style="font-size:10px; color:${isFull ? '#ff4444' : '#666'}">
+          ${isFull ? '❌ 已額滿' : `✅ 剩餘 ${remainingSeats} 位`}
+        </div>
+      `;
+      
+      if (!isFull) {
+        button.onclick = () => selectRoute(routeId, info.direction);
+      }
+      
+      routeButtons.appendChild(button);
     }
     
-    routeButtons.appendChild(button);
+    console.log('班次按鈕渲染完成'); // 除錯用
+    
+  } catch (error) {
+    console.error('載入班次失敗:', error);
+    routeButtons.innerHTML = '<div style="text-align:center; padding:20px; color:#ff4444;">❌ 載入班次失敗，請重新整理</div>';
   }
   
-  routeSection.style.display = 'block';
   routeSection.scrollIntoView({ behavior: 'smooth' });
 }
 
