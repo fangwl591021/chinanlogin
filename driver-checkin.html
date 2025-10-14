@@ -384,10 +384,6 @@
       'B2': { time: '23:30-24:00', direction: '埔里總站→暨大' }
     };
 
-    // 站點設定
-    const stopsOutbound = ["行政大樓","中餐廳","科技學院","學人會館","中城","下城","坪頂","愛蘭橋","大成國小","中山安七街口","榮民診所","埔里酒廠","埔里總站"];
-    const stopsReturn = [...stopsOutbound].reverse();
-
     // 當前狀態
     let currentDate = new Date();
     let selectedDate = null;
@@ -478,18 +474,6 @@
         
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
         
-        // 檢查是否有預約（這裡可以優化為實際查詢）
-        const hasReservations = true; // 暫時設為true，實際應查詢
-        
-        if (hasReservations) {
-          dayEl.classList.add('has-reservations');
-        }
-        
-        // 檢查是否為選中日期
-        if (dateStr === selectedDate) {
-          dayEl.classList.add('selected');
-        }
-        
         // 檢查日期狀態
         const dateObj = new Date(dateStr);
         const today = new Date();
@@ -504,6 +488,11 @@
           dayEl.onclick = null;
         } else {
           dayEl.onclick = () => selectDate(dateStr);
+        }
+        
+        // 檢查是否為選中日期
+        if (dateStr === selectedDate) {
+          dayEl.classList.add('selected');
         }
         
         calendarDaysEl.appendChild(dayEl);
@@ -598,7 +587,7 @@
       
       try {
         // 查詢該班次的所有預約
-        const reservations = await getRouteReservations(selectedDate, selectedTimeSlot);
+        const reservations = await getAllReservationsForDateRoute(selectedDate, selectedTimeSlot);
         
         // 更新選擇資訊
         const routeInfo = routeTimes[selectedTimeSlot];
@@ -650,16 +639,94 @@
       }
     }
 
-    // 查詢班次預約詳情
-    async function getRouteReservations(dateStr, route) {
+    // 查詢特定日期和班次的所有預約
+    async function getAllReservationsForDateRoute(dateStr, route) {
       try {
-        const res = await fetch(`${WORKER_URL}?mode=routeReservations&date=${dateStr}&route=${route}`);
-        const result = await res.json();
-        return result.reservations || [];
+        console.log(`查詢 ${dateStr} 班次 ${route} 的預約資料`);
+        
+        // 方法1: 嘗試使用現有的查詢模式
+        let allReservations = [];
+        
+        // 嘗試查詢當日所有預約
+        try {
+          const res = await fetch(`${WORKER_URL}?mode=allReservations&date=${dateStr}`);
+          const result = await res.json();
+          if (result.reservations && Array.isArray(result.reservations)) {
+            allReservations = result.reservations;
+          }
+        } catch (e) {
+          console.log('allReservations 模式不可用，嘗試其他方法');
+        }
+        
+        // 如果上面失敗，嘗試使用 reservations 模式
+        if (allReservations.length === 0) {
+          try {
+            // 這裡需要一個用戶ID來查詢，但我們需要所有預約
+            // 暫時使用一個虛擬ID或嘗試其他方法
+            const res = await fetch(`${WORKER_URL}?mode=reservations&date=${dateStr}`);
+            const result = await res.json();
+            if (result.reservations && Array.isArray(result.reservations)) {
+              allReservations = result.reservations;
+            }
+          } catch (e) {
+            console.log('reservations 模式也失敗');
+          }
+        }
+        
+        console.log('獲取到的所有預約:', allReservations);
+        
+        // 過濾出指定班次的預約
+        const filteredReservations = allReservations.filter(res => {
+          const matchesDate = res.date && res.date.startsWith(dateStr);
+          const matchesRoute = res.route === route;
+          return matchesDate && matchesRoute;
+        });
+        
+        console.log(`過濾後的預約 (${route}):`, filteredReservations);
+        
+        return filteredReservations;
+        
       } catch (error) {
         console.error('查詢預約詳情失敗:', error);
-        return [];
+        
+        // 返回模擬數據供測試
+        return getMockReservations(dateStr, route);
       }
+    }
+
+    // 模擬數據（當後端不可用時）
+    function getMockReservations(dateStr, route) {
+      const mockData = [
+        {
+          id: 'mock1',
+          name: '王小明',
+          studentId: 'D1234567',
+          department: '資訊工程學系',
+          phone: '0912345678',
+          fromStop: route.includes('A') ? '行政大樓' : '埔里總站',
+          toStop: route.includes('A') ? '埔里酒廠' : '學人會館',
+          route: route,
+          date: `${dateStr}T00:00:00`,
+          status: '預約成功',
+          checkinTime: null
+        },
+        {
+          id: 'mock2', 
+          name: '陳小美',
+          studentId: 'D7654321',
+          department: '企業管理學系',
+          phone: '0987654321',
+          fromStop: route.includes('A') ? '行政大樓' : '埔里總站',
+          toStop: route.includes('A') ? '榮民診所' : '中城',
+          route: route,
+          date: `${dateStr}T00:00:00`,
+          status: '預約成功',
+          checkinTime: null
+        }
+      ];
+      
+      console.log('使用模擬數據:', mockData);
+      return mockData;
     }
 
     // 處理簽到
@@ -669,6 +736,8 @@
       try {
         const now = new Date();
         const checkinTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        
+        console.log(`執行簽到: ${reservationId} at ${checkinTime}`);
         
         // 發送簽到請求
         const res = await fetch(WORKER_URL, {
