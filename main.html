@@ -218,7 +218,17 @@
       font-size: 12px;
       margin-top: 4px;
     }
+    /* 在現有CSS的 .route-btn 樣式後添加 */
+.route-btn.disabled {
+  background: #f5f5f5 !important;
+  border-color: #ccc !important;
+  color: #999 !important;
+  cursor: not-allowed !important;
+}
 
+.route-btn.disabled:hover {
+  background: #f5f5f5 !important;
+}
     /* 車站選擇 */
     .stop-selector {
       padding: 0 16px;
@@ -612,65 +622,56 @@ function selectDate(dateStr) {
 }
 
 // === 🚌 顯示班次選擇 ===
-function showRouteSelection() {
+async function showRouteSelection() {
   const routeSection = document.getElementById('routeSection');
   const routeButtons = document.getElementById('routeButtons');
   
   routeButtons.innerHTML = '';
   
-  // 建立所有班次按鈕
-  Object.entries(routeTimes).forEach(([routeId, info]) => {
+  // 建立所有班次按鈕，並顯示剩餘名額
+  for (const [routeId, info] of Object.entries(routeTimes)) {
     const button = document.createElement('div');
     button.className = 'route-btn';
+    
+    // 取得該班次的預約人數
+    const currentCount = await getRouteReservationCount(selectedDate, routeId);
+    const remainingSeats = RESERVATION_RULES.MAX_CAPACITY_PER_ROUTE - currentCount;
+    
     button.innerHTML = `
       <div class="route-time">${routeId} ${info.time}</div>
       <div class="route-direction">${info.direction}</div>
+      <div style="font-size: 11px; margin-top: 4px; color: ${remainingSeats > 2 ? '#4caf50' : remainingSeats > 0 ? '#ff9800' : '#f44336'}">
+        ${remainingSeats > 0 ? `剩餘 ${remainingSeats} 席` : '已額滿'}
+      </div>
     `;
-    button.onclick = () => selectRoute(routeId, info.direction);
+    
+    // 如果已額滿，禁用按鈕
+    if (remainingSeats <= 0) {
+      button.classList.add('disabled');
+      button.style.background = '#f5f5f5';
+      button.style.borderColor = '#ccc';
+      button.style.cursor = 'not-allowed';
+    } else {
+      button.onclick = () => selectRoute(routeId, info.direction);
+    }
+    
     routeButtons.appendChild(button);
-  });
+  }
   
   routeSection.style.display = 'block';
   routeSection.scrollIntoView({ behavior: 'smooth' });
 }
 
-// === 🚌 選擇班次 ===
-function selectRoute(routeId, direction) {
-  selectedRoute = routeId;
-  
-  // 更新按鈕選擇狀態
-  document.querySelectorAll('.route-btn').forEach(btn => btn.classList.remove('selected'));
-  event.target.classList.add('selected');
-  
-  // 顯示車站選擇
-  showStopSelection(direction);
-}
-
-// === 🚏 顯示車站選擇 ===
-function showStopSelection(direction) {
-  const stopSection = document.getElementById('stopSection');
-  const toStopSelect = document.getElementById('toStop');
-  
-  toStopSelect.innerHTML = '<option value="">請選擇下車站</option>';
-  
-  // 根據方向決定車站列表
-  const isOutbound = direction.includes('暨大→');
-  const stops = isOutbound ? stopsOutbound : stopsReturn;
-  const fromStop = isOutbound ? '行政大樓' : '埔里總站';
-  
-  // 過濾掉上車站
-  stops.filter(stop => stop !== fromStop).forEach(stop => {
-    const option = document.createElement('option');
-    option.value = stop;
-    option.textContent = stop;
-    toStopSelect.appendChild(option);
-  });
-  
-  stopSection.style.display = 'block';
-  
-  // 顯示送出按鈕
-  document.getElementById('submitBtn').style.display = 'block';
-  stopSection.scrollIntoView({ behavior: 'smooth' });
+// 取得班次預約人數的函數
+async function getRouteReservationCount(dateStr, route) {
+  try {
+    const res = await fetch(`${WORKER_URL}?mode=routeCapacity&date=${dateStr}&route=${route}`);
+    const result = await res.json();
+    return result.count || 0;
+  } catch (error) {
+    console.error('取得班次人數失敗:', error);
+    return 0;
+  }
 }
 
 // === 📝 送出預約 ===
