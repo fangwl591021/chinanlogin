@@ -70,50 +70,13 @@
     .carousel { display: flex; overflow-x: auto; gap: 15px; padding: 10px 5px; scrollbar-width: none; -ms-overflow-style: none; }
     .carousel::-webkit-scrollbar { display: none; }
     .reservation-bubble { 
-  min-width: 280px;  /* 改回 mega 寬度 */
+  min-width: 190px;  /* 減少三分之一，原本 280px */
   background: white; 
   border-radius: 12px; 
   box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
   border: 1px solid #e0e0e0; 
   overflow: hidden; 
   flex-shrink: 0; 
-}
-.hidden { display: none !important; }
-.bubble-body { 
-  padding: 20px;  /* 增加內邊距 */
-}
-
-.bubble-line { 
-  margin-bottom: 12px;  /* 增加行間距 */
-  font-size: 14px;  /* 稍微增大字體 */
-  line-height: 1.5;  /* 增加行高 */
-  display: flex; 
-  justify-content: flex-start;
-  text-align: left;
-}
-
-.bubble-line strong { 
-  color: #333;  /* 加深標題顏色 */
-  min-width: 70px;  /* 增加標題寬度 */
-  margin-right: 12px;  /* 增加右邊距 */
-  font-weight: 600;
-}
-
-.bubble-line span { 
-  color: #333; 
-  text-align: left;
-  flex: 1; 
-  line-height: 1.4;
-}
-
-.bubble-header { 
-  background: #27ACB2; 
-  color: white; 
-  padding: 16px 15px;  /* 增加內邊距 */
-  font-weight: bold; 
-  font-size: 16px;  /* 增大字體 */
-  text-align: center; 
-  line-height: 1.4;
 }
 
 .bubble-body { 
@@ -198,11 +161,7 @@
   </button>
 </div>
 
-<div id="calendarContainer" class="hidden" style="margin-top:10px; padding:0 16px;">
-  <!-- 月曆內容 -->
-</div>
-
- <div id="calendarContainer" class="hidden" style="margin-top:10px; padding:0 16px;">
+  <div id="calendarContainer" style="display:none;margin-top:10px; padding:0 16px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
       <button onclick="changeMonth(-1)" style="width:auto; padding:5px 10px;">◀ 上個月</button>
       <h3 id="calendarTitle" style="margin:0; font-size:16px;"></h3>
@@ -379,97 +338,53 @@ async function preloadCalendarData() {
     console.log('✅ 月曆資料預載完成');
   } catch (error) {
     console.error('❌ 月曆資料預載失敗:', error);
-    calendarDataLoaded = false; // 標記為未載入，允許重試
   } finally {
-    calendarLoading = false;
+    calendarLoading = false; // 🚨 確保這裡有重置 loading 狀態
   }
 }
 
 // === 📅 月曆開關 ===
 async function toggleCalendar() {
-  let container, btn, loadingSpan;
-  
-  try {
-    // 使用更安全的 DOM 查詢方式
-    container = document.getElementById('calendarContainer');
-    btn = document.getElementById('calendarBtn');
-    loadingSpan = document.getElementById('calendarLoading');
-    
-    console.log('DOM 元素狀態:', { container, btn, loadingSpan });
-    
-    // 安全檢查 DOM 元素是否存在
-    if (!container || !btn) {
-      console.error('❌ 找不到必要的 DOM 元素');
-      // 嘗試重新查找
-      await new Promise(resolve => setTimeout(resolve, 100));
-      container = document.getElementById('calendarContainer');
-      btn = document.getElementById('calendarBtn');
-      loadingSpan = document.getElementById('calendarLoading');
-      
-      if (!container || !btn) {
-        console.error('❌ 重試後仍然找不到 DOM 元素');
-        alert('系統載入異常，請重新整理頁面');
-        return;
-      }
-    }
+  const container = document.getElementById('calendarContainer');
+  const btn = document.getElementById('calendarBtn');
+  const loadingSpan = document.getElementById('calendarLoading');
 
-    if (container.classList.contains('hidden')) {
-      // 打開月曆
-      console.log('正在打開月曆...');
-      if (loadingSpan) loadingSpan.style.display = 'inline-block';
-      btn.disabled = true;
-      btn.innerHTML = '📅 載入中...';
-      
-      try {
-        if (!calendarDataLoaded && !calendarLoading) {
-          await preloadCalendarData();
-        } else if (calendarLoading) {
-          // 等待正在進行的載入完成
-          let waitCount = 0;
-          while (calendarLoading && waitCount < 50) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            waitCount++;
-          }
-          if (calendarLoading) {
-            throw new Error('月曆載入超時');
-          }
+  if (container.style.display === 'none') {
+    // 打開月曆
+    loadingSpan.style.display = 'inline-block';
+    btn.disabled = true;
+    btn.textContent = '⏳ 載入中...';
+    
+    try {
+      if (!calendarDataLoaded && !calendarLoading) {
+        await preloadCalendarData();
+      } else if (calendarLoading) {
+        let waitCount = 0;
+        while (calendarLoading && waitCount < 50) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          waitCount++;
         }
-        
-        renderCalendar();
-        
-        // 成功打開月曆
-        if (loadingSpan) loadingSpan.style.display = 'none';
-        btn.disabled = false;
-        container.classList.remove('hidden');
-        btn.innerHTML = '📅 關閉月曆';
-        container.scrollIntoView({ behavior: 'smooth' });
-        
-      } catch (error) {
-        console.error('載入月曆失敗:', error);
-        // 錯誤處理：重置狀態
-        if (loadingSpan) loadingSpan.style.display = 'none';
-        btn.disabled = false;
-        btn.innerHTML = '📅 打開月曆';
-        alert('載入月曆失敗，請稍後再試');
       }
       
-    } else {
-      // 關閉月曆
-      console.log('正在關閉月曆...');
-      container.classList.add('hidden');
-      btn.innerHTML = '📅 打開月曆';
-      if (loadingSpan) loadingSpan.style.display = 'none';
+      renderCalendar();
+      
+      loadingSpan.style.display = 'none';
       btn.disabled = false;
+      container.style.display = 'block';
+      btn.textContent = '📅 關閉月曆';
+      container.scrollIntoView({ behavior: 'smooth' });
+      
+    } catch (error) {
+      console.error('載入月曆失敗:', error);
+      loadingSpan.style.display = 'none';
+      btn.disabled = false;
+      btn.textContent = '📅 打開月曆';
     }
     
-  } catch (error) {
-    console.error('toggleCalendar 函數錯誤:', error);
-    // 最終的錯誤恢復
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '📅 打開月曆';
-    }
-    if (loadingSpan) loadingSpan.style.display = 'none';
+  } else {
+    // 關閉月曆
+    container.style.display = 'none';
+    btn.textContent = '📅 打開月曆';
   }
 }
 
@@ -484,13 +399,11 @@ async function loadNoServiceDates() {
       result.holidays.forEach(d => noServiceDates[d.substring(0,10)] = true);
     }
     console.log('停駛日期:', noServiceDates);
-    } catch (e) {
-    console.error('取消預約錯誤', e);
-    alert('❌ 取消預約時發生錯誤');
+  } catch (e) {
+    console.error('🚨 載入停駛日期失敗:', e);
+    noServiceDates = {};
   }
 }
-
-// === 載入預約 ===
 
 async function changeMonth(delta) {
   currentMonth += delta;
@@ -657,9 +570,9 @@ function selectDate(dateStr) {
   document.getElementById('selectedDate').textContent = `✅ 已選擇日期：${dateStr}`;
   document.getElementById('holidayNotice').style.display = 'none';
   
-  // 關閉月曆 - 使用 class 方式
-  document.getElementById('calendarContainer').classList.add('hidden');
-  document.getElementById('calendarBtn').innerHTML = '📅 打開月曆';
+  // 關閉月曆
+  document.getElementById('calendarContainer').style.display = 'none';
+  document.getElementById('calendarBtn').textContent = '📅 打開月曆';
   
   // 顯示班次選擇
   showRouteSelection();
@@ -894,13 +807,18 @@ function resetReservationForm() {
   document.getElementById('submitBtn').style.display = 'none';
   document.getElementById('holidayNotice').style.display = 'none';
   
+  // 🚨 重要：不要關閉月曆容器，只重置選擇狀態
+  // document.getElementById('calendarContainer').style.display = 'none';
+  // document.getElementById('calendarBtn').textContent = '📅 打開月曆';
+  
   // 只重新渲染日曆來清除選擇狀態
-  if (!document.getElementById('calendarContainer').classList.contains('hidden')) {
+  if (document.getElementById('calendarContainer').style.display === 'block') {
     renderCalendar();
   }
 }
+
 async function cancelReservation(reservationId) {
-  if (!confirm('确定要取消这笔预约吗？')) return;
+  if (!confirm('確定要取消這筆預約嗎？')) return;
 
   try {
     const res = await fetch(WORKER_URL, {
@@ -911,9 +829,9 @@ async function cancelReservation(reservationId) {
 
     const result = await res.json();
     if (result.status === 'success') {
-      alert('✅ 已取消预约');
+      alert('✅ 已取消預約');
 
-      // LINE 群组推播通知（取消预约）
+      // LINE 群組推播通知（取消預約）
       try {
         const canceled = existingReservations.find(r => r.id === reservationId);
         if (canceled) {
@@ -922,7 +840,7 @@ async function cancelReservation(reservationId) {
             type: "pushLine",
             flex: {
               type: "flex",
-              altText: "穿山甲专车取消预约通知",
+              altText: "穿山甲專車取消預約通知",
               contents: {
                 type: "bubble",
                 size: "mega",
@@ -938,7 +856,7 @@ async function cancelReservation(reservationId) {
                       contents: [
                         {
                           type: "text",
-                          text: "❌ 穿山甲专车预约取消",
+                          text: "❌ 穿山甲專車預約取消",
                           color: "#ffffff",
                           weight: "bold",
                           size: "md",
@@ -956,8 +874,8 @@ async function cancelReservation(reservationId) {
                         { type: "text", text: `日期：${canceled.date.split('T')[0]}`, size: "sm", color: "#333" },
                         { type: "text", text: `班次：${canceled.route}｜${info.time || ""} ${info.direction || ""}`, size: "sm", color: "#333" },
                         { type: "text", text: `姓名：${canceled.name}`, size: "sm", color: "#333" },
-                        { type: "text", text: `上车：${canceled.fromStop}`, size: "sm", color: "#333" },
-                        { type: "text", text: `下车：${canceled.toStop}`, size: "sm", color: "#333" }
+                        { type: "text", text: `上車：${canceled.fromStop}`, size: "sm", color: "#333" },
+                        { type: "text", text: `下車：${canceled.toStop}`, size: "sm", color: "#333" }
                       ]
                     }
                   ]
@@ -971,22 +889,21 @@ async function cancelReservation(reservationId) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(flexPayload)
           });
-          console.log('🚫 群组推播：取消预约通知成功');
+          console.log('🚫 群組推播：取消預約通知成功');
         }
       } catch (pushErr) {
-        console.error('❌ 取消推播错误:', pushErr);
+        console.error('❌ 取消推播錯誤:', pushErr);
       }
 
       await loadExistingReservations();
     } else {
-      alert('❌ 取消失败：' + (result.message || '请稍后再试'));
+      alert('❌ 取消失敗：' + (result.message || '請稍後再試'));
     }
   } catch (e) {
-    console.error('取消预约错误', e);
-    alert('❌ 取消预约时发生错误');
+    console.error('取消預約錯誤', e);
+    alert('❌ 取消預約時發生錯誤');
   }
-} // 这里添加缺失的右大括号
-
+}
 
 // === 載入預約 ===
 async function loadExistingReservations() {
@@ -1006,90 +923,36 @@ function renderCurrentReservationCard() {
   const container = document.getElementById('currentReservationCard');
   
   if (!existingReservations || existingReservations.length === 0) {
-    container.innerHTML = '<div class="no-reservation">目前沒有預約紀錄<br><small style="color: #3b82f6;">No Reservation Records</small></div>';
+    container.innerHTML = '<div class="no-reservation">目前沒有預約紀錄</div>';
     container.style.display = 'block';
     return;
   }
   
   let html = '<div class="carousel-container">';
-  html += '<div class="carousel-title">🧾 我的預約<br><small style="color: #3b82f6; font-size: 14px;">My Reservations</small></div>';
+  html += '<div class="carousel-title">🧾 我的預約</div>';
   html += '<div class="carousel">';
   
   existingReservations.forEach(r => {
     const routeInfo = routeTimes[r.route] || { time: r.route, direction: '未知路線' };
-    const dateObj = new Date(r.date);
-    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-    const weekdayEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const dayOfWeek = weekdays[dateObj.getDay()];
-    const dayOfWeekEn = weekdayEn[dateObj.getDay()];
-    
-    // 路線方向中英對照
-    let directionZh = routeInfo.direction;
-    let directionEn = '';
-    if (routeInfo.direction.includes('暨大→埔里總站')) {
-      directionEn = 'NCNU → Puli Terminal';
-    } else if (routeInfo.direction.includes('埔里總站→暨大')) {
-      directionEn = 'Puli Terminal → NCNU';
-    }
-    
-    // 站點中英對照
-    const stopMap = {
-      '行政大樓': 'NCNU Administrative Building',
-      '中餐廳': 'Zhong Can Ting(Chinese Restaurant)',
-      '科技學院': 'College of Science and Technology',
-      '學人會館': 'Scholars\' Residence',
-      '中城': 'Zhongcheng',
-      '下城': 'Xiacheng',
-      '坪頂': 'Pingding',
-      '愛蘭橋': 'Ailan Bridge',
-      '大成國小': 'Dacheng Elementary School',
-      '中山安七街口': 'Zhongshan Anqi St. Intersection',
-      '榮民診所': 'Veterans Clinic',
-      '埔里酒廠': 'Puli Distillery',
-      '埔里總站': 'Puli Bus Terminal'
-    };
-    
-    const fromStopEn = stopMap[r.fromStop] || r.fromStop;
-    const toStopEn = stopMap[r.toStop] || r.toStop;
-    
     html += `
-      <div class="reservation-bubble" style="min-width: 280px;">
-        <div class="bubble-header">
-          ${r.date.split('T')[0]} (週${dayOfWeek})<br>
-          <small style="font-size: 12px; opacity: 0.9;">${r.date.split('T')[0]} (${dayOfWeekEn})</small>
-        </div>
+      <div class="reservation-bubble">
+        <div class="bubble-header">${r.date} (${getDayOfWeek(r.date)})</div>
         <div class="bubble-body">
           <div class="bubble-line">
-            <strong>班次<br><small style="color: #3b82f6;">Time</small></strong>
+            <strong>班次</strong>
             <span class="route-time">${routeInfo.time}</span>
           </div>
           <div class="bubble-line">
-            <strong>路線<br><small style="color: #3b82f6;">Route</small></strong>
-            <span>
-              ${directionZh}<br>
-              <small style="color: #3b82f6; font-size: 11px;">${directionEn}</small>
-            </span>
+            <strong>路線</strong>
+            <span>${routeInfo.direction}</span>
           </div>
           <div class="bubble-line">
-            <strong>上車站<br><small style="color: #3b82f6;">From</small></strong>
-            <span>
-              ${r.fromStop}<br>
-              <small style="color: #3b82f6; font-size: 11px;">${fromStopEn}</small>
-            </span>
-          </div>
-          <div class="bubble-line">
-            <strong>下車站<br><small style="color: #3b82f6;">To</small></strong>
-            <span>
-              ${r.toStop}<br>
-              <small style="color: #3b82f6; font-size: 11px;">${toStopEn}</small>
-            </span>
+            <strong>下車站</strong>
+            <span>${r.toStop}</span>
           </div>
         </div>
         <div class="bubble-footer">
-          <button class="cancel-btn-small" onclick="cancelReservation('${r.id}')">
-            取消預約<br>
-            <small style="font-size: 10px; opacity: 0.8;">Cancel</small>
-          </button>
+          <button class="cancel-btn-small" onclick="cancelReservation('${r.id}')">取消預約</button>
         </div>
       </div>
     `;
@@ -1260,3 +1123,5 @@ window.addEventListener('load', init);
 </script>
 </body>
 </html>
+
+
