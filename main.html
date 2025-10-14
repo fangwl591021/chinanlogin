@@ -633,6 +633,7 @@ function selectDate(dateStr) {
 }
 
 // 在班次選擇時批次取得容量
+// === 🚌 顯示班次選擇 ===
 async function showRouteSelection() {
   const routeSection = document.getElementById('routeSection');
   const routeButtons = document.getElementById('routeButtons');
@@ -649,9 +650,24 @@ async function showRouteSelection() {
   for (const [routeId, info] of Object.entries(routeTimes)) {
     const currentCount = capacities[index];
     const remainingSeats = RESERVATION_RULES.MAX_CAPACITY_PER_ROUTE - currentCount;
+    const isFull = remainingSeats <= 0;
     index++;
     
-    // ... 其餘程式碼不變
+    const button = document.createElement('div');
+    button.className = `route-btn ${isFull ? 'disabled' : ''}`;
+    button.innerHTML = `
+      <div class="route-time">${routeId} ${info.time}</div>
+      <div class="route-direction">${info.direction}</div>
+      <div class="route-direction" style="font-size:10px; color:${isFull ? '#ff4444' : '#666'}">
+        ${isFull ? '❌ 已額滿' : `✅ 剩餘 ${remainingSeats} 位`}
+      </div>
+    `;
+    
+    if (!isFull) {
+      button.onclick = () => selectRoute(routeId, info.direction);
+    }
+    
+    routeButtons.appendChild(button);
   }
   
   routeSection.style.display = 'block';
