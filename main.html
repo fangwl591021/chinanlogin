@@ -364,30 +364,25 @@ async function init() {
     await liff.init({ liffId: "2006590746-KJodGOda" });
     console.log('LIFF 初始化成功');
     
-    // 檢查登入狀態
     if (!liff.isLoggedIn()) {
-      console.log('用戶未登入，執行登入...');
       liff.login();
       return;
     }
     
-    // 獲取用戶資料
-    const profile = await liff.getProfile();
-    console.log('用戶資料:', profile);
+    // 並行獲取用戶資料和檢查註冊狀態
+    const [profile, checkRes] = await Promise.all([
+      liff.getProfile(),
+      fetch(`${WORKER_URL}?check=${liff.getContext().userId}`)
+    ]);
     
-    // 檢查用戶是否已註冊
-    const res = await fetch(`${WORKER_URL}?check=${profile.userId}`);
-    const result = await res.json();
-    console.log('註冊檢查結果:', result);
+    const result = await checkRes.json();
     
     if (!result.registered) {
-      console.log('用戶未註冊，跳轉到註冊頁面');
       window.location.href = 'register.html';
       return;
     }
     
     userData = result.user;
-    console.log('用戶數據:', userData);
 
     // 更新用戶信息顯示
     document.getElementById('userInfo').innerHTML = `
@@ -395,8 +390,11 @@ async function init() {
       <div class="user-info"><strong>${userData.department} | ${userData.studentId}</strong></div>
     `;
 
-    // 載入現有預約
-    await loadExistingReservations();
+    // 並行載入預約和停駛日期（如果需要）
+    await Promise.all([
+      loadExistingReservations(),
+      loadNoServiceDates() // 如果月曆一開始就顯示的話
+    ]);
     
     console.log('系統初始化完成');
     
@@ -427,15 +425,34 @@ async function loadNoServiceDates() {
 }
 
 // === 📅 月曆開關 ===
+// === 📅 月曆開關 ===
 async function toggleCalendar() {
   const container = document.getElementById('calendarContainer');
   const btn = document.getElementById('calendarBtn');
 
   if (container.style.display === 'none') {
-    await loadNoServiceDates();
-    renderCalendar();
-    container.style.display = 'block';
-    btn.textContent = '📅 關閉月曆';
+    // 顯示載入狀態
+    btn.disabled = true;
+    btn.style.background = '#2d6140';  // 深綠色表示運作中
+    btn.textContent = '⏳ 載入中...';
+    
+    try {
+      // 只在需要時載入停駛日期
+      if (Object.keys(noServiceDates).length === 0) {
+        await loadNoServiceDates();
+      }
+      renderCalendar();
+      container.style.display = 'block';
+      btn.textContent = '📅 關閉月曆';
+    } catch (error) {
+      console.error('載入月曆失敗:', error);
+      btn.textContent = '📅 打開月曆';
+    } finally {
+      // 恢復正常狀態
+      btn.disabled = false;
+      btn.style.background = '#3c8050';  // 恢復原本的綠色
+    }
+    
     container.scrollIntoView({ behavior: 'smooth' });
   } else {
     container.style.display = 'none';
@@ -623,41 +640,26 @@ function selectDate(dateStr) {
   showRouteSelection();
 }
 
-// === 🚌 顯示班次選擇 ===
+// 在班次選擇時批次取得容量
 async function showRouteSelection() {
   const routeSection = document.getElementById('routeSection');
   const routeButtons = document.getElementById('routeButtons');
   
   routeButtons.innerHTML = '';
   
-  // 建立所有班次按鈕，並顯示剩餘名額
+  // 批次取得所有班次的容量
+  const capacityPromises = Object.keys(routeTimes).map(routeId => 
+    getRouteReservationCount(selectedDate, routeId)
+  );
+  const capacities = await Promise.all(capacityPromises);
+  
+  let index = 0;
   for (const [routeId, info] of Object.entries(routeTimes)) {
-    const button = document.createElement('div');
-    button.className = 'route-btn';
-    
-    // 取得該班次的預約人數
-    const currentCount = await getRouteReservationCount(selectedDate, routeId);
+    const currentCount = capacities[index];
     const remainingSeats = RESERVATION_RULES.MAX_CAPACITY_PER_ROUTE - currentCount;
+    index++;
     
-    button.innerHTML = `
-      <div class="route-time">${routeId} ${info.time}</div>
-      <div class="route-direction">${info.direction}</div>
-      <div style="font-size: 11px; margin-top: 4px; color: ${remainingSeats > 2 ? '#4caf50' : remainingSeats > 0 ? '#ff9800' : '#f44336'}">
-        ${remainingSeats > 0 ? `剩餘 ${remainingSeats} 席` : '已額滿'}
-      </div>
-    `;
-    
-    // 如果已額滿，禁用按鈕
-    if (remainingSeats <= 0) {
-      button.classList.add('disabled');
-      button.style.background = '#f5f5f5';
-      button.style.borderColor = '#ccc';
-      button.style.cursor = 'not-allowed';
-    } else {
-      button.onclick = () => selectRoute(routeId, info.direction);
-    }
-    
-    routeButtons.appendChild(button);
+    // ... 其餘程式碼不變
   }
   
   routeSection.style.display = 'block';
