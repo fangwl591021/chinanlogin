@@ -725,10 +725,10 @@ async function submitReservation() {
     if (result.status === 'success') {
       alert('✅ 預約成功！');
 
-      // LINE 群組推播通知（新預約）- 使用最簡單的格式
+      // LINE 群組推播通知（新預約）- 使用正確的類型
       try {
         const pushData = {
-          type: "push",
+          type: "pushLine",  // 修正為 pushLine
           message: `🚌 穿山甲專車新預約\n\n日期：${selectedDate}\n班次：${selectedRoute}｜${info.time} ${info.direction}\n姓名：${userData.name}\n電話：${userData.phone || "未填"}\n上車：${cleanFromStop}\n下車：${cleanToStop}`
         };
 
@@ -769,21 +769,15 @@ async function cancelReservation(reservationId) {
 
   try {
     console.log('開始取消預約:', reservationId);
-    console.log('現有預約列表:', existingReservations);
     
     // 在取消前先保存要取消的預約資料
-    const reservationToCancel = existingReservations.find(r => {
-      console.log('檢查預約:', r.id, 'vs', reservationId, '類型:', typeof r.id, typeof reservationId);
-      return r.id === reservationId || r.id.toString() === reservationId.toString();
-    });
+    const reservationToCancel = existingReservations.find(r => r.id === reservationId);
     
     if (!reservationToCancel) {
-      console.error('找不到要取消的預約，現有預約ID列表:', existingReservations.map(r => ({ id: r.id, type: typeof r.id })));
+      console.error('找不到要取消的預約');
       alert('找不到預約資料，請重新整理頁面後再試');
       return;
     }
-    
-    console.log('找到要取消的預約:', reservationToCancel);
     
     const response = await fetch(WORKER_URL, {
       method: 'POST',
@@ -816,7 +810,7 @@ async function cancelReservation(reservationId) {
     if (result.status === 'success') {
       alert('✅ 已取消預約\n✅ Reservation cancelled');
 
-      // LINE 群組推播通知（取消預約）
+      // LINE 群組推播通知（取消預約）- 使用正確的類型
       try {
         const info = routeTimes[reservationToCancel.route] || {};
         
@@ -832,7 +826,7 @@ async function cancelReservation(reservationId) {
         const userName = reservationToCancel.name || userData.name || '未知用戶';
 
         const pushData = {
-          type: "push",
+          type: "pushLine",  // 修正為 pushLine
           message: `❌ 穿山甲專車預約取消\n\n日期：${reservationDate}\n班次：${reservationToCancel.route}｜${info.time || ""} ${info.direction || ""}\n姓名：${userName}\n上車：${fromStop}\n下車：${toStop}`
         };
 
