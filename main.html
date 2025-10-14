@@ -658,7 +658,14 @@ function selectDate(dateStr) {
   document.getElementById('calendarContainer').style.display = 'none';
   document.getElementById('calendarBtn').textContent = '📅 打開月曆';
   
+  // 重置之前的選擇
+  selectedRoute = null;
+  document.getElementById('toStop').innerHTML = '<option value="">請先選擇班次</option>';
+  document.getElementById('stopSection').style.display = 'none';
+  document.getElementById('submitBtn').style.display = 'none';
+  
   // 顯示班次選擇
+  document.getElementById('routeSection').style.display = 'block';
   showRouteSelection();
 }
 
