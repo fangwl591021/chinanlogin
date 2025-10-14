@@ -801,6 +801,15 @@ async function cancelReservation(reservationId) {
   try {
     console.log('開始取消預約:', reservationId);
     
+    // 在取消前先保存要取消的預約資料
+    const reservationToCancel = existingReservations.find(r => r.id === reservationId);
+    
+    if (!reservationToCancel) {
+      console.error('找不到要取消的預約');
+      alert('找不到預約資料，請重新整理頁面後再試');
+      return;
+    }
+    
     const response = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 
@@ -834,28 +843,49 @@ async function cancelReservation(reservationId) {
 
       // LINE 群組推播通知（取消預約）
       try {
-        // 先重新載入預約資料，確保資料是最新的
-        await loadExistingReservations();
+        const info = routeTimes[reservationToCancel.route] || {};
         
-        // 從更新後的 existingReservations 中尋找取消的預約
-        const canceledReservation = existingReservations.find(r => r.id === reservationId);
+        // 提取純中文站名（移除 HTML 標籤）
+        const extractChineseName = (stop) => {
+          if (!stop) return '未知站點';
+          return stop.split('<')[0];
+        };
         
-        if (!canceledReservation) {
-          console.warn('找不到取消的預約資料，嘗試從原始資料中查找');
-          // 如果找不到，可能是因為狀態已更新，嘗試從之前的資料中查找
-          const originalReservation = existingReservations.find(r => r.id === reservationId) || 
-                                    result.canceledReservation; // 如果後端有返回取消的預約資料
-          
-          if (originalReservation) {
-            await sendCancelNotification(originalReservation);
-          } else {
-            console.error('無法找到取消的預約資料');
-          }
-        } else {
-          await sendCancelNotification(canceledReservation);
+        const fromStop = extractChineseName(reservationToCancel.fromStop || '未知上車站');
+        const toStop = extractChineseName(reservationToCancel.toStop || '未知下車站');
+        const reservationDate = reservationToCancel.date ? reservationToCancel.date.split('T')[0] : '未知日期';
+        const userName = reservationToCancel.name || userData.name || '未知用戶';
+
+        const pushData = {
+          type: "pushLine",
+          message: `❌ 穿山甲專車預約取消\n\n日期：${reservationDate}\n班次：${reservationToCancel.route}｜${info.time || ""} ${info.direction || ""}\n姓名：${userName}\n上車：${fromStop}\n下車：${toStop}`
+        };
+
+        console.log('發送取消推播數據:', pushData);
+        
+        const pushRes = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(pushData)
+        });
+        
+        // 檢查推播響應狀態
+        if (!pushRes.ok) {
+          throw new Error(`推播請求失敗: ${pushRes.status}`);
         }
+        
+        const pushResult = await pushRes.json();
+        console.log('🚫 群組推播響應:', pushResult);
+        
+        if (pushResult.status === 'success') {
+          console.log('✅ 取消推播發送成功');
+        } else {
+          console.warn('⚠️ 取消推播響應狀態不是 success:', pushResult);
+        }
+        
       } catch (pushErr) {
         console.error('❌ 取消推播錯誤:', pushErr);
+        // 推播失敗不影響主要取消流程，只是記錄錯誤
       }
 
       // 重新載入預約列表
@@ -873,121 +903,7 @@ async function cancelReservation(reservationId) {
     }
   }
 }
-
-// 專門處理取消推播的函數
-async function sendCancelNotification(canceled) {
-  try {
-    const info = routeTimes[canceled.route] || {};
-    const reservationDate = canceled.date ? canceled.date.split('T')[0] : '未知日期';
-    
-    // 提取純中文站名
-    const extractChineseName = (stop) => {
-      if (!stop) return '未知站點';
-      return stop.split('<')[0];
-    };
-    
-    const fromStop = extractChineseName(canceled.fromStop || '未知上車站');
-    const toStop = extractChineseName(canceled.toStop || '未知下車站');
-    const userName = canceled.name || userData.name || '未知用戶';
-
-    const flexPayload = {
-      type: "pushLine",
-      flex: {
-        type: "flex",
-        altText: "穿山甲專車取消預約通知",
-        contents: {
-          type: "bubble",
-          size: "mega",
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "box",
-                layout: "vertical",
-                backgroundColor: "#b71c1c",
-                paddingAll: "10px",
-                contents: [
-                  {
-                    type: "text",
-                    text: "❌ 穿山甲專車預約取消",
-                    color: "#ffffff",
-                    weight: "bold",
-                    size: "md",
-                    align: "center"
-                  }
-                ]
-              },
-              {
-                type: "box",
-                layout: "vertical",
-                backgroundColor: "#ffffff",
-                paddingAll: "12px",
-                spacing: "sm",
-                contents: [
-                  { 
-                    type: "text", 
-                    text: `日期：${reservationDate}`, 
-                    size: "sm", 
-                    color: "#333" 
-                  },
-                  { 
-                    type: "text", 
-                    text: `班次：${canceled.route}｜${info.time || ""} ${info.direction || ""}`, 
-                    size: "sm", 
-                    color: "#333" 
-                  },
-                  { 
-                    type: "text", 
-                    text: `姓名：${userName}`, 
-                    size: "sm", 
-                    color: "#333" 
-                  },
-                  { 
-                    type: "text", 
-                    text: `上車：${fromStop}`, 
-                    size: "sm", 
-                    color: "#333" 
-                  },
-                  { 
-                    type: "text", 
-                    text: `下車：${toStop}`, 
-                    size: "sm", 
-                    color: "#333" 
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      }
-    };
-
-    console.log('發送取消推播:', JSON.stringify(flexPayload, null, 2));
-    
-    const pushResponse = await fetch(WORKER_URL, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(flexPayload)
-    });
-    
-    if (!pushResponse.ok) {
-      const errorText = await pushResponse.text();
-      console.error('取消推播請求失敗:', errorText);
-      throw new Error(`推播請求失敗: ${pushResponse.status}`);
-    }
-    
-    const pushResult = await pushResponse.json();
-    console.log('🚫 取消預約推播成功:', pushResult);
-    
-  } catch (pushErr) {
-    console.error('❌ 取消推播錯誤:', pushErr.message);
-    throw pushErr;
-  }
-}      // LINE 群組推播通知(新預約) - 使用 Flex Message
+      // LINE 群組推播通知(新預約) - 使用 Flex Message
       try {
         const flexPayload = {
           type: "pushLine",
