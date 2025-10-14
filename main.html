@@ -770,6 +770,15 @@ async function cancelReservation(reservationId) {
   try {
     console.log('開始取消預約:', reservationId);
     
+    // 在取消前先保存要取消的預約資料
+    const reservationToCancel = existingReservations.find(r => r.id === reservationId);
+    
+    if (!reservationToCancel) {
+      console.error('找不到要取消的預約');
+      alert('找不到預約資料，請重新整理頁面後再試');
+      return;
+    }
+    
     const response = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 
@@ -801,43 +810,37 @@ async function cancelReservation(reservationId) {
     if (result.status === 'success') {
       alert('✅ 已取消預約\n✅ Reservation cancelled');
 
-      // LINE 群組推播通知（取消預約）- 使用最簡單的格式
+      // LINE 群組推播通知（取消預約）
       try {
-        // 從現有預約中查找取消的預約
-        const canceledReservation = existingReservations.find(r => r.id === reservationId);
+        const info = routeTimes[reservationToCancel.route] || {};
         
-        if (canceledReservation) {
-          const info = routeTimes[canceledReservation.route] || {};
-          
-          // 提取純中文站名（移除 HTML 標籤）
-          const extractChineseName = (stop) => {
-            if (!stop) return '未知站點';
-            return stop.split('<')[0];
-          };
-          
-          const fromStop = extractChineseName(canceledReservation.fromStop || '未知上車站');
-          const toStop = extractChineseName(canceledReservation.toStop || '未知下車站');
-          const reservationDate = canceledReservation.date ? canceledReservation.date.split('T')[0] : '未知日期';
-          const userName = canceledReservation.name || userData.name || '未知用戶';
+        // 提取純中文站名（移除 HTML 標籤）
+        const extractChineseName = (stop) => {
+          if (!stop) return '未知站點';
+          return stop.split('<')[0];
+        };
+        
+        const fromStop = extractChineseName(reservationToCancel.fromStop || '未知上車站');
+        const toStop = extractChineseName(reservationToCancel.toStop || '未知下車站');
+        const reservationDate = reservationToCancel.date ? reservationToCancel.date.split('T')[0] : '未知日期';
+        const userName = reservationToCancel.name || userData.name || '未知用戶';
 
-          const pushData = {
-            type: "push",
-            message: `❌ 穿山甲專車預約取消\n\n日期：${reservationDate}\n班次：${canceledReservation.route}｜${info.time || ""} ${info.direction || ""}\n姓名：${userName}\n上車：${fromStop}\n下車：${toStop}`
-          };
+        const pushData = {
+          type: "push",
+          message: `❌ 穿山甲專車預約取消\n\n日期：${reservationDate}\n班次：${reservationToCancel.route}｜${info.time || ""} ${info.direction || ""}\n姓名：${userName}\n上車：${fromStop}\n下車：${toStop}`
+        };
 
-          console.log('發送取消推播數據:', pushData);
-          
-          const pushRes = await fetch(WORKER_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(pushData)
-          });
-          
-          const pushResult = await pushRes.json();
-          console.log('🚫 群組推播響應:', pushResult);
-        } else {
-          console.warn('找不到取消的預約資料，無法發送推播');
-        }
+        console.log('發送取消推播數據:', pushData);
+        
+        const pushRes = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(pushData)
+        });
+        
+        const pushResult = await pushRes.json();
+        console.log('🚫 群組推播響應:', pushResult);
+        
       } catch (pushErr) {
         console.error('❌ 取消推播錯誤:', pushErr);
       }
