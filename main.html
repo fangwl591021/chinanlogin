@@ -240,11 +240,17 @@ async function init() {
     const profile = await liff.getProfile();
     console.log('用戶信息:', profile);
     
-    // 同時進行用戶驗證和月曆資料載入
-    const [userCheckResult] = await Promise.all([
+    // 🔥 並行處理：同時進行用戶驗證和載入預約
+    console.log('⚡ 開始並行載入用戶資料和預約記錄...');
+    
+    const [userCheckResult, reservationsResult] = await Promise.all([
+      // 用戶身份驗證
       fetch(`${WORKER_URL}?check=${profile.userId}`).then(r => r.json()),
-      preloadCalendarData()
+      // 預約記錄查詢
+      fetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`).then(r => r.json())
     ]);
+    
+    console.log('✅ 並行載入完成');
     
     if (!userCheckResult.registered) {
       console.log('📝 用戶未註冊，跳轉到註冊頁面');
@@ -253,12 +259,22 @@ async function init() {
     }
     
     userData = userCheckResult.user;
+    existingReservations = reservationsResult.reservations || [];
+    
+    // 更新用戶信息顯示
     document.getElementById('userInfo').innerHTML = `
       <div class="user-name">${userData.name}</div>
       <div class="user-info">${userData.department} | ${userData.studentId}</div>
     `;
     
-    await loadExistingReservations();
+    // 直接渲染預約卡片（資料已經載入完成）
+    renderCurrentReservationCard();
+    
+    // 背景預載月曆資料（不阻塞主流程）
+    preloadCalendarData().then(() => {
+      console.log('📅 月曆資料背景預載完成');
+    });
+    
     console.log('🎉 系統初始化完成');
     
   } catch (error) {
