@@ -86,6 +86,13 @@
     .route-btn { padding: 12px; border: 2px solid #3c8050; border-radius: 8px; background: white; cursor: pointer; text-align: center; transition: all 0.2s; }
     .route-btn:hover { background: #eaf5ea; }
     .route-btn.selected { background: #3c8050; color: white; }
+    .route-btn.disabled {
+      background: #f5f5f5 !important;
+      border-color: #ccc !important;
+      color: #999 !important;
+      cursor: not-allowed !important;
+    }
+    .route-btn.disabled:hover { background: #f5f5f5 !important; }
     .route-direction { font-size: 12px; margin-top: 4px; }
     .stop-selector { padding: 0 16px; margin: 20px 0; }
     select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; margin-top: 8px; }
@@ -162,6 +169,14 @@ const routeTimes = {
   'B1': { time: '22:30-23:00', direction: '埔里總站→暨大' },
   'A2': { time: '23:00-23:30', direction: '暨大→埔里總站' },
   'B2': { time: '23:30-24:00', direction: '埔里總站→暨大' }
+};
+
+// === 預約規則 ===
+const RESERVATION_RULES = {
+  MAX_DAYS_AHEAD: 7,
+  MAX_CAPACITY_PER_ROUTE: 6,
+  DAILY_DEADLINE: '19:00',
+  MAX_RESERVATIONS_PER_DAY: 1
 };
 
 async function init() {
@@ -339,22 +354,58 @@ function renderCalendar() {
   for (let day = 1; day <= daysInMonth; day++) {
     const dateObj = new Date(currentYear, currentMonth, day);
     const dateStr = formatDateToLocal(dateObj);
+    
+    // 使用預約規則驗證日期狀態
+    const isPast = ReservationValidator.isPastDate(dateStr);
+    const isNoService = ReservationValidator.isNoServiceDate(dateStr);
+    const isAfterDeadline = ReservationValidator.isAfterDeadline(dateStr);
+    const isWithinWindow = ReservationValidator.isWithinBookingWindow(dateStr);
+    const hasReservation = userData ? ReservationValidator.hasExistingReservation(userData.userId, dateStr) : false;
+    
     let classes = 'calendar-day';
+    let disabled = false;
+    let disabledReason = '';
+
+    // 檢查日期狀態
+    if (hasReservation) {
+      disabled = true;
+      disabledReason = '您已預約';
+    } else if (isPast) {
+      disabled = true;
+      disabledReason = '已過期';
+    } else if (isNoService) {
+      disabled = true;
+      disabledReason = '停駛';
+    } else if (!isWithinWindow) {
+      disabled = true;
+      disabledReason = '未開放';
+    } else if (isAfterDeadline && ReservationValidator.isToday(dateStr)) {
+      disabled = true;
+      disabledReason = '已截止';
+    }
     
-    if (dateObj < today) {
-      classes += ' past';
-    } else if (noServiceDates[dateStr]) {
+    if (disabled) {
       classes += ' disabled';
+      html += `<div class="${classes}">${day}<br><small>${disabledReason}</small></div>`;
+    } else {
+      if (selectedDate === dateStr) {
+        classes += ' selected';
+      }
+      
+      const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+      const dayLabel = isWeekend ? `${day}<br><small style="font-size:10px;">週末</small>` : day;
+      
+      html += `<div class="${classes}" onclick="selectDate('${dateStr}')">${dayLabel}</div>`;
     }
     
-    if (selectedDate === dateStr) {
-      classes += ' selected';
+    // 特別標記已有預約的日期
+    if (hasReservation) {
+      const dayElement = cal.querySelector(`.calendar-day:nth-child(${startWeekday + day + 7})`);
+      if (dayElement) {
+        dayElement.style.background = '#e0d6ff';
+        dayElement.style.border = '1px solid #e0e0e0';
+      }
     }
-    
-    const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
-    const dayLabel = isWeekend ? `${day}<br><small style="font-size:10px;">週末</small>` : day;
-    
-    html += `<div class="${classes}" onclick="selectDate('${dateStr}')">${dayLabel}</div>`;
   }
   
   const remainingDays = 7 - ((startWeekday + daysInMonth) % 7);
@@ -368,43 +419,88 @@ function renderCalendar() {
 }
 
 function selectDate(dateStr) {
-  const dateObj = new Date(dateStr);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  if (dateObj < today) {
-    alert('不能選擇過去的日期');
+  // 使用預約規則進行完整驗證
+  const validation = {
+    past: ReservationValidator.isPastDate(dateStr),
+    noService: ReservationValidator.isNoServiceDate(dateStr),
+    withinWindow: ReservationValidator.isWithinBookingWindow(dateStr),
+    afterDeadline: ReservationValidator.isAfterDeadline(dateStr),
+    hasReservation: ReservationValidator.hasExistingReservation(userData.userId, dateStr)
+  };
+
+  // 檢查日期有效性
+  if (validation.past) {
+    showError('🚫 無法預約過去日期');
     return;
   }
-  
-  if (noServiceDates[dateStr]) {
-    document.getElementById('holidayNotice').style.display = 'block';
-    document.getElementById('holidayNotice').textContent = '❌ 此日期停駛，請選擇其他日期';
+
+  if (validation.noService) {
+    showError('🚫 該日期為停駛日，無法預約');
     return;
   }
-  
-  document.getElementById('holidayNotice').style.display = 'none';
+
+  if (!validation.withinWindow) {
+    showError(`🚫 只能預約未來 ${RESERVATION_RULES.MAX_DAYS_AHEAD} 天內的班次`);
+    return;
+  }
+
+  if (validation.afterDeadline) {
+    showError(`🚫 今日預約已截止（${RESERVATION_RULES.DAILY_DEADLINE}）`);
+    return;
+  }
+
+  // 檢查是否已有預約
+  if (validation.hasReservation) {
+    const existingReservation = existingReservations.find(
+      res => res.userId === userData.userId && 
+             res.date.split('T')[0] === dateStr && 
+             res.status !== '已取消'
+    );
+    
+    showError(`您已在 ${dateStr} 預約了 ${existingReservation?.route || ''} 班次，每天只能預約一個班次`);
+    return;
+  }
+
   selectedDate = dateStr;
-  renderCalendar();
   
-  const d = new Date(dateStr);
-  const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+  // 重置選擇狀態
+  document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
+  event.target.classList.add('selected');
+  
+  // 顯示選擇的日期
   document.getElementById('selectedDate').style.display = 'block';
-  document.getElementById('selectedDate').textContent = `✅ 已選擇: ${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 (週${weekdays[d.getDay()]})`;
+  document.getElementById('selectedDate').textContent = `✅ 已選擇日期：${dateStr}`;
+  document.getElementById('holidayNotice').style.display = 'none';
   
+  // 關閉月曆
+  document.getElementById('calendarContainer').style.display = 'none';
+  document.getElementById('calendarBtn').textContent = '📅 打開月曆';
+  
+  // 顯示班次選擇
   showRouteSelection();
 }
 
-function showRouteSelection() {
+async function showRouteSelection() {
   document.getElementById('routeSection').style.display = 'block';
   const container = document.getElementById('routeButtons');
   
   let html = '';
   for (const [id, info] of Object.entries(routeTimes)) {
+    // 檢查班次是否已額滿
+    const currentCount = await getRouteReservationCount(selectedDate, id);
+    const remainingSeats = RESERVATION_RULES.MAX_CAPACITY_PER_ROUTE - currentCount;
+    const isFull = remainingSeats <= 0;
+    
+    const buttonClass = isFull ? 'route-btn disabled' : 'route-btn';
+    const seatInfo = isFull ? '❌ 已額滿' : `✅ 剩餘 ${remainingSeats} 席`;
+    
     html += `
-      <div class="route-btn" onclick="selectRoute('${id}', '${info.direction}')">
+      <div class="${buttonClass}" ${isFull ? '' : `onclick="selectRoute('${id}', '${info.direction}')"`}>
         <div class="route-time">${info.time}</div>
         <div class="route-direction">${info.direction}</div>
+        <div style="font-size: 11px; margin-top: 4px; color: ${isFull ? '#f44336' : '#4caf50'}">
+          ${seatInfo}
+        </div>
       </div>
     `;
   }
@@ -412,6 +508,18 @@ function showRouteSelection() {
   container.innerHTML = html;
   document.getElementById('stopSection').style.display = 'none';
   document.getElementById('submitBtn').style.display = 'none';
+}
+
+// 取得班次預約人數的函數
+async function getRouteReservationCount(dateStr, route) {
+  try {
+    const res = await fetch(`${WORKER_URL}?mode=routeCapacity&date=${dateStr}&route=${route}`);
+    const result = await res.json();
+    return result.count || 0;
+  } catch (error) {
+    console.error('取得班次人數失敗:', error);
+    return 0;
+  }
 }
 
 function selectRoute(routeId, direction) {
@@ -464,6 +572,20 @@ async function submitReservation() {
   
   if (!selectedDate || !selectedRoute || !toStop) {
     alert('請完整選擇日期、班次與下車站');
+    return;
+  }
+  
+  // 最終預約驗證
+  const validation = await ReservationValidator.validateReservation(
+    userData.userId, 
+    selectedDate, 
+    selectedRoute, 
+    selectedRoute.includes('A') ? '行政大樓' : '埔里總站', 
+    toStop
+  );
+  
+  if (!validation.isValid) {
+    alert('❌ 預約失敗：\n' + validation.errors.join('\n'));
     return;
   }
   
@@ -684,7 +806,7 @@ async function loadExistingReservations() {
     const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
     const result = await res.json();
     existingReservations = result.reservations || [];
-    renderCurrentReservationCard();  // ← 這裡會渲染 Flex 卡片
+    renderCurrentReservationCard();
   } catch (e) {
     console.error('載入預約失敗', e);
     existingReservations = [];
@@ -744,6 +866,148 @@ function getDayOfWeek(dateStr) {
 
 function formatDateToLocal(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+// === 預約規則驗證函數 ===
+class ReservationValidator {
+  // R4: 過去日期檢查
+  static isPastDate(dateStr) {
+    const selected = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return selected < today;
+  }
+
+  // R5: 停駛日檢查
+  static isNoServiceDate(dateStr) {
+    return noServiceDates[dateStr] === true;
+  }
+
+  // R7: 預約截止時間檢查
+  static isAfterDeadline(dateStr) {
+    const today = new Date();
+    const selected = new Date(dateStr);
+    
+    // 如果是今天，檢查是否超過19:00
+    if (this.isToday(dateStr)) {
+      const now = new Date();
+      const [deadlineHour, deadlineMinute] = RESERVATION_RULES.DAILY_DEADLINE.split(':');
+      const deadline = new Date();
+      deadline.setHours(parseInt(deadlineHour), parseInt(deadlineMinute), 0, 0);
+      return now > deadline;
+    }
+    return false;
+  }
+
+  // R13: 未來天數限制
+  static isWithinBookingWindow(dateStr) {
+    const selected = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const maxDate = new Date();
+    maxDate.setDate(today.getDate() + RESERVATION_RULES.MAX_DAYS_AHEAD);
+    maxDate.setHours(23, 59, 59, 999);
+    
+    return selected >= today && selected <= maxDate;
+  }
+
+  // 輔助函數：檢查是否為今天
+  static isToday(dateStr) {
+    const today = formatDateToLocal(new Date());
+    return dateStr === today;
+  }
+
+  // 方案B核心：重複預約檢查 - 每天只能有1筆預約
+  static hasExistingReservation(userId, dateStr) {
+    const userReservations = existingReservations.filter(
+      res => res.userId === userId && 
+             res.date.split('T')[0] === dateStr && 
+             res.status !== '已取消'
+    );
+    return userReservations.length >= RESERVATION_RULES.MAX_RESERVATIONS_PER_DAY;
+  }
+
+  // R8: 班次容量檢查
+  static async isRouteFull(dateStr, route) {
+    try {
+      const res = await fetch(`${WORKER_URL}?mode=routeCapacity&date=${dateStr}&route=${route}`);
+      const result = await res.json();
+      return result.count >= RESERVATION_RULES.MAX_CAPACITY_PER_ROUTE;
+    } catch (error) {
+      console.error('容量檢查失敗:', error);
+      return false;
+    }
+  }
+
+  // R11, R12: 站點驗證
+  static validateStops(route, fromStop, toStop) {
+    const isValidFromStop = route.includes('A') ? 
+      fromStop === '行政大樓' : fromStop === '埔里總站';
+    
+    const stops = route.includes('A') ? stopsOutbound : stopsReturn;
+    const isValidToStop = stops.includes(toStop) && toStop !== fromStop;
+    
+    return isValidFromStop && isValidToStop;
+  }
+
+  // 綜合驗證函數
+  static async validateReservation(userId, dateStr, route, fromStop, toStop) {
+    const errors = [];
+
+    if (this.isPastDate(dateStr)) {
+      errors.push('無法預約過去日期');
+    }
+
+    if (this.isNoServiceDate(dateStr)) {
+      errors.push('該日期為停駛日，無法預約');
+    }
+
+    if (!this.isWithinBookingWindow(dateStr)) {
+      errors.push(`只能預約未來 ${RESERVATION_RULES.MAX_DAYS_AHEAD} 天內的班次`);
+    }
+
+    if (this.isAfterDeadline(dateStr)) {
+      errors.push(`今日預約已截止（${RESERVATION_RULES.DAILY_DEADLINE}）`);
+    }
+
+    // 方案B核心規則：每天只能預約1個班次
+    if (this.hasExistingReservation(userId, dateStr)) {
+      errors.push('每天只能預約一個班次，您當天已有預約');
+    }
+
+    // 檢查容量
+    const isFull = await this.isRouteFull(dateStr, route);
+    if (isFull) {
+      errors.push('該班次已額滿');
+    }
+
+    // 檢查站點
+    if (!this.validateStops(route, fromStop, toStop)) {
+      errors.push('站點選擇無效');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors: errors
+    };
+  }
+}
+
+// 錯誤顯示輔助函數
+function showError(message) {
+  document.getElementById('holidayNotice').style.display = 'block';
+  document.getElementById('holidayNotice').textContent = message;
+  document.getElementById('selectedDate').style.display = 'none';
+  resetSelection();
+}
+
+function resetSelection() {
+  selectedDate = null;
+  selectedRoute = null;
+  document.getElementById('routeSection').style.display = 'none';
+  document.getElementById('stopSection').style.display = 'none';
+  document.getElementById('submitBtn').style.display = 'none';
 }
 
 window.addEventListener('load', init);
