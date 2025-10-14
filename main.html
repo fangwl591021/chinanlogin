@@ -856,68 +856,31 @@ async function cancelReservation(reservationId) {
 
       // LINE 群組推播通知（取消預約）
       try {
-        const canceled = existingReservations.find(r => r.id === reservationId);
-        if (canceled) {
-          const info = routeTimes[canceled.route] || {};
-          const flexPayload = {
-            type: "pushLine",
-            flex: {
-              type: "flex",
-              altText: "穿山甲專車取消預約通知",
-              contents: {
-                type: "bubble",
-                size: "mega",
-                body: {
-                  type: "box",
-                  layout: "vertical",
-                  contents: [
-                    {
-                      type: "box",
-                      layout: "vertical",
-                      backgroundColor: "#b71c1c",
-                      paddingAll: "10px",
-                      contents: [
-                        {
-                          type: "text",
-                          text: "❌ 穿山甲專車預約取消",
-                          color: "#ffffff",
-                          weight: "bold",
-                          size: "md",
-                          align: "center"
-                        }
-                      ]
-                    },
-                    {
-                      type: "box",
-                      layout: "vertical",
-                      backgroundColor: "#ffffff",
-                      paddingAll: "12px",
-                      spacing: "sm",
-                      contents: [
-                        { type: "text", text: `日期：${canceled.date.split('T')[0]}`, size: "sm", color: "#333" },
-                        { type: "text", text: `班次：${canceled.route}｜${info.time || ""} ${info.direction || ""}`, size: "sm", color: "#333" },
-                        { type: "text", text: `姓名：${canceled.name}`, size: "sm", color: "#333" },
-                        { type: "text", text: `上車：${canceled.fromStop}`, size: "sm", color: "#333" },
-                        { type: "text", text: `下車：${canceled.toStop}`, size: "sm", color: "#333" }
-                      ]
-                    }
-                  ]
-                }
-              }
-            }
-          };
-
-          await fetch(WORKER_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(flexPayload)
-          });
-          console.log('🚫 群組推播：取消預約通知成功');
+        // 先重新載入預約資料，確保資料是最新的
+        await loadExistingReservations();
+        
+        // 從更新後的 existingReservations 中尋找取消的預約
+        const canceledReservation = existingReservations.find(r => r.id === reservationId);
+        
+        if (!canceledReservation) {
+          console.warn('找不到取消的預約資料，嘗試從原始資料中查找');
+          // 如果找不到，可能是因為狀態已更新，嘗試從之前的資料中查找
+          const originalReservation = existingReservations.find(r => r.id === reservationId) || 
+                                    result.canceledReservation; // 如果後端有返回取消的預約資料
+          
+          if (originalReservation) {
+            await sendCancelNotification(originalReservation);
+          } else {
+            console.error('無法找到取消的預約資料');
+          }
+        } else {
+          await sendCancelNotification(canceledReservation);
         }
       } catch (pushErr) {
         console.error('❌ 取消推播錯誤:', pushErr);
       }
 
+      // 重新載入預約列表
       await loadExistingReservations();
     } else {
       alert('❌ 取消失敗：' + (result.message || '請稍後再試'));
@@ -933,11 +896,126 @@ async function cancelReservation(reservationId) {
   }
 }
 
+// 專門處理取消推播的函數
+async function sendCancelNotification(canceled) {
+  try {
+    const info = routeTimes[canceled.route] || {};
+    
+    // 確保日期格式正確
+    const reservationDate = canceled.date ? canceled.date.split('T')[0] : '未知日期';
+    
+    // 確保站點資訊存在
+    const fromStop = canceled.fromStop || '未知上車站';
+    const toStop = canceled.toStop || '未知下車站';
+    const userName = canceled.name || userData.name || '未知用戶';
+
+    const flexPayload = {
+      type: "pushLine",
+      flex: {
+        type: "flex",
+        altText: "穿山甲專車取消預約通知",
+        contents: {
+          type: "bubble",
+          size: "mega",
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "box",
+                layout: "vertical",
+                backgroundColor: "#b71c1c",
+                paddingAll: "10px",
+                contents: [
+                  {
+                    type: "text",
+                    text: "❌ 穿山甲專車預約取消",
+                    color: "#ffffff",
+                    weight: "bold",
+                    size: "md",
+                    align: "center"
+                  }
+                ]
+              },
+              {
+                type: "box",
+                layout: "vertical",
+                backgroundColor: "#ffffff",
+                paddingAll: "12px",
+                spacing: "sm",
+                contents: [
+                  { 
+                    type: "text", 
+                    text: `日期：${reservationDate}`, 
+                    size: "sm", 
+                    color: "#333" 
+                  },
+                  { 
+                    type: "text", 
+                    text: `班次：${canceled.route}｜${info.time || ""} ${info.direction || ""}`, 
+                    size: "sm", 
+                    color: "#333" 
+                  },
+                  { 
+                    type: "text", 
+                    text: `姓名：${userName}`, 
+                    size: "sm", 
+                    color: "#333" 
+                  },
+                  { 
+                    type: "text", 
+                    text: `上車：${fromStop}`, 
+                    size: "sm", 
+                    color: "#333" 
+                  },
+                  { 
+                    type: "text", 
+                    text: `下車：${toStop}`, 
+                    size: "sm", 
+                    color: "#333" 
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    };
+
+    console.log('發送取消推播:', flexPayload);
+    
+    const pushResponse = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(flexPayload)
+    });
+    
+    if (!pushResponse.ok) {
+      throw new Error(`推播請求失敗: ${pushResponse.status}`);
+    }
+    
+    const pushResult = await pushResponse.json();
+    console.log('🚫 群組推播：取消預約通知成功', pushResult);
+    
+  } catch (pushErr) {
+    console.error('❌ 取消推播錯誤:', pushErr);
+    throw pushErr; // 重新拋出錯誤讓上層處理
+  }
+}
+
 // === 載入預約 ===
 async function loadExistingReservations() {
   try {
+    console.log('載入預約記錄...');
     const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
+    
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    
     const result = await res.json();
+    console.log('預約記錄載入結果:', result);
+    
     existingReservations = result.reservations || [];
     renderCurrentReservationCard();
   } catch (e) {
