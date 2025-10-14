@@ -436,11 +436,13 @@ async function loadNoServiceDates() {
       result.holidays.forEach(d => noServiceDates[d.substring(0,10)] = true);
     }
     console.log('停駛日期:', noServiceDates);
-  } catch (e) {
-    console.error('🚨 載入停駛日期失敗:', e);
-    noServiceDates = {};
+    } catch (e) {
+    console.error('取消預約錯誤', e);
+    alert('❌ 取消預約時發生錯誤');
   }
 }
+
+// === 載入預約 ===
 
 async function changeMonth(delta) {
   currentMonth += delta;
@@ -846,10 +848,6 @@ function resetReservationForm() {
   
   // 只重新渲染日曆來清除選擇狀態
   if (!document.getElementById('calendarContainer').classList.contains('hidden')) {
-    renderCalendar();
-  }
-}
-if (!document.getElementById('calendarContainer').classList.contains('hidden')) {
     renderCalendar();
   }
 }
