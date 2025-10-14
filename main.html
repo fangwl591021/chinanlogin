@@ -69,7 +69,40 @@
     .carousel-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #333; text-align: center; }
     .carousel { display: flex; overflow-x: auto; gap: 15px; padding: 10px 5px; scrollbar-width: none; -ms-overflow-style: none; }
     .carousel::-webkit-scrollbar { display: none; }
-    .reservation-bubble { min-width: 280px; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #e0e0e0; overflow: hidden; flex-shrink: 0; }
+    .reservation-bubble { 
+  min-width: 190px;  /* 減少三分之一，原本 280px */
+  background: white; 
+  border-radius: 12px; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+  border: 1px solid #e0e0e0; 
+  overflow: hidden; 
+  flex-shrink: 0; 
+}
+
+.bubble-body { 
+  padding: 15px; 
+}
+
+.bubble-line { 
+  margin-bottom: 8px; 
+  font-size: 13px; 
+  line-height: 1.4; 
+  display: flex; 
+  justify-content: flex-start;  /* 改為靠左對齊 */
+  text-align: left;  /* 確保文字靠左 */
+}
+
+.bubble-line strong { 
+  color: #666; 
+  min-width: 50px;  /* 稍微減少標題寬度 */
+  margin-right: 8px;  /* 添加右邊距 */
+}
+
+.bubble-line span { 
+  color: #333; 
+  text-align: left;  /* 改為靠左對齊 */
+  flex: 1; 
+}
     .bubble-header { background: #27ACB2; color: white; padding: 12px 15px; font-weight: bold; font-size: 14px; text-align: center; }
     .bubble-body { padding: 15px; }
     .bubble-line { margin-bottom: 8px; font-size: 13px; line-height: 1.4; display: flex; justify-content: space-between; }
