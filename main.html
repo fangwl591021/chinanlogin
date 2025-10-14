@@ -866,16 +866,6 @@ async function cancelReservation(reservationId) {
 
 // === 載入預約 ===
 async function loadExistingReservations() {
-  const section = document.getElementById('currentReservationCard');
-  
-  // 顯示載入提示
-  section.innerHTML = `
-    <div class="loading-state">
-      <div style="font-size: 24px; margin-bottom: 10px;">⏳</div>
-      <div>查詢預約狀態中...</div>
-    </div>
-  `;
-
   try {
     const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
     const result = await res.json();
@@ -884,14 +874,7 @@ async function loadExistingReservations() {
   } catch (e) {
     console.error('載入預約失敗', e);
     existingReservations = [];
-    
-    // 顯示錯誤狀態
-    section.innerHTML = `
-      <div class="loading-state">
-        <div style="font-size: 24px; margin-bottom: 10px;">❌</div>
-        <div>載入預約失敗，請重新整理</div>
-      </div>
-    `;
+    renderCurrentReservationCard();
   }
 }
 
