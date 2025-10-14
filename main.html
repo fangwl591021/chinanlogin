@@ -402,7 +402,7 @@ function renderCalendar() {
     // 檢查日期狀態 - 優先顯示已完成預約
     if (hasReservation) {
       disabled = true;
-      disabledReason = '已完成預約';  // 改為"已完成預約"
+      disabledReason = '您已預約';  // 改為"您已預約"
       classes += ' disabled';
       html += `<div class="${classes}" style="background: #e0e8ff; border: 1px solid #b3c6ff; color: #333;">${day}<br><small>${disabledReason}</small></div>`;
     } else if (isPast) {
