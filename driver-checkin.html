@@ -1,582 +1,737 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>司機核銷系統 - 月曆版</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Microsoft JhengHei', Arial, sans-serif;
-        }
-        
-        body {
-            background-color: #f5f5f5;
-            padding: 20px;
-            color: #333;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-        
-        header {
-            background: #2c3e50;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-            padding: 20px;
-        }
-        
-        @media (min-width: 768px) {
-            .main-content {
-                grid-template-columns: 350px 1fr;
-            }
-        }
-        
-        /* 月曆樣式 */
-        .calendar-section {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-        }
-        
-        .calendar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        
-        .calendar-nav {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 5px;
-            margin-bottom: 15px;
-        }
-        
-        .calendar-day-header {
-            text-align: center;
-            font-weight: bold;
-            padding: 8px;
-            background: #e9ecef;
-        }
-        
-        .calendar-day {
-            text-align: center;
-            padding: 10px 5px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        
-        .calendar-day:hover {
-            background: #e9ecef;
-        }
-        
-        .calendar-day.selected {
-            background: #3498db;
-            color: white;
-        }
-        
-        .calendar-day.other-month {
-            color: #adb5bd;
-        }
-        
-        .calendar-day.has-reservations {
-            position: relative;
-        }
-        
-        .calendar-day.has-reservations::after {
-            content: '';
-            position: absolute;
-            bottom: 2px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 4px;
-            height: 4px;
-            background: #e74c3c;
-            border-radius: 50%;
-        }
-        
-        /* 時段選擇樣式 */
-        .time-slots {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        
-        .time-slot-btn {
-            padding: 12px;
-            background: white;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.3s;
-        }
-        
-        .time-slot-btn:hover {
-            border-color: #3498db;
-        }
-        
-        .time-slot-btn.selected {
-            background: #3498db;
-            color: white;
-            border-color: #3498db;
-        }
-        
-        .time-slot-info {
-            font-size: 12px;
-            color: #7f8c8d;
-            margin-top: 5px;
-        }
-        
-        /* 乘客列表樣式 */
-        .passenger-section {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-        }
-        
-        .section-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #e9ecef;
-        }
-        
-        .selected-info {
-            color: #7f8c8d;
-            font-size: 14px;
-        }
-        
-        .passenger-list {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 12px;
-        }
-        
-        @media (min-width: 600px) {
-            .passenger-list {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-        
-        .passenger-item {
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 4px solid #3498db;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .passenger-item.cancelled {
-            border-left-color: #e74c3c;
-            opacity: 0.7;
-        }
-        
-        .passenger-info {
-            flex: 1;
-        }
-        
-        .passenger-time {
-            font-size: 14px;
-            color: #7f8c8d;
-        }
-        
-        .passenger-status {
-            font-size: 12px;
-            padding: 3px 8px;
-            border-radius: 4px;
-            margin-top: 5px;
-            display: inline-block;
-        }
-        
-        .status-success {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .status-cancelled {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        
-        .checkin-btn {
-            background: #27ae60;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.3s;
-        }
-        
-        .checkin-btn:hover {
-            background: #219653;
-        }
-        
-        .checkin-btn:disabled {
-            background: #95a5a6;
-            cursor: not-allowed;
-        }
-        
-        .checked-in {
-            color: #27ae60;
-            font-weight: bold;
-            font-size: 14px;
-        }
-        
-        .no-data {
-            text-align: center;
-            padding: 40px;
-            color: #7f8c8d;
-            font-size: 18px;
-            grid-column: 1 / -1;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>穿山甲專車 - 司機核銷系統</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: system-ui, sans-serif;
+    }
+    
+    body {
+      background: #f5f6f7;
+      color: #333;
+    }
+    
+    header {
+      background: #3c8050;
+      color: white;
+      text-align: center;
+      padding: 15px;
+      font-size: 22px;
+      font-weight: bold;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    /* 月曆樣式 */
+    .calendar-section {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .calendar-nav {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      text-align: center;
+    }
+    
+    .calendar-day-header {
+      padding: 10px 0;
+      font-weight: bold;
+      background: #27ACB2;
+      color: white;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .calendar-day {
+      padding: 12px 0;
+      border-radius: 6px;
+      background: white;
+      border: 1px solid #e0e0e0;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    
+    .calendar-day:hover {
+      background: #eaf5ea;
+      border-color: #3c8050;
+    }
+    
+    .calendar-day.disabled {
+      background: #f8f9fa;
+      color: #999;
+      cursor: not-allowed;
+    }
+    
+    .calendar-day.past {
+      background: #f5f5f5;
+      color: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .calendar-day.selected {
+      background: #3c8050;
+      color: white;
+      font-weight: bold;
+      border-color: #3c8050;
+    }
+    
+    .calendar-day.other-month {
+      color: #ccc;
+      background: #f8f9fa;
+    }
+    
+    .calendar-day.has-reservations::after {
+      content: '';
+      position: absolute;
+      bottom: 3px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 6px;
+      height: 6px;
+      background: #e74c3c;
+      border-radius: 50%;
+    }
+    
+    /* 時段選擇樣式 */
+    .time-slots-section {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .time-slots {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+    
+    .time-slot-btn {
+      padding: 15px;
+      background: white;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.3s;
+    }
+    
+    .time-slot-btn:hover {
+      border-color: #3498db;
+      transform: translateY(-2px);
+    }
+    
+    .time-slot-btn.selected {
+      background: #3498db;
+      color: white;
+      border-color: #3498db;
+    }
+    
+    .time-slot-info {
+      font-size: 12px;
+      color: #7f8c8d;
+      margin-top: 5px;
+    }
+    
+    .route-time {
+      font-weight: bold;
+      font-size: 16px;
+      color: #333;
+    }
+    
+    .reservation-count {
+      font-size: 12px;
+      margin-top: 5px;
+      padding: 2px 6px;
+      background: #e74c3c;
+      color: white;
+      border-radius: 10px;
+      display: inline-block;
+    }
+    
+    /* 乘客列表樣式 */
+    .passenger-section {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e9ecef;
+    }
+    
+    .selected-info {
+      color: #7f8c8d;
+      font-size: 14px;
+    }
+    
+    .passenger-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 15px;
+    }
+    
+    .passenger-item {
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      border-left: 4px solid #3498db;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .passenger-item.cancelled {
+      border-left-color: #e74c3c;
+      opacity: 0.7;
+    }
+    
+    .passenger-info {
+      flex: 1;
+    }
+    
+    .passenger-name {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 5px;
+    }
+    
+    .passenger-details {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.4;
+    }
+    
+    .passenger-status {
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-top: 5px;
+      display: inline-block;
+    }
+    
+    .status-success {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    .status-cancelled {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    
+    .checkin-btn {
+      background: #27ae60;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    
+    .checkin-btn:hover {
+      background: #219653;
+    }
+    
+    .checkin-btn:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+    }
+    
+    .checked-in {
+      color: #27ae60;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    
+    .no-data {
+      text-align: center;
+      padding: 40px 20px;
+      color: #7f8c8d;
+      font-size: 18px;
+      grid-column: 1 / -1;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+    
+    .notice {
+      padding: 12px 16px;
+      margin: 10px 0;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    
+    .notice.success {
+      background: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #81c784;
+    }
+    
+    .notice.error {
+      background: #fdecea;
+      color: #b71c1c;
+      border: 1px solid #f5c2c7;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>司機核銷系統</h1>
-        </header>
+  <header>穿山甲專車 - 司機核銷系統</header>
+  
+  <div class="container">
+    <!-- 月曆區塊 -->
+    <div class="calendar-section">
+      <div class="calendar-header">
+        <button class="calendar-nav" id="prev-month">◀ 上個月</button>
+        <h2 id="current-month">2025年10月</h2>
+        <button class="calendar-nav" id="next-month">下個月 ▶</button>
+      </div>
+      <div class="calendar-grid" id="calendar-days">
+        <!-- 星期標題 -->
+        <div class="calendar-day-header">日</div>
+        <div class="calendar-day-header">一</div>
+        <div class="calendar-day-header">二</div>
+        <div class="calendar-day-header">三</div>
+        <div class="calendar-day-header">四</div>
+        <div class="calendar-day-header">五</div>
+        <div class="calendar-day-header">六</div>
         
-        <div class="main-content">
-            <!-- 左側：月曆和時段選擇 -->
-            <div class="calendar-section">
-                <div class="calendar-header">
-                    <button class="calendar-nav" id="prev-month">‹</button>
-                    <h3 id="current-month">2025年10月</h3>
-                    <button class="calendar-nav" id="next-month">›</button>
-                </div>
-                
-                <div class="calendar-grid" id="calendar-days">
-                    <!-- 星期標題 -->
-                    <div class="calendar-day-header">日</div>
-                    <div class="calendar-day-header">一</div>
-                    <div class="calendar-day-header">二</div>
-                    <div class="calendar-day-header">三</div>
-                    <div class="calendar-day-header">四</div>
-                    <div class="calendar-day-header">五</div>
-                    <div class="calendar-day-header">六</div>
-                    
-                    <!-- 日期將通過JavaScript動態生成 -->
-                </div>
-                
-                <div class="time-slots" id="time-slots">
-                    <!-- 時段選擇將通過JavaScript動態生成 -->
-                </div>
-            </div>
-            
-            <!-- 右側：乘客列表 -->
-            <div class="passenger-section">
-                <div class="section-title">
-                    <h2>預約者列表</h2>
-                    <div class="selected-info" id="selected-info">請選擇日期和時段</div>
-                </div>
-                
-                <div class="passenger-list" id="passenger-list">
-                    <!-- 乘客列表將通過JavaScript動態生成 -->
-                </div>
-            </div>
-        </div>
+        <!-- 日期將通過JavaScript動態生成 -->
+      </div>
     </div>
+    
+    <!-- 選擇資訊顯示 -->
+    <div id="selectedDate" class="notice success" style="display:none;"></div>
+    <div id="errorNotice" class="notice error" style="display:none;"></div>
+    
+    <!-- 時段選擇 -->
+    <div id="timeSlotsSection" class="time-slots-section" style="display:none;">
+      <h3>請選擇班次時段</h3>
+      <div class="time-slots" id="time-slots">
+        <!-- 時段選擇將通過JavaScript動態生成 -->
+      </div>
+    </div>
+    
+    <!-- 乘客列表 -->
+    <div id="passengerSection" class="passenger-section" style="display:none;">
+      <div class="section-title">
+        <h2>預約者列表</h2>
+        <div class="selected-info" id="selected-info">請選擇日期和時段</div>
+      </div>
+      <div class="passenger-list" id="passenger-list">
+        <!-- 乘客列表將通過JavaScript動態生成 -->
+      </div>
+    </div>
+  </div>
 
-    <script>
-        // 模擬數據
-        const reservations = [
-            { timestamp: "2025-10-13 14:32:43", status: "已取消", checkin: "" },
-            { timestamp: "2025-10-13 14:44:36", status: "已取消", checkin: "" },
-            { timestamp: "2025-10-13 15:07:35", status: "已取消", checkin: "" },
-            { timestamp: "2025-10-13 19:09:45", status: "已取消", checkin: "" },
-            { timestamp: "2025-10-13 19:57:00", status: "預約成功", checkin: "" },
-            { timestamp: "2025-10-13 20:14:36", status: "預約成功", checkin: "" },
-            { timestamp: "2025-10-14 13:41:32", status: "預約成功", checkin: "" },
-            { timestamp: "2025-10-14 14:14:46", status: "預約成功", checkin: "" },
-            { timestamp: "2025-10-14 20:35:21", status: "預約成功", checkin: "" },
-            { timestamp: "2025-10-15 14:30:00", status: "預約成功", checkin: "" },
-            { timestamp: "2025-10-15 15:15:00", status: "預約成功", checkin: "" },
-            { timestamp: "2025-10-16 19:20:00", status: "預約成功", checkin: "" }
-        ];
+  <script>
+    // 與預約系統一致的設定
+    const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+    const CALENDAR_ID = '86eee89e759f27d2a2c7a44853868f7be880aa8e745ba3839933ec84b562631e@group.calendar.google.com';
+    
+    // 與預約系統一致的班次設定
+    const routeTimes = {
+      'A1': { time: '22:00-22:30', direction: '暨大→埔里總站' },
+      'B1': { time: '22:30-23:00', direction: '埔里總站→暨大' },
+      'A2': { time: '23:00-23:30', direction: '暨大→埔里總站' },
+      'B2': { time: '23:30-24:00', direction: '埔里總站→暨大' }
+    };
 
-        // 時段定義
-        const timeSlots = [
-            { id: 1, name: "上午時段", start: 9, end: 12 },
-            { id: 2, name: "下午時段", start: 12, end: 17 },
-            { id: 3, name: "晚間時段", start: 17, end: 20 },
-            { id: 4, name: "夜間時段", start: 20, end: 22 }
-        ];
+    // 站點設定
+    const stopsOutbound = ["行政大樓","中餐廳","科技學院","學人會館","中城","下城","坪頂","愛蘭橋","大成國小","中山安七街口","榮民診所","埔里酒廠","埔里總站"];
+    const stopsReturn = [...stopsOutbound].reverse();
 
-        // 當前狀態
-        let currentDate = new Date('2025-10-13');
-        let selectedTimeSlot = null;
+    // 當前狀態
+    let currentDate = new Date();
+    let selectedDate = null;
+    let selectedTimeSlot = null;
+    let noServiceDates = {};
+    let currentMonth = currentDate.getMonth();
+    let currentYear = currentDate.getFullYear();
 
-        // DOM元素
-        const currentMonthEl = document.getElementById('current-month');
-        const calendarDaysEl = document.getElementById('calendar-days');
-        const timeSlotsEl = document.getElementById('time-slots');
-        const passengerListEl = document.getElementById('passenger-list');
-        const selectedInfoEl = document.getElementById('selected-info');
-        const prevMonthBtn = document.getElementById('prev-month');
-        const nextMonthBtn = document.getElementById('next-month');
+    // DOM元素
+    const currentMonthEl = document.getElementById('current-month');
+    const calendarDaysEl = document.getElementById('calendar-days');
+    const timeSlotsEl = document.getElementById('time-slots');
+    const passengerListEl = document.getElementById('passenger-list');
+    const selectedInfoEl = document.getElementById('selected-info');
+    const selectedDateEl = document.getElementById('selectedDate');
+    const errorNoticeEl = document.getElementById('errorNotice');
+    const timeSlotsSection = document.getElementById('timeSlotsSection');
+    const passengerSection = document.getElementById('passengerSection');
+    const prevMonthBtn = document.getElementById('prev-month');
+    const nextMonthBtn = document.getElementById('next-month');
 
-        // 初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            // 綁定事件
-            prevMonthBtn.addEventListener('click', showPreviousMonth);
-            nextMonthBtn.addEventListener('click', showNextMonth);
-            
-            // 初始載入
-            renderCalendar();
-            renderTimeSlots();
-            updatePassengerList();
+    // 初始化
+    document.addEventListener('DOMContentLoaded', function() {
+      // 綁定事件
+      prevMonthBtn.addEventListener('click', showPreviousMonth);
+      nextMonthBtn.addEventListener('click', showNextMonth);
+      
+      // 初始載入
+      loadNoServiceDates().then(() => {
+        renderCalendar();
+      });
+    });
+
+    // 載入停駛日期
+    async function loadNoServiceDates() {
+      try {
+        const start = formatDateToLocal(new Date(currentYear, currentMonth - 1, 1));
+        const end = formatDateToLocal(new Date(currentYear, currentMonth + 2, 0));
+        const res = await fetch(`${WORKER_URL}?mode=calendar&start=${start}&end=${end}&calendarId=${encodeURIComponent(CALENDAR_ID)}`);
+        const result = await res.json();
+        noServiceDates = {};
+        if (Array.isArray(result.holidays)) {
+          result.holidays.forEach(d => noServiceDates[d.substring(0,10)] = true);
+        }
+        console.log('停駛日期:', noServiceDates);
+      } catch (e) {
+        console.error('載入停駛日期失敗:', e);
+        noServiceDates = {};
+      }
+    }
+
+    // 渲染月曆
+    function renderCalendar() {
+      const year = currentYear;
+      const month = currentMonth;
+      
+      // 更新月份標題
+      currentMonthEl.textContent = `${year}年${month + 1}月`;
+      
+      // 清空月曆
+      while (calendarDaysEl.children.length > 7) {
+        calendarDaysEl.removeChild(calendarDaysEl.lastChild);
+      }
+      
+      // 獲取當月第一天和最後一天
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      
+      // 獲取第一天是星期幾（0 = 星期日）
+      const firstDayIndex = firstDay.getDay();
+      
+      // 獲取上個月的最後幾天
+      const prevMonthLastDay = new Date(year, month, 0).getDate();
+      
+      // 添加上月日期
+      for (let i = firstDayIndex - 1; i >= 0; i--) {
+        const dayEl = document.createElement('div');
+        dayEl.className = 'calendar-day other-month';
+        dayEl.textContent = prevMonthLastDay - i;
+        calendarDaysEl.appendChild(dayEl);
+      }
+      
+      // 添加當月日期
+      for (let i = 1; i <= lastDay.getDate(); i++) {
+        const dayEl = document.createElement('div');
+        dayEl.className = 'calendar-day';
+        dayEl.textContent = i;
+        
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+        
+        // 檢查是否有預約（這裡可以優化為實際查詢）
+        const hasReservations = true; // 暫時設為true，實際應查詢
+        
+        if (hasReservations) {
+          dayEl.classList.add('has-reservations');
+        }
+        
+        // 檢查是否為選中日期
+        if (dateStr === selectedDate) {
+          dayEl.classList.add('selected');
+        }
+        
+        // 檢查日期狀態
+        const dateObj = new Date(dateStr);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (dateObj < today) {
+          dayEl.classList.add('past');
+          dayEl.onclick = null;
+        } else if (noServiceDates[dateStr]) {
+          dayEl.classList.add('disabled');
+          dayEl.innerHTML = `${i}<br><small>停駛</small>`;
+          dayEl.onclick = null;
+        } else {
+          dayEl.onclick = () => selectDate(dateStr);
+        }
+        
+        calendarDaysEl.appendChild(dayEl);
+      }
+      
+      // 添加下月日期
+      const totalCells = 42; // 6行×7列
+      const nextMonthDays = totalCells - (firstDayIndex + lastDay.getDate());
+      for (let i = 1; i <= nextMonthDays; i++) {
+        const dayEl = document.createElement('div');
+        dayEl.className = 'calendar-day other-month';
+        dayEl.textContent = i;
+        calendarDaysEl.appendChild(dayEl);
+      }
+    }
+
+    // 選擇日期
+    async function selectDate(dateStr) {
+      selectedDate = dateStr;
+      selectedTimeSlot = null;
+      
+      // 更新UI
+      renderCalendar();
+      
+      // 顯示選擇的日期
+      selectedDateEl.style.display = 'block';
+      selectedDateEl.textContent = `✅ 已選擇日期：${dateStr}`;
+      errorNoticeEl.style.display = 'none';
+      
+      // 顯示時段選擇
+      await showTimeSlots();
+    }
+
+    // 顯示時段選擇
+    async function showTimeSlots() {
+      timeSlotsSection.style.display = 'block';
+      timeSlotsEl.innerHTML = '<div class="loading">載入中...</div>';
+      
+      let html = '';
+      
+      for (const [routeId, info] of Object.entries(routeTimes)) {
+        // 查詢該班次的預約人數
+        const reservationCount = await getRouteReservationCount(selectedDate, routeId);
+        const isSelected = selectedTimeSlot === routeId;
+        
+        html += `
+          <div class="time-slot-btn ${isSelected ? 'selected' : ''}" onclick="selectTimeSlot('${routeId}')">
+            <div class="route-time">${routeId} | ${info.time}</div>
+            <div class="time-slot-info">${info.direction}</div>
+            <div class="reservation-count">${reservationCount} 人預約</div>
+          </div>
+        `;
+      }
+      
+      timeSlotsEl.innerHTML = html;
+      passengerSection.style.display = 'none';
+      
+      // 滾動到時段選擇區
+      timeSlotsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 查詢班次預約人數
+    async function getRouteReservationCount(dateStr, route) {
+      try {
+        const res = await fetch(`${WORKER_URL}?mode=routeCapacity&date=${dateStr}&route=${route}`);
+        const result = await res.json();
+        return result.count || 0;
+      } catch (error) {
+        console.error('查詢預約人數失敗:', error);
+        return 0;
+      }
+    }
+
+    // 選擇時段
+    async function selectTimeSlot(routeId) {
+      selectedTimeSlot = routeId;
+      
+      // 更新按鈕選擇狀態
+      document.querySelectorAll('.time-slot-btn').forEach(btn => {
+        btn.classList.remove('selected');
+      });
+      event.target.classList.add('selected');
+      
+      // 顯示乘客列表
+      await showPassengerList();
+    }
+
+    // 顯示乘客列表
+    async function showPassengerList() {
+      passengerSection.style.display = 'block';
+      passengerListEl.innerHTML = '<div class="loading">載入乘客資料中...</div>';
+      
+      try {
+        // 查詢該班次的所有預約
+        const reservations = await getRouteReservations(selectedDate, selectedTimeSlot);
+        
+        // 更新選擇資訊
+        const routeInfo = routeTimes[selectedTimeSlot];
+        selectedInfoEl.textContent = `${selectedDate} ${selectedTimeSlot} | ${routeInfo.time} ${routeInfo.direction}`;
+        
+        if (reservations.length === 0) {
+          passengerListEl.innerHTML = '<div class="no-data">此時段暫無預約</div>';
+          return;
+        }
+        
+        let html = '';
+        
+        reservations.forEach(reservation => {
+          const isCancelled = reservation.status === '已取消';
+          const isCheckedIn = reservation.checkinTime;
+          
+          html += `
+            <div class="passenger-item ${isCancelled ? 'cancelled' : ''}">
+              <div class="passenger-info">
+                <div class="passenger-name">${reservation.name}</div>
+                <div class="passenger-details">
+                  <div>學號：${reservation.studentId}</div>
+                  <div>系所：${reservation.department}</div>
+                  <div>電話：${reservation.phone || '未提供'}</div>
+                  <div>上車：${reservation.fromStop} → 下車：${reservation.toStop}</div>
+                </div>
+                <div class="passenger-status ${isCancelled ? 'status-cancelled' : 'status-success'}">
+                  ${isCancelled ? '已取消' : (isCheckedIn ? `已簽到 ${reservation.checkinTime}` : '預約成功')}
+                </div>
+              </div>
+              <div>
+                ${!isCancelled && !isCheckedIn ? 
+                  `<button class="checkin-btn" onclick="handleCheckin('${reservation.id}')">簽到</button>` :
+                  (isCheckedIn ? `<div class="checked-in">已簽到</div>` : '')
+                }
+              </div>
+            </div>
+          `;
         });
+        
+        passengerListEl.innerHTML = html;
+        
+        // 滾動到乘客列表
+        passengerSection.scrollIntoView({ behavior: 'smooth' });
+        
+      } catch (error) {
+        console.error('載入乘客資料失敗:', error);
+        passengerListEl.innerHTML = '<div class="no-data">載入失敗，請稍後再試</div>';
+      }
+    }
 
-        // 渲染月曆
-        function renderCalendar() {
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            
-            // 更新月份標題
-            currentMonthEl.textContent = `${year}年${month + 1}月`;
-            
-            // 清空月曆
-            while (calendarDaysEl.children.length > 7) {
-                calendarDaysEl.removeChild(calendarDaysEl.lastChild);
-            }
-            
-            // 獲取當月第一天和最後一天
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-            
-            // 獲取第一天是星期幾（0 = 星期日）
-            const firstDayIndex = firstDay.getDay();
-            
-            // 獲取上個月的最後幾天
-            const prevMonthLastDay = new Date(year, month, 0).getDate();
-            
-            // 添加上月日期
-            for (let i = firstDayIndex - 1; i >= 0; i--) {
-                const dayEl = document.createElement('div');
-                dayEl.className = 'calendar-day other-month';
-                dayEl.textContent = prevMonthLastDay - i;
-                calendarDaysEl.appendChild(dayEl);
-            }
-            
-            // 添加當月日期
-            for (let i = 1; i <= lastDay.getDate(); i++) {
-                const dayEl = document.createElement('div');
-                dayEl.className = 'calendar-day';
-                dayEl.textContent = i;
-                
-                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                
-                // 檢查是否有預約
-                const hasReservations = reservations.some(res => 
-                    res.timestamp.startsWith(dateStr)
-                );
-                
-                if (hasReservations) {
-                    dayEl.classList.add('has-reservations');
-                }
-                
-                // 檢查是否為選中日期
-                if (dateStr === formatDate(currentDate)) {
-                    dayEl.classList.add('selected');
-                }
-                
-                dayEl.addEventListener('click', () => selectDate(new Date(dateStr)));
-                calendarDaysEl.appendChild(dayEl);
-            }
-            
-            // 添加下月日期
-            const totalCells = 42; // 6行×7列
-            const nextMonthDays = totalCells - (firstDayIndex + lastDay.getDate());
-            for (let i = 1; i <= nextMonthDays; i++) {
-                const dayEl = document.createElement('div');
-                dayEl.className = 'calendar-day other-month';
-                dayEl.textContent = i;
-                calendarDaysEl.appendChild(dayEl);
-            }
-        }
+    // 查詢班次預約詳情
+    async function getRouteReservations(dateStr, route) {
+      try {
+        const res = await fetch(`${WORKER_URL}?mode=routeReservations&date=${dateStr}&route=${route}`);
+        const result = await res.json();
+        return result.reservations || [];
+      } catch (error) {
+        console.error('查詢預約詳情失敗:', error);
+        return [];
+      }
+    }
 
-        // 渲染時段選擇
-        function renderTimeSlots() {
-            timeSlotsEl.innerHTML = '';
-            
-            timeSlots.forEach(slot => {
-                const slotBtn = document.createElement('button');
-                slotBtn.className = 'time-slot-btn';
-                if (selectedTimeSlot === slot.id) {
-                    slotBtn.classList.add('selected');
-                }
-                
-                slotBtn.innerHTML = `
-                    <div>${slot.name}</div>
-                    <div class="time-slot-info">${slot.start}:00 - ${slot.end}:00</div>
-                `;
-                
-                slotBtn.addEventListener('click', () => selectTimeSlot(slot.id));
-                timeSlotsEl.appendChild(slotBtn);
-            });
+    // 處理簽到
+    async function handleCheckin(reservationId) {
+      if (!confirm('確認此乘客已搭乘？')) return;
+      
+      try {
+        const now = new Date();
+        const checkinTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        
+        // 發送簽到請求
+        const res = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'checkin',
+            id: reservationId,
+            checkinTime: checkinTime
+          })
+        });
+        
+        const result = await res.json();
+        
+        if (result.status === 'success') {
+          alert('✅ 簽到成功！');
+          // 刷新乘客列表
+          await showPassengerList();
+        } else {
+          alert('❌ 簽到失敗：' + (result.message || '請稍後再試'));
         }
+      } catch (error) {
+        console.error('簽到錯誤:', error);
+        alert('❌ 簽到失敗，請檢查網路連線');
+      }
+    }
 
-        // 選擇日期
-        function selectDate(date) {
-            currentDate = date;
-            selectedTimeSlot = null;
-            renderCalendar();
-            renderTimeSlots();
-            updatePassengerList();
-        }
+    // 切換月份
+    async function showPreviousMonth() {
+      currentMonth--;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      }
+      await loadNoServiceDates();
+      renderCalendar();
+      resetSelection();
+    }
 
-        // 選擇時段
-        function selectTimeSlot(slotId) {
-            selectedTimeSlot = slotId;
-            renderTimeSlots();
-            updatePassengerList();
-        }
+    async function showNextMonth() {
+      currentMonth++;
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      }
+      await loadNoServiceDates();
+      renderCalendar();
+      resetSelection();
+    }
 
-        // 更新乘客列表
-        function updatePassengerList() {
-            passengerListEl.innerHTML = '';
-            
-            if (!selectedTimeSlot) {
-                selectedInfoEl.textContent = '請選擇日期和時段';
-                passengerListEl.innerHTML = '<div class="no-data">請先選擇日期和時段</div>';
-                return;
-            }
-            
-            const selectedSlot = timeSlots.find(slot => slot.id === selectedTimeSlot);
-            const dateStr = formatDate(currentDate);
-            
-            selectedInfoEl.textContent = `${dateStr} ${selectedSlot.name} (${selectedSlot.start}:00 - ${selectedSlot.end}:00)`;
-            
-            // 過濾預約數據
-            const slotReservations = reservations.filter(res => {
-                if (!res.timestamp.startsWith(dateStr)) return false;
-                
-                const hour = parseInt(res.timestamp.split(' ')[1].split(':')[0]);
-                return hour >= selectedSlot.start && hour < selectedSlot.end;
-            });
-            
-            if (slotReservations.length === 0) {
-                passengerListEl.innerHTML = '<div class="no-data">此時段暫無預約</div>';
-                return;
-            }
-            
-            // 顯示預約者列表
-            slotReservations.forEach(reservation => {
-                const passengerItem = document.createElement('div');
-                passengerItem.className = `passenger-item ${reservation.status === '已取消' ? 'cancelled' : ''}`;
-                
-                const passengerInfo = document.createElement('div');
-                passengerInfo.className = 'passenger-info';
-                
-                const timeText = document.createElement('div');
-                timeText.className = 'passenger-time';
-                timeText.textContent = `預約時間: ${reservation.timestamp.split(' ')[1]}`;
-                
-                const statusText = document.createElement('div');
-                statusText.className = `passenger-status ${reservation.status === '預約成功' ? 'status-success' : 'status-cancelled'}`;
-                statusText.textContent = reservation.status;
-                
-                passengerInfo.appendChild(timeText);
-                passengerInfo.appendChild(statusText);
-                
-                passengerItem.appendChild(passengerInfo);
-                
-                if (reservation.status === '預約成功') {
-                    if (reservation.checkin) {
-                        const checkedInText = document.createElement('div');
-                        checkedInText.className = 'checked-in';
-                        checkedInText.textContent = `已簽到 ${reservation.checkin}`;
-                        passengerItem.appendChild(checkedInText);
-                    } else {
-                        const checkinBtn = document.createElement('button');
-                        checkinBtn.className = 'checkin-btn';
-                        checkinBtn.textContent = '簽到';
-                        checkinBtn.addEventListener('click', () => handleCheckin(reservation, checkinBtn));
-                        passengerItem.appendChild(checkinBtn);
-                    }
-                }
-                
-                passengerListEl.appendChild(passengerItem);
-            });
-        }
+    // 重置選擇
+    function resetSelection() {
+      selectedDate = null;
+      selectedTimeSlot = null;
+      selectedDateEl.style.display = 'none';
+      timeSlotsSection.style.display = 'none';
+      passengerSection.style.display = 'none';
+    }
 
-        // 處理簽到
-        function handleCheckin(reservation, button) {
-            if (confirm('確認此乘客已搭乘？')) {
-                const now = new Date();
-                const checkinTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-                
-                reservation.checkin = checkinTime;
-                
-                // 更新UI
-                button.parentNode.removeChild(button);
-                
-                const checkedInText = document.createElement('div');
-                checkedInText.className = 'checked-in';
-                checkedInText.textContent = `已簽到 ${checkinTime}`;
-                button.parentNode.appendChild(checkedInText);
-                
-                alert('簽到成功！');
-            }
-        }
-
-        // 切換月份
-        function showPreviousMonth() {
-            currentDate.setMonth(currentDate.getMonth() - 1);
-            selectedTimeSlot = null;
-            renderCalendar();
-            renderTimeSlots();
-            updatePassengerList();
-        }
-
-        function showNextMonth() {
-            currentDate.setMonth(currentDate.getMonth() + 1);
-            selectedTimeSlot = null;
-            renderCalendar();
-            renderTimeSlots();
-            updatePassengerList();
-        }
-
-        // 工具函數
-        function formatDate(date) {
-            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-        }
-    </script>
+    // 工具函數
+    function formatDateToLocal(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+  </script>
 </body>
 </html>
