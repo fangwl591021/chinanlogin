@@ -818,18 +818,41 @@ function resetReservationForm() {
 }
 
 async function cancelReservation(reservationId) {
-  if (!confirm('確定要取消這筆預約嗎？')) return;
+  if (!confirm('確定要取消這筆預約嗎？\nAre you sure you want to cancel this reservation?')) return;
 
   try {
-    const res = await fetch(WORKER_URL, {
+    console.log('開始取消預約:', reservationId);
+    
+    const response = await fetch(WORKER_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'cancel', id: reservationId, userId: userData.userId })
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ 
+        type: 'cancel', 
+        id: reservationId, 
+        userId: userData.userId 
+      })
     });
 
-    const result = await res.json();
+    // 檢查響應狀態
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // 檢查內容類型
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      console.error('非 JSON 響應:', text.substring(0, 200));
+      throw new Error('伺服器返回了非 JSON 響應');
+    }
+
+    const result = await response.json();
+    
     if (result.status === 'success') {
-      alert('✅ 已取消預約');
+      alert('✅ 已取消預約\n✅ Reservation cancelled');
 
       // LINE 群組推播通知（取消預約）
       try {
@@ -899,9 +922,14 @@ async function cancelReservation(reservationId) {
     } else {
       alert('❌ 取消失敗：' + (result.message || '請稍後再試'));
     }
-  } catch (e) {
-    console.error('取消預約錯誤', e);
-    alert('❌ 取消預約時發生錯誤');
+  } catch (error) {
+    console.error('取消預約錯誤:', error);
+    
+    if (error.message.includes('JSON') || error.message.includes('DOCTYPE')) {
+      alert('❌ 伺服器連接失敗，請檢查網路連線或稍後再試\n❌ Server connection failed, please check your network connection');
+    } else {
+      alert('❌ 取消預約時發生錯誤: ' + error.message);
+    }
   }
 }
 
