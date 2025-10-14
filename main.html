@@ -694,6 +694,11 @@ async function submitReservation() {
     const info = routeTimes[selectedRoute];
     const fromStop = selectedRoute.includes('A') ? '行政大樓' : '埔里總站';
     
+    // 提取純中文站名（移除 HTML 標籤）
+    const extractChineseName = (stop) => stop.split('<')[0];
+    const cleanFromStop = extractChineseName(fromStop);
+    const cleanToStop = extractChineseName(toStop);
+    
     const data = {
       type: 'reserve',
       userId: userData.userId,
@@ -703,8 +708,8 @@ async function submitReservation() {
       phone: userData.phone || '',
       route: selectedRoute,
       routeName: `${selectedRoute} | ${info.time} ${info.direction}`,
-      fromStop: fromStop,
-      toStop: toStop,
+      fromStop: cleanFromStop,  // 使用清理後的中文站名
+      toStop: cleanToStop,      // 使用清理後的中文站名
       date: selectedDate
     };
     
@@ -761,8 +766,8 @@ async function submitReservation() {
                       { type: "text", text: `班次：${selectedRoute}｜${info.time} ${info.direction}`, size: "sm", color: "#333" },
                       { type: "text", text: `姓名：${userData.name}`, size: "sm", color: "#333" },
                       { type: "text", text: `電話：${userData.phone || "未填"}`, size: "sm", color: "#333" },
-                      { type: "text", text: `上車：${fromStop}`, size: "sm", color: "#333" },
-                      { type: "text", text: `下車：${toStop}`, size: "sm", color: "#333" }
+                      { type: "text", text: `上車：${cleanFromStop}`, size: "sm", color: "#333" },  // 使用清理後的站名
+                      { type: "text", text: `下車：${cleanToStop}`, size: "sm", color: "#333" }    // 使用清理後的站名
                     ]
                   }
                 ]
@@ -904,9 +909,15 @@ async function sendCancelNotification(canceled) {
     // 確保日期格式正確
     const reservationDate = canceled.date ? canceled.date.split('T')[0] : '未知日期';
     
-    // 確保站點資訊存在
-    const fromStop = canceled.fromStop || '未知上車站';
-    const toStop = canceled.toStop || '未知下車站';
+    // 提取純中文站名（移除 HTML 標籤）
+    const extractChineseName = (stop) => {
+      if (!stop) return '未知站點';
+      return stop.split('<')[0];
+    };
+    
+    // 確保站點資訊存在且清理 HTML 標籤
+    const fromStop = extractChineseName(canceled.fromStop || '未知上車站');
+    const toStop = extractChineseName(canceled.toStop || '未知下車站');
     const userName = canceled.name || userData.name || '未知用戶';
 
     const flexPayload = {
@@ -999,7 +1010,7 @@ async function sendCancelNotification(canceled) {
     
   } catch (pushErr) {
     console.error('❌ 取消推播錯誤:', pushErr);
-    throw pushErr; // 重新拋出錯誤讓上層處理
+    throw pushErr;
   }
 }
 
