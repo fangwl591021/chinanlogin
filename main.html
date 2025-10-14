@@ -203,7 +203,37 @@ let noServiceDates = {};
 let calendarDataLoaded = false;
 let calendarLoading = false;
 
-const stopsOutbound = ["行政大樓","中餐廳","科技學院","學人會館","中城","下城","坪頂","愛蘭橋","大成國小","中山安七街口","榮民診所","埔里酒廠","埔里總站"];
+const stopsOutbound = [
+  "行政大樓<br><small style='color: #3b82f6;'>NCNU Administrative Building</small>",
+  "中餐廳<br><small style='color: #3b82f6;'>Zhong Can Ting(Chinese Restaurant)</small>",
+  "科技學院<br><small style='color: #3b82f6;'>College of Science and Technology</small>",
+  "學人會館<br><small style='color: #3b82f6;'>Scholars' Residence</small>",
+  "中城<br><small style='color: #3b82f6;'>Zhongcheng</small>",
+  "下城<br><small style='color: #3b82f6;'>Xiacheng</small>",
+  "坪頂<br><small style='color: #3b82f6;'>Pingding</small>",
+  "愛蘭橋<br><small style='color: #3b82f6;'>Ailan Bridge</small>",
+  "大成國小<br><small style='color: #3b82f6;'>Dacheng Elementary School</small>",
+  "中山安七街口<br><small style='color: #3b82f6;'>Zhongshan Anqi St. Intersection</small>",
+  "榮民診所<br><small style='color: #3b82f6;'>Veterans Clinic</small>",
+  "埔里酒廠<br><small style='color: #3b82f6;'>Puli Distillery</small>",
+  "埔里總站<br><small style='color: #3b82f6;'>Puli Bus Terminal</small>"
+];
+
+const stopsReturn = [
+  "埔里總站<br><small style='color: #3b82f6;'>Puli Bus Terminal</small>",
+  "埔里酒廠<br><small style='color: #3b82f6;'>Puli Distillery</small>",
+  "榮民診所<br><small style='color: #3b82f6;'>Veterans Clinic</small>",
+  "中山安七街口<br><small style='color: #3b82f6;'>Zhongshan Anqi St. Intersection</small>",
+  "大成國小<br><small style='color: #3b82f6;'>Dacheng Elementary School</small>",
+  "愛蘭橋<br><small style='color: #3b82f6;'>Ailan Bridge</small>",
+  "坪頂<br><small style='color: #3b82f6;'>Pingding</small>",
+  "下城<br><small style='color: #3b82f6;'>Xiacheng</small>",
+  "中城<br><small style='color: #3b82f6;'>Zhongcheng</small>",
+  "學人會館<br><small style='color: #3b82f6;'>Scholars' Residence</small>",
+  "科技學院<br><small style='color: #3b82f6;'>College of Science and Technology</small>",
+  "中餐廳<br><small style='color: #3b82f6;'>Zhong Can Ting(Chinese Restaurant)</small>",
+  "行政大樓<br><small style='color: #3b82f6;'>NCNU Administrative Building</small>"
+];
 const stopsReturn = [...stopsOutbound].reverse();
 
 const routeTimes = {
