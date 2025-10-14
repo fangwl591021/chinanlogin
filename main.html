@@ -298,41 +298,54 @@ async function preloadCalendarData() {
   try {
     await loadNoServiceDates();
     calendarDataLoaded = true;
-    calendarLoading = false;
     console.log('✅ 月曆資料預載完成');
   } catch (error) {
-    calendarLoading = false;
     console.error('❌ 月曆資料預載失敗:', error);
+  } finally {
+    calendarLoading = false; // 🚨 確保這裡有重置 loading 狀態
   }
 }
 
+// === 📅 月曆開關 ===
 async function toggleCalendar() {
   const container = document.getElementById('calendarContainer');
   const btn = document.getElementById('calendarBtn');
   const loadingSpan = document.getElementById('calendarLoading');
 
   if (container.style.display === 'none') {
+    // 打開月曆
     loadingSpan.style.display = 'inline-block';
     btn.disabled = true;
+    btn.textContent = '⏳ 載入中...';
     
-    if (!calendarDataLoaded && !calendarLoading) {
-      await preloadCalendarData();
-    } else if (calendarLoading) {
-      let waitCount = 0;
-      while (calendarLoading && waitCount < 50) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        waitCount++;
+    try {
+      if (!calendarDataLoaded && !calendarLoading) {
+        await preloadCalendarData();
+      } else if (calendarLoading) {
+        let waitCount = 0;
+        while (calendarLoading && waitCount < 50) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          waitCount++;
+        }
       }
+      
+      renderCalendar();
+      
+      loadingSpan.style.display = 'none';
+      btn.disabled = false;
+      container.style.display = 'block';
+      btn.textContent = '📅 關閉月曆';
+      container.scrollIntoView({ behavior: 'smooth' });
+      
+    } catch (error) {
+      console.error('載入月曆失敗:', error);
+      loadingSpan.style.display = 'none';
+      btn.disabled = false;
+      btn.textContent = '📅 打開月曆';
     }
     
-    renderCalendar();
-    
-    loadingSpan.style.display = 'none';
-    btn.disabled = false;
-    container.style.display = 'block';
-    btn.textContent = '📅 關閉月曆';
-    container.scrollIntoView({ behavior: 'smooth' });
   } else {
+    // 關閉月曆
     container.style.display = 'none';
     btn.textContent = '📅 打開月曆';
   }
@@ -752,9 +765,16 @@ function resetReservationForm() {
   document.getElementById('routeSection').style.display = 'none';
   document.getElementById('stopSection').style.display = 'none';
   document.getElementById('submitBtn').style.display = 'none';
-  document.getElementById('calendarContainer').style.display = 'none';
-  document.getElementById('calendarBtn').textContent = '📅 打開月曆';
-  renderCalendar();
+  document.getElementById('holidayNotice').style.display = 'none';
+  
+  // 🚨 重要：不要關閉月曆容器，只重置選擇狀態
+  // document.getElementById('calendarContainer').style.display = 'none';
+  // document.getElementById('calendarBtn').textContent = '📅 打開月曆';
+  
+  // 只重新渲染日曆來清除選擇狀態
+  if (document.getElementById('calendarContainer').style.display === 'block') {
+    renderCalendar();
+  }
 }
 
 async function cancelReservation(reservationId) {
