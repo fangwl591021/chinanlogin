@@ -78,7 +78,7 @@
   overflow: hidden; 
   flex-shrink: 0; 
 }
-
+.hidden { display: none !important; }
 .bubble-body { 
   padding: 20px;  /* 增加內邊距 */
 }
@@ -607,9 +607,9 @@ function selectDate(dateStr) {
   document.getElementById('selectedDate').textContent = `✅ 已選擇日期：${dateStr}`;
   document.getElementById('holidayNotice').style.display = 'none';
   
-  // 關閉月曆
-  document.getElementById('calendarContainer').style.display = 'none';
-  document.getElementById('calendarBtn').textContent = '📅 打開月曆';
+  // 關閉月曆 - 使用 class 方式
+  document.getElementById('calendarContainer').classList.add('hidden');
+  document.getElementById('calendarBtn').innerHTML = '📅 打開月曆';
   
   // 顯示班次選擇
   showRouteSelection();
@@ -844,16 +844,15 @@ function resetReservationForm() {
   document.getElementById('submitBtn').style.display = 'none';
   document.getElementById('holidayNotice').style.display = 'none';
   
-  // 🚨 重要：不要關閉月曆容器，只重置選擇狀態
-  // document.getElementById('calendarContainer').style.display = 'none';
-  // document.getElementById('calendarBtn').textContent = '📅 打開月曆';
-  
   // 只重新渲染日曆來清除選擇狀態
-  if (document.getElementById('calendarContainer').style.display === 'block') {
+  if (!document.getElementById('calendarContainer').classList.contains('hidden')) {
     renderCalendar();
   }
 }
-
+if (!document.getElementById('calendarContainer').classList.contains('hidden')) {
+    renderCalendar();
+  }
+}
 async function cancelReservation(reservationId) {
   if (!confirm('確定要取消這筆預約嗎？')) return;
 
