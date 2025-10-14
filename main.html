@@ -399,27 +399,32 @@ function renderCalendar() {
     let disabled = false;
     let disabledReason = '';
 
-    // 檢查日期狀態
+    // 檢查日期狀態 - 優先顯示已完成預約
     if (hasReservation) {
       disabled = true;
-      disabledReason = '您已預約';
+      disabledReason = '已完成預約';  // 改為"已完成預約"
+      classes += ' disabled';
+      html += `<div class="${classes}" style="background: #e0e8ff; border: 1px solid #b3c6ff; color: #333;">${day}<br><small>${disabledReason}</small></div>`;
     } else if (isPast) {
       disabled = true;
       disabledReason = '已過期';
+      classes += ' past';
+      html += `<div class="${classes}">${day}<br><small>${disabledReason}</small></div>`;
     } else if (isNoService) {
       disabled = true;
       disabledReason = '停駛';
+      classes += ' disabled';
+      html += `<div class="${classes}" style="background: #f8f9fa; color: #999;">${day}<br><small>${disabledReason}</small></div>`;
     } else if (!isWithinWindow) {
       disabled = true;
       disabledReason = '未開放';
+      classes += ' disabled';
+      html += `<div class="${classes}" style="background: #f8f9fa; color: #999;">${day}<br><small>${disabledReason}</small></div>`;
     } else if (isAfterDeadline && ReservationValidator.isToday(dateStr)) {
       disabled = true;
       disabledReason = '已截止';
-    }
-    
-    if (disabled) {
       classes += ' disabled';
-      html += `<div class="${classes}">${day}<br><small>${disabledReason}</small></div>`;
+      html += `<div class="${classes}" style="background: #f8f9fa; color: #999;">${day}<br><small>${disabledReason}</small></div>`;
     } else {
       if (selectedDate === dateStr) {
         classes += ' selected';
@@ -429,15 +434,6 @@ function renderCalendar() {
       const dayLabel = isWeekend ? `${day}<br><small style="font-size:10px;">週末</small>` : day;
       
       html += `<div class="${classes}" onclick="selectDate('${dateStr}')">${dayLabel}</div>`;
-    }
-    
-    // 特別標記已有預約的日期
-    if (hasReservation) {
-      const dayElement = cal.querySelector(`.calendar-day:nth-child(${startWeekday + day + 7})`);
-      if (dayElement) {
-        dayElement.style.background = '#e0d6ff';
-        dayElement.style.border = '1px solid #e0e0e0';
-      }
     }
   }
   
