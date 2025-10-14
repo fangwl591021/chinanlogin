@@ -198,7 +198,7 @@
   </button>
 </div>
 
-  <div id="calendarContainer" style="display:none;margin-top:10px; padding:0 16px;">
+ <div id="calendarContainer" class="hidden" style="margin-top:10px; padding:0 16px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
       <button onclick="changeMonth(-1)" style="width:auto; padding:5px 10px;">◀ 上個月</button>
       <h3 id="calendarTitle" style="margin:0; font-size:16px;"></h3>
@@ -386,11 +386,11 @@ async function toggleCalendar() {
   const btn = document.getElementById('calendarBtn');
   const loadingSpan = document.getElementById('calendarLoading');
 
-  if (container.style.display === 'none') {
+  if (container.classList.contains('hidden')) {
     // 打開月曆
     loadingSpan.style.display = 'inline-block';
     btn.disabled = true;
-    btn.textContent = '⏳ 載入中...';
+    btn.innerHTML = '⏳ 載入中...';
     
     try {
       if (!calendarDataLoaded && !calendarLoading) {
@@ -407,21 +407,21 @@ async function toggleCalendar() {
       
       loadingSpan.style.display = 'none';
       btn.disabled = false;
-      container.style.display = 'block';
-      btn.textContent = '📅 關閉月曆';
+      container.classList.remove('hidden');
+      btn.innerHTML = '📅 關閉月曆';
       container.scrollIntoView({ behavior: 'smooth' });
       
     } catch (error) {
       console.error('載入月曆失敗:', error);
       loadingSpan.style.display = 'none';
       btn.disabled = false;
-      btn.textContent = '📅 打開月曆';
+      btn.innerHTML = '📅 打開月曆';
     }
     
   } else {
     // 關閉月曆
-    container.style.display = 'none';
-    btn.textContent = '📅 打開月曆';
+    container.classList.add('hidden');
+    btn.innerHTML = '📅 打開月曆';
   }
 }
 
