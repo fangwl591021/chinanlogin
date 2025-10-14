@@ -484,7 +484,10 @@ function renderCalendar() {
   
   cal.innerHTML = html;
 }
-
+// 打開預約規則
+function openRules() {
+  window.open('https://line.me/R/home/public/post?postId=1176044641970348675', '_blank');
+}
 function selectDate(dateStr) {
   // 使用預約規則進行完整驗證
   const validation = {
