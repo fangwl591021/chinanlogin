@@ -198,6 +198,10 @@
   </button>
 </div>
 
+<div id="calendarContainer" class="hidden" style="margin-top:10px; padding:0 16px;">
+  <!-- 月曆內容 -->
+</div>
+
  <div id="calendarContainer" class="hidden" style="margin-top:10px; padding:0 16px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
       <button onclick="changeMonth(-1)" style="width:auto; padding:5px 10px;">◀ 上個月</button>
@@ -383,61 +387,89 @@ async function preloadCalendarData() {
 
 // === 📅 月曆開關 ===
 async function toggleCalendar() {
-  const container = document.getElementById('calendarContainer');
-  const btn = document.getElementById('calendarBtn');
-  const loadingSpan = document.getElementById('calendarLoading');
+  let container, btn, loadingSpan;
+  
+  try {
+    // 使用更安全的 DOM 查詢方式
+    container = document.getElementById('calendarContainer');
+    btn = document.getElementById('calendarBtn');
+    loadingSpan = document.getElementById('calendarLoading');
+    
+    console.log('DOM 元素狀態:', { container, btn, loadingSpan });
+    
+    // 安全檢查 DOM 元素是否存在
+    if (!container || !btn) {
+      console.error('❌ 找不到必要的 DOM 元素');
+      // 嘗試重新查找
+      await new Promise(resolve => setTimeout(resolve, 100));
+      container = document.getElementById('calendarContainer');
+      btn = document.getElementById('calendarBtn');
+      loadingSpan = document.getElementById('calendarLoading');
+      
+      if (!container || !btn) {
+        console.error('❌ 重試後仍然找不到 DOM 元素');
+        alert('系統載入異常，請重新整理頁面');
+        return;
+      }
+    }
 
-  // 安全檢查 DOM 元素是否存在
-  if (!container || !btn || !loadingSpan) {
-    console.error('❌ 找不到必要的 DOM 元素');
-    return;
-  }
-
-  if (container.classList.contains('hidden')) {
-    // 打開月曆
-    try {
-      loadingSpan.style.display = 'inline-block';
+    if (container.classList.contains('hidden')) {
+      // 打開月曆
+      console.log('正在打開月曆...');
+      if (loadingSpan) loadingSpan.style.display = 'inline-block';
       btn.disabled = true;
       btn.innerHTML = '📅 載入中...';
       
-      if (!calendarDataLoaded && !calendarLoading) {
-        await preloadCalendarData();
-      } else if (calendarLoading) {
-        // 等待正在進行的載入完成
-        let waitCount = 0;
-        while (calendarLoading && waitCount < 50) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-          waitCount++;
+      try {
+        if (!calendarDataLoaded && !calendarLoading) {
+          await preloadCalendarData();
+        } else if (calendarLoading) {
+          // 等待正在進行的載入完成
+          let waitCount = 0;
+          while (calendarLoading && waitCount < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            waitCount++;
+          }
+          if (calendarLoading) {
+            throw new Error('月曆載入超時');
+          }
         }
-        if (calendarLoading) {
-          throw new Error('月曆載入超時');
-        }
+        
+        renderCalendar();
+        
+        // 成功打開月曆
+        if (loadingSpan) loadingSpan.style.display = 'none';
+        btn.disabled = false;
+        container.classList.remove('hidden');
+        btn.innerHTML = '📅 關閉月曆';
+        container.scrollIntoView({ behavior: 'smooth' });
+        
+      } catch (error) {
+        console.error('載入月曆失敗:', error);
+        // 錯誤處理：重置狀態
+        if (loadingSpan) loadingSpan.style.display = 'none';
+        btn.disabled = false;
+        btn.innerHTML = '📅 打開月曆';
+        alert('載入月曆失敗，請稍後再試');
       }
       
-      renderCalendar();
-      
-      // 成功打開月曆
-      loadingSpan.style.display = 'none';
-      btn.disabled = false;
-      container.classList.remove('hidden');
-      btn.innerHTML = '📅 關閉月曆';
-      container.scrollIntoView({ behavior: 'smooth' });
-      
-    } catch (error) {
-      console.error('載入月曆失敗:', error);
-      // 錯誤處理：重置狀態
-      loadingSpan.style.display = 'none';
-      btn.disabled = false;
+    } else {
+      // 關閉月曆
+      console.log('正在關閉月曆...');
+      container.classList.add('hidden');
       btn.innerHTML = '📅 打開月曆';
-      alert('載入月曆失敗，請稍後再試');
+      if (loadingSpan) loadingSpan.style.display = 'none';
+      btn.disabled = false;
     }
     
-  } else {
-    // 關閉月曆
-    container.classList.add('hidden');
-    btn.innerHTML = '📅 打開月曆';
-    loadingSpan.style.display = 'none';
-    btn.disabled = false;
+  } catch (error) {
+    console.error('toggleCalendar 函數錯誤:', error);
+    // 最終的錯誤恢復
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '📅 打開月曆';
+    }
+    if (loadingSpan) loadingSpan.style.display = 'none';
   }
 }
 
