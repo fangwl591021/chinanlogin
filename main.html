@@ -852,7 +852,7 @@ function resetReservationForm() {
   }
 }
 async function cancelReservation(reservationId) {
-  if (!confirm('確定要取消這筆預約嗎？')) return;
+  if (!confirm('确定要取消这笔预约吗？')) return;
 
   try {
     const res = await fetch(WORKER_URL, {
@@ -863,9 +863,9 @@ async function cancelReservation(reservationId) {
 
     const result = await res.json();
     if (result.status === 'success') {
-      alert('✅ 已取消預約');
+      alert('✅ 已取消预约');
 
-      // LINE 群組推播通知（取消預約）
+      // LINE 群组推播通知（取消预约）
       try {
         const canceled = existingReservations.find(r => r.id === reservationId);
         if (canceled) {
@@ -874,7 +874,7 @@ async function cancelReservation(reservationId) {
             type: "pushLine",
             flex: {
               type: "flex",
-              altText: "穿山甲專車取消預約通知",
+              altText: "穿山甲专车取消预约通知",
               contents: {
                 type: "bubble",
                 size: "mega",
@@ -890,7 +890,7 @@ async function cancelReservation(reservationId) {
                       contents: [
                         {
                           type: "text",
-                          text: "❌ 穿山甲專車預約取消",
+                          text: "❌ 穿山甲专车预约取消",
                           color: "#ffffff",
                           weight: "bold",
                           size: "md",
@@ -908,8 +908,8 @@ async function cancelReservation(reservationId) {
                         { type: "text", text: `日期：${canceled.date.split('T')[0]}`, size: "sm", color: "#333" },
                         { type: "text", text: `班次：${canceled.route}｜${info.time || ""} ${info.direction || ""}`, size: "sm", color: "#333" },
                         { type: "text", text: `姓名：${canceled.name}`, size: "sm", color: "#333" },
-                        { type: "text", text: `上車：${canceled.fromStop}`, size: "sm", color: "#333" },
-                        { type: "text", text: `下車：${canceled.toStop}`, size: "sm", color: "#333" }
+                        { type: "text", text: `上车：${canceled.fromStop}`, size: "sm", color: "#333" },
+                        { type: "text", text: `下车：${canceled.toStop}`, size: "sm", color: "#333" }
                       ]
                     }
                   ]
@@ -923,20 +923,21 @@ async function cancelReservation(reservationId) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(flexPayload)
           });
-          console.log('🚫 群組推播：取消預約通知成功');
+          console.log('🚫 群组推播：取消预约通知成功');
         }
       } catch (pushErr) {
-        console.error('❌ 取消推播錯誤:', pushErr);
+        console.error('❌ 取消推播错误:', pushErr);
       }
 
       await loadExistingReservations();
     } else {
-      alert('❌ 取消失敗：' + (result.message || '請稍後再試'));
+      alert('❌ 取消失败：' + (result.message || '请稍后再试'));
     }
   } catch (e) {
-    console.error('取消預約錯誤', e);
-    alert('❌ 取消預約時發生錯誤');
+    console.error('取消预约错误', e);
+    alert('❌ 取消预约时发生错误');
   }
+} // 这里添加缺失的右大括号
 
 
 // === 載入預約 ===
