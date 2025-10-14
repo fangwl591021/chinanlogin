@@ -70,13 +70,50 @@
     .carousel { display: flex; overflow-x: auto; gap: 15px; padding: 10px 5px; scrollbar-width: none; -ms-overflow-style: none; }
     .carousel::-webkit-scrollbar { display: none; }
     .reservation-bubble { 
-  min-width: 190px;  /* 減少三分之一，原本 280px */
+  min-width: 280px;  /* 改回 mega 寬度 */
   background: white; 
   border-radius: 12px; 
   box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
   border: 1px solid #e0e0e0; 
   overflow: hidden; 
   flex-shrink: 0; 
+}
+
+.bubble-body { 
+  padding: 20px;  /* 增加內邊距 */
+}
+
+.bubble-line { 
+  margin-bottom: 12px;  /* 增加行間距 */
+  font-size: 14px;  /* 稍微增大字體 */
+  line-height: 1.5;  /* 增加行高 */
+  display: flex; 
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.bubble-line strong { 
+  color: #333;  /* 加深標題顏色 */
+  min-width: 70px;  /* 增加標題寬度 */
+  margin-right: 12px;  /* 增加右邊距 */
+  font-weight: 600;
+}
+
+.bubble-line span { 
+  color: #333; 
+  text-align: left;
+  flex: 1; 
+  line-height: 1.4;
+}
+
+.bubble-header { 
+  background: #27ACB2; 
+  color: white; 
+  padding: 16px 15px;  /* 增加內邊距 */
+  font-weight: bold; 
+  font-size: 16px;  /* 增大字體 */
+  text-align: center; 
+  line-height: 1.4;
 }
 
 .bubble-body { 
@@ -923,36 +960,90 @@ function renderCurrentReservationCard() {
   const container = document.getElementById('currentReservationCard');
   
   if (!existingReservations || existingReservations.length === 0) {
-    container.innerHTML = '<div class="no-reservation">目前沒有預約紀錄</div>';
+    container.innerHTML = '<div class="no-reservation">目前沒有預約紀錄<br><small style="color: #3b82f6;">No Reservation Records</small></div>';
     container.style.display = 'block';
     return;
   }
   
   let html = '<div class="carousel-container">';
-  html += '<div class="carousel-title">🧾 我的預約</div>';
+  html += '<div class="carousel-title">🧾 我的預約<br><small style="color: #3b82f6; font-size: 14px;">My Reservations</small></div>';
   html += '<div class="carousel">';
   
   existingReservations.forEach(r => {
     const routeInfo = routeTimes[r.route] || { time: r.route, direction: '未知路線' };
+    const dateObj = new Date(r.date);
+    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+    const weekdayEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayOfWeek = weekdays[dateObj.getDay()];
+    const dayOfWeekEn = weekdayEn[dateObj.getDay()];
+    
+    // 路線方向中英對照
+    let directionZh = routeInfo.direction;
+    let directionEn = '';
+    if (routeInfo.direction.includes('暨大→埔里總站')) {
+      directionEn = 'NCNU → Puli Terminal';
+    } else if (routeInfo.direction.includes('埔里總站→暨大')) {
+      directionEn = 'Puli Terminal → NCNU';
+    }
+    
+    // 站點中英對照
+    const stopMap = {
+      '行政大樓': 'NCNU Administrative Building',
+      '中餐廳': 'Zhong Can Ting(Chinese Restaurant)',
+      '科技學院': 'College of Science and Technology',
+      '學人會館': 'Scholars\' Residence',
+      '中城': 'Zhongcheng',
+      '下城': 'Xiacheng',
+      '坪頂': 'Pingding',
+      '愛蘭橋': 'Ailan Bridge',
+      '大成國小': 'Dacheng Elementary School',
+      '中山安七街口': 'Zhongshan Anqi St. Intersection',
+      '榮民診所': 'Veterans Clinic',
+      '埔里酒廠': 'Puli Distillery',
+      '埔里總站': 'Puli Bus Terminal'
+    };
+    
+    const fromStopEn = stopMap[r.fromStop] || r.fromStop;
+    const toStopEn = stopMap[r.toStop] || r.toStop;
+    
     html += `
-      <div class="reservation-bubble">
-        <div class="bubble-header">${r.date} (${getDayOfWeek(r.date)})</div>
+      <div class="reservation-bubble" style="min-width: 280px;">
+        <div class="bubble-header">
+          ${r.date.split('T')[0]} (週${dayOfWeek})<br>
+          <small style="font-size: 12px; opacity: 0.9;">${r.date.split('T')[0]} (${dayOfWeekEn})</small>
+        </div>
         <div class="bubble-body">
           <div class="bubble-line">
-            <strong>班次</strong>
+            <strong>班次<br><small style="color: #3b82f6;">Time</small></strong>
             <span class="route-time">${routeInfo.time}</span>
           </div>
           <div class="bubble-line">
-            <strong>路線</strong>
-            <span>${routeInfo.direction}</span>
+            <strong>路線<br><small style="color: #3b82f6;">Route</small></strong>
+            <span>
+              ${directionZh}<br>
+              <small style="color: #3b82f6; font-size: 11px;">${directionEn}</small>
+            </span>
           </div>
           <div class="bubble-line">
-            <strong>下車站</strong>
-            <span>${r.toStop}</span>
+            <strong>上車站<br><small style="color: #3b82f6;">From</small></strong>
+            <span>
+              ${r.fromStop}<br>
+              <small style="color: #3b82f6; font-size: 11px;">${fromStopEn}</small>
+            </span>
+          </div>
+          <div class="bubble-line">
+            <strong>下車站<br><small style="color: #3b82f6;">To</small></strong>
+            <span>
+              ${r.toStop}<br>
+              <small style="color: #3b82f6; font-size: 11px;">${toStopEn}</small>
+            </span>
           </div>
         </div>
         <div class="bubble-footer">
-          <button class="cancel-btn-small" onclick="cancelReservation('${r.id}')">取消預約</button>
+          <button class="cancel-btn-small" onclick="cancelReservation('${r.id}')">
+            取消預約<br>
+            <small style="font-size: 10px; opacity: 0.8;">Cancel</small>
+          </button>
         </div>
       </div>
     `;
