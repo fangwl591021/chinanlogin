@@ -769,15 +769,21 @@ async function cancelReservation(reservationId) {
 
   try {
     console.log('開始取消預約:', reservationId);
+    console.log('現有預約列表:', existingReservations);
     
     // 在取消前先保存要取消的預約資料
-    const reservationToCancel = existingReservations.find(r => r.id === reservationId);
+    const reservationToCancel = existingReservations.find(r => {
+      console.log('檢查預約:', r.id, 'vs', reservationId, '類型:', typeof r.id, typeof reservationId);
+      return r.id === reservationId || r.id.toString() === reservationId.toString();
+    });
     
     if (!reservationToCancel) {
-      console.error('找不到要取消的預約');
+      console.error('找不到要取消的預約，現有預約ID列表:', existingReservations.map(r => ({ id: r.id, type: typeof r.id })));
       alert('找不到預約資料，請重新整理頁面後再試');
       return;
     }
+    
+    console.log('找到要取消的預約:', reservationToCancel);
     
     const response = await fetch(WORKER_URL, {
       method: 'POST',
