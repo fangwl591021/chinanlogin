@@ -147,10 +147,19 @@
     <div class="loading-state">⏳ 系統初始化中...</div>
   </div>
 
-  <button id="calendarBtn" onclick="toggleCalendar()">
+  <div style="display: flex; gap: 10px; margin: 10px 16px; align-items: center;">
+  <button id="calendarBtn" onclick="toggleCalendar()" style="flex: 1; position: relative;">
     📅 打開月曆
     <span id="calendarLoading" class="loading-dots" style="display:none"></span>
   </button>
+  
+  <button id="rulesBtn" onclick="openRules()" 
+          style="flex: 0 0 auto; background: #27ACB2; color: white; border: none; 
+                 padding: 12px 16px; border-radius: 6px; font-size: 16px; 
+                 cursor: pointer; white-space: nowrap; font-weight: bold;">
+    📖 預約規則
+  </button>
+</div>
 
   <div id="calendarContainer" style="display:none;margin-top:10px; padding:0 16px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
