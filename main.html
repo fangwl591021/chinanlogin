@@ -708,8 +708,8 @@ async function submitReservation() {
       phone: userData.phone || '',
       route: selectedRoute,
       routeName: `${selectedRoute} | ${info.time} ${info.direction}`,
-      fromStop: cleanFromStop,  // 使用清理後的中文站名
-      toStop: cleanToStop,      // 使用清理後的中文站名
+      fromStop: cleanFromStop,
+      toStop: cleanToStop,
       date: selectedDate
     };
     
@@ -725,61 +725,17 @@ async function submitReservation() {
     if (result.status === 'success') {
       alert('✅ 預約成功！');
 
-      // LINE 群組推播通知（新預約）
+      // LINE 群組推播通知（新預約）- 使用舊版本的格式
       try {
-        const flexPayload = {
+        const pushData = {
           type: "pushLine",
-          flex: {
-            type: "flex",
-            altText: "穿山甲專車新預約通知",
-            contents: {
-              type: "bubble",
-              size: "mega",
-              body: {
-                type: "box",
-                layout: "vertical",
-                contents: [
-                  {
-                    type: "box",
-                    layout: "vertical",
-                    backgroundColor: "#3c8050",
-                    paddingAll: "10px",
-                    contents: [
-                      {
-                        type: "text",
-                        text: "🚌 穿山甲專車新預約",
-                        color: "#ffffff",
-                        weight: "bold",
-                        size: "md",
-                        align: "center"
-                      }
-                    ]
-                  },
-                  {
-                    type: "box",
-                    layout: "vertical",
-                    backgroundColor: "#ffffff",
-                    paddingAll: "12px",
-                    spacing: "sm",
-                    contents: [
-                      { type: "text", text: `日期：${selectedDate}`, size: "sm", color: "#333" },
-                      { type: "text", text: `班次：${selectedRoute}｜${info.time} ${info.direction}`, size: "sm", color: "#333" },
-                      { type: "text", text: `姓名：${userData.name}`, size: "sm", color: "#333" },
-                      { type: "text", text: `電話：${userData.phone || "未填"}`, size: "sm", color: "#333" },
-                      { type: "text", text: `上車：${cleanFromStop}`, size: "sm", color: "#333" },  // 使用清理後的站名
-                      { type: "text", text: `下車：${cleanToStop}`, size: "sm", color: "#333" }    // 使用清理後的站名
-                    ]
-                  }
-                ]
-              }
-            }
-          }
+          message: `🚌 穿山甲專車新預約\n\n日期：${selectedDate}\n班次：${selectedRoute}｜${info.time} ${info.direction}\n姓名：${userData.name}\n電話：${userData.phone || "未填"}\n上車：${cleanFromStop}\n下車：${cleanToStop}`
         };
 
         await fetch(WORKER_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(flexPayload)
+          body: JSON.stringify(pushData)
         });
         console.log('✅ 群組推播：新預約通知成功');
       } catch (err) {
@@ -800,6 +756,99 @@ async function submitReservation() {
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = '送出預約';
+  }
+}
+
+async function cancelReservation(reservationId) {
+  if (!confirm('確定要取消這筆預約嗎？\nAre you sure you want to cancel this reservation?')) return;
+
+  try {
+    console.log('開始取消預約:', reservationId);
+    
+    const response = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ 
+        type: 'cancel', 
+        id: reservationId, 
+        userId: userData.userId 
+      })
+    });
+
+    // 檢查響應狀態
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // 檢查內容類型
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      console.error('非 JSON 響應:', text.substring(0, 200));
+      throw new Error('伺服器返回了非 JSON 響應');
+    }
+
+    const result = await response.json();
+    
+    if (result.status === 'success') {
+      alert('✅ 已取消預約\n✅ Reservation cancelled');
+
+      // LINE 群組推播通知（取消預約）- 使用舊版本的格式
+      try {
+        // 先重新載入預約資料，確保資料是最新的
+        await loadExistingReservations();
+        
+        // 從更新後的 existingReservations 中尋找取消的預約
+        const canceledReservation = existingReservations.find(r => r.id === reservationId);
+        
+        if (canceledReservation) {
+          const info = routeTimes[canceledReservation.route] || {};
+          
+          // 提取純中文站名（移除 HTML 標籤）
+          const extractChineseName = (stop) => {
+            if (!stop) return '未知站點';
+            return stop.split('<')[0];
+          };
+          
+          const fromStop = extractChineseName(canceledReservation.fromStop || '未知上車站');
+          const toStop = extractChineseName(canceledReservation.toStop || '未知下車站');
+          const reservationDate = canceledReservation.date ? canceledReservation.date.split('T')[0] : '未知日期';
+          const userName = canceledReservation.name || userData.name || '未知用戶';
+
+          const pushData = {
+            type: "pushLine",
+            message: `❌ 穿山甲專車預約取消\n\n日期：${reservationDate}\n班次：${canceledReservation.route}｜${info.time || ""} ${info.direction || ""}\n姓名：${userName}\n上車：${fromStop}\n下車：${toStop}`
+          };
+
+          await fetch(WORKER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(pushData)
+          });
+          console.log('🚫 群組推播：取消預約通知成功');
+        } else {
+          console.warn('找不到取消的預約資料，無法發送推播');
+        }
+      } catch (pushErr) {
+        console.error('❌ 取消推播錯誤:', pushErr);
+      }
+
+      // 重新載入預約列表
+      await loadExistingReservations();
+    } else {
+      alert('❌ 取消失敗：' + (result.message || '請稍後再試'));
+    }
+  } catch (error) {
+    console.error('取消預約錯誤:', error);
+    
+    if (error.message.includes('JSON') || error.message.includes('DOCTYPE')) {
+      alert('❌ 伺服器連接失敗，請檢查網路連線或稍後再試\n❌ Server connection failed, please check your network connection');
+    } else {
+      alert('❌ 取消預約時發生錯誤: ' + error.message);
+    }
   }
 }
 
