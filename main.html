@@ -645,8 +645,8 @@ function showStopSelection(direction) {
   // 過濾掉上車站
   stops.filter(stop => stop !== fromStop).forEach(stop => {
     const option = document.createElement('option');
-    option.value = stop;
-    option.textContent = stop;
+    option.value = stop.split('<')[0]; // 只取中文部分作為 value
+    option.innerHTML = stop; // 使用 innerHTML 而不是 textContent
     toStopSelect.appendChild(option);
   });
   
@@ -1046,15 +1046,19 @@ class ReservationValidator {
   }
 
   // R11, R12: 站點驗證
-  static validateStops(route, fromStop, toStop) {
-    const isValidFromStop = route.includes('A') ? 
-      fromStop === '行政大樓' : fromStop === '埔里總站';
-    
-    const stops = route.includes('A') ? stopsOutbound : stopsReturn;
-    const isValidToStop = stops.includes(toStop) && toStop !== fromStop;
-    
-    return isValidFromStop && isValidToStop;
-  }
+static validateStops(route, fromStop, toStop) {
+  // 提取純中文站名進行比較
+  const extractChineseName = (stop) => stop.split('<')[0];
+  
+  const isValidFromStop = route.includes('A') ? 
+    extractChineseName(fromStop) === '行政大樓' : extractChineseName(fromStop) === '埔里總站';
+  
+  const stops = route.includes('A') ? stopsOutbound : stopsReturn;
+  const stopNames = stops.map(stop => extractChineseName(stop));
+  const isValidToStop = stopNames.includes(extractChineseName(toStop)) && extractChineseName(toStop) !== extractChineseName(fromStop);
+  
+  return isValidFromStop && isValidToStop;
+}
 
   // 綜合驗證函數
   static async validateReservation(userId, dateStr, route, fromStop, toStop) {
