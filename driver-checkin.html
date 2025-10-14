@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>司机核销签到系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .date-selector {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 15px 0;
+            gap: 10px;
+        }
+        
+        .date-selector select {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+        
+        .card-container {
+            position: relative;
+            min-height: 500px;
+        }
+        
+        .card {
+            display: none;
+            padding: 20px;
+            animation: fadeIn 0.5s;
+        }
+        
+        .card.active {
+            display: block;
+        }
+        
+        .time-slot {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .passenger-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        
+        @media (min-width: 600px) {
+            .passenger-list {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .passenger-item {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #3498db;
+        }
+        
+        .passenger-item.cancelled {
+            border-left-color: #e74c3c;
+            opacity: 0.7;
+        }
+        
+        .passenger-info {
+            flex: 1;
+        }
+        
+        .passenger-time {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        
+        .passenger-status {
+            font-size: 14px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-top: 5px;
+            display: inline-block;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .checkin-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        
+        .checkin-btn:hover {
+            background: #219653;
+        }
+        
+        .checkin-btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        .checked-in {
+            color: #27ae60;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            gap: 10px;
+        }
+        
+        .page-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .page-btn:hover {
+            background: #2980b9;
+        }
+        
+        .page-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .page-indicator {
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>司机核销签到系统</h1>
+        </header>
+        
+        <div class="date-selector">
+            <label for="date-select">选择日期：</label>
+            <select id="date-select">
+                <option value="2025-10-13">2025年10月13日</option>
+                <option value="2025-10-14">2025年10月14日</option>
+            </select>
+        </div>
+        
+        <div class="card-container">
+            <div class="card active" id="card-1">
+                <div class="time-slot">时段 1: 14:00-15:00</div>
+                <div class="passenger-list" id="passenger-list-1">
+                    <!-- 乘客列表将通过JavaScript动态生成 -->
+                </div>
+            </div>
+            
+            <div class="card" id="card-2">
+                <div class="time-slot">时段 2: 15:00-16:00</div>
+                <div class="passenger-list" id="passenger-list-2">
+                    <!-- 乘客列表将通过JavaScript动态生成 -->
+                </div>
+            </div>
+            
+            <div class="card" id="card-3">
+                <div class="time-slot">时段 3: 19:00-20:00</div>
+                <div class="passenger-list" id="passenger-list-3">
+                    <!-- 乘客列表将通过JavaScript动态生成 -->
+                </div>
+            </div>
+            
+            <div class="card" id="card-4">
+                <div class="time-slot">时段 4: 20:00-21:00</div>
+                <div class="passenger-list" id="passenger-list-4">
+                    <!-- 乘客列表将通过JavaScript动态生成 -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="pagination">
+            <button class="page-btn" id="prev-btn">上一页</button>
+            <div class="page-indicator" id="page-indicator">1 / 4</div>
+            <button class="page-btn" id="next-btn">下一页</button>
+        </div>
+    </div>
+
+    <script>
+        // 模拟数据 - 实际应用中应从后端获取
+        const reservations = [
+            { timestamp: "2025-10-13 14:32:43", status: "已取消", checkin: "" },
+            { timestamp: "2025-10-13 14:44:36", status: "已取消", checkin: "" },
+            { timestamp: "2025-10-13 15:07:35", status: "已取消", checkin: "" },
+            { timestamp: "2025-10-13 19:09:45", status: "已取消", checkin: "" },
+            { timestamp: "2025-10-13 19:57:00", status: "预约成功", checkin: "" },
+            { timestamp: "2025-10-13 20:14:36", status: "预约成功", checkin: "" },
+            { timestamp: "2025-10-14 13:41:32", status: "预约成功", checkin: "" },
+            { timestamp: "2025-10-14 14:14:46", status: "预约成功", checkin: "" },
+            { timestamp: "2025-10-14 20:35:21", status: "预约成功", checkin: "" }
+        ];
+
+        // 时段定义
+        const timeSlots = [
+            { id: 1, name: "14:00-15:00", start: 14, end: 15 },
+            { id: 2, name: "15:00-16:00", start: 15, end: 16 },
+            { id: 3, name: "19:00-20:00", start: 19, end: 20 },
+            { id: 4, name: "20:00-21:00", start: 20, end: 21 }
+        ];
+
+        // 当前页面和日期
+        let currentPage = 1;
+        const totalPages = 4;
+        let currentDate = "2025-10-13";
+
+        // DOM元素
+        const dateSelect = document.getElementById('date-select');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const pageIndicator = document.getElementById('page-indicator');
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 绑定事件
+            dateSelect.addEventListener('change', handleDateChange);
+            prevBtn.addEventListener('click', goToPrevPage);
+            nextBtn.addEventListener('click', goToNextPage);
+            
+            // 初始加载数据
+            loadReservations();
+            updatePagination();
+        });
+
+        // 处理日期变更
+        function handleDateChange() {
+            currentDate = dateSelect.value;
+            currentPage = 1;
+            loadReservations();
+            updatePagination();
+        }
+
+        // 加载预约数据
+        function loadReservations() {
+            // 清空所有卡片
+            for (let i = 1; i <= totalPages; i++) {
+                const passengerList = document.getElementById(`passenger-list-${i}`);
+                passengerList.innerHTML = '';
+            }
+            
+            // 过滤当前日期的预约
+            const dateReservations = reservations.filter(res => {
+                return res.timestamp.startsWith(currentDate);
+            });
+            
+            // 按时段分组
+            const timeSlotReservations = {};
+            timeSlots.forEach(slot => {
+                timeSlotReservations[slot.id] = dateReservations.filter(res => {
+                    const hour = parseInt(res.timestamp.split(' ')[1].split(':')[0]);
+                    return hour >= slot.start && hour < slot.end;
+                });
+            });
+            
+            // 填充各时段卡片
+            timeSlots.forEach(slot => {
+                const passengerList = document.getElementById(`passenger-list-${slot.id}`);
+                const slotReservations = timeSlotReservations[slot.id];
+                
+                if (slotReservations.length === 0) {
+                    passengerList.innerHTML = '<div class="no-data">此时段暂无预约</div>';
+                    return;
+                }
+                
+                slotReservations.forEach((reservation, index) => {
+                    const passengerItem = document.createElement('div');
+                    passengerItem.className = `passenger-item ${reservation.status === '已取消' ? 'cancelled' : ''}`;
+                    
+                    const passengerInfo = document.createElement('div');
+                    passengerInfo.className = 'passenger-info';
+                    
+                    const timeText = document.createElement('div');
+                    timeText.className = 'passenger-time';
+                    timeText.textContent = reservation.timestamp.split(' ')[1];
+                    
+                    const statusText = document.createElement('div');
+                    statusText.className = `passenger-status ${reservation.status === '预约成功' ? 'status-success' : 'status-cancelled'}`;
+                    statusText.textContent = reservation.status;
+                    
+                    passengerInfo.appendChild(timeText);
+                    passengerInfo.appendChild(statusText);
+                    
+                    passengerItem.appendChild(passengerInfo);
+                    
+                    if (reservation.status === '预约成功') {
+                        if (reservation.checkin) {
+                            const checkedInText = document.createElement('div');
+                            checkedInText.className = 'checked-in';
+                            checkedInText.textContent = `已签到 ${reservation.checkin}`;
+                            passengerItem.appendChild(checkedInText);
+                        } else {
+                            const checkinBtn = document.createElement('button');
+                            checkinBtn.className = 'checkin-btn';
+                            checkinBtn.textContent = '签到';
+                            checkinBtn.addEventListener('click', () => handleCheckin(reservation, checkinBtn));
+                            passengerItem.appendChild(checkinBtn);
+                        }
+                    }
+                    
+                    passengerList.appendChild(passengerItem);
+                });
+            });
+        }
+
+        // 处理签到
+        function handleCheckin(reservation, button) {
+            if (confirm('确认此乘客已搭乘？')) {
+                // 在实际应用中，这里应该发送请求到后端更新数据
+                const now = new Date();
+                const checkinTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+                
+                reservation.checkin = checkinTime;
+                
+                // 更新UI
+                button.parentNode.removeChild(button);
+                
+                const checkedInText = document.createElement('div');
+                checkedInText.className = 'checked-in';
+                checkedInText.textContent = `已签到 ${checkinTime}`;
+                button.parentNode.appendChild(checkedInText);
+                
+                alert('签到成功！');
+            }
+        }
+
+        // 分页功能
+        function goToPrevPage() {
+            if (currentPage > 1) {
+                document.getElementById(`card-${currentPage}`).classList.remove('active');
+                currentPage--;
+                document.getElementById(`card-${currentPage}`).classList.add('active');
+                updatePagination();
+            }
+        }
+
+        function goToNextPage() {
+            if (currentPage < totalPages) {
+                document.getElementById(`card-${currentPage}`).classList.remove('active');
+                currentPage++;
+                document.getElementById(`card-${currentPage}`).classList.add('active');
+                updatePagination();
+            }
+        }
+
+        function updatePagination() {
+            pageIndicator.textContent = `${currentPage} / ${totalPages}`;
+            prevBtn.disabled = currentPage === 1;
+            nextBtn.disabled = currentPage === totalPages;
+        }
+    </script>
+</body>
+</html>
