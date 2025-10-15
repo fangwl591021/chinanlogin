@@ -145,6 +145,7 @@
 
   // === 📝 預約送出（含推播修正版） ===
   async function submitReservation(){
+    console.log('推播 payload 前：', flexPayload);
     const toStop=document.getElementById('toStop').value;
     if(!selectedDate||!selectedRoute||!toStop){alert('請完整選擇日期、班次與下車站');return;}
     const info=routeTimes[selectedRoute];
