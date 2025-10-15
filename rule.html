@@ -2,18 +2,22 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
+<title>穿山甲專車規則</title>
+</head>
+<body>
+<pre id="data"></pre>
 <script>
-const rules={
-  seatLimit:7,
-  maxPerDay:1,
-  advanceMinutes:30,
-  availableRoutes:[
-    {id:"A1",time:"22:00–22:30",direction:"暨大 → 埔里總站",eng:"NCNU → Puli Bus Terminal"},
-    {id:"B1",time:"22:30–23:00",direction:"埔里總站 → 暨大",eng:"Puli Bus Terminal → NCNU"},
-    {id:"A2",time:"23:00–23:30",direction:"暨大 → 埔里總站",eng:"NCNU → Puli Bus Terminal"},
-    {id:"B2",time:"23:30–24:00",direction:"埔里總站 → 暨大",eng:"Puli Bus Terminal → NCNU"}
+const rules = {
+  seatLimit: 7,
+  maxPerDay: 1,
+  advanceMinutes: 30,
+  availableRoutes: [
+    { id:"A1", time:"22:00–22:30", direction:"暨大 → 埔里總站", eng:"NCNU → Puli Bus Terminal" },
+    { id:"B1", time:"22:30–23:00", direction:"埔里總站 → 暨大", eng:"Puli Bus Terminal → NCNU" },
+    { id:"A2", time:"23:00–23:30", direction:"暨大 → 埔里總站", eng:"NCNU → Puli Bus Terminal" },
+    { id:"B2", time:"23:30–24:00", direction:"埔里總站 → 暨大", eng:"Puli Bus Terminal → NCNU" }
   ],
-  stopList:[
+  stopList: [
     ["行政大樓","NCNU Administrative Building"],["中餐廳","Zhong Can Ting (Chinese Restaurant)"],
     ["科技學院","College of Science and Technology"],["學人會館","Scholars’ Residence"],
     ["中城","Zhongcheng"],["下城","Xiacheng"],["坪頂","Pingding"],
@@ -22,6 +26,9 @@ const rules={
     ["埔里酒廠","Puli Distillery"],["埔里總站","Puli Bus Terminal"]
   ]
 };
-document.write(JSON.stringify(rules));
+
+// ✅ 輸出純 JSON 字串
+document.body.textContent = JSON.stringify(rules);
 </script>
-</head><body></body></html>
+</body>
+</html>
