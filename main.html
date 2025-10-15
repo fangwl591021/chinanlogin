@@ -427,49 +427,17 @@ async function preloadCalendarData() {
   }
 }
 
-// === 📅 月曆開關 ===
-async function toggleCalendar() {
-  const container = document.getElementById('calendarContainer');
+function toggleCalendar() {
+  const calendar = document.getElementById('calendarContainer');
   const btn = document.getElementById('calendarBtn');
-  const loadingSpan = document.getElementById('calendarLoading');
-
-  if (container.style.display === 'none') {
-    loadingSpan.style.display = 'inline-block';
-    btn.disabled = true;
-    btn.textContent = '⏳ 載入中...';
-    btn.innerHTML = '⏳ 載入中...<span class="en-text">Loading...</span><span id="calendarLoading" class="loading-dots" style="display:inline-block"></span>';
-    
-    try {
-      if (!calendarDataLoaded && !calendarLoading) {
-        await preloadCalendarData();
-      } else if (calendarLoading) {
-        let waitCount = 0;
-        while (calendarLoading && waitCount < 50) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-          waitCount++;
-        }
-      }
-      
-      renderCalendar();
-      
-      loadingSpan.style.display = 'none';
-      btn.disabled = false;
-      container.style.display = 'block';
-      btn.innerHTML = '📅 關閉月曆<span class="en-text">Close Calendar</span>';
-      container.scrollIntoView({ behavior: 'smooth' });
-      
-    } catch (error) {
-      console.error('載入月曆失敗 Failed to load calendar:', error);
-      loadingSpan.style.display = 'none';
-      btn.disabled = false;
-      btn.innerHTML = '📅 打開月曆<span class="en-text">Open Calendar</span>';
-    }
-    
-  } else {
-    container.style.display = 'none';
-    btn.innerHTML = '📅 打開月曆<span class="en-text">Open Calendar</span>';
-  }
+  const isHidden = window.getComputedStyle(calendar).display === 'none';
+  
+  calendar.style.display = isHidden ? 'block' : 'none';
+  btn.innerHTML = isHidden 
+    ? '📅 關閉月曆<span class="en-text">Close Calendar</span>' 
+    : '📅 打開月曆<span class="en-text">Open Calendar</span>';
 }
+
 
 // === 📅 月曆產生 ===
 function renderCalendar() {
