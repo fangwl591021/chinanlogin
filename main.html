@@ -1017,20 +1017,21 @@ class ReservationValidator {
     return selected >= today && selected <= maxDate;
   }
 
-  // 輔助函數：檢查是否為今天
+// 輔助函數：檢查是否為今天
   static isToday(dateStr) {
     const today = formatDateToLocal(new Date());
     return dateStr === today;
   }
 }
 
+// === 輔助函數：提取純中文站名 ===
 function getChineseStopName(stopWithHtml) {
-  return stopWithHtml.split('<')[0];  // 提取 HTML 前的中文站名
+  return stopWithHtml.split('<')[0];
 }
 
 function getEnglishStopName(stopWithHtml) {
   const match = stopWithHtml.match(/color: #3b82f6;'>([^<]+)</);
-  return match ? match[1] : '';  // 提取英文站名（如需要）
+  return match ? match[1] : '';
 }
 
   // 方案B核心：重複預約檢查 - 每天只能有1筆預約
