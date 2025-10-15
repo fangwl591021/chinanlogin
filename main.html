@@ -395,35 +395,66 @@ async function cancelReservation(id){
     renderReservations();
   }else alert('❌ 取消失敗');
 }
-function renderReservations(){
-  const c=document.getElementById('currentReservationCard');
-  if(!existingReservations.length){
-    c.innerHTML='<div style="text-align:center;padding:20px;">目前沒有預約紀錄<br><span class="en" style="color:#0056b3;">No reservation records</span></div>';
-    c.style.display='block';
+function renderReservations() {
+  const c = document.getElementById('currentReservationCard');
+  if (!existingReservations.length) {
+    c.innerHTML = `
+      <div style="text-align:center;padding:20px;">
+        目前沒有預約紀錄<br>
+        <span class="en" style="color:#0056b3;">No reservation records</span>
+      </div>`;
+    c.style.display = 'block';
     return;
   }
-  let h='<h3 style="text-align:center;">🧾 我的預約<span class="en" style="display:block;color:#0056b3;font-size:14px;">My Reservations</span></h3>';
-  existingReservations.forEach(r=>{
-    h+=`<div class="reservation-bubble">
-      <div class="bubble-header">🚌 穿山甲專車新預約<span class="en">Pangolin Shuttle New Reservation</span></div>
-      <div class="bubble-body">
-        日期：${r.date}<span class="en">Date: ${r.date}</span>
-        班次：${r.route}<span class="en">Route: ${r.route}</span>
-        姓名：${r.name}<span class="en">Name: ${r.name}</span>
-        電話：${r.phone}<span class="en">Phone: ${r.phone}</span>
-        上車：${r.fromStop}<span class="en">Pick-up: ${r.fromStop}</span>
-        下車：${r.toStop}<span class="en">Drop-off: ${r.toStop}</span>
-      </div>
-      <div class="bubble-footer">
-        <button class="cancel-btn-small" onclick="cancelReservation('${r.id}')">
-          取消預約<span class="en">Cancel</span>
-        </button>
-      </div>
-    </div>`;
+
+  // ✅ 找對應的英文名稱
+  function getEnglish(stopName) {
+    const match = stops.find(s => s[0] === stopName);
+    return match ? match[1] : stopName;
+  }
+
+  let h = `
+    <h3 style="text-align:center;">
+      🧾 我的預約
+      <span class="en" style="display:block;color:#0056b3;font-size:14px;">My Reservations</span>
+    </h3>`;
+
+  existingReservations.forEach(r => {
+    const fromEn = getEnglish(r.fromStop);
+    const toEn = getEnglish(r.toStop);
+
+    h += `
+      <div class="reservation-bubble">
+        <div class="bubble-header">
+          🚌 穿山甲專車新預約
+          <span class="en">Pangolin Shuttle New Reservation</span>
+        </div>
+        <div class="bubble-body">
+          日期：${r.date}<br>
+          <span class="en">Date: ${r.date}</span>
+          班次：${r.route}<br>
+          <span class="en">Route: ${r.route}</span>
+          姓名：${r.name}<br>
+          <span class="en">Name: ${r.name}</span>
+          電話：${r.phone}<br>
+          <span class="en">Phone: ${r.phone}</span>
+          上車：${r.fromStop}<br>
+          <span class="en">Pick-up: ${fromEn}</span>
+          下車：${r.toStop}<br>
+          <span class="en">Drop-off: ${toEn}</span>
+        </div>
+        <div class="bubble-footer">
+          <button class="cancel-btn-small" onclick="cancelReservation('${r.id}')">
+            取消預約<span class="en">Cancel</span>
+          </button>
+        </div>
+      </div>`;
   });
-  c.innerHTML=h;
-  c.style.display='block';
+
+  c.innerHTML = h;
+  c.style.display = 'block';
 }
+
 window.addEventListener('load',init);
 </script>
 </body>
