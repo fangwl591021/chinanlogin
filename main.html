@@ -67,25 +67,25 @@
       background: #fff;
       border: 1px solid #ccc;
       border-radius: 10px;
-      margin: 10px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      margin: 6px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
       overflow: hidden;
     }
     .bubble-header {
       background: #27acb2;
       color: #fff;
       font-weight: bold;
-      padding: 10px;
+      padding: 8px;
       text-align: center;
       font-size: 16px;
     }
     .bubble-body {
-      padding: 10px;
+      padding: 8px 10px;
       font-size: 14px;
-      line-height: 1.6;
+      line-height: 1.4;
     }
     .bubble-footer {
-      padding: 10px;
+      padding: 8px;
       text-align: center;
       background: #f8f8f8;
     }
@@ -94,8 +94,8 @@
       color: white;
       border: none;
       border-radius: 6px;
-      padding: 8px 14px;
-      font-size: 14px;
+      padding: 10px 20px;
+      font-size: 15px;
       font-weight: bold;
       cursor: pointer;
     }
@@ -103,7 +103,7 @@
       background: #fff;
       border: 2px solid #3c8050;
       border-radius: 10px;
-      padding: 14px;
+      padding: 18px 12px;
       text-align: center;
       cursor: pointer;
       font-size: 15px;
@@ -131,12 +131,15 @@
   <header>穿山甲專車預約<br><small>Pangolin Shuttle Reservation</small></header>
   <div id="userInfo" class="user-section">⏳ 系統初始化中 / Loading...</div>
 
+  <!-- 按鈕區 -->
   <div style="display: flex; gap: 10px; margin: 10px 16px;">
-    <button onclick="toggleCalendar()" style="flex: 1; background:#3c8050; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold;">
-      📅 打開月曆 / Open Calendar
+    <button onclick="toggleCalendar()" style="flex: 1; background:#3c8050; color:white; border:none; padding:10px; border-radius:8px; font-weight:bold;">
+      <div>📅 打開月曆</div>
+      <div style="font-size:13px;">Open Calendar</div>
     </button>
-    <button onclick="openRules()" style="flex: 0 0 auto; background:#27acb2; color:white; border:none; padding:12px 16px; border-radius:8px; font-weight:bold;">
-      📖 預約規則 / Reservation Rules
+    <button onclick="openRules()" style="flex: 1; background:#27acb2; color:white; border:none; padding:10px; border-radius:8px; font-weight:bold;">
+      <div>📖 預約規則</div>
+      <div style="font-size:13px;">Reservation Rules</div>
     </button>
   </div>
 
@@ -317,13 +320,15 @@
       }
       let h = '<h3 style="text-align:center;">🧾 我的預約 / My Reservations</h3>';
       existingReservations.forEach(r => {
+        const fromEN = stops.find(s => s[0] === r.fromStop)?.[1] || '';
+        const toEN = stops.find(s => s[0] === r.toStop)?.[1] || '';
         h += `<div class="reservation-bubble">
           <div class="bubble-header">穿山甲專車新預約<br><small>Pangolin Shuttle New Reservation</small></div>
           <div class="bubble-body">
             <b>日期：</b>${r.date}<br><small>Date: ${r.date}</small><br>
             <b>班次：</b>${r.routeName}<br><small>Route: ${r.routeName}</small><br>
-            <b>上車：</b>${r.fromStop}<br><small>Pick-up: ${r.fromStop}</small><br>
-            <b>下車：</b>${r.toStop}<br><small>Drop-off: ${r.toStop}</small>
+            <b>上車：</b>${r.fromStop}<br><small>Pick-up: ${fromEN}</small><br>
+            <b>下車：</b>${r.toStop}<br><small>Drop-off: ${toEN}</small>
           </div>
           <div class="bubble-footer">
             <button class="cancel-btn-small" onclick="cancelReservation('${r.id}')">取消預約 / Cancel</button>
