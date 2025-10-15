@@ -95,16 +95,23 @@ const WORKER_URL='https://delicate-math-7e61.fangwl591021.workers.dev/';
 let RULES=null,userData=null,existingReservations=[],selectedDate=null,selectedRoute=null;
 
 async function loadRules(){
-  try{
-    const res=await fetch('rule.html');
-    const txt=await res.text();
-    RULES=JSON.parse(txt);
-    console.log('📘 規則載入成功',RULES);
-  }catch(e){
-    console.error('❌ 載入規則失敗',e);
-    RULES={seatLimit:7,maxPerDay:1,advanceMinutes:30};
+  try {
+    const res = await fetch('rule.html', { cache: "no-store" });
+    const text = await res.text();
+
+    // 嘗試自動抽出 <pre> 或 <script> 內 JSON
+    const cleanText = text.trim().startsWith('<')
+      ? text.match(/\{[\s\S]*\}/)?.[0] || '{}'
+      : text;
+
+    RULES = JSON.parse(cleanText);
+    console.log('📘 規則載入成功', RULES);
+  } catch(e) {
+    console.error('❌ 載入規則失敗', e);
+    RULES = { seatLimit: 7, maxPerDay: 1, advanceMinutes: 30, stopList: [], availableRoutes: [] };
   }
 }
+
 
 function alertRules(){
   if(!RULES)return alert('規則尚未載入');
