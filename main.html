@@ -1022,6 +1022,17 @@ class ReservationValidator {
     const today = formatDateToLocal(new Date());
     return dateStr === today;
   }
+}
+
+// === 輔助函數：提取純中文站名 ===
+function getChineseStopName(stopWithHtml) {
+  return stopWithHtml.split('<')[0];
+}
+
+function getEnglishStopName(stopWithHtml) {
+  const match = stopWithHtml.match(/color: #3b82f6;'>([^<]+)</);
+  return match ? match[1] : '';
+}
 
   // 方案B核心：重複預約檢查 - 每天只能有1筆預約
   static hasExistingReservation(userId, dateStr) {
