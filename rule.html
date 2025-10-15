@@ -1,152 +1,40 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車預約規則 Pangolin Shuttle Bus Rules</title>
-<style>
-body {
-  font-family: system-ui, sans-serif;
-  background: #f5f6f7;
-  margin: 0;
-  padding: 0;
-  color: #333;
-  line-height: 1.6;
-}
-header {
-  background: #3c8050;
-  color: #fff;
-  text-align: center;
-  padding: 15px;
-  font-size: 22px;
-  font-weight: bold;
-  line-height: 1.3;
-}
-header span.en {
-  display: block;
-  font-size: 14px;
-  color: #fff;
-}
-main {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 20px;
-}
-section {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  margin-bottom: 20px;
-  padding: 20px;
-}
-h2 {
-  color: #3c8050;
-  font-size: 20px;
-  border-left: 6px solid #3c8050;
-  padding-left: 10px;
-  margin-bottom: 10px;
-  line-height: 1.3;
-}
-h2 span.en {
-  display: block;
-  color: #0056b3;
-  font-size: 14px;
-  font-weight: normal;
-}
-ul {
-  padding-left: 20px;
-}
-li {
-  margin-bottom: 8px;
-}
-li span.en {
-  display: block;
-  color: #0056b3;
-  font-size: 13px;
-}
-.notice {
-  background: #fff7e6;
-  border: 1px solid #ffcc66;
-  padding: 10px 15px;
-  border-radius: 8px;
-  color: #333;
-  font-weight: 500;
-  margin-top: 12px;
-}
-footer {
-  text-align: center;
-  padding: 20px;
-  font-size: 13px;
-  color: #888;
-}
-footer a {
-  color: #3c8050;
-  text-decoration: none;
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>穿山甲專車規則</title>
+  <script>
+    const rules = {
+      seatLimit: 7,              // 每班最多 7 人
+      maxPerDay: 1,              // 每人每日限 1 筆
+      advanceMinutes: 30,        // 出發前 30 分鐘停止預約
+      availableRoutes: [
+        { id: "A1", time: "22:00–22:30", direction: "暨大 → 埔里總站", eng: "NCNU → Puli Bus Terminal" },
+        { id: "B1", time: "22:30–23:00", direction: "埔里總站 → 暨大", eng: "Puli Bus Terminal → NCNU" },
+        { id: "A2", time: "23:00–23:30", direction: "暨大 → 埔里總站", eng: "NCNU → Puli Bus Terminal" },
+        { id: "B2", time: "23:30–24:00", direction: "埔里總站 → 暨大", eng: "Puli Bus Terminal → NCNU" }
+      ],
+      stopList: [
+        ["行政大樓", "NCNU Administrative Building"],
+        ["中餐廳", "Zhong Can Ting (Chinese Restaurant)"],
+        ["科技學院", "College of Science and Technology"],
+        ["學人會館", "Scholars’ Residence"],
+        ["中城", "Zhongcheng"],
+        ["下城", "Xiacheng"],
+        ["坪頂", "Pingding"],
+        ["愛蘭橋", "Ailan Bridge"],
+        ["大成國小", "Dacheng Elementary School"],
+        ["中山安七街口", "Zhongshan Anqi St. Intersection"],
+        ["榮民診所", "Veterans Clinic"],
+        ["埔里酒廠", "Puli Distillery"],
+        ["埔里總站", "Puli Bus Terminal"]
+      ]
+    };
+
+    // 直接回傳 JSON 給 main.html 使用
+    document.write(JSON.stringify(rules));
+  </script>
 </head>
-
-<body>
-<header>
-  專車預約規則
-  <span class="en">Pangolin Shuttle Reservation Rules</span>
-</header>
-
-<main>
-  <section>
-    <h2>🚍 班次與乘車時間 <span class="en">Bus Schedule & Routes</span></h2>
-    <ul>
-      <li>A1｜22:00–22:30 暨大 → 埔里總站<span class="en">A1 | 22:00–22:30 NCNU → Puli Bus Terminal</span></li>
-      <li>B1｜22:30–23:00 埔里總站 → 暨大<span class="en">B1 | 22:30–23:00 Puli Bus Terminal → NCNU</span></li>
-      <li>A2｜23:00–23:30 暨大 → 埔里總站<span class="en">A2 | 23:00–23:30 NCNU → Puli Bus Terminal</span></li>
-      <li>B2｜23:30–24:00 埔里總站 → 暨大<span class="en">B2 | 23:30–24:00 Puli Bus Terminal → NCNU</span></li>
-    </ul>
-  </section>
-
-  <section>
-    <h2>🧾 預約規則 <span class="en">Reservation Rules</span></h2>
-    <ul>
-      <li>每班次限額 7 名乘客，額滿即無法再預約。<span class="en">Each trip is limited to 7 passengers; once full, no more reservations are accepted.</span></li>
-      <li>每位學生每日限預約 1 班次，不得重複。<span class="en">Each student may book only one trip per day.</span></li>
-      <li>請於乘車前至少 30 分鐘完成預約。<span class="en">Please complete your reservation at least 30 minutes before departure.</span></li>
-      <li>若臨時無法搭乘，請於出發前取消，以釋出名額。<span class="en">If you cannot take the bus, please cancel before departure to release the seat.</span></li>
-      <li>預約完成後將顯示於「我的預約」清單中。<span class="en">After successful booking, the trip will appear in your “My Reservations” list.</span></li>
-    </ul>
-    <div class="notice">⚠️ 名額有限，請珍惜預約機會，勿惡意佔位。<br><span class="en">⚠️ Limited seats — please reserve responsibly.</span></div>
-  </section>
-
-  <section>
-    <h2>🚌 上下車地點 <span class="en">Pick-up & Drop-off Stops</span></h2>
-    <ul>
-      <li>行政大樓 / NCNU Administrative Building</li>
-      <li>中餐廳 / Zhong Can Ting (Chinese Restaurant)</li>
-      <li>科技學院 / College of Science and Technology</li>
-      <li>學人會館 / Scholars’ Residence</li>
-      <li>中城 / Zhongcheng</li>
-      <li>下城 / Xiacheng</li>
-      <li>坪頂 / Pingding</li>
-      <li>愛蘭橋 / Ailan Bridge</li>
-      <li>大成國小 / Dacheng Elementary School</li>
-      <li>中山安七街口 / Zhongshan Anqi St. Intersection</li>
-      <li>榮民診所 / Veterans Clinic</li>
-      <li>埔里酒廠 / Puli Distillery</li>
-      <li>埔里總站 / Puli Bus Terminal</li>
-    </ul>
-  </section>
-
-  <section>
-    <h2>📱 注意事項 <span class="en">Important Notes</span></h2>
-    <ul>
-      <li>請攜帶學生證以利身份確認。<span class="en">Please bring your student ID for verification.</span></li>
-      <li>上車前請提前 5 分鐘到達集合地點。<span class="en">Arrive at the stop at least 5 minutes before departure.</span></li>
-      <li>系統將於當日 23:50 關閉預約功能。<span class="en">Reservation system closes at 23:50 each day.</span></li>
-      <li>乘車當日未出席者，系統將紀錄一次未搭乘紀錄。<span class="en">No-shows will be recorded in the system.</span></li>
-    </ul>
-  </section>
-</main>
-
-<footer>
-  © 2025 NCNU Shuttle Team | <a href="main.html">回到預約系統 Back to Reservation</a>
-</footer>
-</body>
+<body></body>
 </html>
