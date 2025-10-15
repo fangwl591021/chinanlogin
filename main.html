@@ -345,22 +345,56 @@ function checkStopsReady(){
   document.getElementById('submitBtn').style.display=(from && to)?'block':'none';
 }
 async function submitReservation(){
-  const from=document.getElementById('fromStop').value;
-  const to=document.getElementById('toStop').value;
-  if(!selectedDate||!selectedRoute||!from||!to){alert('⚠️ 請完整選擇上下車地點');return;}
-  if(from===to){alert('⚠️ 上下車地點不可相同');return;}
-  const r=routes.find(r=>r.id===selectedRoute);
-  const data={
-    type:'reserve',userId:userData.userId,name:userData.name,
-    studentId:userData.studentId,department:userData.department,
-    phone:userData.phone||'',route:selectedRoute,
+  const from = document.getElementById('fromStop').value;
+  const to = document.getElementById('toStop').value;
+  if (!selectedDate || !selectedRoute || !from || !to) {
+    alert('⚠️ 請完整選擇上下車地點');
+    return;
+  }
+  if (from === to) {
+    alert('⚠️ 上下車地點不可相同');
+    return;
+  }
+
+  const r = routes.find(r => r.id === selectedRoute);
+  const data = {
+    type:'reserve', userId:userData.userId, name:userData.name,
+    studentId:userData.studentId, department:userData.department,
+    phone:userData.phone || '', route:selectedRoute,
     routeName:`${selectedRoute} | ${r.time} ${r.cn}`,
-    fromStop:from,toStop:to,date:selectedDate
+    fromStop:from, toStop:to, date:selectedDate
   };
-  const res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-  const j=await res.json();
-  if(j.status==='success'){alert('✅ 預約成功！');location.reload();}else alert('❌ 預約失敗');
+
+  const res = await fetch(WORKER_URL, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
+  });
+  const j = await res.json();
+
+  if (j.status === 'success') {
+    alert('✅ 預約成功！');
+    // 不 reload，只更新畫面
+    existingReservations.push({
+      id: j.id || `temp-${Date.now()}`,
+      date: data.date,
+      route: data.routeName,
+      name: data.name,
+      phone: data.phone,
+      fromStop: data.fromStop,
+      toStop: data.toStop
+    });
+    renderReservations();
+
+    // 重置表單
+    document.getElementById('submitBtn').style.display='none';
+    document.getElementById('stopSection').style.display='none';
+    document.getElementById('routeButtons').style.display='none';
+    document.getElementById('calendarContainer').style.display='none';
+    document.getElementById('selectedDate').textContent='';
+  } else {
+    alert('❌ 預約失敗，請稍後再試');
+  }
 }
+
 async function cancelReservation(id){
   if(!confirm('確定取消這筆預約？'))return;
   const r=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'cancel',id,userId:userData.userId})});
