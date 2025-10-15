@@ -341,13 +341,14 @@ async function init() {
     const profile = await liff.getProfile();
     console.log('用戶信息 User info:', profile);
     
-    // 並行處理：同時進行用戶驗證和載入預約
+    // 三重並行處理：用戶驗證、載入預約、預載月曆資料
     const [userCheckResult, reservationsResult] = await Promise.all([
       fetch(`${WORKER_URL}?check=${profile.userId}`).then(r => r.json()),
-      fetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`).then(r => r.json())
+      fetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`).then(r => r.json()),
+      preloadCalendarData() // 直接在初始化時執行
     ]);
     
-    console.log('✅ 並行載入完成 Parallel loading completed');
+    console.log('✅ 並行載入完成（含月曆資料）Parallel loading completed (including calendar data)');
     
     if (!userCheckResult.registered) {
       console.log('📝 用戶未註冊，跳轉到註冊頁面 User not registered, redirecting to registration page');
@@ -366,11 +367,6 @@ async function init() {
     
     // 直接渲染預約卡片
     renderCurrentReservationCard();
-    
-    // 背景預載月曆資料
-    preloadCalendarData().then(() => {
-      console.log('📅 月曆資料背景預載完成 Calendar data preloaded');
-    });
     
     console.log('🎉 系統初始化完成 System initialization completed');
     
