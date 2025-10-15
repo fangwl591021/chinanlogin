@@ -1,40 +1,27 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>穿山甲專車規則</title>
-  <script>
-    const rules = {
-      seatLimit: 7,              // 每班最多 7 人
-      maxPerDay: 1,              // 每人每日限 1 筆
-      advanceMinutes: 30,        // 出發前 30 分鐘停止預約
-      availableRoutes: [
-        { id: "A1", time: "22:00–22:30", direction: "暨大 → 埔里總站", eng: "NCNU → Puli Bus Terminal" },
-        { id: "B1", time: "22:30–23:00", direction: "埔里總站 → 暨大", eng: "Puli Bus Terminal → NCNU" },
-        { id: "A2", time: "23:00–23:30", direction: "暨大 → 埔里總站", eng: "NCNU → Puli Bus Terminal" },
-        { id: "B2", time: "23:30–24:00", direction: "埔里總站 → 暨大", eng: "Puli Bus Terminal → NCNU" }
-      ],
-      stopList: [
-        ["行政大樓", "NCNU Administrative Building"],
-        ["中餐廳", "Zhong Can Ting (Chinese Restaurant)"],
-        ["科技學院", "College of Science and Technology"],
-        ["學人會館", "Scholars’ Residence"],
-        ["中城", "Zhongcheng"],
-        ["下城", "Xiacheng"],
-        ["坪頂", "Pingding"],
-        ["愛蘭橋", "Ailan Bridge"],
-        ["大成國小", "Dacheng Elementary School"],
-        ["中山安七街口", "Zhongshan Anqi St. Intersection"],
-        ["榮民診所", "Veterans Clinic"],
-        ["埔里酒廠", "Puli Distillery"],
-        ["埔里總站", "Puli Bus Terminal"]
-      ]
-    };
-
-    // 直接回傳 JSON 給 main.html 使用
-    document.write(JSON.stringify(rules));
-  </script>
-</head>
-<body></body>
-</html>
+<meta charset="UTF-8">
+<script>
+const rules={
+  seatLimit:7,
+  maxPerDay:1,
+  advanceMinutes:30,
+  availableRoutes:[
+    {id:"A1",time:"22:00–22:30",direction:"暨大 → 埔里總站",eng:"NCNU → Puli Bus Terminal"},
+    {id:"B1",time:"22:30–23:00",direction:"埔里總站 → 暨大",eng:"Puli Bus Terminal → NCNU"},
+    {id:"A2",time:"23:00–23:30",direction:"暨大 → 埔里總站",eng:"NCNU → Puli Bus Terminal"},
+    {id:"B2",time:"23:30–24:00",direction:"埔里總站 → 暨大",eng:"Puli Bus Terminal → NCNU"}
+  ],
+  stopList:[
+    ["行政大樓","NCNU Administrative Building"],["中餐廳","Zhong Can Ting (Chinese Restaurant)"],
+    ["科技學院","College of Science and Technology"],["學人會館","Scholars’ Residence"],
+    ["中城","Zhongcheng"],["下城","Xiacheng"],["坪頂","Pingding"],
+    ["愛蘭橋","Ailan Bridge"],["大成國小","Dacheng Elementary School"],
+    ["中山安七街口","Zhongshan Anqi St. Intersection"],["榮民診所","Veterans Clinic"],
+    ["埔里酒廠","Puli Distillery"],["埔里總站","Puli Bus Terminal"]
+  ]
+};
+document.write(JSON.stringify(rules));
+</script>
+</head><body></body></html>
