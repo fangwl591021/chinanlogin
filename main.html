@@ -16,11 +16,11 @@
     .submit-btn { background:#3c8050; color:white; border:none; padding:15px; border-radius:8px; font-size:16px; font-weight:bold; cursor:pointer; margin:20px 16px; width:calc(100% - 32px); }
     .submit-btn small { display:block; font-size:12px; color:#e0e0e0; }
     .reservation-bubble { background:#fff; border:1px solid #ccc; border-radius:10px; margin:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1); overflow:hidden; }
-    .bubble-header { background:#27ACB2; color:#fff; font-weight:bold; padding:8px; text-align:center; }
+    .bubble-header { background:#27ACB2; color:#fff; font-weight:bold; padding:8px; text-align:center; font-size:16px; }
     .bubble-body { padding:10px; font-size:14px; line-height:1.5; }
     .bubble-footer { padding:10px; text-align:center; background:#f8f8f8; }
     .cancel-btn-small { background:#d32f2f; color:white; border:none; border-radius:6px; padding:6px 10px; cursor:pointer; font-weight:bold; }
-    .cancel-btn-small small { display:block; font-size:11px; color:#ffdddd; }
+    small { display:block; color:#777; font-size:12px; }
   </style>
 </head>
 <body>
@@ -28,7 +28,7 @@
     穿山甲專車預約
     <small>Pangolin Shuttle Reservation</small>
   </header>
-  
+
   <div id="userInfo" class="user-section">⏳ 系統初始化中...<br><small>System initializing...</small></div>
 
   <button onclick="toggleCalendar()" style="margin:10px 16px; padding:10px 16px; background:#3c8050; color:white; border:none; border-radius:6px; font-weight:bold;">
@@ -149,11 +149,12 @@ async function submitReservation(){
   const data={type:'reserve',userId:userData.userId,name:userData.name,studentId:userData.studentId,
     department:userData.department,phone:userData.phone||'',route:selectedRoute,
     routeName:`${selectedRoute} | ${info.time} ${info.direction}`,fromStop:from,toStop:toStop,date:selectedDate};
-  const r=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  const r=await fetch(`${WORKER_URL}?mode=reserve`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
   const j=await r.json();
   if(j.status==='success'){
     alert('✅ 預約成功！\nReservation Successful!');
-    location.reload();
+    existingReservations.push(data);
+    renderReservations();
   }else{
     alert('❌ 預約失敗\nReservation Failed');
   }
@@ -164,7 +165,8 @@ async function cancelReservation(id){
   const j=await r.json();
   if(j.status==='success'){
     alert('✅ 已取消預約\nReservation Cancelled');
-    location.reload();
+    existingReservations=existingReservations.filter(x=>x.id!==id);
+    renderReservations();
   }else{
     alert('❌ 取消失敗\nCancel Failed');
   }
@@ -178,11 +180,14 @@ function renderReservations(){
   let h='<h3 style="text-align:center;">🧾 我的預約<br><small>My Reservations</small></h3>';
   existingReservations.forEach(r=>{
     h+=`<div class="reservation-bubble">
-      <div class="bubble-header">${r.date} ${r.route}<br><small>Date / Route</small></div>
+      <div class="bubble-header">穿山甲專車新預約<br><small>Pangolin Shuttle New Reservation</small></div>
       <div class="bubble-body">
-        日期 / Date：${r.date}<br>
-        班次 / Route：${r.route}<br>
-        下車站 / Drop-off Stop：${r.toStop}
+        日期：${r.date}<br><small>Date: ${r.date}</small><br>
+        班次：${r.routeName||r.route}<br><small>Route: ${r.routeName||r.route}</small><br>
+        姓名：${r.name}<br><small>Name: ${r.name}</small><br>
+        電話：${r.phone||'未提供'}<br><small>Phone: ${r.phone||'Not Provided'}</small><br>
+        上車：${r.fromStop}<br><small>From: ${r.fromStop}</small><br>
+        下車：${r.toStop}<br><small>To: ${r.toStop}</small>
       </div>
       <div class="bubble-footer">
         <button class="cancel-btn-small" onclick="cancelReservation('${r.id}')">
