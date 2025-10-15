@@ -974,6 +974,7 @@ function formatDateToLocal(date) {
 }
 
 // === 預約規則驗證函數 ===
+// === 預約規則驗證函數 ===
 class ReservationValidator {
   // R4: 過去日期檢查
   static isPastDate(dateStr) {
@@ -992,7 +993,7 @@ class ReservationValidator {
   static isAfterDeadline(dateStr) {
     const today = new Date();
     const selected = new Date(dateStr);
-    
+
     // 如果是今天，檢查是否超過19:00
     if (this.isToday(dateStr)) {
       const now = new Date();
@@ -1009,42 +1010,32 @@ class ReservationValidator {
     const selected = new Date(dateStr);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const maxDate = new Date();
     maxDate.setDate(today.getDate() + RESERVATION_RULES.MAX_DAYS_AHEAD);
     maxDate.setHours(23, 59, 59, 999);
-    
+
     return selected >= today && selected <= maxDate;
   }
 
-// 輔助函數：檢查是否為今天
+  // 輔助函數：檢查是否為今天
   static isToday(dateStr) {
     const today = formatDateToLocal(new Date());
     return dateStr === today;
   }
-}
 
-// === 輔助函數：提取純中文站名 ===
-function getChineseStopName(stopWithHtml) {
-  return stopWithHtml.split('<')[0];
-}
-
-function getEnglishStopName(stopWithHtml) {
-  const match = stopWithHtml.match(/color: #3b82f6;'>([^<]+)</);
-  return match ? match[1] : '';
-}
-
-  // 方案B核心：重複預約檢查 - 每天只能有1筆預約
+  // ✅ R6: 是否已有預約（每天只允許一筆）
   static hasExistingReservation(userId, dateStr) {
     const userReservations = existingReservations.filter(
-      res => res.userId === userId && 
-             res.date.split('T')[0] === dateStr && 
-             res.status !== '已取消'
+      res =>
+        res.userId === userId &&
+        res.date.split('T')[0] === dateStr &&
+        res.status !== '已取消'
     );
     return userReservations.length >= RESERVATION_RULES.MAX_RESERVATIONS_PER_DAY;
   }
 
-  // R8: 班次容量檢查
+  // ✅ R8: 班次容量檢查
   static async isRouteFull(dateStr, route) {
     try {
       const res = await fetch(`${WORKER_URL}?mode=routeCapacity&date=${dateStr}&route=${route}`);
@@ -1056,22 +1047,24 @@ function getEnglishStopName(stopWithHtml) {
     }
   }
 
-  // R11, R12: 站點驗證
-static validateStops(route, fromStop, toStop) {
-  // 提取純中文站名進行比較
-  const extractChineseName = (stop) => stop.split('<')[0];
-  
-  const isValidFromStop = route.includes('A') ? 
-    extractChineseName(fromStop) === '行政大樓' : extractChineseName(fromStop) === '埔里總站';
-  
-  const stops = route.includes('A') ? stopsOutbound : stopsReturn;
-  const stopNames = stops.map(stop => extractChineseName(stop));
-  const isValidToStop = stopNames.includes(extractChineseName(toStop)) && extractChineseName(toStop) !== extractChineseName(fromStop);
-  
-  return isValidFromStop && isValidToStop;
-}
+  // ✅ R11 / R12: 站點驗證
+  static validateStops(route, fromStop, toStop) {
+    const extractChineseName = stop => stop.split('<')[0];
 
-  // 綜合驗證函數
+    const isValidFromStop = route.includes('A')
+      ? extractChineseName(fromStop) === '行政大樓'
+      : extractChineseName(fromStop) === '埔里總站';
+
+    const stops = route.includes('A') ? stopsOutbound : stopsReturn;
+    const stopNames = stops.map(stop => extractChineseName(stop));
+    const isValidToStop =
+      stopNames.includes(extractChineseName(toStop)) &&
+      extractChineseName(toStop) !== extractChineseName(fromStop);
+
+    return isValidFromStop && isValidToStop;
+  }
+
+  // ✅ 綜合驗證函數
   static async validateReservation(userId, dateStr, route, fromStop, toStop) {
     const errors = [];
 
@@ -1091,28 +1084,26 @@ static validateStops(route, fromStop, toStop) {
       errors.push(`今日預約已截止（${RESERVATION_RULES.DAILY_DEADLINE}）`);
     }
 
-    // 方案B核心規則：每天只能預約1個班次
     if (this.hasExistingReservation(userId, dateStr)) {
       errors.push('每天只能預約一個班次，您當天已有預約');
     }
 
-    // 檢查容量
     const isFull = await this.isRouteFull(dateStr, route);
     if (isFull) {
       errors.push('該班次已額滿');
     }
 
-    // 檢查站點
     if (!this.validateStops(route, fromStop, toStop)) {
       errors.push('站點選擇無效');
     }
 
     return {
       isValid: errors.length === 0,
-      errors: errors
+      errors: errors,
     };
   }
 }
+
 
 // 錯誤顯示輔助函數
 function showError(message) {
