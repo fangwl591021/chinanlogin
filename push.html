@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>穿山甲專車推播工具</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background:#f5f6f7; margin:0; padding:20px; }
+    h1 { text-align:center; color:#3c8050; }
+    .card { background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.1); padding:20px; max-width:480px; margin:20px auto; }
+    label { display:block; margin-top:10px; font-weight:bold; color:#333; }
+    input, select { width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; font-size:14px; margin-top:4px; }
+    button { background:#3c8050; color:white; border:none; border-radius:8px; padding:12px 16px; font-size:16px; font-weight:bold; cursor:pointer; width:100%; margin-top:20px; }
+    button:hover { background:#2d6140; }
+    .result { margin-top:20px; text-align:center; font-weight:bold; }
+  </style>
+</head>
+<body>
+  <h1>🚌 穿山甲專車推播工具</h1>
+
+  <div class="card">
+    <label>推播類型</label>
+    <select id="pushType">
+      <option value="reserve">新預約通知</option>
+      <option value="cancel">取消預約通知</option>
+    </select>
+
+    <label>日期</label>
+    <input id="date" type="date" />
+
+    <label>班次</label>
+    <input id="route" placeholder="例如：A1 | 22:00-22:30 暨大→埔里總站" />
+
+    <label>姓名</label>
+    <input id="name" placeholder="使用者姓名" />
+
+    <label>電話</label>
+    <input id="phone" placeholder="電話號碼" />
+
+    <label>上車站</label>
+    <input id="fromStop" placeholder="例如：行政大樓" />
+
+    <label>下車站</label>
+    <input id="toStop" placeholder="例如：埔里酒廠" />
+
+    <button onclick="sendPush()">🚀 發送推播</button>
+    <div id="result" class="result"></div>
+  </div>
+
+<script>
+const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+
+async function sendPush(){
+  const type = document.getElementById('pushType').value;
+  const date = document.getElementById('date').value;
+  const route = document.getElementById('route').value;
+  const name = document.getElementById('name').value;
+  const phone = document.getElementById('phone').value;
+  const fromStop = document.getElementById('fromStop').value;
+  const toStop = document.getElementById('toStop').value;
+  const result = document.getElementById('result');
+
+  if(!date || !route || !name){ result.textContent='❌ 必填欄位未完成'; result.style.color='red'; return; }
+
+  let color = type === 'cancel' ? '#D32F2F' : '#27ACB2';
+  let title = type === 'cancel' ? '🚫 穿山甲專車預約取消' : '🚌 穿山甲專車新預約';
+
+  const flex = {
+    type: 'flex',
+    altText: title,
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      header: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [{ type: 'text', text: title, weight: 'bold', color: '#fff', align: 'center' }],
+        backgroundColor: color
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'sm',
+        contents: [
+          { type: 'text', text: `日期：${date}` },
+          { type: 'text', text: `班次：${route}` },
+          { type: 'text', text: `姓名：${name}` },
+          { type: 'text', text: `電話：${phone}` },
+          { type: 'text', text: `上車：${fromStop}` },
+          { type: 'text', text: `下車：${toStop}` }
+        ]
+      }
+    }
+  };
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'pushLine', flex })
+    });
+    const text = await res.text();
+    console.log(text);
+    result.textContent = '✅ 推播成功！';
+    result.style.color = 'green';
+  } catch (e) {
+    console.error(e);
+    result.textContent = '❌ 推播失敗';
+    result.style.color = 'red';
+  }
+}
+</script>
+</body>
+</html>
