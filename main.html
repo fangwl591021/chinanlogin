@@ -694,11 +694,6 @@ async function submitReservation() {
     const info = routeTimes[selectedRoute];
     const fromStop = selectedRoute.includes('A') ? '行政大樓' : '埔里總站';
     
-    // 提取純中文站名（移除 HTML 標籤）
-    const extractChineseName = (stop) => stop.split('<')[0];
-    const cleanFromStop = extractChineseName(fromStop);
-    const cleanToStop = extractChineseName(toStop);
-    
     const data = {
       type: 'reserve',
       userId: userData.userId,
@@ -708,8 +703,8 @@ async function submitReservation() {
       phone: userData.phone || '',
       route: selectedRoute,
       routeName: `${selectedRoute} | ${info.time} ${info.direction}`,
-      fromStop: cleanFromStop,
-      toStop: cleanToStop,
+      fromStop: fromStop,
+      toStop: toStop,
       date: selectedDate
     };
     
@@ -727,36 +722,63 @@ async function submitReservation() {
 
       // LINE 群組推播通知（新預約）
       try {
-        const pushData = {
+        const flexPayload = {
           type: "pushLine",
-          message: `🚌 穿山甲專車新預約\n\n日期：${selectedDate}\n班次：${selectedRoute}｜${info.time} ${info.direction}\n姓名：${userData.name}\n電話：${userData.phone || "未填"}\n上車：${cleanFromStop}\n下車：${cleanToStop}`
+          flex: {
+            type: "flex",
+            altText: "穿山甲專車新預約通知",
+            contents: {
+              type: "bubble",
+              size: "mega",
+              body: {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                  {
+                    type: "box",
+                    layout: "vertical",
+                    backgroundColor: "#3c8050",
+                    paddingAll: "10px",
+                    contents: [
+                      {
+                        type: "text",
+                        text: "🚌 穿山甲專車新預約",
+                        color: "#ffffff",
+                        weight: "bold",
+                        size: "md",
+                        align: "center"
+                      }
+                    ]
+                  },
+                  {
+                    type: "box",
+                    layout: "vertical",
+                    backgroundColor: "#ffffff",
+                    paddingAll: "12px",
+                    spacing: "sm",
+                    contents: [
+                      { type: "text", text: `日期：${selectedDate}`, size: "sm", color: "#333" },
+                      { type: "text", text: `班次：${selectedRoute}｜${info.time} ${info.direction}`, size: "sm", color: "#333" },
+                      { type: "text", text: `姓名：${userData.name}`, size: "sm", color: "#333" },
+                      { type: "text", text: `電話：${userData.phone || "未填"}`, size: "sm", color: "#333" },
+                      { type: "text", text: `上車：${fromStop}`, size: "sm", color: "#333" },
+                      { type: "text", text: `下車：${toStop}`, size: "sm", color: "#333" }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
         };
 
-        console.log('發送推播數據:', pushData);
-        
-        const pushRes = await fetch(WORKER_URL, {
+        await fetch(WORKER_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(pushData)
+          body: JSON.stringify(flexPayload)
         });
-        
-        // 檢查推播響應狀態
-        if (!pushRes.ok) {
-          throw new Error(`推播請求失敗: ${pushRes.status}`);
-        }
-        
-        const pushResult = await pushRes.json();
-        console.log('✅ 群組推播響應:', pushResult);
-        
-        if (pushResult.status === 'success') {
-          console.log('✅ 推播發送成功');
-        } else {
-          console.warn('⚠️ 推播響應狀態不是 success:', pushResult);
-        }
-        
+        console.log('✅ 群組推播：新預約通知成功');
       } catch (err) {
         console.error('❌ 推播錯誤:', err);
-        // 推播失敗不影響主要預約流程，只是記錄錯誤
       }
 
       // 重置畫面
@@ -796,231 +818,98 @@ function resetReservationForm() {
 }
 
 async function cancelReservation(reservationId) {
-  if (!confirm('確定要取消這筆預約嗎？\nAre you sure you want to cancel this reservation?')) return;
+  if (!confirm('確定要取消這筆預約嗎？')) return;
 
   try {
-    console.log('開始取消預約:', reservationId);
-    
-    // 在取消前先保存要取消的預約資料
-    const reservationToCancel = existingReservations.find(r => r.id === reservationId);
-    
-    if (!reservationToCancel) {
-      console.error('找不到要取消的預約');
-      alert('找不到預約資料，請重新整理頁面後再試');
-      return;
-    }
-    
-    const response = await fetch(WORKER_URL, {
+    const res = await fetch(WORKER_URL, {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ 
-        type: 'cancel', 
-        id: reservationId, 
-        userId: userData.userId 
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'cancel', id: reservationId, userId: userData.userId })
     });
 
-    // 檢查響應狀態
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    // 檢查內容類型
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      console.error('非 JSON 響應:', text.substring(0, 200));
-      throw new Error('伺服器返回了非 JSON 響應');
-    }
-
-    const result = await response.json();
-    
+    const result = await res.json();
     if (result.status === 'success') {
-      alert('✅ 已取消預約\n✅ Reservation cancelled');
+      alert('✅ 已取消預約');
 
       // LINE 群組推播通知（取消預約）
       try {
-        const info = routeTimes[reservationToCancel.route] || {};
-        
-        // 提取純中文站名（移除 HTML 標籤）
-        const extractChineseName = (stop) => {
-          if (!stop) return '未知站點';
-          return stop.split('<')[0];
-        };
-        
-        const fromStop = extractChineseName(reservationToCancel.fromStop || '未知上車站');
-        const toStop = extractChineseName(reservationToCancel.toStop || '未知下車站');
-        const reservationDate = reservationToCancel.date ? reservationToCancel.date.split('T')[0] : '未知日期';
-        const userName = reservationToCancel.name || userData.name || '未知用戶';
+        const canceled = existingReservations.find(r => r.id === reservationId);
+        if (canceled) {
+          const info = routeTimes[canceled.route] || {};
+          const flexPayload = {
+            type: "pushLine",
+            flex: {
+              type: "flex",
+              altText: "穿山甲專車取消預約通知",
+              contents: {
+                type: "bubble",
+                size: "mega",
+                body: {
+                  type: "box",
+                  layout: "vertical",
+                  contents: [
+                    {
+                      type: "box",
+                      layout: "vertical",
+                      backgroundColor: "#b71c1c",
+                      paddingAll: "10px",
+                      contents: [
+                        {
+                          type: "text",
+                          text: "❌ 穿山甲專車預約取消",
+                          color: "#ffffff",
+                          weight: "bold",
+                          size: "md",
+                          align: "center"
+                        }
+                      ]
+                    },
+                    {
+                      type: "box",
+                      layout: "vertical",
+                      backgroundColor: "#ffffff",
+                      paddingAll: "12px",
+                      spacing: "sm",
+                      contents: [
+                        { type: "text", text: `日期：${canceled.date.split('T')[0]}`, size: "sm", color: "#333" },
+                        { type: "text", text: `班次：${canceled.route}｜${info.time || ""} ${info.direction || ""}`, size: "sm", color: "#333" },
+                        { type: "text", text: `姓名：${canceled.name}`, size: "sm", color: "#333" },
+                        { type: "text", text: `上車：${canceled.fromStop}`, size: "sm", color: "#333" },
+                        { type: "text", text: `下車：${canceled.toStop}`, size: "sm", color: "#333" }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          };
 
-        const pushData = {
-          type: "pushLine",
-          message: `❌ 穿山甲專車預約取消\n\n日期：${reservationDate}\n班次：${reservationToCancel.route}｜${info.time || ""} ${info.direction || ""}\n姓名：${userName}\n上車：${fromStop}\n下車：${toStop}`
-        };
-
-        console.log('發送取消推播數據:', pushData);
-        
-        const pushRes = await fetch(WORKER_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(pushData)
-        });
-        
-        // 檢查推播響應狀態
-        if (!pushRes.ok) {
-          throw new Error(`推播請求失敗: ${pushRes.status}`);
+          await fetch(WORKER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(flexPayload)
+          });
+          console.log('🚫 群組推播：取消預約通知成功');
         }
-        
-        const pushResult = await pushRes.json();
-        console.log('🚫 群組推播響應:', pushResult);
-        
-        if (pushResult.status === 'success') {
-          console.log('✅ 取消推播發送成功');
-        } else {
-          console.warn('⚠️ 取消推播響應狀態不是 success:', pushResult);
-        }
-        
       } catch (pushErr) {
         console.error('❌ 取消推播錯誤:', pushErr);
-        // 推播失敗不影響主要取消流程，只是記錄錯誤
       }
 
-      // 重新載入預約列表
       await loadExistingReservations();
     } else {
       alert('❌ 取消失敗：' + (result.message || '請稍後再試'));
     }
-  } catch (error) {
-    console.error('取消預約錯誤:', error);
-    
-    if (error.message.includes('JSON') || error.message.includes('DOCTYPE')) {
-      alert('❌ 伺服器連接失敗，請檢查網路連線或稍後再試\n❌ Server connection failed, please check your network connection');
-    } else {
-      alert('❌ 取消預約時發生錯誤: ' + error.message);
-    }
+  } catch (e) {
+    console.error('取消預約錯誤', e);
+    alert('❌ 取消預約時發生錯誤');
   }
 }
-      // LINE 群組推播通知(新預約) - 使用 Flex Message
-      try {
-        const flexPayload = {
-          type: "pushLine",
-          flex: {
-            type: "flex",
-            altText: "穿山甲專車新預約通知",
-            contents: {
-              type: "bubble",
-              size: "mega",
-              body: {
-                type: "box",
-                layout: "vertical",
-                contents: [
-                  {
-                    type: "box",
-                    layout: "vertical",
-                    backgroundColor: "#3c8050",
-                    paddingAll: "10px",
-                    contents: [
-                      {
-                        type: "text",
-                        text: "🚌 穿山甲專車新預約",
-                        color: "#ffffff",
-                        weight: "bold",
-                        size: "md",
-                        align: "center"
-                      }
-                    ]
-                  },
-                  {
-                    type: "box",
-                    layout: "vertical",
-                    backgroundColor: "#ffffff",
-                    paddingAll: "12px",
-                    spacing: "sm",
-                    contents: [
-                      { 
-                        type: "text", 
-                        text: `日期：${selectedDate}`, 
-                        size: "sm", 
-                        color: "#333" 
-                      },
-                      { 
-                        type: "text", 
-                        text: `班次：${selectedRoute}｜${info.time} ${info.direction}`, 
-                        size: "sm", 
-                        color: "#333" 
-                      },
-                      { 
-                        type: "text", 
-                        text: `姓名：${userData.name}`, 
-                        size: "sm", 
-                        color: "#333" 
-                      },
-                      { 
-                        type: "text", 
-                        text: `電話：${userData.phone || "未填"}`, 
-                        size: "sm", 
-                        color: "#333" 
-                      },
-                      { 
-                        type: "text", 
-                        text: `上車：${cleanFromStop}`, 
-                        size: "sm", 
-                        color: "#333" 
-                      },
-                      { 
-                        type: "text", 
-                        text: `下車：${cleanToStop}`, 
-                        size: "sm", 
-                        color: "#333" 
-                      }
-                    ]
-                  }
-                ]
-              }
-            }
-          }
-        };
-
-        console.log('發送新預約推播:', JSON.stringify(flexPayload, null, 2));
-        
-        const pushRes = await fetch(WORKER_URL, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(flexPayload)
-        });
-        
-        if (!pushRes.ok) {
-          const errorText = await pushRes.text();
-          console.error('推播請求失敗:', errorText);
-          throw new Error(`推播失敗: HTTP ${pushRes.status}`);
-        }
-        
-        const pushResult = await pushRes.json();
-        console.log('✅ 新預約推播成功:', pushResult);
-        
-      } catch (err) {
-        console.error('❌ 新預約推播錯誤:', err.message);
-      }
 
 // === 載入預約 ===
 async function loadExistingReservations() {
   try {
-    console.log('載入預約記錄...');
     const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
-    
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    
     const result = await res.json();
-    console.log('預約記錄載入結果:', result);
-    
     existingReservations = result.reservations || [];
     renderCurrentReservationCard();
   } catch (e) {
@@ -1034,90 +923,36 @@ function renderCurrentReservationCard() {
   const container = document.getElementById('currentReservationCard');
   
   if (!existingReservations || existingReservations.length === 0) {
-    container.innerHTML = '<div class="no-reservation">目前沒有預約紀錄<br><small style="color: #3b82f6;">No Reservation Records</small></div>';
+    container.innerHTML = '<div class="no-reservation">目前沒有預約紀錄</div>';
     container.style.display = 'block';
     return;
   }
   
   let html = '<div class="carousel-container">';
-  html += '<div class="carousel-title">🧾 我的預約<br><small style="color: #3b82f6; font-size: 14px;">My Reservations</small></div>';
+  html += '<div class="carousel-title">🧾 我的預約</div>';
   html += '<div class="carousel">';
   
   existingReservations.forEach(r => {
     const routeInfo = routeTimes[r.route] || { time: r.route, direction: '未知路線' };
-    const dateObj = new Date(r.date);
-    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-    const weekdayEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const dayOfWeek = weekdays[dateObj.getDay()];
-    const dayOfWeekEn = weekdayEn[dateObj.getDay()];
-    
-    // 路線方向中英對照
-    let directionZh = routeInfo.direction;
-    let directionEn = '';
-    if (routeInfo.direction.includes('暨大→埔里總站')) {
-      directionEn = 'NCNU → Puli Terminal';
-    } else if (routeInfo.direction.includes('埔里總站→暨大')) {
-      directionEn = 'Puli Terminal → NCNU';
-    }
-    
-    // 站點中英對照映射
-    const stopMap = {
-      '行政大樓': 'NCNU Administrative Building',
-      '中餐廳': 'Zhong Can Ting(Chinese Restaurant)',
-      '科技學院': 'College of Science and Technology',
-      '學人會館': 'Scholars\' Residence',
-      '中城': 'Zhongcheng',
-      '下城': 'Xiacheng',
-      '坪頂': 'Pingding',
-      '愛蘭橋': 'Ailan Bridge',
-      '大成國小': 'Dacheng Elementary School',
-      '中山安七街口': 'Zhongshan Anqi St. Intersection',
-      '榮民診所': 'Veterans Clinic',
-      '埔里酒廠': 'Puli Distillery',
-      '埔里總站': 'Puli Bus Terminal'
-    };
-    
-    const fromStopEn = stopMap[r.fromStop] || r.fromStop;
-    const toStopEn = stopMap[r.toStop] || r.toStop;
-    
     html += `
-      <div class="reservation-bubble" style="min-width: 190px;">
-        <div class="bubble-header">
-          ${r.date.split('T')[0]} (週${dayOfWeek})<br>
-          <small style="font-size: 12px; opacity: 0.9;">${r.date.split('T')[0]} (${dayOfWeekEn})</small>
-        </div>
+      <div class="reservation-bubble">
+        <div class="bubble-header">${r.date} (${getDayOfWeek(r.date)})</div>
         <div class="bubble-body">
           <div class="bubble-line">
-            <strong>班次<br><small style="color: #3b82f6;">Time</small></strong>
+            <strong>班次</strong>
             <span class="route-time">${routeInfo.time}</span>
           </div>
           <div class="bubble-line">
-            <strong>路線<br><small style="color: #3b82f6;">Route</small></strong>
-            <span>
-              ${directionZh}<br>
-              <small style="color: #3b82f6; font-size: 11px;">${directionEn}</small>
-            </span>
+            <strong>路線</strong>
+            <span>${routeInfo.direction}</span>
           </div>
           <div class="bubble-line">
-            <strong>上車站<br><small style="color: #3b82f6;">From</small></strong>
-            <span>
-              ${r.fromStop}<br>
-              <small style="color: #3b82f6; font-size: 11px;">${fromStopEn}</small>
-            </span>
-          </div>
-          <div class="bubble-line">
-            <strong>下車站<br><small style="color: #3b82f6;">To</small></strong>
-            <span>
-              ${r.toStop}<br>
-              <small style="color: #3b82f6; font-size: 11px;">${toStopEn}</small>
-            </span>
+            <strong>下車站</strong>
+            <span>${r.toStop}</span>
           </div>
         </div>
         <div class="bubble-footer">
-          <button class="cancel-btn-small" onclick="cancelReservation('${r.id}')">
-            取消預約<br>
-            <small style="font-size: 10px; opacity: 0.8;">Cancel</small>
-          </button>
+          <button class="cancel-btn-small" onclick="cancelReservation('${r.id}')">取消預約</button>
         </div>
       </div>
     `;
