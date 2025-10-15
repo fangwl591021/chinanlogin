@@ -3,42 +3,56 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>穿山甲專車預約</title>
+  <title>穿山甲專車預約 Pangolin Shuttle Reservation</title>
   <style>
     body { font-family: system-ui, sans-serif; background:#f5f6f7; margin:0; padding:0; }
     header { background:#3c8050; color:#fff; text-align:center; padding:15px; font-size:22px; font-weight:bold; }
+    header small { display:block; font-size:14px; color:#e0e0e0; }
     .user-section { background:white; margin:16px; padding:16px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
     .user-name { font-size:20px; font-weight:bold; color:#333; margin-bottom:5px; }
     .user-info { font-size:14px; color:#666; }
     .calendar-day { background:#fff; border:1px solid #ddd; padding:6px; border-radius:4px; text-align:center; cursor:pointer; }
     .calendar-day.selected { background:#3c8050; color:#fff; }
     .submit-btn { background:#3c8050; color:white; border:none; padding:15px; border-radius:8px; font-size:16px; font-weight:bold; cursor:pointer; margin:20px 16px; width:calc(100% - 32px); }
+    .submit-btn small { display:block; font-size:12px; color:#e0e0e0; }
     .reservation-bubble { background:#fff; border:1px solid #ccc; border-radius:10px; margin:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1); overflow:hidden; }
     .bubble-header { background:#27ACB2; color:#fff; font-weight:bold; padding:8px; text-align:center; }
     .bubble-body { padding:10px; font-size:14px; line-height:1.5; }
     .bubble-footer { padding:10px; text-align:center; background:#f8f8f8; }
     .cancel-btn-small { background:#d32f2f; color:white; border:none; border-radius:6px; padding:6px 10px; cursor:pointer; font-weight:bold; }
+    .cancel-btn-small small { display:block; font-size:11px; color:#ffdddd; }
   </style>
 </head>
 <body>
-  <header>穿山甲專車預約</header>
-  <div id="userInfo" class="user-section">⏳ 系統初始化中...</div>
+  <header>
+    穿山甲專車預約
+    <small>Pangolin Shuttle Reservation</small>
+  </header>
+  
+  <div id="userInfo" class="user-section">⏳ 系統初始化中...<br><small>System initializing...</small></div>
 
-  <button onclick="toggleCalendar()" style="margin:10px 16px; padding:10px 16px; background:#3c8050; color:white; border:none; border-radius:6px; font-weight:bold;">📅 打開月曆</button>
+  <button onclick="toggleCalendar()" style="margin:10px 16px; padding:10px 16px; background:#3c8050; color:white; border:none; border-radius:6px; font-weight:bold;">
+    📅 打開月曆<br><small>Open Calendar</small>
+  </button>
+
   <div id="calendarContainer" style="display:none; padding:0 16px;">
     <h3 id="calendarTitle"></h3>
     <div id="calendar" style="display:grid; grid-template-columns:repeat(7,1fr); gap:4px;"></div>
   </div>
 
   <div id="selectedDate" style="margin:10px 16px; color:#2e7d32; display:none;"></div>
+
   <div id="routeButtons" style="display:none; grid-template-columns:1fr 1fr; gap:10px; padding:0 16px;"></div>
 
   <div id="stopSection" style="display:none; padding:0 16px;">
-    <h3>請選擇下車站</h3>
-    <select id="toStop"><option>請選擇</option></select>
+    <h3>請選擇下車站<br><small>Select Drop-off Stop</small></h3>
+    <select id="toStop"><option>請選擇 / Select</option></select>
   </div>
 
-  <button id="submitBtn" class="submit-btn" onclick="submitReservation()" style="display:none;">送出預約</button>
+  <button id="submitBtn" class="submit-btn" onclick="submitReservation()" style="display:none;">
+    送出預約<br><small>Submit Reservation</small>
+  </button>
+
   <div id="currentReservationCard" style="display:none;"></div>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -49,10 +63,10 @@ let userData=null, existingReservations=[], selectedDate=null, selectedRoute=nul
 const stopsOutbound=["行政大樓","中餐廳","科技學院","學人會館","中城","下城","坪頂","愛蘭橋","大成國小","中山安七街口","榮民診所","埔里酒廠","埔里總站"];
 const stopsReturn=["埔里總站","埔里酒廠","榮民診所","中山安七街口","大成國小","愛蘭橋","坪頂","下城","中城","學人會館","科技學院","中餐廳","行政大樓"];
 const routes={
-  'A1':{time:'22:00-22:30',direction:'暨大→埔里總站'},
-  'B1':{time:'22:30-23:00',direction:'埔里總站→暨大'},
-  'A2':{time:'23:00-23:30',direction:'暨大→埔里總站'},
-  'B2':{time:'23:30-24:00',direction:'埔里總站→暨大'}
+  'A1':{time:'22:00-22:30',direction:'暨大→埔里總站 / NCNU → Puli Terminal'},
+  'B1':{time:'22:30-23:00',direction:'埔里總站→暨大 / Puli Terminal → NCNU'},
+  'A2':{time:'23:00-23:30',direction:'暨大→埔里總站 / NCNU → Puli Terminal'},
+  'B2':{time:'23:30-24:00',direction:'埔里總站→暨大 / Puli Terminal → NCNU'}
 };
 
 async function init(){
@@ -71,7 +85,10 @@ async function init(){
       <div class="user-info">${userData.department} | ${userData.studentId}</div>
     `;
     renderReservations();
-  }catch(e){console.error(e);document.getElementById('userInfo').innerText='❌ 初始化失敗';}
+  }catch(e){
+    console.error(e);
+    document.getElementById('userInfo').innerHTML='❌ 初始化失敗<br><small>Initialization Failed</small>';
+  }
 }
 
 function toggleCalendar(){
@@ -79,91 +96,103 @@ function toggleCalendar(){
   c.style.display=c.style.display==='none'?'block':'none';
   renderCalendar();
 }
-
 function renderCalendar(){
   const cal=document.getElementById('calendar');
   const now=new Date(),y=now.getFullYear(),m=now.getMonth();
-  document.getElementById('calendarTitle').innerText=`${y}年${m+1}月`;
+  document.getElementById('calendarTitle').innerHTML=`${y}年${m+1}月<br><small>${y}/${m+1}</small>`;
   const first=new Date(y,m,1),last=new Date(y,m+1,0);
   let html='';const wd=first.getDay();
   for(let i=0;i<wd;i++)html+='<div></div>';
   for(let d=1;d<=last.getDate();d++){
     const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    html+=`<div class="calendar-day" onclick="selectDate('${ds}')">${d}</div>`;
+    html+=`<div class="calendar-day" onclick="selectDate('${ds}')">${d}<br><small>Day</small></div>`;
   }
   cal.innerHTML=html;
 }
-
 function selectDate(ds){
   selectedDate=ds;
-  document.getElementById('selectedDate').textContent=`✅ 已選擇日期：${ds}`;
+  document.getElementById('selectedDate').innerHTML=`✅ 已選擇日期：${ds}<br><small>Selected Date: ${ds}</small>`;
   document.getElementById('selectedDate').style.display='block';
   renderRoutes();
 }
-
 function renderRoutes(){
   const c=document.getElementById('routeButtons');
   let html='';
   for(const [id,info] of Object.entries(routes)){
-    html+=`<button class="calendar-day" onclick="selectRoute('${id}','${info.direction}')">${id}<br>${info.direction}</button>`;
+    html+=`
+      <button class="calendar-day" onclick="selectRoute('${id}','${info.direction}')">
+        ${id}<br><small>${info.direction}</small>
+      </button>`;
   }
   c.innerHTML=html;c.style.display='grid';
 }
-
 function selectRoute(id,dir){
   selectedRoute=id;
   const toSel=document.getElementById('toStop');
-  toSel.innerHTML='<option>請選擇下車站</option>';
-  const list=dir.includes('暨大→')?stopsOutbound:stopsReturn;
-  const from=dir.includes('暨大→')?'行政大樓':'埔里總站';
-  list.filter(s=>s!==from).forEach(s=>{
+  toSel.innerHTML='<option>請選擇下車站 / Select Drop-off Stop</option>';
+  const list=dir.includes('NCNU')?stopsOutbound:stopsReturn;
+  const from=dir.includes('NCNU')?'行政大樓 / NCNU':'埔里總站 / Puli Terminal';
+  list.filter(s=>!s.includes(from.split(' / ')[0])).forEach(s=>{
     const op=document.createElement('option');op.value=s;op.textContent=s;toSel.appendChild(op);
   });
   document.getElementById('stopSection').style.display='block';
   toSel.onchange=()=>document.getElementById('submitBtn').style.display=toSel.value?'block':'none';
 }
-
 async function submitReservation(){
   const toStop=document.getElementById('toStop').value;
-  if(!selectedDate||!selectedRoute||!toStop){alert('請完整選擇');return;}
+  if(!selectedDate||!selectedRoute||!toStop){
+    alert('⚠️ 請完整選擇所有欄位\nPlease complete all fields');
+    return;
+  }
   const info=routes[selectedRoute];
   const from=selectedRoute.includes('A')?'行政大樓':'埔里總站';
   const data={type:'reserve',userId:userData.userId,name:userData.name,studentId:userData.studentId,
     department:userData.department,phone:userData.phone||'',route:selectedRoute,
-    routeName:`${selectedRoute} | ${info.time} ${info.direction}`,fromStop:from,toStop,toStop,date:selectedDate};
+    routeName:`${selectedRoute} | ${info.time} ${info.direction}`,fromStop:from,toStop:toStop,date:selectedDate};
   const r=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
   const j=await r.json();
-  if(j.status==='success'){alert('✅ 預約成功！');location.reload();}
-  else alert('❌ 預約失敗');
+  if(j.status==='success'){
+    alert('✅ 預約成功！\nReservation Successful!');
+    location.reload();
+  }else{
+    alert('❌ 預約失敗\nReservation Failed');
+  }
 }
-
 async function cancelReservation(id){
-  if(!confirm('確定取消這筆預約？'))return;
+  if(!confirm('確定取消這筆預約？\nAre you sure to cancel this reservation?'))return;
   const r=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'cancel',id,userId:userData.userId})});
   const j=await r.json();
-  if(j.status==='success'){alert('✅ 已取消');location.reload();}else alert('❌ 取消失敗');
+  if(j.status==='success'){
+    alert('✅ 已取消預約\nReservation Cancelled');
+    location.reload();
+  }else{
+    alert('❌ 取消失敗\nCancel Failed');
+  }
 }
-
 function renderReservations(){
   const c=document.getElementById('currentReservationCard');
-  if(!existingReservations.length){c.innerHTML='<div style="text-align:center;padding:20px;">目前沒有預約紀錄</div>';c.style.display='block';return;}
-  let h='<h3 style="text-align:center;">🧾 我的預約</h3>';
+  if(!existingReservations.length){
+    c.innerHTML='<div style="text-align:center;padding:20px;">目前沒有預約紀錄<br><small>No Reservations Yet</small></div>';
+    c.style.display='block';return;
+  }
+  let h='<h3 style="text-align:center;">🧾 我的預約<br><small>My Reservations</small></h3>';
   existingReservations.forEach(r=>{
     h+=`<div class="reservation-bubble">
-      <div class="bubble-header">${r.date} ${r.route}</div>
+      <div class="bubble-header">${r.date} ${r.route}<br><small>Date / Route</small></div>
       <div class="bubble-body">
-        日期：${r.date}<br>
-        班次：${r.route}<br>
-        下車站：${r.toStop}
+        日期 / Date：${r.date}<br>
+        班次 / Route：${r.route}<br>
+        下車站 / Drop-off Stop：${r.toStop}
       </div>
       <div class="bubble-footer">
-        <button class="cancel-btn-small" onclick="cancelReservation('${r.id}')">取消預約</button>
+        <button class="cancel-btn-small" onclick="cancelReservation('${r.id}')">
+          取消預約<br><small>Cancel Reservation</small>
+        </button>
       </div>
     </div>`;
   });
   c.innerHTML=h;c.style.display='block';
 }
-
 window.addEventListener('load',init);
 </script>
 </body>
