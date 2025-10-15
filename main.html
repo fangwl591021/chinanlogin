@@ -79,6 +79,7 @@ function toggleCalendar(){
   c.style.display=c.style.display==='none'?'block':'none';
   renderCalendar();
 }
+
 function renderCalendar(){
   const cal=document.getElementById('calendar');
   const now=new Date(),y=now.getFullYear(),m=now.getMonth();
@@ -92,12 +93,14 @@ function renderCalendar(){
   }
   cal.innerHTML=html;
 }
+
 function selectDate(ds){
   selectedDate=ds;
   document.getElementById('selectedDate').textContent=`✅ 已選擇日期：${ds}`;
   document.getElementById('selectedDate').style.display='block';
   renderRoutes();
 }
+
 function renderRoutes(){
   const c=document.getElementById('routeButtons');
   let html='';
@@ -106,6 +109,7 @@ function renderRoutes(){
   }
   c.innerHTML=html;c.style.display='grid';
 }
+
 function selectRoute(id,dir){
   selectedRoute=id;
   const toSel=document.getElementById('toStop');
@@ -118,36 +122,28 @@ function selectRoute(id,dir){
   document.getElementById('stopSection').style.display='block';
   toSel.onchange=()=>document.getElementById('submitBtn').style.display=toSel.value?'block':'none';
 }
+
 async function submitReservation(){
   const toStop=document.getElementById('toStop').value;
   if(!selectedDate||!selectedRoute||!toStop){alert('請完整選擇');return;}
   const info=routes[selectedRoute];
   const from=selectedRoute.includes('A')?'行政大樓':'埔里總站';
-  const clean=t=>t.split('<')[0];
   const data={type:'reserve',userId:userData.userId,name:userData.name,studentId:userData.studentId,
     department:userData.department,phone:userData.phone||'',route:selectedRoute,
-    routeName:`${selectedRoute} | ${info.time} ${info.direction}`,fromStop:clean(from),toStop:clean(toStop),date:selectedDate};
+    routeName:`${selectedRoute} | ${info.time} ${info.direction}`,fromStop:from,toStop,toStop,date:selectedDate};
   const r=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
   const j=await r.json();
-  if(j.status==='success'){alert('✅ 預約成功！');await sendPush(data);location.reload();}
+  if(j.status==='success'){alert('✅ 預約成功！');location.reload();}
   else alert('❌ 預約失敗');
 }
-async function sendPush(d){
-  const f={type:'flex',altText:'穿山甲專車新預約',contents:{type:'bubble',
-    header:{type:'box',layout:'vertical',contents:[{type:'text',text:'🚌 穿山甲專車新預約',weight:'bold',color:'#fff',align:'center'}],backgroundColor:'#27ACB2'},
-    body:{type:'box',layout:'vertical',contents:[
-      {type:'text',text:`日期：${d.date}`},{type:'text',text:`班次：${d.routeName}`},
-      {type:'text',text:`姓名：${d.name}`},{type:'text',text:`電話：${d.phone}`},
-      {type:'text',text:`上車：${d.fromStop}`},{type:'text',text:`下車：${d.toStop}`}
-    ]}}};
-  await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'pushLine',flex:f})});
-}
+
 async function cancelReservation(id){
   if(!confirm('確定取消這筆預約？'))return;
   const r=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'cancel',id,userId:userData.userId})});
   const j=await r.json();
   if(j.status==='success'){alert('✅ 已取消');location.reload();}else alert('❌ 取消失敗');
 }
+
 function renderReservations(){
   const c=document.getElementById('currentReservationCard');
   if(!existingReservations.length){c.innerHTML='<div style="text-align:center;padding:20px;">目前沒有預約紀錄</div>';c.style.display='block';return;}
@@ -167,6 +163,7 @@ function renderReservations(){
   });
   c.innerHTML=h;c.style.display='block';
 }
+
 window.addEventListener('load',init);
 </script>
 </body>
