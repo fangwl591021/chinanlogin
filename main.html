@@ -21,7 +21,6 @@ header {
 }
 header span.en { display:block; font-size:14px; color:#fff; }
 
-/* 按鈕群組 */
 .btn-dual {
   display:flex; justify-content:space-between; gap:10px;
   margin:10px 16px;
@@ -36,7 +35,6 @@ header span.en { display:block; font-size:14px; color:#fff; }
 }
 .dual-btn span.en { display:block; font-size:13px; color:#fff; }
 
-/* 使用者資訊 */
 .user-section {
   background:white;
   margin:16px; padding:16px;
@@ -46,7 +44,6 @@ header span.en { display:block; font-size:14px; color:#fff; }
 .user-name { font-size:20px; font-weight:bold; color:#333; margin-bottom:5px; }
 .user-info { font-size:14px; color:#666; }
 
-/* 日曆 */
 .calendar-day {
   background:#fff;
   border:1px solid #ddd;
@@ -57,7 +54,6 @@ header span.en { display:block; font-size:14px; color:#fff; }
 .calendar-day:hover { background:#e9f5ec; }
 .calendar-day.selected { background:#3c8050; color:#fff; }
 
-/* 班次樣式 */
 .route-btn {
   background:#fff;
   border:2px solid #3c8050;
@@ -69,36 +65,20 @@ header span.en { display:block; font-size:14px; color:#fff; }
   transition:all 0.3s;
   box-shadow:0 2px 5px rgba(0,0,0,0.05);
 }
-.route-btn:hover {
-  background:#f0faf2;
-}
+.route-btn:hover { background:#f0faf2; }
 .route-btn.selected {
   background:#fff;
   border:3px solid #3c8050;
   box-shadow:0 3px 8px rgba(60,128,80,0.3);
 }
-.route-btn span.time {
-  display:block;
-  font-size:15px;
-  color:#3c8050;
-}
-.route-btn span.cn {
-  display:block;
-  color:#333;
-  font-size:15px;
-  margin-top:3px;
-}
-.route-btn span.en {
-  display:block;
-  color:#0056b3;
-  font-size:13px;
-}
+.route-btn span.time { display:block; font-size:15px; color:#3c8050; }
+.route-btn span.cn { display:block; color:#333; font-size:15px; margin-top:3px; }
+.route-btn span.en { display:block; color:#0056b3; font-size:13px; }
 
-/* 選擇上下車 */
 .select-label {
   font-weight:bold;
   color:#333;
-  margin-top:20px;
+  margin-top:22px;
   line-height:1.3;
   font-size:16px;
 }
@@ -141,7 +121,6 @@ select:focus {
   font-size:13px;
 }
 
-/* 預約查詢卡 */
 .reservation-bubble {
   background:#fff;
   border:1px solid #ccc;
@@ -311,7 +290,7 @@ function renderRoutes(){
   let html='';
   routes.forEach(r=>{
     html+=`
-      <div class="route-btn" onclick="selectRoute('${r.id}')">
+      <div class="route-btn" onclick="selectRoute('${r.id}', this)">
         ${r.id}
         <span class="time">${r.time}</span>
         <span class="cn">${r.cn}</span>
@@ -320,10 +299,10 @@ function renderRoutes(){
   });
   c.innerHTML=html;c.style.display='grid';
 }
-function selectRoute(id){
+function selectRoute(id,btn){
   selectedRoute=id;
-  document.querySelectorAll('.route-btn').forEach(btn=>btn.classList.remove('selected'));
-  event.currentTarget.classList.add('selected');
+  document.querySelectorAll('.route-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
   renderStops();
 }
 function renderStops(){
@@ -345,61 +324,50 @@ function checkStopsReady(){
   document.getElementById('submitBtn').style.display=(from && to)?'block':'none';
 }
 async function submitReservation(){
-  const from = document.getElementById('fromStop').value;
-  const to = document.getElementById('toStop').value;
-  if (!selectedDate || !selectedRoute || !from || !to) {
-    alert('⚠️ 請完整選擇上下車地點');
-    return;
-  }
-  if (from === to) {
-    alert('⚠️ 上下車地點不可相同');
-    return;
-  }
+  const from=document.getElementById('fromStop').value;
+  const to=document.getElementById('toStop').value;
+  if(!selectedDate||!selectedRoute||!from||!to){alert('⚠️ 請完整選擇上下車地點');return;}
+  if(from===to){alert('⚠️ 上下車地點不可相同');return;}
 
-  const r = routes.find(r => r.id === selectedRoute);
-  const data = {
-    type:'reserve', userId:userData.userId, name:userData.name,
-    studentId:userData.studentId, department:userData.department,
-    phone:userData.phone || '', route:selectedRoute,
+  const r=routes.find(r=>r.id===selectedRoute);
+  const data={
+    type:'reserve',userId:userData.userId,name:userData.name,
+    studentId:userData.studentId,department:userData.department,
+    phone:userData.phone||'',route:selectedRoute,
     routeName:`${selectedRoute} | ${r.time} ${r.cn}`,
-    fromStop:from, toStop:to, date:selectedDate
+    fromStop:from,toStop:to,date:selectedDate
   };
+  const res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  const j=await res.json();
 
-  const res = await fetch(WORKER_URL, {
-    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
-  });
-  const j = await res.json();
-
-  if (j.status === 'success') {
+  if(j.status==='success'){
     alert('✅ 預約成功！');
-    // 不 reload，只更新畫面
     existingReservations.push({
-      id: j.id || `temp-${Date.now()}`,
-      date: data.date,
-      route: data.routeName,
-      name: data.name,
-      phone: data.phone,
-      fromStop: data.fromStop,
-      toStop: data.toStop
+      id:j.id||`temp-${Date.now()}`,
+      date:data.date, route:data.routeName,
+      name:data.name, phone:data.phone,
+      fromStop:data.fromStop, toStop:data.toStop
     });
     renderReservations();
-
-    // 重置表單
-    document.getElementById('submitBtn').style.display='none';
+    // 重置輸入區
     document.getElementById('stopSection').style.display='none';
+    document.getElementById('submitBtn').style.display='none';
     document.getElementById('routeButtons').style.display='none';
     document.getElementById('calendarContainer').style.display='none';
     document.getElementById('selectedDate').textContent='';
-  } else {
+  }else{
     alert('❌ 預約失敗，請稍後再試');
   }
 }
-
 async function cancelReservation(id){
   if(!confirm('確定取消這筆預約？'))return;
   const r=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'cancel',id,userId:userData.userId})});
   const j=await r.json();
-  if(j.status==='success'){alert('✅ 已取消');location.reload();}else alert('❌ 取消失敗');
+  if(j.status==='success'){
+    alert('✅ 已取消');
+    existingReservations=existingReservations.filter(e=>e.id!==id);
+    renderReservations();
+  }else alert('❌ 取消失敗');
 }
 function renderReservations(){
   const c=document.getElementById('currentReservationCard');
