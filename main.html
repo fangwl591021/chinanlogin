@@ -91,38 +91,51 @@ select:focus { outline:none; border-color:#0056b3; box-shadow:0 0 5px rgba(0,86,
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
+// ==================== 全域設定 =====================
 const WORKER_URL='https://delicate-math-7e61.fangwl591021.workers.dev/';
+const CALENDAR_ID='86eee89e759f27d2a2c7a44853868f7be880aa8e745ba3839933ec84b562631e@group.calendar.google.com';
+const GOOGLE_API_KEY='🔑 請填入你的 Google API 金鑰';
 let RULES=null,userData=null,existingReservations=[],selectedDate=null,selectedRoute=null;
+let blockedDates=new Set(); // 停駛或公休
 
+// ==================== 規則載入 =====================
 async function loadRules(){
-  try {
-    const res = await fetch('rule.html', { cache: "no-store" });
-    const text = await res.text();
-
-    // 嘗試自動抽出 <pre> 或 <script> 內 JSON
-    const cleanText = text.trim().startsWith('<')
-      ? text.match(/\{[\s\S]*\}/)?.[0] || '{}'
-      : text;
-
-    RULES = JSON.parse(cleanText);
-    console.log('📘 規則載入成功', RULES);
-  } catch(e) {
-    console.error('❌ 載入規則失敗', e);
-    RULES = { seatLimit: 7, maxPerDay: 1, advanceMinutes: 30, stopList: [], availableRoutes: [] };
+  try{
+    const res=await fetch('rule.html',{cache:'no-store'});
+    const txt=await res.text();
+    const clean=txt.trim().startsWith('<') ? txt.match(/\{[\s\S]*\}/)?.[0]||'{}' : txt;
+    RULES=JSON.parse(clean);
+    console.log('📘 規則載入成功',RULES);
+  }catch(e){
+    console.error('❌ 載入規則失敗',e);
+    RULES={seatLimit:7,maxPerDay:1,advanceMinutes:30,stopList:[],availableRoutes:[]};
   }
 }
 
-
-function alertRules(){
-  if(!RULES)return alert('規則尚未載入');
-  alert(`📘 預約規則：
-1. 每班最多 ${RULES.seatLimit} 人
-2. 每日限預約 ${RULES.maxPerDay} 班
-3. 出發前 ${RULES.advanceMinutes} 分鐘截止預約`);
+// ==================== 日曆封鎖判斷 =====================
+async function fetchCalendarBlockedDates(){
+  try{
+    const today=new Date();
+    const nextMonth=new Date();nextMonth.setMonth(today.getMonth()+1);
+    const url=`https://www.googleapis.com/calendar/v3/calendars/${CALENDAR_ID}/events?key=${GOOGLE_API_KEY}&timeMin=${today.toISOString()}&timeMax=${nextMonth.toISOString()}&singleEvents=true&orderBy=startTime`;
+    const res=await fetch(url);
+    const data=await res.json();
+    blockedDates.clear();
+    (data.items||[]).forEach(ev=>{
+      const title=ev.summary||'';
+      if(title.includes('公休')||title.includes('停駛')){
+        const date=ev.start.date||ev.start.dateTime.split('T')[0];
+        blockedDates.add(date);
+      }
+    });
+    console.log('📅 已封鎖日期：',Array.from(blockedDates));
+  }catch(e){console.error('❌ 無法載入日曆封鎖',e);}
 }
 
+// ==================== 初始化 =====================
 async function init(){
   await loadRules();
+  await fetchCalendarBlockedDates();
   try{
     await liff.init({liffId:'2006590746-KJodGOda'});
     if(!liff.isLoggedIn())return liff.login();
@@ -140,13 +153,14 @@ async function init(){
   }catch(e){console.error(e);document.getElementById('userInfo').innerText='❌ 初始化失敗';}
 }
 
+// ==================== 日曆 =====================
 function toggleCalendar(){
   const c=document.getElementById('calendarContainer');
   c.style.display=c.style.display==='none'?'block':'none';
   renderCalendar();
 }
 
-async function renderCalendar(){
+function renderCalendar(){
   const cal=document.getElementById('calendar');
   const now=new Date(),y=now.getFullYear(),m=now.getMonth();
   document.getElementById('calendarTitle').innerText=`${y}年${m+1}月`;
@@ -157,24 +171,24 @@ async function renderCalendar(){
     const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isPast=new Date(ds)<new Date(now.toDateString());
     const hasReserved=existingReservations.some(r=>r.date===ds);
+    const isBlocked=blockedDates.has(ds);
     let cls='calendar-day',disabled=false;
-    if(isPast||hasReserved){cls+=' disabled';disabled=true;}
-    html+=`<div class="${cls}" ${disabled?'':`onclick="selectDate('${ds}')"`}>${d}</div>`;
+    if(isPast||hasReserved||isBlocked){cls+=' disabled';disabled=true;}
+    html+=`<div class="${cls}" ${disabled?'':`onclick="selectDate('${ds}')"`}>${d}${isBlocked?'<br><small style="color:#d32f2f;">停駛</small>':''}</div>`;
   }
   cal.innerHTML=html;
 }
 
 function selectDate(ds){
-  if(existingReservations.some(r=>r.date===ds)){
-    alert('⚠️ 您當日已有預約，請勿重複。');
-    return;
-  }
+  if(existingReservations.some(r=>r.date===ds)){alert('⚠️ 您當日已有預約，請勿重複。');return;}
+  if(blockedDates.has(ds)){alert('❌ 該日停駛，無法預約。');return;}
   selectedDate=ds;
   document.getElementById('selectedDate').textContent=`✅ 已選擇日期：${ds}`;
   document.getElementById('selectedDate').style.display='block';
   renderRoutes();
 }
 
+// ==================== 班次與停靠 =====================
 function renderRoutes(){
   const c=document.getElementById('routeButtons');
   let html='';
@@ -216,6 +230,7 @@ function checkStopsReady(){
   document.getElementById('submitBtn').style.display=(from&&to)?'block':'none';
 }
 
+// ==================== 預約與取消 =====================
 async function submitReservation(){
   const from=document.getElementById('fromStop').value;
   const to=document.getElementById('toStop').value;
@@ -240,19 +255,16 @@ async function cancelReservation(id){
   else alert('❌ 取消失敗');
 }
 
+// ==================== 渲染預約紀錄 =====================
 function renderReservations(){
   const c=document.getElementById('currentReservationCard');
-  if(!existingReservations.length){c.innerHTML='<div style="text-align:center;padding:20px;">目前沒有預約紀錄<br><span class="en" style="color:#0056b3;">No reservation records</span></div>';c.style.display='block';return;}
+  if(!RULES||!RULES.stopList)RULES={stopList:[]};
+  if(!existingReservations.length){
+    c.innerHTML='<div style="text-align:center;padding:20px;">目前沒有預約紀錄<br><span class="en" style="color:#0056b3;">No reservation records</span></div>';
+    c.style.display='block';return;
+  }
   let h='<h3 style="text-align:center;">🧾 我的預約<span class="en" style="display:block;color:#0056b3;font-size:14px;">My Reservations</span></h3>';
   existingReservations.forEach(r=>{
     const fromEn=(RULES.stopList.find(s=>s[0]===r.fromStop)||[])[1]||r.fromStop;
     const toEn=(RULES.stopList.find(s=>s[0]===r.toStop)||[])[1]||r.toStop;
-    h+=`<div class="reservation-bubble"><div class="bubble-header">🚌 穿山甲專車新預約<span class="en">Pangolin Shuttle New Reservation</span></div><div class="bubble-body">日期：${r.date}<br><span class="en">Date: ${r.date}</span>班次：${r.route}<br><span class="en">Route: ${r.route}</span>上車：${r.fromStop}<br><span class="en">Pick-up: ${fromEn}</span>下車：${r.toStop}<br><span class="en">Drop-off: ${toEn}</span></div><div class="bubble-footer"><button class="cancel-btn-small" onclick="cancelReservation('${r.id}')">取消預約<span class="en">Cancel</span></button></div></div>`;
-  });
-  c.innerHTML=h;c.style.display='block';
-}
-
-window.addEventListener('load',init);
-</script>
-</body>
-</html>
+    h+=`<div class="reservation-bubble"><div class="bubble-header">🚌 穿山甲專車新預約<span class="en">Pangolin Shuttle New Reservation</span></div><div class="bubble-body">日期：${r.date}<br><span class="en">Date: ${r.date}</span>班次：${r.route}<br><span class="en">Route: ${r.route}</span>上車：${r.fromStop}<br><span class="en">Pick-up: ${
