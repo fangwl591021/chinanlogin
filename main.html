@@ -243,6 +243,23 @@ let noServiceDates = {};
 let calendarDataLoaded = false;
 let calendarLoading = false;
 
+// 全域站點對照映射
+const STOP_MAP = {
+  '行政大樓': 'NCNU Administrative Building',
+  '中餐廳': 'Zhong Can Ting(Chinese Restaurant)',
+  '科技學院': 'College of Science and Technology',
+  '學人會館': 'Scholars\' Residence',
+  '中城': 'Zhongcheng',
+  '下城': 'Xiacheng',
+  '坪頂': 'Pingding',
+  '愛蘭橋': 'Ailan Bridge',
+  '大成國小': 'Dacheng Elementary School',
+  '中山安七街口': 'Zhongshan Anqi St. Intersection',
+  '榮民診所': 'Veterans Clinic',
+  '埔里酒廠': 'Puli Distillery',
+  '埔里總站': 'Puli Bus Terminal'
+};
+
 // 從 rules.json 載入設定
 async function loadRules() {
   try {
@@ -449,8 +466,6 @@ function toggleCalendar() {
     }
   }
 }
-
-
 
 // === 📅 月曆產生 ===
 function renderCalendar() {
@@ -902,27 +917,59 @@ function resetReservationForm() {
   }
 }
 
+// 提取純中文站名
+function extractChineseName(stop) {
+  if (!stop) return '未知站點';
+  return stop.split('<')[0];
+}
+
+// 發送取消推播通知（背景執行，不等待結果）
+async function sendCancellationPush(reservationData) {
+  try {
+    const info = routeTimes[reservationData.route] || {};
+    const fromStop = extractChineseName(reservationData.fromStop);
+    const toStop = extractChineseName(reservationData.toStop);
+    const reservationDate = reservationData.date ? reservationData.date.split('T')[0] : '未知日期';
+    const userName = reservationData.name || userData?.name || '未知用戶';
+
+    const pushData = {
+      type: "pushLine",
+      message: `❌ 穿山甲專車預約取消\nPangolin Shuttle Reservation Cancelled\n\n日期：${reservationDate}\nDate: ${reservationDate}\n班次：${reservationData.route}｜${info.time || ""} ${info.direction || ""}\nTime: ${reservationData.route}｜${info.time || ""} ${info.eng || ""}\n姓名：${userName}\nName: ${userName}\n上車：${fromStop}\nPick-up: ${fromStop}\n下車：${toStop}\nDrop-off: ${toStop}`
+    };
+
+    console.log('發送取消推播數據 Sending cancellation push data');
+    
+    const pushRes = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(pushData)
+    });
+    
+    if (pushRes.ok) {
+      console.log('✅ 取消推播發送成功 Cancellation push sent successfully');
+    }
+  } catch (pushErr) {
+    console.error('❌ 取消推播錯誤 Cancellation push error:', pushErr);
+  }
+}
+
+// 簡化的取消預約函數
 async function cancelReservation(reservationId) {
   if (!confirm('確定要取消這筆預約嗎？\nAre you sure you want to cancel this reservation?')) return;
 
   try {
     console.log('開始取消預約 Starting cancellation:', reservationId);
     
-    // 在取消前先保存要取消的預約資料
+    // 查找要取消的預約
     const reservationToCancel = existingReservations.find(r => r.id === reservationId);
-    
     if (!reservationToCancel) {
-      console.error('找不到要取消的預約 Reservation not found');
-      alert('找不到預約資料，請重新整理頁面後再試\nReservation not found, please refresh and try again');
-      return;
+      throw new Error('找不到要取消的預約 Reservation not found');
     }
-    
+
+    // 發送取消請求
     const response = await fetch(WORKER_URL, {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         type: 'cancel', 
         id: reservationId, 
@@ -930,84 +977,30 @@ async function cancelReservation(reservationId) {
       })
     });
 
-    // 檢查響應狀態
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    // 檢查內容類型
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      console.error('非 JSON 響應 Non-JSON response:', text.substring(0, 200));
-      throw new Error('伺服器返回了非 JSON 響應 Server returned non-JSON response');
-    }
-
-    const result = await response.json();
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     
-    if (result.status === 'success') {
-      alert('✅ 已取消預約\n✅ Reservation cancelled');
+    const result = await response.json();
+    if (result.status !== 'success') throw new Error(result.message || '取消失敗 Cancellation failed');
 
-      // LINE 群組推播通知（取消預約）
-      try {
-        const info = routeTimes[reservationToCancel.route] || {};
-        
-        // 提取純中文站名（移除 HTML 標籤）
-        const extractChineseName = (stop) => {
-          if (!stop) return '未知站點';
-          return stop.split('<')[0];
-        };
-        
-        const fromStop = extractChineseName(reservationToCancel.fromStop || '未知上車站');
-        const toStop = extractChineseName(reservationToCancel.toStop || '未知下車站');
-        const reservationDate = reservationToCancel.date ? reservationToCancel.date.split('T')[0] : '未知日期';
-        const userName = reservationToCancel.name || userData.name || '未知用戶';
+    // 取消成功
+    alert('✅ 已取消預約\n✅ Reservation cancelled');
 
-        const pushData = {
-          type: "pushLine",
-          message: `❌ 穿山甲專車預約取消\nPangolin Shuttle Reservation Cancelled\n\n日期：${reservationDate}\nDate: ${reservationDate}\n班次：${reservationToCancel.route}｜${info.time || ""} ${info.direction || ""}\nTime: ${reservationToCancel.route}｜${info.time || ""} ${info.eng || ""}\n姓名：${userName}\nName: ${userName}\n上車：${fromStop}\nPick-up: ${fromStop}\n下車：${toStop}\nDrop-off: ${toStop}`
-        };
+    // 背景發送推播通知（不阻塞主流程）
+    sendCancellationPush(reservationToCancel).catch(err => 
+      console.warn('推播發送失敗但不影響取消操作 Push failed but cancellation succeeded:', err)
+    );
 
-        console.log('發送取消推播數據 Sending cancellation push data:', pushData);
-        
-        const pushRes = await fetch(WORKER_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(pushData)
-        });
-        
-        // 檢查推播響應狀態
-        if (!pushRes.ok) {
-          throw new Error(`推播請求失敗 Push request failed: ${pushRes.status}`);
-        }
-        
-        const pushResult = await pushRes.json();
-        console.log('🚫 群組推播響應 Group push response:', pushResult);
-        
-        if (pushResult.status === 'success') {
-          console.log('✅ 取消推播發送成功 Cancellation push sent successfully');
-        } else {
-          console.warn('⚠️ 取消推播響應狀態不是 success Cancellation push response status not success:', pushResult);
-        }
-        
-      } catch (pushErr) {
-        console.error('❌ 取消推播錯誤 Cancellation push error:', pushErr);
-        // 推播失敗不影響主要取消流程，只是記錄錯誤
-      }
+    // 重新載入預約列表
+    await loadExistingReservations();
 
-      // 重新載入預約列表
-      await loadExistingReservations();
-    } else {
-      alert('❌ 取消失敗：' + (result.message || '請稍後再試') + '\n❌ Cancellation failed: ' + (result.message || 'Please try again later'));
-    }
   } catch (error) {
     console.error('取消預約錯誤 Cancellation error:', error);
     
-    if (error.message.includes('JSON') || error.message.includes('DOCTYPE')) {
-      alert('❌ 伺服器連接失敗，請檢查網路連線或稍後再試\n❌ Server connection failed, please check your network connection');
-    } else {
-      alert('❌ 取消預約時發生錯誤: ' + error.message + '\n❌ Error occurred while cancelling reservation: ' + error.message);
-    }
+    const errorMessage = error.message.includes('JSON') || error.message.includes('DOCTYPE') 
+      ? '伺服器連接失敗，請檢查網路連線或稍後再試\nServer connection failed, please check your network connection'
+      : error.message;
+    
+    alert(`❌ 取消預約失敗：${errorMessage}\n❌ Cancellation failed: ${errorMessage}`);
   }
 }
 
@@ -1059,25 +1052,8 @@ function renderCurrentReservationCard() {
     let directionZh = routeInfo.direction;
     let directionEn = routeInfo.eng;
     
-    // 站點中英對照映射
-    const stopMap = {
-      '行政大樓': 'NCNU Administrative Building',
-      '中餐廳': 'Zhong Can Ting(Chinese Restaurant)',
-      '科技學院': 'College of Science and Technology',
-      '學人會館': 'Scholars\' Residence',
-      '中城': 'Zhongcheng',
-      '下城': 'Xiacheng',
-      '坪頂': 'Pingding',
-      '愛蘭橋': 'Ailan Bridge',
-      '大成國小': 'Dacheng Elementary School',
-      '中山安七街口': 'Zhongshan Anqi St. Intersection',
-      '榮民診所': 'Veterans Clinic',
-      '埔里酒廠': 'Puli Distillery',
-      '埔里總站': 'Puli Bus Terminal'
-    };
-    
-    const fromStopEn = stopMap[r.fromStop] || r.fromStop;
-    const toStopEn = stopMap[r.toStop] || r.toStop;
+    const fromStopEn = STOP_MAP[r.fromStop] || r.fromStop;
+    const toStopEn = STOP_MAP[r.toStop] || r.toStop;
     
     html += `
       <div class="reservation-bubble" style="min-width: 190px;">
@@ -1306,5 +1282,3 @@ window.addEventListener('load', init);
 </script>
 </body>
 </html>
-
-
