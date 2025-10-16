@@ -493,51 +493,51 @@ function renderCalendar() {
     
     let classes = 'calendar-day';
     let disabled = false;
-    let disabledReason = '';
-    let disabledReasonEn = '';
+    let displayText = day.toString();
+    let displaySubtext = '';
+    let displaySubtextEn = '';
 
-    // 檢查日期狀態 - 優先顯示已完成預約
+    // 檢查日期狀態 - 優先顯示重要資訊
     if (hasReservation) {
       disabled = true;
-      disabledReason = '您已預約';
-      disabledReasonEn = 'Booked';
+      displaySubtext = '您已預約';
+      displaySubtextEn = 'Booked';
       classes += ' disabled';
-      html += `<div class="${classes}" style="background: #e0e8ff; border: 1px solid #b3c6ff; color: #333;">${day}<br><small>${disabledReason}</small><br><small style="color: #3b82f6; font-size: 9px;">${disabledReasonEn}</small></div>`;
-    } else if (isPast) {
-      disabled = true;
-      disabledReason = '已過期';
-      disabledReasonEn = 'Expired';
-      classes += ' past';
-      html += `<div class="${classes}">${day}<br><small>${disabledReason}</small><br><small style="color: #3b82f6; font-size: 9px;">${disabledReasonEn}</small></div>`;
+      html += `<div class="${classes}" style="background: #e0e8ff; border: 1px solid #b3c6ff; color: #333;">${displayText}<br><small>${displaySubtext}</small><br><small style="color: #3b82f6; font-size: 9px;">${displaySubtextEn}</small></div>`;
     } else if (isNoService) {
       disabled = true;
-      disabledReason = '停駛';
-      disabledReasonEn = 'No Service';
+      displaySubtext = '停駛';
+      displaySubtextEn = 'No Service';
       classes += ' disabled';
-      html += `<div class="${classes}" style="background: #f8f9fa; color: #999;">${day}<br><small>${disabledReason}</small><br><small style="color: #3b82f6; font-size: 9px;">${disabledReasonEn}</small></div>`;
+      html += `<div class="${classes}" style="background: #f8f9fa; color: #999;">${displayText}<br><small>${displaySubtext}</small><br><small style="color: #3b82f6; font-size: 9px;">${displaySubtextEn}</small></div>`;
     } else if (!isWithinWindow) {
       disabled = true;
-      disabledReason = '未開放';
-      disabledReasonEn = 'Not Open';
+      displaySubtext = '未開放';
+      displaySubtextEn = 'Not Open';
       classes += ' disabled';
-      html += `<div class="${classes}" style="background: #f8f9fa; color: #999;">${day}<br><small>${disabledReason}</small><br><small style="color: #3b82f6; font-size: 9px;">${disabledReasonEn}</small></div>`;
+      html += `<div class="${classes}" style="background: #f8f9fa; color: #999;">${displayText}<br><small>${displaySubtext}</small><br><small style="color: #3b82f6; font-size: 9px;">${displaySubtextEn}</small></div>`;
     } else if (isAfterDeadline && ReservationValidator.isToday(dateStr)) {
       disabled = true;
-      disabledReason = '已截止';
-      disabledReasonEn = 'Deadline Passed';
+      displaySubtext = '已截止';
+      displaySubtextEn = 'Deadline Passed';
       classes += ' disabled';
-      html += `<div class="${classes}" style="background: #f8f9fa; color: #999;">${day}<br><small>${disabledReason}</small><br><small style="color: #3b82f6; font-size: 9px;">${disabledReasonEn}</small></div>`;
+      html += `<div class="${classes}" style="background: #f8f9fa; color: #999;">${displayText}<br><small>${displaySubtext}</small><br><small style="color: #3b82f6; font-size: 9px;">${displaySubtextEn}</small></div>`;
+    } else if (isPast) {
+      // 已過期日期 - 只顯示數字，不顯示文字
+      disabled = true;
+      classes += ' past';
+      html += `<div class="${classes}">${displayText}</div>`;
     } else {
       if (selectedDate === dateStr) {
         classes += ' selected';
       }
       
       const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
-      const dayLabel = isWeekend ? 
-        `${day}<br><small style="font-size:10px;">週末</small><br><small style="color: #3b82f6; font-size: 9px;">Weekend</small>` : 
-        day;
+      if (isWeekend) {
+        displayText = `${day}<br><small style="font-size:10px;">週末</small><br><small style="color: #3b82f6; font-size: 9px;">Weekend</small>`;
+      }
       
-      html += `<div class="${classes}" onclick="selectDate('${dateStr}')">${dayLabel}</div>`;
+      html += `<div class="${classes}" onclick="selectDate('${dateStr}')">${displayText}</div>`;
     }
   }
   
