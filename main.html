@@ -188,14 +188,11 @@
     </button>
   </div>
 
-  <div id="calendarContainer" style="display:none;margin-top:10px; padding:0 16px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-      <button onclick="changeMonth(-1)" style="width:auto; padding:5px 10px;">◀ 上個月<span class="en-text">Prev Month</span></button>
-      <h3 id="calendarTitle" style="margin:0; font-size:16px;"></h3>
-      <button onclick="changeMonth(1)" style="width:auto; padding:5px 10px;">下個月 ▶<span class="en-text">Next Month</span></button>
-    </div>
-    <div id="calendar" class="calendar"></div>
-  </div>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+  <button onclick="changeMonth(-1)" style="width:auto; padding:5px 10px; background:#3c8050; color:white; border:none; border-radius:4px; font-weight:bold;">◀ 上個月<span class="en-text">Prev Month</span></button>
+  <h3 id="calendarTitle" style="margin:0; font-size:16px;"></h3>
+  <button onclick="changeMonth(1)" style="width:auto; padding:5px 10px; background:#3c8050; color:white; border:none; border-radius:4px; font-weight:bold;">下個月 ▶<span class="en-text">Next Month</span></button>
+</div>
 
   <div id="selectedDate" class="notice success" style="display:none;"></div>
   <div id="holidayNotice" class="notice error" style="display:none;"></div>
