@@ -586,7 +586,8 @@ function selectDate(dateStr) {
     noService: ReservationValidator.isNoServiceDate(dateStr),
     withinWindow: ReservationValidator.isWithinBookingWindow(dateStr),
     afterDeadline: ReservationValidator.isAfterDeadline(dateStr),
-    hasReservation: ReservationValidator.hasExistingReservation(userData.userId, dateStr, '')
+    // 這裡需要傳入空字串作為 route 參數，因為我們只是檢查是否有任何預約
+    hasReservation: userData ? ReservationValidator.hasExistingReservation(userData.userId, dateStr, '') : false
   };
 
   // 檢查日期有效性
@@ -610,20 +611,51 @@ function selectDate(dateStr) {
     return;
   }
 
-  // 檢查是否已有預約
-  // 檢查是否已有同方向預約
-if (validation.hasReservation) {
-  const existingReservation = existingReservations.find(
-    res => res.userId === userData.userId && 
-           res.date.split('T')[0] === dateStr && 
-           res.status !== '已取消'
-  );
-  
-  const direction = existingReservation?.route.includes('A') ? '去程' : '回程';
-  showError(`您已在 ${dateStr} 預約了${direction}班次，每天只能預約一個${direction}班次<br><span style="color: #3b82f6;">You already booked ${direction} on ${dateStr}, only one ${direction} per day</span>`);
-  return;
-}
+  // 檢查是否已有預約 - 這裡只是檢查是否有任何預約
+  if (validation.hasReservation) {
+    const existingReservationsOnDate = existingReservations.filter(
+      res => res.userId === userData.userId && 
+             res.date.split('T')[0] === dateStr && 
+             res.status !== '已取消'
+    );
+    
+    // 檢查是否有去程和回程預約
+    const hasOutbound = existingReservationsOnDate.some(res => res.route.includes('A'));
+    const hasReturn = existingReservationsOnDate.some(res => res.route.includes('B'));
+    
+    let errorMessage = '';
+    if (hasOutbound && hasReturn) {
+      errorMessage = `您已在 ${dateStr} 預約了去程和回程班次，無法再預約其他班次<br><span style="color: #3b82f6;">You already booked both outbound and return on ${dateStr}, cannot book more</span>`;
+    } else if (hasOutbound) {
+      errorMessage = `您已在 ${dateStr} 預約了去程班次，但還可以預約回程班次<br><span style="color: #3b82f6;">You already booked outbound on ${dateStr}, but can still book return</span>`;
+    } else if (hasReturn) {
+      errorMessage = `您已在 ${dateStr} 預約了回程班次，但還可以預約去程班次<br><span style="color: #3b82f6;">You already booked return on ${dateStr}, but can still book outbound</span>`;
+    } else {
+      errorMessage = `您已在 ${dateStr} 有預約<br><span style="color: #3b82f6;">You already have reservation on ${dateStr}</span>`;
+    }
+    
+    showError(errorMessage);
+    return;
+  }
 
+  selectedDate = dateStr;
+  
+  // 重置選擇狀態
+  document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
+  event.target.classList.add('selected');
+  
+  // 顯示選擇的日期
+  document.getElementById('selectedDate').style.display = 'block';
+  document.getElementById('selectedDate').innerHTML = `✅ 已選擇日期：${dateStr}<br><span style="color: #3b82f6;">✅ Selected date: ${dateStr}</span>`;
+  document.getElementById('holidayNotice').style.display = 'none';
+  
+  // 關閉月曆
+  document.getElementById('calendarContainer').style.display = 'none';
+  document.getElementById('calendarBtn').innerHTML = '📅 打開月曆<span class="en-text">Open Calendar</span>';
+  
+  // 顯示班次選擇
+  showRouteSelection();
+}
   selectedDate = dateStr;
   
   // 重置選擇狀態
