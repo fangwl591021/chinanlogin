@@ -610,16 +610,18 @@ function selectDate(dateStr) {
   }
 
   // 檢查是否已有預約
-  if (validation.hasReservation) {
-    const existingReservation = existingReservations.find(
-      res => res.userId === userData.userId && 
-             res.date.split('T')[0] === dateStr && 
-             res.status !== '已取消'
-    );
-    
-    showError(`您已在 ${dateStr} 預約了 ${existingReservation?.route || ''} 班次，每天只能預約一個班次<br><span style="color: #3b82f6;">You already booked ${existingReservation?.route || ''} on ${dateStr}, only one booking per day</span>`);
-    return;
-  }
+  // 檢查是否已有同方向預約
+if (validation.hasReservation) {
+  const existingReservation = existingReservations.find(
+    res => res.userId === userData.userId && 
+           res.date.split('T')[0] === dateStr && 
+           res.status !== '已取消'
+  );
+  
+  const direction = existingReservation?.route.includes('A') ? '去程' : '回程';
+  showError(`您已在 ${dateStr} 預約了${direction}班次，每天只能預約一個${direction}班次<br><span style="color: #3b82f6;">You already booked ${direction} on ${dateStr}, only one ${direction} per day</span>`);
+  return;
+}
 
   selectedDate = dateStr;
   
@@ -1185,15 +1187,23 @@ class ReservationValidator {
     return dateStr === today;
   }
 
-  // 方案B核心：重複預約檢查 - 每天只能有1筆預約
-  static hasExistingReservation(userId, dateStr) {
-    const userReservations = existingReservations.filter(
-      res => res.userId === userId && 
-             res.date.split('T')[0] === dateStr && 
-             res.status !== '已取消'
-    );
-    return userReservations.length >= RESERVATION_RULES.maxPerDay;
-  }
+// 新的邏輯：每天可以預約1個去程 + 1個回程
+static hasExistingReservation(userId, dateStr, newRoute) {
+  const userReservations = existingReservations.filter(
+    res => res.userId === userId && 
+           res.date.split('T')[0] === dateStr && 
+           res.status !== '已取消'
+  );
+  
+  // 如果沒有同方向的預約，就可以預約
+  const isNewRouteOutbound = newRoute.includes('A');
+  const hasSameDirection = userReservations.some(res => {
+    const isResOutbound = res.route.includes('A');
+    return isResOutbound === isNewRouteOutbound;
+  });
+  
+  return hasSameDirection;
+}
 
   // R8: 班次容量檢查
   static async isRouteFull(dateStr, route) {
@@ -1252,8 +1262,8 @@ class ReservationValidator {
       errors.push(`今日預約已截止（${RESERVATION_RULES.dailyDeadline}） Today's booking deadline passed (${RESERVATION_RULES.dailyDeadline})`);
     }
 
-    // 方案B核心規則：每天只能預約1個班次
-    if (this.hasExistingReservation(userId, dateStr)) {
+    // 方案B核心規則：每天只能預約1個同方向班次
+if (this.hasExistingReservation(userId, dateStr, route)) {
       errors.push('每天只能預約一個班次，您當天已有預約 Only one booking per day, you already have a reservation');
     }
 
