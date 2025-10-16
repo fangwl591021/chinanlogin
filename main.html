@@ -226,6 +226,50 @@
       color: #b71c1c;
       border: 1px solid #f5c2c7;
     }
+
+    /* 使用者資訊區塊 */
+    .user-section {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin: 16px;
+    }
+    .user-name {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 5px;
+    }
+    .user-info {
+      font-size: 14px;
+      color: #666;
+    }
+
+    /* 按鈕群組 */
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin: 10px 16px;
+      align-items: center;
+    }
+    #calendarBtn {
+      flex: 1;
+    }
+    #rulesBtn {
+      flex: 0 0 auto;
+      background: #3c8050;
+      color: white;
+      border: none;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      white-space: nowrap;
+      font-weight: bold;
+    }
+    #rulesBtn:hover {
+      background: #2d6140;
+    }
   </style>
 </head>
 <body>
@@ -236,8 +280,11 @@
     <div class="loading-state">⏳ 系統初始化中...</div>
   </div>
 
-  <!-- 📅 月曆按鈕 -->
-  <button id="calendarBtn" onclick="toggleCalendar()">📅 打開月曆</button>
+  <!-- 📅 月曆按鈕 + 📖 規則按鈕 -->
+  <div class="button-group">
+    <button id="calendarBtn" onclick="toggleCalendar()">📅 打開月曆</button>
+    <button id="rulesBtn" onclick="openRules()">📖 預約規則</button>
+  </div>
 
   <!-- 📅 月曆容器 -->
   <div id="calendarContainer" style="display:none;margin-top:10px; padding:0 16px;">
@@ -284,6 +331,23 @@ let userData = null;
 let existingReservations = [];
 let noServiceDates = {};
 
+// 站點中英對照
+const STOP_MAP = {
+  '行政大樓': 'NCNU Administrative Building',
+  '中餐廳': 'Zhong Can Ting (Chinese Restaurant)',
+  '科技學院': 'College of Science and Technology',
+  '學人會館': 'Scholars\' Residence',
+  '中城': 'Zhongcheng',
+  '下城': 'Xiacheng',
+  '坪頂': 'Pingding',
+  '愛蘭橋': 'Ailan Bridge',
+  '大成國小': 'Dacheng Elementary School',
+  '中山安七街口': 'Zhongshan Anqi St. Intersection',
+  '榮民診所': 'Veterans Clinic',
+  '埔里酒廠': 'Puli Distillery',
+  '埔里總站': 'Puli Bus Terminal'
+};
+
 const stopsOutbound = ["行政大樓","中餐廳","科技學院","學人會館","中城","下城","坪頂","愛蘭橋","大成國小","中山安七街口","榮民診所","埔里酒廠","埔里總站"];
 const stopsReturn = [...stopsOutbound].reverse();
 
@@ -293,6 +357,11 @@ const routeTimes = {
   'A2': { time: '23:00-23:30', direction: '暨大→埔里總站' },
   'B2': { time: '23:30-24:00', direction: '埔里總站→暨大' }
 };
+
+// === 📖 打開預約規則 ===
+function openRules() {
+  window.open('https://line.me/R/home/public/post?postId=1176044641970348675', '_blank');
+}
 
 // ========================================
 // Flex Message 生成器
@@ -557,6 +626,8 @@ function showStopSelection(direction) {
   stops.filter(stop => stop !== fromStop).forEach(stop => {
     const option = document.createElement('option');
     option.value = stop;
+    const stopEn = STOP_MAP[stop] || stop;
+    option.innerHTML = `${stop}<br><small style="color: #666;">${stopEn}</small>`;
     option.textContent = stop;
     toStopSelect.appendChild(option);
   });
