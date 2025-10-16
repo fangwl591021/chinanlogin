@@ -932,6 +932,7 @@ async function cancelReservation(reservationId) {
       return;
     }
     
+    // 1. 先執行取消預約
     const response = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 
@@ -963,7 +964,7 @@ async function cancelReservation(reservationId) {
     if (result.status === 'success') {
       alert('✅ 已取消預約\n✅ Reservation cancelled');
 
-      // LINE 群組推播通知（取消預約）
+      // 2. LINE 群組推播通知（取消預約）- 改為非阻塞式
       try {
         const info = routeTimes[reservationToCancel.route] || {};
         
@@ -985,44 +986,56 @@ async function cancelReservation(reservationId) {
 
         console.log('發送取消推播數據 Sending cancellation push data:', pushData);
         
-        const pushRes = await fetch(WORKER_URL, {
+        // 使用非阻塞方式發送推播，不等待結果
+        fetch(WORKER_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(pushData)
+        })
+        .then(pushRes => {
+          if (!pushRes.ok) {
+            console.warn('⚠️ 推播請求失敗 Push request failed:', pushRes.status);
+            return;
+          }
+          return pushRes.json();
+        })
+        .then(pushResult => {
+          if (pushResult && pushResult.status === 'success') {
+            console.log('✅ 取消推播發送成功 Cancellation push sent successfully');
+          } else {
+            console.warn('⚠️ 取消推播響應異常 Cancellation push response abnormal:', pushResult);
+          }
+        })
+        .catch(pushErr => {
+          console.warn('⚠️ 取消推播錯誤（不影響取消操作）Cancellation push error (does not affect cancellation):', pushErr);
+          // 推播失敗不影響主要取消流程
         });
         
-        // 檢查推播響應狀態
-        if (!pushRes.ok) {
-          throw new Error(`推播請求失敗 Push request failed: ${pushRes.status}`);
-        }
-        
-        const pushResult = await pushRes.json();
-        console.log('🚫 群組推播響應 Group push response:', pushResult);
-        
-        if (pushResult.status === 'success') {
-          console.log('✅ 取消推播發送成功 Cancellation push sent successfully');
-        } else {
-          console.warn('⚠️ 取消推播響應狀態不是 success Cancellation push response status not success:', pushResult);
-        }
-        
       } catch (pushErr) {
-        console.error('❌ 取消推播錯誤 Cancellation push error:', pushErr);
-        // 推播失敗不影響主要取消流程，只是記錄錯誤
+        console.warn('⚠️ 取消推播處理錯誤（不影響取消操作）Cancellation push processing error:', pushErr);
+        // 推播失敗不影響主要取消流程
       }
 
-      // 重新載入預約列表
+      // 3. 重新載入預約列表
       await loadExistingReservations();
+      
     } else {
       alert('❌ 取消失敗：' + (result.message || '請稍後再試') + '\n❌ Cancellation failed: ' + (result.message || 'Please try again later'));
     }
   } catch (error) {
     console.error('取消預約錯誤 Cancellation error:', error);
     
+    let errorMessage = '❌ 取消預約時發生錯誤\n❌ Error occurred while cancelling reservation';
+    
     if (error.message.includes('JSON') || error.message.includes('DOCTYPE')) {
-      alert('❌ 伺服器連接失敗，請檢查網路連線或稍後再試\n❌ Server connection failed, please check your network connection');
+      errorMessage = '❌ 伺服器連接失敗，請檢查網路連線或稍後再試\n❌ Server connection failed, please check your network connection';
+    } else if (error.message.includes('500')) {
+      errorMessage = '❌ 伺服器暫時無法處理請求，請稍後再試\n❌ Server temporarily unavailable, please try again later';
     } else {
-      alert('❌ 取消預約時發生錯誤: ' + error.message + '\n❌ Error occurred while cancelling reservation: ' + error.message);
+      errorMessage += ': ' + error.message;
     }
+    
+    alert(errorMessage);
   }
 }
 
