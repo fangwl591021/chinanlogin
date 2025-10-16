@@ -427,8 +427,24 @@ async function preloadCalendarData() {
 function toggleCalendar() {
   const calendar = document.getElementById('calendarContainer');
   const btn = document.getElementById('calendarBtn');
-  const isHidden = window.getComputedStyle(calendar).display === 'none';
+  
+  // 檢查元素是否存在
+  if (!calendar || !btn) {
+    console.error('找不到月曆元素');
+    return;
+  }
 
+  // 安全地檢查顯示狀態
+  let isHidden;
+  try {
+    const computedStyle = window.getComputedStyle(calendar);
+    isHidden = computedStyle.display === 'none';
+  } catch (error) {
+    // 如果 getComputedStyle 失敗，使用 style.display
+    console.warn('getComputedStyle 失敗，使用備用方法');
+    isHidden = calendar.style.display === 'none';
+  }
+  
   // ✅ 切換顯示狀態
   calendar.style.display = isHidden ? 'block' : 'none';
   btn.innerHTML = isHidden
@@ -437,13 +453,7 @@ function toggleCalendar() {
 
   // ✅ 每次開啟都重新渲染日曆內容
   if (isHidden) {
-    if (typeof renderCalendar === 'function') {
-      renderCalendar(currentYear, currentMonth);
-    } else if (typeof generateCalendar === 'function') {
-      generateCalendar();
-    } else {
-      console.warn('⚠️ 沒找到 renderCalendar() 或 generateCalendar()，請確認名稱');
-    }
+    renderCalendar();
   }
 }
 
