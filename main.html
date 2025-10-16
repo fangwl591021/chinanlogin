@@ -173,11 +173,19 @@
   </div>
 
   <div style="display: flex; gap: 10px; margin: 10px 16px; align-items: center;">
-    <button id="calendarBtn" onclick="toggleCalendar()" style="flex: 1; position: relative;">
-      📅 打開月曆
-      <span class="en-text">Open Calendar</span>
-      <span id="calendarLoading" class="loading-dots" style="display:none"></span>
-    </button>
+    <button id="calendarBtn" onclick="toggleCalendar()" style="flex: 1; position: relative;" disabled>
+  📅 打開月曆
+  <span class="en-text">Open Calendar</span>
+  <span id="calendarLoading" class="loading-dots" style="display:none"></span>
+</button>
+
+<button id="rulesBtn" onclick="openRules()" 
+        style="flex: 0 0 auto; background: #3C8050; color: white; border: none; 
+               padding: 12px 16px; border-radius: 6px; font-size: 16px; 
+               cursor: pointer; white-space: nowrap; font-weight: bold;" disabled>
+  📖 預約規則
+  <span class="en-text">Reservation Rules</span>
+</button>
     
     <button id="rulesBtn" onclick="openRules()" 
             style="flex: 0 0 auto; background: #3C8050; color: white; border: none; 
@@ -346,7 +354,9 @@ async function init() {
     ]);
     
     console.log('✅ 並行載入完成（含月曆資料）Parallel loading completed (including calendar data)');
-    
+    // 啟用按鈕
+    document.getElementById('calendarBtn').disabled = false;
+    document.getElementById('rulesBtn').disabled = false;
     if (!userCheckResult.registered) {
       console.log('📝 用戶未註冊，跳轉到註冊頁面 User not registered, redirecting to registration page');
       location.href = 'register.html';
