@@ -430,8 +430,15 @@ async function preloadCalendarData() {
 function toggleCalendar() {
   const calendar = document.getElementById('calendarContainer');
   const btn = document.getElementById('calendarBtn');
-  const isHidden = window.getComputedStyle(calendar).display === 'none';
+  
+  // 檢查元素是否存在
+  if (!calendar || !btn) {
+    console.error('找不到月曆元素');
+    return;
+  }
 
+  const isHidden = calendar.style.display === 'none' || window.getComputedStyle(calendar).display === 'none';
+  
   // ✅ 切換顯示狀態
   calendar.style.display = isHidden ? 'block' : 'none';
   btn.innerHTML = isHidden
@@ -440,13 +447,7 @@ function toggleCalendar() {
 
   // ✅ 每次開啟都重新渲染日曆內容
   if (isHidden) {
-    if (typeof renderCalendar === 'function') {
-      renderCalendar(currentYear, currentMonth);
-    } else if (typeof generateCalendar === 'function') {
-      generateCalendar();
-    } else {
-      console.warn('⚠️ 沒找到 renderCalendar() 或 generateCalendar()，請確認名稱');
-    }
+    renderCalendar();
   }
 }
 
@@ -585,7 +586,7 @@ function selectDate(dateStr) {
     noService: ReservationValidator.isNoServiceDate(dateStr),
     withinWindow: ReservationValidator.isWithinBookingWindow(dateStr),
     afterDeadline: ReservationValidator.isAfterDeadline(dateStr),
-    hasReservation: ReservationValidator.hasExistingReservation(userData.userId, dateStr)
+    hasReservation: ReservationValidator.hasExistingReservation(userData.userId, dateStr, '')
   };
 
   // 檢查日期有效性
