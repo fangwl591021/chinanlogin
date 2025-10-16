@@ -489,7 +489,7 @@ function renderCalendar() {
     const isNoService = ReservationValidator.isNoServiceDate(dateStr);
     const isAfterDeadline = ReservationValidator.isAfterDeadline(dateStr);
     const isWithinWindow = ReservationValidator.isWithinBookingWindow(dateStr);
-    const hasReservation = userData ? ReservationValidator.hasExistingReservation(userData.userId, dateStr) : false;
+    const hasReservation = userData ? ReservationValidator.hasExistingReservation(userData.userId, dateStr, '') : false;
     
     let classes = 'calendar-day';
     let disabled = false;
@@ -1209,6 +1209,11 @@ static hasExistingReservation(userId, dateStr, newRoute) {
            res.date.split('T')[0] === dateStr && 
            res.status !== '已取消'
   );
+  
+  // 如果沒有傳入 route 參數，檢查是否有任何預約（向後兼容）
+  if (!newRoute) {
+    return userReservations.length > 0;
+  }
   
   // 如果沒有同方向的預約，就可以預約
   const isNewRouteOutbound = newRoute.includes('A');
