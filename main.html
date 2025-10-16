@@ -917,7 +917,8 @@ async function cancelReservation(reservationId) {
       return;
     }
     
-    const response = await fetch(WORKER_URL, {
+    // 並行處理取消和推播，不等待推播結果
+    const cancelPromise = fetch(WORKER_URL, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -929,6 +930,9 @@ async function cancelReservation(reservationId) {
         userId: userData.userId 
       })
     });
+
+    // 立即顯示取消成功，不等待推播
+    const response = await cancelPromise;
 
     // 檢查響應狀態
     if (!response.ok) {
@@ -948,7 +952,7 @@ async function cancelReservation(reservationId) {
     if (result.status === 'success') {
       alert('✅ 已取消預約\n✅ Reservation cancelled');
 
-      // LINE 群組推播通知（取消預約）
+      // 背景執行推播（不等待結果）
       try {
         const info = routeTimes[reservationToCancel.route] || {};
         
@@ -968,35 +972,33 @@ async function cancelReservation(reservationId) {
           message: `❌ 穿山甲專車預約取消\nPangolin Shuttle Reservation Cancelled\n\n日期：${reservationDate}\nDate: ${reservationDate}\n班次：${reservationToCancel.route}｜${info.time || ""} ${info.direction || ""}\nTime: ${reservationToCancel.route}｜${info.time || ""} ${info.eng || ""}\n姓名：${userName}\nName: ${userName}\n上車：${fromStop}\nPick-up: ${fromStop}\n下車：${toStop}\nDrop-off: ${toStop}`
         };
 
-        console.log('發送取消推播數據 Sending cancellation push data:', pushData);
+        console.log('背景發送取消推播數據 Background sending cancellation push data');
         
-        const pushRes = await fetch(WORKER_URL, {
+        // 背景執行推播，不等待結果
+        fetch(WORKER_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(pushData)
+        }).then(pushRes => {
+          if (!pushRes.ok) {
+            console.warn('推播請求失敗 Push request failed:', pushRes.status);
+          } else {
+            console.log('✅ 取消推播發送成功 Cancellation push sent successfully');
+          }
+        }).catch(pushErr => {
+          console.error('❌ 取消推播錯誤 Cancellation push error:', pushErr);
         });
         
-        // 檢查推播響應狀態
-        if (!pushRes.ok) {
-          throw new Error(`推播請求失敗 Push request failed: ${pushRes.status}`);
-        }
-        
-        const pushResult = await pushRes.json();
-        console.log('🚫 群組推播響應 Group push response:', pushResult);
-        
-        if (pushResult.status === 'success') {
-          console.log('✅ 取消推播發送成功 Cancellation push sent successfully');
-        } else {
-          console.warn('⚠️ 取消推播響應狀態不是 success Cancellation push response status not success:', pushResult);
-        }
-        
       } catch (pushErr) {
-        console.error('❌ 取消推播錯誤 Cancellation push error:', pushErr);
-        // 推播失敗不影響主要取消流程，只是記錄錯誤
+        console.error('❌ 取消推播準備錯誤 Cancellation push preparation error:', pushErr);
       }
 
-      // 重新載入預約列表
-      await loadExistingReservations();
+      // 立即重新載入預約列表和刷新日曆
+      await Promise.all([
+        loadExistingReservations(),
+        refreshCalendarIfVisible()
+      ]);
+
     } else {
       alert('❌ 取消失敗：' + (result.message || '請稍後再試') + '\n❌ Cancellation failed: ' + (result.message || 'Please try again later'));
     }
@@ -1009,6 +1011,19 @@ async function cancelReservation(reservationId) {
       alert('❌ 取消預約時發生錯誤: ' + error.message + '\n❌ Error occurred while cancelling reservation: ' + error.message);
     }
   }
+}
+
+// 新增函數：如果日曆可見就刷新
+function refreshCalendarIfVisible() {
+  const calendarContainer = document.getElementById('calendarContainer');
+  if (calendarContainer && calendarContainer.style.display !== 'none') {
+    // 重新載入停駛日期並渲染日曆
+    return loadNoServiceDates().then(() => {
+      renderCalendar();
+      console.log('✅ 日曆已刷新 Calendar refreshed');
+    });
+  }
+  return Promise.resolve();
 }
 
 // === 載入預約 ===
