@@ -16,6 +16,12 @@
       color: #ffffff;
       margin-top: 2px;
     }
+    .en-text-dark {
+      display: block;
+      font-size: 14px;
+      color: #666666;
+      margin-top: 2px;
+    }
     #calendarBtn { 
       width:calc(100% - 32px); background:#3c8050; color:#fff; border:none; 
       padding:12px; border-radius:6px; font-size:16px; font-weight:bold; 
@@ -169,7 +175,7 @@
   </header>
 
   <div id="userInfo" class="user-section">
-    <div class="loading-state">⏳ 系統初始化中...<span class="en-text">System initializing...</span></div>
+    <div class="loading-state">⏳ 系統初始化中...<span class="en-text-dark">System initializing...</span></div>
   </div>
 
   <div style="display: flex; gap: 10px; margin: 10px 16px; align-items: center;">
@@ -190,9 +196,9 @@
 
   <div id="calendarContainer" style="display:none;margin-top:10px; padding:0 16px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-      <button onclick="changeMonth(-1)" style="width:auto; padding:5px 10px;">◀ 上個月<span class="en-text">Prev Month</span></button>
+      <button onclick="changeMonth(-1)" style="width:auto; padding:5px 10px;">◀ 上個月<span class="en-text-dark">Prev Month</span></button>
       <h3 id="calendarTitle" style="margin:0; font-size:16px;"></h3>
-      <button onclick="changeMonth(1)" style="width:auto; padding:5px 10px;">下個月 ▶<span class="en-text">Next Month</span></button>
+      <button onclick="changeMonth(1)" style="width:auto; padding:5px 10px;">下個月 ▶<span class="en-text-dark">Next Month</span></button>
     </div>
     <div id="calendar" class="calendar"></div>
   </div>
@@ -201,21 +207,21 @@
   <div id="holidayNotice" class="notice error" style="display:none;"></div>
 
   <div id="routeSection" class="route-section" style="display:none;">
-    <h3>請選擇搭乘班次<span class="en-text">Please Select Shuttle Time</span></h3>
+    <h3>請選擇搭乘班次<span class="en-text-dark">Please Select Shuttle Time</span></h3>
     <div id="routeButtons" class="route-buttons"></div>
   </div>
 
   <div id="fromStopSection" class="stop-selector" style="display:none;">
-    <h3>請選擇上車站<span class="en-text">Please Select Pick-up Stop</span></h3>
+    <h3>請選擇上車站<span class="en-text-dark">Please Select Pick-up Stop</span></h3>
     <select id="fromStop">
-      <option value="">請先選擇班次<span class="en-text">Please select shuttle time first</span></option>
+      <option value="">請先選擇班次<span class="en-text-dark">Please select shuttle time first</span></option>
     </select>
   </div>
 
   <div id="toStopSection" class="stop-selector" style="display:none;">
-    <h3>請選擇下車站<span class="en-text">Please Select Drop-off Stop</span></h3>
+    <h3>請選擇下車站<span class="en-text-dark">Please Select Drop-off Stop</span></h3>
     <select id="toStop">
-      <option value="">請先選擇上車站<span class="en-text">Please select pick-up stop first</span></option>
+      <option value="">請先選擇上車站<span class="en-text-dark">Please select pick-up stop first</span></option>
     </select>
   </div>
 
@@ -287,7 +293,7 @@ async function loadRules() {
 function initFromRules() {
   // 生成站點資料
   const stopsOutbound = RESERVATION_RULES.stopList.map(stop => 
-    `${stop[0]}<br><small style='color: #3b82f6;'>${stop[1]}</small>`
+    `${stop[0]}<br><small style='color: #666;'>${stop[1]}</small>`
   );
   const stopsReturn = [...stopsOutbound].reverse();
 
@@ -320,9 +326,9 @@ async function init() {
       document.getElementById('userInfo').innerHTML = `
         <div style="color: red; text-align: center;">
           <p>❌ 系統加載失敗</p>
-          <p class="en-text">System loading failed</p>
+          <p class="en-text-dark">System loading failed</p>
           <p>請在 LINE App 中打開此頁面</p>
-          <p class="en-text">Please open this page in LINE App</p>
+          <p class="en-text-dark">Please open this page in LINE App</p>
         </div>
       `;
       return;
@@ -375,12 +381,12 @@ async function init() {
     document.getElementById('userInfo').innerHTML = `
       <div style="color: red; text-align: center;">
         <p>❌ 系統初始化失敗</p>
-        <p class="en-text">System initialization failed</p>
+        <p class="en-text-dark">System initialization failed</p>
         <p>錯誤: ${error.message}</p>
-        <p class="en-text">Error: ${error.message}</p>
+        <p class="en-text-dark">Error: ${error.message}</p>
         <button onclick="location.reload()" style="padding: 10px; margin: 10px;">
           重新加載
-          <span class="en-text">Reload</span>
+          <span class="en-text-dark">Reload</span>
         </button>
       </div>
     `;
@@ -450,15 +456,13 @@ function toggleCalendar() {
   }
 }
 
-
-
 // === 📅 月曆產生 ===
 function renderCalendar() {
   const cal = document.getElementById('calendar');
   const title = document.getElementById('calendarTitle');
   
   title.textContent = `${currentYear}年 ${currentMonth + 1}月`;
-  title.innerHTML = `${currentYear}年 ${currentMonth + 1}月<br><small class="en-text">${currentYear} ${getMonthName(currentMonth)}</small>`;
+  title.innerHTML = `${currentYear}年 ${currentMonth + 1}月<br><small class="en-text-dark">${currentYear} ${getMonthName(currentMonth)}</small>`;
   
   const firstDay = new Date(currentYear, currentMonth, 1);
   const lastDay = new Date(currentYear, currentMonth + 1, 0);
@@ -472,7 +476,7 @@ function renderCalendar() {
   ['日', '一', '二', '三', '四', '五', '六'].forEach(d => {
     const engDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const engDay = engDays[['日', '一', '二', '三', '四', '五', '六'].indexOf(d)];
-    html += `<div class="calendar-header">${d}<br><small style="color: #3b82f6; font-size: 10px;">${engDay}</small></div>`;
+    html += `<div class="calendar-header">${d}<br><small style="color: #666; font-size: 10px;">${engDay}</small></div>`;
   });
   
   for (let i = startWeekday - 1; i >= 0; i--) {
@@ -502,31 +506,31 @@ function renderCalendar() {
       disabledReason = '您已預約';
       disabledReasonEn = 'Booked';
       classes += ' disabled';
-      html += `<div class="${classes}" style="background: #e0e8ff; border: 1px solid #b3c6ff; color: #333;">${day}<br><small>${disabledReason}</small><br><small style="color: #3b82f6; font-size: 9px;">${disabledReasonEn}</small></div>`;
+      html += `<div class="${classes}" style="background: #e0e8ff; border: 1px solid #b3c6ff; color: #333;">${day}<br><small>${disabledReason}</small><br><small style="color: #666; font-size: 9px;">${disabledReasonEn}</small></div>`;
     } else if (isPast) {
       disabled = true;
       disabledReason = '已過期';
       disabledReasonEn = 'Expired';
       classes += ' past';
-      html += `<div class="${classes}">${day}<br><small>${disabledReason}</small><br><small style="color: #3b82f6; font-size: 9px;">${disabledReasonEn}</small></div>`;
+      html += `<div class="${classes}">${day}<br><small>${disabledReason}</small><br><small style="color: #666; font-size: 9px;">${disabledReasonEn}</small></div>`;
     } else if (isNoService) {
       disabled = true;
       disabledReason = '停駛';
       disabledReasonEn = 'No Service';
       classes += ' disabled';
-      html += `<div class="${classes}" style="background: #f8f9fa; color: #999;">${day}<br><small>${disabledReason}</small><br><small style="color: #3b82f6; font-size: 9px;">${disabledReasonEn}</small></div>`;
+      html += `<div class="${classes}" style="background: #f8f9fa; color: #999;">${day}<br><small>${disabledReason}</small><br><small style="color: #666; font-size: 9px;">${disabledReasonEn}</small></div>`;
     } else if (!isWithinWindow) {
       disabled = true;
       disabledReason = '未開放';
       disabledReasonEn = 'Not Open';
       classes += ' disabled';
-      html += `<div class="${classes}" style="background: #f8f9fa; color: #999;">${day}<br><small>${disabledReason}</small><br><small style="color: #3b82f6; font-size: 9px;">${disabledReasonEn}</small></div>`;
+      html += `<div class="${classes}" style="background: #f8f9fa; color: #999;">${day}<br><small>${disabledReason}</small><br><small style="color: #666; font-size: 9px;">${disabledReasonEn}</small></div>`;
     } else if (isAfterDeadline && ReservationValidator.isToday(dateStr)) {
       disabled = true;
       disabledReason = '已截止';
       disabledReasonEn = 'Deadline Passed';
       classes += ' disabled';
-      html += `<div class="${classes}" style="background: #f8f9fa; color: #999;">${day}<br><small>${disabledReason}</small><br><small style="color: #3b82f6; font-size: 9px;">${disabledReasonEn}</small></div>`;
+      html += `<div class="${classes}" style="background: #f8f9fa; color: #999;">${day}<br><small>${disabledReason}</small><br><small style="color: #666; font-size: 9px;">${disabledReasonEn}</small></div>`;
     } else {
       if (selectedDate === dateStr) {
         classes += ' selected';
@@ -534,7 +538,7 @@ function renderCalendar() {
       
       const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
       const dayLabel = isWeekend ? 
-        `${day}<br><small style="font-size:10px;">週末</small><br><small style="color: #3b82f6; font-size: 9px;">Weekend</small>` : 
+        `${day}<br><small style="font-size:10px;">週末</small><br><small style="color: #666; font-size: 9px;">Weekend</small>` : 
         day;
       
       html += `<div class="${classes}" onclick="selectDate('${dateStr}')">${dayLabel}</div>`;
@@ -590,22 +594,22 @@ function selectDate(dateStr) {
 
   // 檢查日期有效性
   if (validation.past) {
-    showError('🚫 無法預約過去日期<br><span style="color: #3b82f6;">Cannot book past dates</span>');
+    showError('🚫 無法預約過去日期<br><span style="color: #666;">Cannot book past dates</span>');
     return;
   }
 
   if (validation.noService) {
-    showError('🚫 該日期為停駛日，無法預約<br><span style="color: #3b82f6;">No service on this date, cannot book</span>');
+    showError('🚫 該日期為停駛日，無法預約<br><span style="color: #666;">No service on this date, cannot book</span>');
     return;
   }
 
   if (!validation.withinWindow) {
-    showError(`🚫 只能預約未來 ${RESERVATION_RULES.maxDaysAhead} 天內的班次<br><span style="color: #3b82f6;">Can only book within ${RESERVATION_RULES.maxDaysAhead} days</span>`);
+    showError(`🚫 只能預約未來 ${RESERVATION_RULES.maxDaysAhead} 天內的班次<br><span style="color: #666;">Can only book within ${RESERVATION_RULES.maxDaysAhead} days</span>`);
     return;
   }
 
   if (validation.afterDeadline) {
-    showError(`🚫 今日預約已截止（${RESERVATION_RULES.dailyDeadline}）<br><span style="color: #3b82f6;">Today\'s booking deadline passed (${RESERVATION_RULES.dailyDeadline})</span>`);
+    showError(`🚫 今日預約已截止（${RESERVATION_RULES.dailyDeadline}）<br><span style="color: #666;">Today\'s booking deadline passed (${RESERVATION_RULES.dailyDeadline})</span>`);
     return;
   }
 
@@ -617,7 +621,7 @@ function selectDate(dateStr) {
              res.status !== '已取消'
     );
     
-    showError(`您已在 ${dateStr} 預約了 ${existingReservation?.route || ''} 班次，每天只能預約一個班次<br><span style="color: #3b82f6;">You already booked ${existingReservation?.route || ''} on ${dateStr}, only one booking per day</span>`);
+    showError(`您已在 ${dateStr} 預約了 ${existingReservation?.route || ''} 班次，每天只能預約一個班次<br><span style="color: #666;">You already booked ${existingReservation?.route || ''} on ${dateStr}, only one booking per day</span>`);
     return;
   }
 
@@ -629,7 +633,7 @@ function selectDate(dateStr) {
   
   // 顯示選擇的日期
   document.getElementById('selectedDate').style.display = 'block';
-  document.getElementById('selectedDate').innerHTML = `✅ 已選擇日期：${dateStr}<br><span style="color: #3b82f6;">✅ Selected date: ${dateStr}</span>`;
+  document.getElementById('selectedDate').innerHTML = `✅ 已選擇日期：${dateStr}<br><span style="color: #666;">✅ Selected date: ${dateStr}</span>`;
   document.getElementById('holidayNotice').style.display = 'none';
   
   // 關閉月曆
@@ -659,10 +663,10 @@ async function showRouteSelection() {
     html += `
       <div class="${buttonClass}" ${isFull ? '' : `onclick="selectRoute('${id}', '${info.direction}')"`}>
         <div class="route-time">${info.time}</div>
-        <div class="route-direction">${info.direction}<br><span style="color: #3b82f6; font-size: 11px;">${info.eng}</span></div>
+        <div class="route-direction">${info.direction}<br><span style="color: #666; font-size: 11px;">${info.eng}</span></div>
         <div style="font-size: 11px; margin-top: 4px; color: ${isFull ? '#f44336' : '#4caf50'}">
           ${seatInfo}<br>
-          <span style="color: #3b82f6; font-size: 10px;">${seatInfoEn}</span>
+          <span style="color: #666; font-size: 10px;">${seatInfoEn}</span>
         </div>
       </div>
     `;
@@ -704,8 +708,8 @@ function showStopSelection(direction) {
   const toStopSelect = document.getElementById('toStop');
   
   // 重置選擇
-  fromStopSelect.innerHTML = '<option value="">請選擇上車站<br><span style="color: #3b82f6;">Please select pick-up stop</span></option>';
-  toStopSelect.innerHTML = '<option value="">請先選擇上車站<br><span style="color: #3b82f6;">Please select pick-up stop first</span></option>';
+  fromStopSelect.innerHTML = '<option value="">請選擇上車站<br><span style="color: #666;">Please select pick-up stop</span></option>';
+  toStopSelect.innerHTML = '<option value="">請先選擇上車站<br><span style="color: #666;">Please select pick-up stop first</span></option>';
   
   // 根據方向決定車站列表
   const isOutbound = direction.includes('暨大→');
@@ -726,7 +730,7 @@ function showStopSelection(direction) {
   fromStopSelect.onchange = function() {
     if (this.value) {
       // 過濾掉已選擇的上車站
-      toStopSelect.innerHTML = '<option value="">請選擇下車站<br><span style="color: #3b82f6;">Please select drop-off stop</span></option>';
+      toStopSelect.innerHTML = '<option value="">請選擇下車站<br><span style="color: #666;">Please select drop-off stop</span></option>';
       
       stops.filter(stop => {
         const stopName = stop.split('<')[0];
@@ -741,7 +745,7 @@ function showStopSelection(direction) {
       // 檢查是否可以顯示送出按鈕
       checkSubmitButton();
     } else {
-      toStopSelect.innerHTML = '<option value="">請先選擇上車站<br><span style="color: #3b82f6;">Please select pick-up stop first</span></option>';
+      toStopSelect.innerHTML = '<option value="">請先選擇上車站<br><span style="color: #666;">Please select pick-up stop first</span></option>';
       document.getElementById('submitBtn').style.display = 'none';
     }
   };
@@ -1036,13 +1040,13 @@ function renderCurrentReservationCard() {
   const container = document.getElementById('currentReservationCard');
   
   if (!existingReservations || existingReservations.length === 0) {
-    container.innerHTML = '<div class="no-reservation">目前沒有預約紀錄<br><span style="color: #3b82f6;">No Reservation Records</span></div>';
+    container.innerHTML = '<div class="no-reservation">目前沒有預約紀錄<br><span style="color: #666;">No Reservation Records</span></div>';
     container.style.display = 'block';
     return;
   }
   
   let html = '<div class="carousel-container">';
-  html += '<div class="carousel-title">🧾 我的預約<br><span style="color: #3b82f6; font-size: 14px;">My Reservations</span></div>';
+  html += '<div class="carousel-title">🧾 我的預約<br><span style="color: #666; font-size: 14px;">My Reservations</span></div>';
   html += '<div class="carousel">';
   
   existingReservations.forEach(r => {
@@ -1081,32 +1085,32 @@ function renderCurrentReservationCard() {
       <div class="reservation-bubble" style="min-width: 190px;">
         <div class="bubble-header">
           ${r.date.split('T')[0]} (週${dayOfWeek})
-          <span style="color: #3b82f6; font-size: 12px;">${r.date.split('T')[0]} (${dayOfWeekEn})</span>
+          <span style="color: #ffffff; font-size: 12px;">${r.date.split('T')[0]} (${dayOfWeekEn})</span>
         </div>
         <div class="bubble-body">
           <div class="bubble-line">
-            <strong>班次<br><span style="color: #3b82f6; font-size: 11px;">Time</span></strong>
+            <strong>班次<br><span style="color: #666; font-size: 11px;">Time</span></strong>
             <span class="route-time">${routeInfo.time}</span>
           </div>
           <div class="bubble-line">
-            <strong>路線<br><span style="color: #3b82f6; font-size: 11px;">Route</span></strong>
+            <strong>路線<br><span style="color: #666; font-size: 11px;">Route</span></strong>
             <span>
               ${directionZh}<br>
-              <span style="color: #3b82f6; font-size: 11px;">${directionEn}</span>
+              <span style="color: #666; font-size: 11px;">${directionEn}</span>
             </span>
           </div>
           <div class="bubble-line">
-            <strong>上車站<br><span style="color: #3b82f6; font-size: 11px;">From</span></strong>
+            <strong>上車站<br><span style="color: #666; font-size: 11px;">From</span></strong>
             <span>
               ${r.fromStop}<br>
-              <span style="color: #3b82f6; font-size: 11px;">${fromStopEn}</span>
+              <span style="color: #666; font-size: 11px;">${fromStopEn}</span>
             </span>
           </div>
           <div class="bubble-line">
-            <strong>下車站<br><span style="color: #3b82f6; font-size: 11px;">To</span></strong>
+            <strong>下車站<br><span style="color: #666; font-size: 11px;">To</span></strong>
             <span>
               ${r.toStop}<br>
-              <span style="color: #3b82f6; font-size: 11px;">${toStopEn}</span>
+              <span style="color: #666; font-size: 11px;">${toStopEn}</span>
             </span>
           </div>
         </div>
@@ -1296,5 +1300,3 @@ window.addEventListener('load', init);
 </script>
 </body>
 </html>
-
-
