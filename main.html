@@ -428,30 +428,37 @@ function toggleCalendar() {
   const calendar = document.getElementById('calendarContainer');
   const btn = document.getElementById('calendarBtn');
   
-  // 檢查元素是否存在
-  if (!calendar || !btn) {
-    console.error('找不到月曆元素');
+  // 更嚴格的元素檢查
+  if (!calendar || !btn || typeof calendar.style === 'undefined') {
+    console.error('找不到月曆元素或元素未完全載入');
+    // 延遲重試
+    setTimeout(() => {
+      const retryCalendar = document.getElementById('calendarContainer');
+      const retryBtn = document.getElementById('calendarBtn');
+      if (retryCalendar && retryBtn) {
+        toggleCalendar();
+      }
+    }, 100);
     return;
   }
 
-  // 安全地檢查顯示狀態
-  let isHidden;
+  // 使用更安全的方式檢查顯示狀態
+  let isHidden = true;
   try {
     const computedStyle = window.getComputedStyle(calendar);
     isHidden = computedStyle.display === 'none';
   } catch (error) {
-    // 如果 getComputedStyle 失敗，使用 style.display
-    console.warn('getComputedStyle 失敗，使用備用方法');
-    isHidden = calendar.style.display === 'none';
+    // 如果 getComputedStyle 失敗，使用直接檢查
+    isHidden = calendar.style.display === 'none' || !calendar.style.display;
   }
   
-  // ✅ 切換顯示狀態
+  // 切換顯示狀態
   calendar.style.display = isHidden ? 'block' : 'none';
   btn.innerHTML = isHidden
     ? '📅 關閉月曆<span class="en-text">Close Calendar</span>'
     : '📅 打開月曆<span class="en-text">Open Calendar</span>';
 
-  // ✅ 每次開啟都重新渲染日曆內容
+  // 每次開啟都重新渲染日曆內容
   if (isHidden) {
     renderCalendar();
   }
