@@ -133,9 +133,22 @@
     .route-section { padding: 0 16px; margin: 20px 0; }
     .route-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
     .route-btn { 
-      padding: 12px; border: 2px solid #3c8050; border-radius: 8px; background: white; cursor: pointer; text-align: center; transition: all 0.2s;
-      line-height: 1.3;
-    }
+  padding: 12px; 
+  border: 2px solid #3c8050;  /* 綠色邊框 */
+  border-radius: 8px; 
+  background: white; 
+  cursor: pointer; 
+  text-align: center; 
+  transition: all 0.2s;
+  line-height: 1.3;
+}
+.route-btn:hover { 
+  background: #eaf5ea;  /* 淺綠色懸停背景 */
+}
+.route-btn.selected { 
+  background: #3c8050;   /* 綠色選中背景 */
+  color: white; 
+}
     .route-btn:hover { background: #eaf5ea; }
     .route-btn.selected { background: #3c8050; color: white; }
     .route-btn.disabled {
