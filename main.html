@@ -874,38 +874,55 @@ async function submitReservation() {
     console.log('📊 預約回應:', result);
     
     if (result.status === 'success') {
-  alert('✅ 預約成功！\n✅ Booking successful!');
+      alert('✅ 預約成功！\n✅ Booking successful!');
 
-  // ⚡️ 立即把這筆預約加入現有陣列（前端立即更新）
-  existingReservations.push({
-    id: result.id || `${userData.userId}-${selectedDate}-${selectedRoute}`,
-    userId: userData.userId,
-    name: userData.name,
-    studentId: userData.studentId,
-    department: userData.department,
-    phone: userData.phone || '',
-    route: selectedRoute,
-    date: selectedDate,
-    fromStop: cleanFromStop,
-    toStop: cleanToStop,
-    status: '已預約'
-  });
+      // 🚀 發送預約成功推播通知
+      try {
+        const pushData = {
+          type: 'push',
+          message: `# 穿山甲專車新預約\n\n日期：${selectedDate}\n班次：${selectedRoute} | ${info.time} ${info.direction}\n姓名：${userData.name}\n電話：${userData.phone || '未提供'}\n上車：${cleanFromStop}\n下車：${cleanToStop}`
+        };
+        
+        // 非阻塞方式發送推播
+        fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(pushData)
+        }).catch(err => console.warn('預約推播發送失敗:', err));
+        
+      } catch (pushErr) {
+        console.warn('預約推播通知失敗:', pushErr);
+      }
 
-  // ⚡️ 立即更新畫面（不等伺服器回傳）
-  renderCurrentReservationCard();
+      // ⚡️ 立即把這筆預約加入現有陣列（前端立即更新）
+      existingReservations.push({
+        id: result.id || `${userData.userId}-${selectedDate}-${selectedRoute}`,
+        userId: userData.userId,
+        name: userData.name,
+        studentId: userData.studentId,
+        department: userData.department,
+        phone: userData.phone || '',
+        route: selectedRoute,
+        date: selectedDate,
+        fromStop: cleanFromStop,
+        toStop: cleanToStop,
+        status: '已預約'
+      });
 
-  // 🔁 清除選項、回復按鈕
-  resetReservationForm();
+      // ⚡️ 立即更新畫面（不等伺服器回傳）
+      renderCurrentReservationCard();
 
-  // 🕐 延遲 1 秒後，再抓伺服器資料，確保最新狀態
-  setTimeout(() => {
-    updateUIAfterReservationChange();
-  }, 1000);
+      // 🔁 清除選項、回復按鈕
+      resetReservationForm();
 
-} else {
-  alert('❌ 預約失敗：' + (result.message || '請稍後再試'));
-}
+      // 🕐 延遲 1 秒後，再抓伺服器資料，確保最新狀態
+      setTimeout(() => {
+        updateUIAfterReservationChange();
+      }, 1000);
 
+    } else {
+      alert('❌ 預約失敗：' + (result.message || '請稍後再試'));
+    }
     
   } catch (error) {
     console.error('預約錯誤:', error);
@@ -998,9 +1015,10 @@ async function cancelReservation(reservationId) {
         const reservationDate = reservationToCancel.date ? reservationToCancel.date.split('T')[0] : '未知日期';
         const userName = reservationToCancel.name || userData.name || '未知用戶';
 
+        // 🚀 修正這裡：補齊推播資料的結尾大括號
         const pushData = {
-          type: "pushLine",
-          message: `❌ 穿山甲專車預約取消\nPangolin Shuttle Reservation Cancelled\n\n日期：${reservationDate}\nDate: ${reservationDate}\n班次：${reservationToCancel.route}｜${info.time || ""} ${info.direction || ""}\nTime: ${reservationToCancel.route}｜${info.time || ""} ${info.eng || ""}\n姓名：${userName}\nName: ${userName}\n上車：${fromStop}\nPick-up: ${fromStop}\n下車：${toStop}\nDrop-off: ${toStop}`
+          type: 'push',
+          message: `# 穿山甲專車預約取消\n\n日期：${reservationDate}\n姓名：${userName}\n班次：${reservationToCancel.route} | ${info.time} ${info.direction}\n狀態：已取消`
         };
 
         console.log('發送取消推播數據 Sending cancellation push data:', pushData);
@@ -1056,7 +1074,6 @@ async function cancelReservation(reservationId) {
 }
 
 // === 核心更新函數：在預約變更後立即更新所有相關UI ===
-// === 核心更新函數：在預約變更後立即更新所有相關UI ===
 async function updateUIAfterReservationChange() {
   console.log('🔄 開始更新UI狀態 Starting UI update after reservation change');
   
@@ -1094,6 +1111,7 @@ async function updateUIAfterReservationChange() {
     }
   }
 }
+
 // === 載入預約（用於初始化）===
 async function loadExistingReservations() {
   try {
@@ -1282,15 +1300,15 @@ class ReservationValidator {
     return dateStr === today;
   }
 
-// 方案B核心：重複預約檢查 - 每天只能有1筆預約
-static hasExistingReservation(userId, dateStr) {
-  const userReservations = existingReservations.filter(
-    res => res.userId === userId && 
-           res.date.split('T')[0] === dateStr && 
-           res.status !== '已取消' && res.status !== 'cancelled'
-  );
-  return userReservations.length >= RESERVATION_RULES.maxPerDay;
-}
+  // 方案B核心：重複預約檢查 - 每天只能有1筆預約
+  static hasExistingReservation(userId, dateStr) {
+    const userReservations = existingReservations.filter(
+      res => res.userId === userId && 
+             res.date.split('T')[0] === dateStr && 
+             res.status !== '已取消' && res.status !== 'cancelled'
+    );
+    return userReservations.length >= RESERVATION_RULES.maxPerDay;
+  }
 
   // R11, R12: 站點驗證 - 修改為允許任選上下車點
   static validateStops(route, fromStop, toStop) {
