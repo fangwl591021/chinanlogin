@@ -451,22 +451,21 @@ function toggleCalendar() {
   const btn = document.getElementById('calendarBtn');
   const isHidden = window.getComputedStyle(calendar).display === 'none';
 
-  // ✅ 切換顯示狀態
   calendar.style.display = isHidden ? 'block' : 'none';
   btn.innerHTML = isHidden
     ? '📅 關閉月曆<span class="en-text">Close Calendar</span>'
     : '📅 打開月曆<span class="en-text">Open Calendar</span>';
 
-  // ✅ 每次開啟都重新渲染日曆內容
   if (isHidden) {
     if (typeof renderCalendar === 'function') {
-      renderCalendar();  // 移除參數
+      renderCalendar();
     } else if (typeof generateCalendar === 'function') {
       generateCalendar();
     } else {
       console.warn('⚠️ 沒找到 renderCalendar() 或 generateCalendar()，請確認名稱');
     }
   }
+} // ✅ ← 這個大括號要補上
 
 
 // === 📅 月曆產生 ===
