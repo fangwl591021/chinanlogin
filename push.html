@@ -63,7 +63,7 @@ async function sendPush(){
   if(!date || !route || !name){ result.textContent='❌ 必填欄位未完成'; result.style.color='red'; return; }
 
   let color = type === 'cancel' ? '#D32F2F' : '#27ACB2';
-  let title = type === 'cancel' ? '🚫 穿山甲專車預約取消' : '🚌 穿山甲專車新預約';
+  let title = type === 'cancel' ? '# 穿山甲專車預約取消' : '# 穿山甲專車新預約';
 
   const flex = {
     type: 'flex',
@@ -74,20 +74,32 @@ async function sendPush(){
       header: {
         type: 'box',
         layout: 'vertical',
-        contents: [{ type: 'text', text: title, weight: 'bold', color: '#fff', align: 'center' }],
+        contents: [{
+          type: 'text', 
+          text: title, 
+          weight: 'bold', 
+          color: '#fff', 
+          align: 'start',
+          size: 'lg'
+        }],
         backgroundColor: color
       },
       body: {
         type: 'box',
         layout: 'vertical',
-        spacing: 'sm',
+        spacing: 'md',
         contents: [
-          { type: 'text', text: `日期：${date}` },
-          { type: 'text', text: `班次：${route}` },
-          { type: 'text', text: `姓名：${name}` },
-          { type: 'text', text: `電話：${phone}` },
-          { type: 'text', text: `上車：${fromStop}` },
-          { type: 'text', text: `下車：${toStop}` }
+          { type: 'text', text: `日期：${date}`, size: 'md', wrap: true },
+          { type: 'text', text: `姓名：${name}`, size: 'md', wrap: true },
+          { type: 'text', text: `班次：${route}`, size: 'md', wrap: true },
+          { 
+            type: 'text', 
+            text: `狀態：${type === 'cancel' ? '已取消' : '新預約'}`, 
+            size: 'md', 
+            wrap: true,
+            weight: 'bold',
+            color: type === 'cancel' ? '#D32F2F' : '#27ACB2'
+          }
         ]
       }
     }
