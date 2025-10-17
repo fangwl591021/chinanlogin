@@ -458,33 +458,72 @@
     }
 
     // 載入所有預約資料
-    async function loadAllReservations() {
+async function loadAllReservations() {
+  try {
+    console.log('開始載入所有預約資料...');
+    
+    // 嘗試使用不同的模式來獲取預約資料
+    let result;
+    
+    // 方法1: 嘗試使用 reservations 模式
+    try {
+      const res1 = await fetch(`${WORKER_URL}?mode=reservations`);
+      if (res1.ok) {
+        result = await res1.json();
+        console.log('使用 reservations 模式載入成功');
+      }
+    } catch (e) {
+      console.log('reservations 模式失敗:', e);
+    }
+    
+    // 方法2: 如果方法1失敗，嘗試使用其他模式
+    if (!result || !result.reservations) {
       try {
-        console.log('開始載入所有預約資料...');
-        
-        // 嘗試使用 reservations 模式但不指定 userId
-        const res = await fetch(`${WORKER_URL}?mode=reservations`);
-        
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        const res2 = await fetch(`${WORKER_URL}?mode=allReservations`);
+        if (res2.ok) {
+          result = await res2.json();
+          console.log('使用 allReservations 模式載入成功');
         }
-        
-        const result = await res.json();
-        console.log('預約資料回應:', result);
-        
-        if (result.reservations && Array.isArray(result.reservations)) {
-          allReservations = result.reservations;
-          console.log(`成功載入 ${allReservations.length} 筆預約資料`);
-        } else {
-          console.log('未找到預約資料，使用模擬數據');
-          allReservations = generateMockReservations();
-        }
-      } catch (error) {
-        console.error('載入預約資料失敗:', error);
-        console.log('使用模擬數據');
-        allReservations = generateMockReservations();
+      } catch (e) {
+        console.log('allReservations 模式失敗:', e);
       }
     }
+    
+    // 方法3: 如果前兩種方法都失敗，使用模擬數據
+    if (!result || !result.reservations) {
+      console.log('API 載入失敗，使用模擬數據');
+      allReservations = generateMockReservations();
+      return;
+    }
+    
+    // 處理真實的預約資料
+    if (result.reservations && Array.isArray(result.reservations)) {
+      allReservations = result.reservations.map(res => ({
+        id: res.id || `res_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: res.name,
+        studentId: res.studentId,
+        department: res.department,
+        phone: res.phone,
+        fromStop: res.fromStop,
+        toStop: res.toStop,
+        route: res.route,
+        date: res.date,
+        status: res.status || '預約成功',
+        checkinTime: res.checkinTime || null
+      }));
+      
+      console.log(`成功載入 ${allReservations.length} 筆真實預約資料`);
+      console.log('預約資料範例:', allReservations.slice(0, 3));
+    } else {
+      console.log('未找到預約資料，使用模擬數據');
+      allReservations = generateMockReservations();
+    }
+  } catch (error) {
+    console.error('載入預約資料失敗:', error);
+    console.log('使用模擬數據');
+    allReservations = generateMockReservations();
+  }
+}
 
     // 生成模擬預約資料
     function generateMockReservations() {
@@ -609,7 +648,30 @@
         calendarDaysEl.appendChild(dayEl);
       }
     }
+// 測試 API 連接
+async function testAPI() {
+  try {
+    console.log('🔍 測試 API 連接...');
+    
+    // 測試不同的模式
+    const modes = ['reservations', 'allReservations', 'checkins'];
+    
+    for (const mode of modes) {
+      try {
+        const res = await fetch(`${WORKER_URL}?mode=${mode}`);
+        const result = await res.json();
+        console.log(`✅ ${mode} 模式回應:`, result);
+      } catch (e) {
+        console.log(`❌ ${mode} 模式失敗:`, e.message);
+      }
+    }
+  } catch (error) {
+    console.error('API 測試失敗:', error);
+  }
+}
 
+// 在初始化時呼叫測試
+// testAPI();
     // 選擇日期
     async function selectDate(dateStr) {
       selectedDate = dateStr;
@@ -681,63 +743,66 @@
     }
 
     // 顯示乘客列表
-    async function showPassengerList() {
-      passengerSection.style.display = 'block';
-      passengerListEl.innerHTML = '<div class="loading">載入乘客資料中...</div>';
-      
-      try {
-        // 從快取資料取得該班次的所有預約
-        const reservations = getRouteReservations(selectedDate, selectedTimeSlot);
-        
-        // 更新選擇資訊
-        const routeInfo = routeTimes[selectedTimeSlot];
-        selectedInfoEl.textContent = `${selectedDate} ${selectedTimeSlot} | ${routeInfo.time} ${routeInfo.direction}`;
-        
-        if (reservations.length === 0) {
-          passengerListEl.innerHTML = '<div class="no-data">此時段暫無預約</div>';
-          return;
-        }
-        
-        let html = '';
-        
-        reservations.forEach(reservation => {
-          const isCancelled = reservation.status === '已取消';
-          const isCheckedIn = reservation.checkinTime;
-          
-          html += `
-            <div class="passenger-item ${isCancelled ? 'cancelled' : ''}">
-              <div class="passenger-info">
-                <div class="passenger-name">${reservation.name}</div>
-                <div class="passenger-details">
-                  <div>學號：${reservation.studentId || '未提供'}</div>
-                  <div>系所：${reservation.department || '未提供'}</div>
-                  <div>電話：${reservation.phone || '未提供'}</div>
-                  <div>上車：${reservation.fromStop} → 下車：${reservation.toStop}</div>
-                </div>
-                <div class="passenger-status ${isCancelled ? 'status-cancelled' : 'status-success'}">
-                  ${isCancelled ? '已取消' : (isCheckedIn ? `已簽到 ${reservation.checkinTime}` : '預約成功')}
-                </div>
-              </div>
-              <div>
-                ${!isCancelled && !isCheckedIn ? 
-                  `<button class="checkin-btn" onclick="handleCheckin('${reservation.id}', this)">簽到</button>` :
-                  (isCheckedIn ? `<div class="checked-in">已簽到</div>` : '')
-                }
-              </div>
-            </div>
-          `;
-        });
-        
-        passengerListEl.innerHTML = html;
-        
-        // 滾動到乘客列表
-        passengerSection.scrollIntoView({ behavior: 'smooth' });
-        
-      } catch (error) {
-        console.error('載入乘客資料失敗:', error);
-        passengerListEl.innerHTML = '<div class="no-data">載入失敗，請稍後再試</div>';
-      }
+async function showPassengerList() {
+  passengerSection.style.display = 'block';
+  passengerListEl.innerHTML = '<div class="loading">載入乘客資料中...</div>';
+  
+  try {
+    // 從快取資料取得該班次的所有預約
+    const reservations = getRouteReservations(selectedDate, selectedTimeSlot);
+    
+    console.log(`🔍 找到 ${reservations.length} 筆預約:`, reservations);
+    
+    // 更新選擇資訊
+    const routeInfo = routeTimes[selectedTimeSlot];
+    selectedInfoEl.textContent = `${selectedDate} ${selectedTimeSlot} | ${routeInfo.time} ${routeInfo.direction}`;
+    
+    if (reservations.length === 0) {
+      passengerListEl.innerHTML = '<div class="no-data">此時段暫無預約</div>';
+      return;
     }
+    
+    let html = '';
+    
+    reservations.forEach(reservation => {
+      const isCancelled = reservation.status === '已取消';
+      const isCheckedIn = reservation.checkinTime;
+      
+      html += `
+        <div class="passenger-item ${isCancelled ? 'cancelled' : ''}">
+          <div class="passenger-info">
+            <div class="passenger-name">${reservation.name}</div>
+            <div class="passenger-details">
+              <div>學號：${reservation.studentId || '未提供'}</div>
+              <div>系所：${reservation.department || '未提供'}</div>
+              <div>電話：${reservation.phone || '未提供'}</div>
+              <div>上車：${reservation.fromStop} → 下車：${reservation.toStop}</div>
+              <div style="font-size: 10px; color: #999;">ID: ${reservation.id}</div>
+            </div>
+            <div class="passenger-status ${isCancelled ? 'status-cancelled' : 'status-success'}">
+              ${isCancelled ? '已取消' : (isCheckedIn ? `已簽到 ${reservation.checkinTime}` : '預約成功')}
+            </div>
+          </div>
+          <div>
+            ${!isCancelled && !isCheckedIn ? 
+              `<button class="checkin-btn" onclick="handleCheckin('${reservation.id}', this)">簽到</button>` :
+              (isCheckedIn ? `<div class="checked-in">已簽到</div>` : '')
+            }
+          </div>
+        </div>
+      `;
+    });
+    
+    passengerListEl.innerHTML = html;
+    
+    // 滾動到乘客列表
+    passengerSection.scrollIntoView({ behavior: 'smooth' });
+    
+  } catch (error) {
+    console.error('載入乘客資料失敗:', error);
+    passengerListEl.innerHTML = '<div class="no-data">載入失敗，請稍後再試</div>';
+  }
+}
 
     // 查詢特定日期和班次的所有預約 - 從快取資料過濾
     function getRouteReservations(dateStr, route) {
@@ -749,56 +814,65 @@
     }
 
     // 處理簽到
-    async function handleCheckin(reservationId, button) {
-      if (!confirm('確認此乘客已搭乘？')) return;
-      
-      try {
-        const now = new Date();
-        const checkinTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-        
-        console.log(`執行簽到: ${reservationId} at ${checkinTime}`);
-        
-        // 更新快取資料中的簽到狀態
-        const reservation = allReservations.find(r => r.id === reservationId);
-        if (reservation) {
-          reservation.checkinTime = checkinTime;
-        }
-        
-        // 如果是模擬數據，直接更新UI
-        if (reservationId.startsWith('mock')) {
-          button.disabled = true;
-          button.textContent = '已簽到';
-          button.classList.remove('checkin-btn');
-          button.classList.add('checked-in');
-          alert('✅ 簽到成功！');
-          return;
-        }
-        
-        // 發送簽到請求到後端
-        const res = await fetch(WORKER_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'checkin',
-            id: reservationId,
-            checkinTime: checkinTime
-          })
-        });
-        
-        const result = await res.json();
-        
-        if (result.status === 'success') {
-          alert('✅ 簽到成功！');
-          // 刷新乘客列表
-          await showPassengerList();
-        } else {
-          alert('❌ 簽到失敗：' + (result.message || '請稍後再試'));
-        }
-      } catch (error) {
-        console.error('簽到錯誤:', error);
-        alert('❌ 簽到失敗，請檢查網路連線');
-      }
+    // 處理簽到
+async function handleCheckin(reservationId, button) {
+  if (!confirm('確認此乘客已搭乘？')) return;
+  
+  try {
+    const now = new Date();
+    const checkinTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    
+    console.log(`執行簽到: ${reservationId} at ${checkinTime}`);
+    
+    // 更新快取資料中的簽到狀態
+    const reservation = allReservations.find(r => r.id === reservationId);
+    if (reservation) {
+      reservation.checkinTime = checkinTime;
     }
+    
+    // 如果是模擬數據，直接更新UI
+    if (reservationId.startsWith('mock')) {
+      button.disabled = true;
+      button.textContent = '已簽到';
+      button.classList.remove('checkin-btn');
+      button.classList.add('checked-in');
+      alert('✅ 簽到成功！');
+      return;
+    }
+    
+    // 修正：使用與預約系統一致的簽到資料格式
+    const checkinData = {
+      type: 'checkin',
+      reservationId: reservationId,  // 使用 reservationId 而不是 id
+      checkinTime: checkinTime,
+      date: selectedDate,           // 添加日期
+      route: selectedTimeSlot       // 添加班次
+    };
+    
+    console.log('📤 發送簽到資料:', checkinData);
+    
+    // 發送簽到請求到後端
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(checkinData)
+    });
+    
+    const result = await res.json();
+    console.log('📊 簽到回應:', result);
+    
+    if (result.status === 'success') {
+      alert('✅ 簽到成功！');
+      // 刷新乘客列表以顯示最新狀態
+      await showPassengerList();
+    } else {
+      alert('❌ 簽到失敗：' + (result.message || '請稍後再試'));
+    }
+  } catch (error) {
+    console.error('簽到錯誤:', error);
+    alert('❌ 簽到失敗，請檢查網路連線');
+  }
+}
 
     // 切換月份
     async function showPreviousMonth() {
