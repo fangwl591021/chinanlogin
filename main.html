@@ -962,16 +962,19 @@ async function cancelReservation(reservationId) {
     
     // 1. 先執行取消預約
     const response = await fetch(WORKER_URL, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ 
-  type: 'cancel',
-  userId: userData.userId,
-  date: reservationToCancel.date  // ✅ 加這行
-})
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  },
+  body: JSON.stringify({ 
+    type: 'cancel',
+    userId: userData.userId,
+    date: reservationToCancel.date  // ✅ 加這行
+  })
+- 
++ }); // ✅ 補上這個結束 fetch() 參數的大括號與括號
+
 
 
     // 檢查響應狀態
