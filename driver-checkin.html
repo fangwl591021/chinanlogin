@@ -501,6 +501,13 @@
 
     // 載入所有預約資料
     async function loadAllReservations() {
+      // 添加這段代碼到 loadAllReservations 函數
+console.log('=== 載入預約資料 ===');
+console.log('API 回應:', result);
+console.log('預約記錄數:', allReservations.length);
+allReservations.forEach((res, index) => {
+  console.log(`[${index}] ID: ${res.id}, 日期: ${res.date}, 班次: ${res.route}`);
+});
       try {
         let result;
         
