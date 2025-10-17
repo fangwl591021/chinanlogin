@@ -1081,21 +1081,6 @@ async function updateUIAfterReservationChange() {
       renderCalendar();
     }
     
-    // 4. 如果有選擇日期，重新檢查該日期的班次狀態
-    if (selectedDate) {
-      console.log('🔄 更新班次選擇狀態 Updating route selection state');
-      // 先隱藏班次選擇區塊，強制用戶重新選擇（確保顯示最新狀態）
-      document.getElementById('routeSection').style.display = 'none';
-      document.getElementById('fromStopSection').style.display = 'none';
-      document.getElementById('toStopSection').style.display = 'none';
-      document.getElementById('submitBtn').style.display = 'none';
-      
-      // 顯示提示訊息
-      document.getElementById('selectedDate').innerHTML = 
-        `✅ 預約狀態已更新，請重新選擇班次<br>
-         <span style="color: #666;">✅ Reservation status updated, please reselect shuttle time</span>`;
-    }
-    
     console.log('✅ UI更新完成 UI update completed');
     
   } catch (error) {
