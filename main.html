@@ -596,6 +596,13 @@ async function changeMonth(delta) {
 }
 
 function selectDate(dateStr) {
+  // 安全檢查：確保用戶信息已載入
+  if (!userData) {
+    console.error('❌ userData 未初始化');
+    alert('❌ 系統初始化中，請稍候...\n❌ System initializing, please wait...');
+    return;
+  }
+
   // 使用預約規則進行完整驗證
   const validation = {
     past: ReservationValidator.isPastDate(dateStr),
