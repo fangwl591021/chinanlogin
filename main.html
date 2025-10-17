@@ -780,45 +780,59 @@ function checkSubmitButton() {
 
 // === 📝 送出預約 ===
 async function submitReservation() {
-  const fromStop = document.getElementById('fromStop').value;
-  const toStop = document.getElementById('toStop').value;
+  console.log('🟢 送出預約函數被觸發');
+  
+  const fromStop = document.getElementById('fromStop');
+  const toStop = document.getElementById('toStop');
   const submitBtn = document.getElementById('submitBtn');
   
-  if (!selectedDate || !selectedRoute || !fromStop || !toStop) {
-    alert('請完整選擇日期、班次、上車站與下車站\nPlease complete date, time, pick-up and drop-off stop selection');
+  if (!fromStop || !toStop) {
+    console.error('❌ 找不到車站選擇元素');
+    return;
+  }
+  
+  const fromStopValue = fromStop.value;
+  const toStopValue = toStop.value;
+  
+  console.log('🔍 送出預約參數:', {
+    selectedDate, 
+    selectedRoute, 
+    fromStop: fromStopValue, 
+    toStop: toStopValue
+  });
+  
+  // 基本驗證
+  if (!selectedDate) {
+    alert('請選擇日期\nPlease select date');
+    return;
+  }
+  
+  if (!selectedRoute) {
+    alert('請選擇班次\nPlease select shuttle time');
+    return;
+  }
+  
+  if (!fromStopValue) {
+    alert('請選擇上車站\nPlease select pick-up stop');
+    return;
+  }
+  
+  if (!toStopValue) {
+    alert('請選擇下車站\nPlease select drop-off stop');
     return;
   }
 
-  // 檢查上下車站是否相同
-  if (fromStop === toStop) {
+  if (fromStopValue === toStopValue) {
     alert('上車站與下車站不能相同\nPick-up and drop-off stops cannot be the same');
     return;
   }
   
-  // 最終預約驗證
-  const validation = await ReservationValidator.validateReservation(
-    userData.userId, 
-    selectedDate, 
-    selectedRoute, 
-    fromStop, 
-    toStop
-  );
-  
-  if (!validation.isValid) {
-    alert('❌ 預約失敗：\n' + validation.errors.join('\n') + '\n\nBooking failed:\n' + validation.errors.join('\n'));
-    return;
-  }
-  
   try {
+    console.log('🔄 開始處理預約...');
     submitBtn.disabled = true;
     submitBtn.innerHTML = '預約中...<span class="en-text">Booking...</span>';
     
     const info = routeTimes[selectedRoute];
-    
-    // 除錯：檢查 routeTimes 和 info
-    console.log('🔍 routeTimes:', routeTimes);
-    console.log('🔍 selectedRoute:', selectedRoute);
-    console.log('🔍 info 物件:', info);
     
     if (!info) {
       alert('❌ 路線資訊缺失，請重新選擇班次');
@@ -827,15 +841,12 @@ async function submitReservation() {
       return;
     }
     
-    console.log('🔍 info.time:', info.time);
-    console.log('🔍 info.direction:', info.direction);
-    
-    // 提取純中文站名（移除 HTML 標籤）
+    // 提取純中文站名
     const extractChineseName = (stop) => stop.split('<')[0];
-    const cleanFromStop = extractChineseName(fromStop);
-    const cleanToStop = extractChineseName(toStop);
+    const cleanFromStop = extractChineseName(fromStopValue);
+    const cleanToStop = extractChineseName(toStopValue);
     
-    // 準備預約資料 - 確保所有必要欄位都有
+    // 準備預約資料
     const data = {
       type: 'reserve',
       userId: userData.userId,
@@ -851,10 +862,8 @@ async function submitReservation() {
     };
     
     console.log('📤 發送預約資料:', data);
-    console.log('📤 routeName 內容:', data.routeName);
-    console.log('📤 routeName 長度:', data.routeName.length);
     
-    // 寫入 GAS
+    // 發送請求
     const res = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -866,54 +875,15 @@ async function submitReservation() {
     
     if (result.status === 'success') {
       alert('✅ 預約成功！\n✅ Booking successful!');
-
-      // === 關鍵更新：立即更新畫面 ===
       await updateUIAfterReservationChange();
-
-      // LINE 群組推播通知（新預約）
-      try {
-        const pushData = {
-          type: "pushLine",
-          message: `🚌 穿山甲專車新預約\nPangolin Shuttle New Reservation\n\n日期：${selectedDate}\nDate: ${selectedDate}\n班次：${selectedRoute}｜${info.time} ${info.direction}\nTime: ${selectedRoute}｜${info.time} ${info.eng}\n姓名：${userData.name}\nName: ${userData.name}\n電話：${userData.phone || "未填"}\nPhone: ${userData.phone || "Not provided"}\n上車：${cleanFromStop}\nPick-up: ${cleanFromStop}\n下車：${cleanToStop}\nDrop-off: ${cleanToStop}`
-        };
-
-        console.log('發送推播數據 Sending push data:', pushData);
-        
-        const pushRes = await fetch(WORKER_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(pushData)
-        });
-        
-        // 檢查推播響應狀態
-        if (!pushRes.ok) {
-          throw new Error(`推播請求失敗 Push request failed: ${pushRes.status}`);
-        }
-        
-        const pushResult = await pushRes.json();
-        console.log('✅ 群組推播響應 Group push response:', pushResult);
-        
-        if (pushResult.status === 'success') {
-          console.log('✅ 推播發送成功 Push sent successfully');
-        } else {
-          console.warn('⚠️ 推播響應狀態不是 success Push response status not success:', pushResult);
-        }
-        
-      } catch (err) {
-        console.error('❌ 推播錯誤 Push error:', err);
-        // 推播失敗不影響主要預約流程，只是記錄錯誤
-      }
-
-      // 重置畫面
       resetReservationForm();
-      
     } else {
-      alert('❌ 預約失敗：' + (result.message || '請稍後再試') + '\n❌ Booking failed: ' + (result.message || 'Please try again later'));
+      alert('❌ 預約失敗：' + (result.message || '請稍後再試'));
     }
     
   } catch (error) {
-    console.error('預約錯誤 Booking error:', error);
-    alert('❌ 預約失敗，請檢查網路連線\n❌ Booking failed, please check network connection');
+    console.error('預約錯誤:', error);
+    alert('❌ 預約失敗，請檢查網路連線');
   } finally {
     submitBtn.disabled = false;
     submitBtn.innerHTML = '送出預約<span class="en-text">Submit Reservation</span>';
