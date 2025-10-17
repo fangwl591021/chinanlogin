@@ -826,6 +826,21 @@ async function submitReservation() {
     
     const info = routeTimes[selectedRoute];
     
+    // 除錯：檢查 routeTimes 和 info
+    console.log('🔍 routeTimes:', routeTimes);
+    console.log('🔍 selectedRoute:', selectedRoute);
+    console.log('🔍 info 物件:', info);
+    
+    if (!info) {
+      alert('❌ 路線資訊缺失，請重新選擇班次');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '送出預約<span class="en-text">Submit Reservation</span>';
+      return;
+    }
+    
+    console.log('🔍 info.time:', info.time);
+    console.log('🔍 info.direction:', info.direction);
+    
     // 提取純中文站名（移除 HTML 標籤）
     const extractChineseName = (stop) => stop.split('<')[0];
     const cleanFromStop = extractChineseName(fromStop);
@@ -838,15 +853,17 @@ async function submitReservation() {
       name: userData.name,
       studentId: userData.studentId,
       department: userData.department,
-      phone: userData.phone || '',                          // ← 確保有 phone
-      route: selectedRoute,                                 // ← 路線代碼 (A1, B2 等)
-      routeName: `${selectedRoute}｜${info.time} ${info.direction}`,  // ← 完整路線資訊
-      fromStop: cleanFromStop,                              // ← 上車站
-      toStop: cleanToStop,                                  // ← 下車站
-      date: selectedDate                                    // ← 日期
+      phone: userData.phone || '',
+      route: selectedRoute,
+      routeName: `${selectedRoute}｜${info.time} ${info.direction}`,
+      fromStop: cleanFromStop,
+      toStop: cleanToStop,
+      date: selectedDate
     };
     
     console.log('📤 發送預約資料:', data);
+    console.log('📤 routeName 內容:', data.routeName);
+    console.log('📤 routeName 長度:', data.routeName.length);
     
     // 寫入 GAS
     const res = await fetch(WORKER_URL, {
