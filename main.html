@@ -824,19 +824,22 @@ async function submitReservation() {
     const cleanFromStop = extractChineseName(fromStop);
     const cleanToStop = extractChineseName(toStop);
     
+    // 準備預約資料 - 確保所有必要欄位都有
     const data = {
       type: 'reserve',
       userId: userData.userId,
       name: userData.name,
       studentId: userData.studentId,
       department: userData.department,
-      phone: userData.phone || '',
-      route: selectedRoute,
-     routeName: `${selectedRoute}｜${info.time} ${info.direction}`,
-      fromStop: cleanFromStop,
-      toStop: cleanToStop,
-      date: selectedDate
+      phone: userData.phone || '',                          // ← 確保有 phone
+      route: selectedRoute,                                 // ← 路線代碼 (A1, B2 等)
+      routeName: `${selectedRoute}｜${info.time} ${info.direction}`,  // ← 完整路線資訊
+      fromStop: cleanFromStop,                              // ← 上車站
+      toStop: cleanToStop,                                  // ← 下車站
+      date: selectedDate                                    // ← 日期
     };
+    
+    console.log('📤 發送預約資料:', data);
     
     // 寫入 GAS
     const res = await fetch(WORKER_URL, {
@@ -846,6 +849,7 @@ async function submitReservation() {
     });
     
     const result = await res.json();
+    console.log('📊 預約回應:', result);
     
     if (result.status === 'success') {
       alert('✅ 預約成功！\n✅ Booking successful!');
