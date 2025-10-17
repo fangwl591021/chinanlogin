@@ -1192,27 +1192,27 @@ async function cancelReservation(reservationId) {
   }
 }
 
-// === 載入預約 ===
-async function loadExistingReservations() {
-  try {
-    console.log('載入預約記錄... Loading reservation records...');
-    const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
-    
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
+function toggleCalendar() {
+  const calendar = document.getElementById('calendarContainer');
+  const btn = document.getElementById('calendarBtn');
+  const isHidden = window.getComputedStyle(calendar).display === 'none';
+
+  calendar.style.display = isHidden ? 'block' : 'none';
+  btn.innerHTML = isHidden
+    ? '📅 關閉月曆<span class="en-text">Close Calendar</span>'
+    : '📅 打開月曆<span class="en-text">Open Calendar</span>';
+
+  if (isHidden) {
+    if (typeof renderCalendar === 'function') {
+      renderCalendar();
+    } else if (typeof generateCalendar === 'function') {
+      generateCalendar();
+    } else {
+      console.warn('⚠️ 沒找到 renderCalendar() 或 generateCalendar()，請確認名稱');
     }
-    
-    const result = await res.json();
-    console.log('預約記錄載入結果 Reservation records loaded:', result);
-    
-    existingReservations = result.reservations || [];
-    renderCurrentReservationCard();
-  } catch (e) {
-    console.error('載入預約失敗 Failed to load reservations', e);
-    existingReservations = [];
-    renderCurrentReservationCard();
   }
-}
+} // ✅ ← 這個大括號要補上
+
 
 // === 📅 橫向輪播式預約卡片 ===
 function renderCurrentReservationCard() {
