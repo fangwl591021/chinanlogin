@@ -968,11 +968,11 @@ async function cancelReservation(reservationId) {
         'Accept': 'application/json'
       },
       body: JSON.stringify({ 
-        type: 'cancel', 
-        id: reservationId, 
-        userId: userData.userId 
-      })
-    });
+  type: 'cancel',
+  userId: userData.userId,
+  date: reservationToCancel.date  // ✅ 加這行
+})
+
 
     // 檢查響應狀態
     if (!response.ok) {
