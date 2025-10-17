@@ -874,12 +874,38 @@ async function submitReservation() {
     console.log('📊 預約回應:', result);
     
     if (result.status === 'success') {
-      alert('✅ 預約成功！\n✅ Booking successful!');
-      await updateUIAfterReservationChange();
-      resetReservationForm();
-    } else {
-      alert('❌ 預約失敗：' + (result.message || '請稍後再試'));
-    }
+  alert('✅ 預約成功！\n✅ Booking successful!');
+
+  // ⚡️ 立即把這筆預約加入現有陣列（前端立即更新）
+  existingReservations.push({
+    id: result.id || `${userData.userId}-${selectedDate}-${selectedRoute}`,
+    userId: userData.userId,
+    name: userData.name,
+    studentId: userData.studentId,
+    department: userData.department,
+    phone: userData.phone || '',
+    route: selectedRoute,
+    date: selectedDate,
+    fromStop: cleanFromStop,
+    toStop: cleanToStop,
+    status: '已預約'
+  });
+
+  // ⚡️ 立即更新畫面（不等伺服器回傳）
+  renderCurrentReservationCard();
+
+  // 🔁 清除選項、回復按鈕
+  resetReservationForm();
+
+  // 🕐 延遲 1 秒後，再抓伺服器資料，確保最新狀態
+  setTimeout(() => {
+    updateUIAfterReservationChange();
+  }, 1000);
+
+} else {
+  alert('❌ 預約失敗：' + (result.message || '請稍後再試'));
+}
+
     
   } catch (error) {
     console.error('預約錯誤:', error);
