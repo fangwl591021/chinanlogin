@@ -867,6 +867,9 @@ async function submitReservation() {
     if (result.status === 'success') {
       alert('✅ 預約成功！\n✅ Booking successful!');
 
+      // === 關鍵更新：立即更新畫面 ===
+      await updateUIAfterReservationChange();
+
       // LINE 群組推播通知（新預約）
       try {
         const pushData = {
@@ -903,7 +906,6 @@ async function submitReservation() {
 
       // 重置畫面
       resetReservationForm();
-      await loadExistingReservations();
       
     } else {
       alert('❌ 預約失敗：' + (result.message || '請稍後再試') + '\n❌ Booking failed: ' + (result.message || 'Please try again later'));
@@ -982,6 +984,9 @@ async function cancelReservation(reservationId) {
     if (result.status === 'success') {
       alert('✅ 已取消預約\n✅ Reservation cancelled');
 
+      // === 關鍵更新：立即更新畫面 ===
+      await updateUIAfterReservationChange();
+
       // 2. LINE 群組推播通知（取消預約）- 改為非阻塞式
       try {
         const info = routeTimes[reservationToCancel.route] || {};
@@ -1033,9 +1038,6 @@ async function cancelReservation(reservationId) {
         console.warn('⚠️ 取消推播處理錯誤（不影響取消操作）Cancellation push processing error:', pushErr);
         // 推播失敗不影響主要取消流程
       }
-
-      // 3. 重新載入預約列表
-      await loadExistingReservations();
       
     } else {
       alert('❌ 取消失敗：' + (result.message || '請稍後再試') + '\n❌ Cancellation failed: ' + (result.message || 'Please try again later'));
@@ -1057,7 +1059,56 @@ async function cancelReservation(reservationId) {
   }
 }
 
-// === 載入預約 ===
+// === 核心更新函數：在預約變更後立即更新所有相關UI ===
+async function updateUIAfterReservationChange() {
+  console.log('🔄 開始更新UI狀態 Starting UI update after reservation change');
+  
+  try {
+    // 1. 重新載入用戶的最新預約資料
+    const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
+    if (!res.ok) throw new Error('載入預約資料失敗');
+    
+    const result = await res.json();
+    existingReservations = result.reservations || [];
+    console.log('✅ 預約資料更新成功 Reservation data updated:', existingReservations);
+    
+    // 2. 立即重新渲染預約卡片
+    renderCurrentReservationCard();
+    
+    // 3. 如果月曆是打開的，重新渲染月曆以更新狀態
+    if (document.getElementById('calendarContainer').style.display === 'block') {
+      console.log('🔄 重新渲染月曆狀態 Re-rendering calendar state');
+      renderCalendar();
+    }
+    
+    // 4. 如果有選擇日期，重新檢查該日期的班次狀態
+    if (selectedDate) {
+      console.log('🔄 更新班次選擇狀態 Updating route selection state');
+      // 先隱藏班次選擇區塊，強制用戶重新選擇（確保顯示最新狀態）
+      document.getElementById('routeSection').style.display = 'none';
+      document.getElementById('fromStopSection').style.display = 'none';
+      document.getElementById('toStopSection').style.display = 'none';
+      document.getElementById('submitBtn').style.display = 'none';
+      
+      // 顯示提示訊息
+      document.getElementById('selectedDate').innerHTML = 
+        `✅ 預約狀態已更新，請重新選擇班次<br>
+         <span style="color: #666;">✅ Reservation status updated, please reselect shuttle time</span>`;
+    }
+    
+    console.log('✅ UI更新完成 UI update completed');
+    
+  } catch (error) {
+    console.error('❌ UI更新失敗 UI update failed:', error);
+    // 即使更新失敗，也嘗試重新渲染現有資料
+    renderCurrentReservationCard();
+    if (document.getElementById('calendarContainer').style.display === 'block') {
+      renderCalendar();
+    }
+  }
+}
+
+// === 載入預約（用於初始化）===
 async function loadExistingReservations() {
   try {
     console.log('載入預約記錄... Loading reservation records...');
@@ -1071,6 +1122,7 @@ async function loadExistingReservations() {
     console.log('預約記錄載入結果 Reservation records loaded:', result);
     
     existingReservations = result.reservations || [];
+    // 直接呼叫渲染函數，不再重複寫渲染邏輯
     renderCurrentReservationCard();
   } catch (e) {
     console.error('載入預約失敗 Failed to load reservations', e);
