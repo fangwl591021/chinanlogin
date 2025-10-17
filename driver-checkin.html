@@ -500,57 +500,67 @@
     }
 
     // 載入所有預約資料
-    async function loadAllReservations() {
-      // 添加這段代碼到 loadAllReservations 函數
-console.log('=== 載入預約資料 ===');
-console.log('API 回應:', result);
-console.log('預約記錄數:', allReservations.length);
-allReservations.forEach((res, index) => {
-  console.log(`[${index}] ID: ${res.id}, 日期: ${res.date}, 班次: ${res.route}`);
-});
-      try {
-        let result;
-        
-        // 嘗試使用 reservations 模式
-        try {
-          const res1 = await fetch(`${WORKER_URL}?mode=reservations`);
-          if (res1.ok) {
-            result = await res1.json();
-          }
-        } catch (e) {
-          console.log('reservations 模式失敗:', e);
-        }
-        
-        // 如果失敗，使用模擬數據
-        if (!result || !result.reservations) {
-          allReservations = generateMockReservations();
-          return;
-        }
-        
-        // 處理真實的預約資料
-        if (result.reservations && Array.isArray(result.reservations)) {
-          allReservations = result.reservations.map(res => ({
-            id: res.id || `res_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            name: res.name,
-            studentId: res.studentId,
-            department: res.department,
-            phone: res.phone,
-            fromStop: res.fromStop,
-            toStop: res.toStop,
-            route: res.route,
-            date: res.date,
-            status: res.status || '預約成功',
-            checkinTime: res.checkinTime || null,
-            checkinStatus: res.checkinStatus || 'N'
-          }));
-        } else {
-          allReservations = generateMockReservations();
-        }
-      } catch (error) {
-        console.error('載入預約資料失敗:', error);
-        allReservations = generateMockReservations();
+    // ✅ 修正版
+async function loadAllReservations() {
+  console.log('=== 載入預約資料 ===');
+  try {
+    let result;
+    
+    // 嘗試使用 reservations 模式
+    try {
+      const res1 = await fetch(`${WORKER_URL}?mode=reservations`);
+      if (res1.ok) {
+        result = await res1.json();
       }
+    } catch (e) {
+      console.log('reservations 模式失敗:', e);
     }
+
+    // ✅ 將這段日誌放在 result 取得後
+    if (result) {
+      console.log('API 回應:', result);
+    }
+
+    // 如果失敗，使用模擬數據
+    if (!result || !result.reservations) {
+      console.warn('⚠️ 使用模擬資料');
+      allReservations = generateMockReservations();
+      console.log('模擬預約筆數:', allReservations.length);
+      return;
+    }
+
+    // ✅ 處理真實的預約資料
+    if (result.reservations && Array.isArray(result.reservations)) {
+      allReservations = result.reservations.map(res => ({
+        id: res.id || `res_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: res.name,
+        studentId: res.studentId,
+        department: res.department,
+        phone: res.phone,
+        fromStop: res.fromStop,
+        toStop: res.toStop,
+        route: res.route,
+        date: res.date,
+        status: res.status || '預約成功',
+        checkinTime: res.checkinTime || null,
+        checkinStatus: res.checkinStatus || 'N'
+      }));
+    } else {
+      allReservations = generateMockReservations();
+    }
+
+    // ✅ 在此安全輸出 log
+    console.log('預約記錄數:', allReservations.length);
+    allReservations.forEach((res, index) => {
+      console.log(`[${index}] ID: ${res.id}, 日期: ${res.date}, 班次: ${res.route}`);
+    });
+
+  } catch (error) {
+    console.error('載入預約資料失敗:', error);
+    allReservations = generateMockReservations();
+  }
+}
+
 
     // 生成模擬預約資料
     function generateMockReservations() {
