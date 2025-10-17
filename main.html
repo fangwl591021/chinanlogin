@@ -928,6 +928,129 @@ async function submitReservation() {
   }
 }
 
+// 修正取消預約函數 - 修復語法錯誤
+async function cancelReservation(reservationId) {
+  if (!confirm('確定要取消這筆預約嗎？\nAre you sure you want to cancel this reservation?')) return;
+
+  try {
+    console.log('開始取消預約 Starting cancellation:', reservationId);
+    
+    // 在取消前先保存要取消的預約資料
+    const reservationToCancel = existingReservations.find(r => r.id === reservationId);
+    
+    if (!reservationToCancel) {
+      console.error('找不到要取消的預約 Reservation not found');
+      alert('找不到預約資料，請重新整理頁面後再試\nReservation not found, please refresh and try again');
+      return;
+    }
+    
+    // 1. 先執行取消預約
+    const response = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ 
+        type: 'cancel',
+        userId: userData.userId,
+        date: reservationToCancel.date  // ✅ 加這行
+      })
+    }); // ✅ 修正：正確關閉 fetch 參數
+
+    // 檢查響應狀態
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // 檢查內容類型
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      console.error('非 JSON 響應 Non-JSON response:', text.substring(0, 200));
+      throw new Error('伺服器返回了非 JSON 響應 Server returned non-JSON response');
+    }
+
+    const result = await response.json();
+    
+    if (result.status === 'success') {
+      alert('✅ 已取消預約\n✅ Reservation cancelled');
+
+      // 2. LINE 群組推播通知（取消預約）- 改為非阻塞式
+      try {
+        const info = routeTimes[reservationToCancel.route] || {};
+        
+        // 提取純中文站名（移除 HTML 標籤）
+        const extractChineseName = (stop) => {
+          if (!stop) return '未知站點';
+          return stop.split('<')[0];
+        };
+        
+        const fromStop = extractChineseName(reservationToCancel.fromStop || '未知上車站');
+        const toStop = extractChineseName(reservationToCancel.toStop || '未知下車站');
+        const reservationDate = reservationToCancel.date ? reservationToCancel.date.split('T')[0] : '未知日期';
+        const userName = reservationToCancel.name || userData.name || '未知用戶';
+
+        const pushData = {
+          type: "pushLine",
+          message: `❌ 穿山甲專車預約取消\nPangolin Shuttle Reservation Cancelled\n\n日期：${reservationDate}\nDate: ${reservationDate}\n班次：${reservationToCancel.route}｜${info.time || ""} ${info.direction || ""}\nTime: ${reservationToCancel.route}｜${info.time || ""} ${info.eng || ""}\n姓名：${userName}\nName: ${userName}\n上車：${fromStop}\nPick-up: ${fromStop}\n下車：${toStop}\nDrop-off: ${toStop}`
+        };
+
+        console.log('發送取消推播數據 Sending cancellation push data:', pushData);
+        
+        // 使用非阻塞方式發送推播，不等待結果
+        fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(pushData)
+        })
+        .then(pushRes => {
+          if (!pushRes.ok) {
+            console.warn('⚠️ 推播請求失敗 Push request failed:', pushRes.status);
+            return;
+          }
+          return pushRes.json();
+        })
+        .then(pushResult => {
+          if (pushResult && pushResult.status === 'success') {
+            console.log('✅ 取消推播發送成功 Cancellation push sent successfully');
+          } else {
+            console.warn('⚠️ 取消推播響應異常 Cancellation push response abnormal:', pushResult);
+          }
+        })
+        .catch(pushErr => {
+          console.warn('⚠️ 取消推播錯誤（不影響取消操作）Cancellation push error (does not affect cancellation):', pushErr);
+          // 推播失敗不影響主要取消流程
+        });
+        
+      } catch (pushErr) {
+        console.warn('⚠️ 取消推播處理錯誤（不影響取消操作）Cancellation push processing error:', pushErr);
+        // 推播失敗不影響主要取消流程
+      }
+
+      // 3. 重新載入預約列表
+      await loadExistingReservations();
+      
+    } else {
+      alert('❌ 取消失敗：' + (result.message || '請稍後再試') + '\n❌ Cancellation failed: ' + (result.message || 'Please try again later'));
+    }
+  } catch (error) {
+    console.error('取消預約錯誤 Cancellation error:', error);
+    
+    let errorMessage = '❌ 取消預約時發生錯誤\n❌ Error occurred while cancelling reservation';
+    
+    if (error.message.includes('JSON') || error.message.includes('DOCTYPE')) {
+      errorMessage = '❌ 伺服器連接失敗，請檢查網路連線或稍後再試\n❌ Server connection failed, please check your network connection';
+    } else if (error.message.includes('500')) {
+      errorMessage = '❌ 伺服器暫時無法處理請求，請稍後再試\n❌ Server temporarily unavailable, please try again later';
+    } else {
+      errorMessage += ': ' + error.message;
+    }
+    
+    alert(errorMessage);
+  }
+}
+
 function resetReservationForm() {
   selectedDate = null;
   selectedRoute = null;
