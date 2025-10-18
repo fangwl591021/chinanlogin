@@ -160,11 +160,18 @@
     
     .time-slots {
   display: grid;
-  grid-template-columns: repeat(2, minmax(300px, 1fr)); /* 固定兩欄 */
-  gap: 20px 30px; /* 上下20px、左右30px */
-  margin-top: 20px;
-  justify-content: start; /* 靠左對齊 */
+  grid-template-columns: 1fr 1fr;   /* 固定兩欄 */
+  gap: 16px 16px;                  /* 上下左右間距 */
+  margin-top: 16px;
+  justify-content: start;          /* 靠左對齊 */
+  align-items: start;              /* 元素頂端對齊 */
 }
+
+.time-slot-btn {
+  width: 95%;                      /* 讓它靠左不置中 */
+  justify-self: start;             /* 每個卡片靠左 */
+}
+
 
 
     
