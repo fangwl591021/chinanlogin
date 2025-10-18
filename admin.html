@@ -100,6 +100,79 @@ table { font-size: var(--text-lg); }
     color: #64748b;
 }
 
+/* 簽到狀態樣式 */
+.checkin-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.checkin-yes {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.checkin-no {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+/* 簽到按鈕樣式 */
+.checkin-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.checkin-btn.checked {
+  background-color: #10b981;
+  color: white;
+}
+
+.checkin-btn.unchecked {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+.checkin-btn.unchecked:hover {
+  background-color: #e5e7eb;
+}
+
+/* 狀態標籤樣式 */
+.status-confirmed { 
+  background-color: #d1fae5; 
+  color: #065f46; 
+  padding: 4px 10px; 
+  border-radius: 20px; 
+  font-size: 14px;
+  font-weight: 600;
+}
+.status-cancelled { 
+  background-color: #fecaca; 
+  color: #991b1b; 
+  padding: 4px 10px; 
+  border-radius: 20px; 
+  font-size: 14px;
+  font-weight: 600;
+}
+.status-pending { 
+  background-color: #fef3c7; 
+  color: #92400e; 
+  padding: 4px 10px; 
+  border-radius: 20px; 
+  font-size: 14px;
+  font-weight: 600;
+}
+
 </style>
 </head>
 
@@ -189,10 +262,12 @@ table { font-size: var(--text-lg); }
             <th class="p-3 border">系所/註記</th>
             <th class="p-3 border">電話</th>
             <th class="p-3 border">狀態</th>
+            <th class="p-3 border">簽到狀態</th>
+            <th class="p-3 border">操作</th>
           </tr>
         </thead>
         <tbody id="reservationBody">
-          <tr><td colspan="6" id="loadingMessage">點擊「預約查詢」載入資料...</td></tr>
+          <tr><td colspan="8" id="loadingMessage">點擊「預約查詢」載入資料...</td></tr>
         </tbody>
       </table>
     </div>
@@ -240,7 +315,7 @@ let allReservations = []; // 用於儲存從 API 獲取的原始資料
 // 渲染表格
 function renderReservations(data) {
     if (!data || data.length === 0) {
-        reservationBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">
+        reservationBody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-gray-500">
                                       目前沒有預約資料。
                                     </td></tr>`;
         return;
@@ -252,12 +327,24 @@ function renderReservations(data) {
         const row = document.createElement('tr');
         row.className = index % 2 === 1 ? 'text-center bg-gray-50' : 'text-center'; 
         
-        let statusColor = 'text-green-600';
-        if (item.status === '已取消') {
-            statusColor = 'text-red-600';
-        } else if (item.status === '已簽到') {
-            statusColor = 'text-blue-600';
+        // 狀態標籤
+        let statusClass = '';
+        let statusText = '';
+        if (item.status === '已確認' || item.status === 'confirmed') {
+            statusClass = 'status-confirmed';
+            statusText = '已確認';
+        } else if (item.status === '已取消' || item.status === 'cancelled') {
+            statusClass = 'status-cancelled';
+            statusText = '已取消';
+        } else {
+            statusClass = 'status-pending';
+            statusText = '待確認';
         }
+        
+        // 簽到狀態
+        const isCheckedIn = item.checkedIn || false;
+        const checkinStatusClass = isCheckedIn ? 'checkin-yes' : 'checkin-no';
+        const checkinStatusText = isCheckedIn ? '已搭乘' : '未搭乘';
         
         // ✅ 改用 Worker 實際回傳的欄位名稱
         row.innerHTML = `
@@ -266,10 +353,77 @@ function renderReservations(data) {
             <td class="p-2 border">${item.name || '--'}</td>
             <td class="p-2 border">${item.department || '--'}</td>
             <td class="p-2 border">${item.phone || '--'}</td>
-            <td class="p-2 border ${statusColor} font-semibold">${item.status || '未知'}</td>
+            <td class="p-2 border"><span class="${statusClass}">${statusText}</span></td>
+            <td class="p-2 border"><span class="checkin-status ${checkinStatusClass}">${checkinStatusText}</span></td>
+            <td class="p-2 border">
+              <button class="checkin-btn ${isCheckedIn ? 'checked' : 'unchecked'}" 
+                      data-id="${item.id || index}" 
+                      data-checked="${isCheckedIn}">
+                ${isCheckedIn ? '✅ 已簽到' : '🔄 標記搭乘'}
+              </button>
+            </td>
         `;
         reservationBody.appendChild(row);
     });
+    
+    // 添加簽到按鈕事件監聽器
+    document.querySelectorAll('.checkin-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const isCurrentlyChecked = this.dataset.checked === 'true';
+            
+            // 切換簽到狀態
+            toggleCheckinStatus(id, !isCurrentlyChecked);
+        });
+    });
+}
+
+// 切換簽到狀態
+function toggleCheckinStatus(id, newStatus) {
+    // 更新資料
+    const reservationIndex = allReservations.findIndex(item => 
+        (item.id && item.id.toString() === id) || 
+        (allReservations.indexOf(item).toString() === id)
+    );
+    
+    if (reservationIndex !== -1) {
+        allReservations[reservationIndex].checkedIn = newStatus;
+        
+        // 重新渲染表格
+        renderReservations(allReservations);
+        
+        // 顯示成功訊息
+        const statusText = newStatus ? '已標記為已搭乘' : '已取消搭乘標記';
+        showNotification(`成功更新簽到狀態：${statusText}`, 'success');
+        
+        // 這裡可以添加實際的 API 呼叫來更新後端資料
+        // updateCheckinStatusOnServer(id, newStatus);
+    }
+}
+
+// 顯示通知
+function showNotification(message, type = 'info') {
+    // 移除現有的通知
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+    
+    // 創建新通知
+    const notification = document.createElement('div');
+    notification.className = `notification fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+        type === 'success' ? 'bg-green-500 text-white' : 
+        type === 'error' ? 'bg-red-500 text-white' : 
+        'bg-blue-500 text-white'
+    }`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // 3秒後自動移除
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
 }
 
 // 搜尋功能
@@ -289,17 +443,16 @@ searchInput.addEventListener('input', (e) => {
 });
 
 // 實際抓取預約資料
-// 實際抓取預約資料
 async function fetchReservations() {
     // 檢查 Worker URL 是否已設定
     if (WORKER_URL === 'YOUR_ACTUAL_CLOUDFLARE_WORKER_URL_HERE') {
-        reservationBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-600 font-bold">
+        reservationBody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-600 font-bold">
                                       錯誤：請先將程式碼中的 WORKER_URL 替換為您的實際 Worker 網址！
                                     </td></tr>`;
         return;
     }
     
-    reservationBody.innerHTML = `<tr><td colspan="6" id="loadingMessage">
+    reservationBody.innerHTML = `<tr><td colspan="8" id="loadingMessage">
                                   <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -352,16 +505,22 @@ async function fetchReservations() {
             return db - da;
         });
 
+        // 為每筆資料添加簽到狀態（如果沒有）
+        allReservations.forEach(item => {
+            if (item.checkedIn === undefined) {
+                item.checkedIn = false;
+            }
+        });
+
         renderReservations(allReservations);
 
     } catch (error) {
         console.error('❌ 抓取預約資料失敗:', error);
-        reservationBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-600 font-bold">
+        reservationBody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-600 font-bold">
                                       ❌ 資料載入失敗: ${error.message}。請檢查 Worker URL 和網路連線。
                                     </td></tr>`;
     }
 }
-
 
 // 初始化頁面和側邊欄切換邏輯
 document.querySelectorAll(".sidebar-btn").forEach(btn => {
