@@ -320,13 +320,28 @@ async function fetchReservations() {
         // 假設 Worker 返回的 JSON 結構為 { status: 'success', data: [...] }
         if (data && Array.isArray(data.data)) {
     allReservations = data.data;
+} else if (Array.isArray(data)) {
+    allReservations = data;
+} else {
+    throw new Error('資料格式不正確或為空');
+}
 
-    // ✅ 按日期降冪排序（最新的在最上面）
-    allReservations.sort((a, b) => {
-        const da = new Date(a.date);
-        const db = new Date(b.date);
-        return db - da;
-    });
+// ✅ 雙層排序邏輯
+allReservations.sort((a, b) => {
+    const dateA = new Date(a.date);
+    const dateB = new Date(b.date);
+
+    // 第一層：日期（新 → 舊）
+    if (dateA.getTime() !== dateB.getTime()) {
+        return dateB - dateA;
+    }
+
+    // 第二層：班次（A1→A2→B1→B2）
+    const order = ['A1', 'A2', 'B1', 'B2'];
+    const idxA = order.indexOf(a.trip || '');
+    const idxB = order.indexOf(b.trip || '');
+    return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+});
 
     renderReservations(allReservations);
 } else if (Array.isArray(data)) {
