@@ -260,9 +260,10 @@ function showPassengerList(){
     }
     const phoneLink = phoneDisplay !== '未提供' ? `<a href="tel:${phoneDisplay}" style="color:#0066cc;text-decoration:none;font-weight:600;">${phoneDisplay}</a>` : phoneDisplay;
     
-    // 檢查學號、系所是否為空
-    const studentId = r.studentId && r.studentId.toString().trim() ? r.studentId : '未提供';
-    const department = r.department && r.department.toString().trim() ? r.department : '未提供';
+    // 學號與系所直接顯示（後端已保證正確）
+const studentId = r.studentId || '未提供';
+const department = r.department || '未提供';
+
     
     let actionHtml = '';
     if(isCheckedIn){
