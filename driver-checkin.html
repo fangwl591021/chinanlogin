@@ -160,12 +160,12 @@
     
     .time-slots {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 改為固定兩欄 */
-  gap: 20px;
+  grid-template-columns: repeat(2, minmax(300px, 1fr)); /* 固定兩欄 */
+  gap: 20px 30px; /* 上下20px、左右30px */
   margin-top: 20px;
-  justify-items: center; /* 水平置中 */
-  align-items: stretch; /* 高度一致 */
+  justify-content: start; /* 靠左對齊 */
 }
+
 
     
     .time-slot-btn {
@@ -356,9 +356,11 @@
     
     /* 響應式設計 */
     @media (max-width: 768px) {
-      .container {
-        padding: 10px;
-      }
+  .time-slots {
+    grid-template-columns: 1fr;
+  }
+}
+
       
       .calendar-header {
         flex-direction: column;
