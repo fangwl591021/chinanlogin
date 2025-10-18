@@ -319,16 +319,28 @@ async function fetchReservations() {
         
         // 假設 Worker 返回的 JSON 結構為 { status: 'success', data: [...] }
         if (data && Array.isArray(data.data)) {
-            allReservations = data.data;
-            renderReservations(allReservations);
-        } else if (Array.isArray(data)) {
-            // 如果 Worker 直接返回陣列 (這是比較常見的 GAS 格式，但 Worker 應該返回物件)
-            // 為了兼容性，先接受陣列，但建議 Worker 遵循 { status: 'success', data: [...] } 結構
-            allReservations = data;
-            renderReservations(allReservations);
-        } else {
-            throw new Error('資料格式不正確或為空');
-        }
+    allReservations = data.data;
+
+    // ✅ 按日期降冪排序（最新的在最上面）
+    allReservations.sort((a, b) => {
+        const da = new Date(a.date);
+        const db = new Date(b.date);
+        return db - da;
+    });
+
+    renderReservations(allReservations);
+} else if (Array.isArray(data)) {
+    allReservations = data;
+
+    allReservations.sort((a, b) => {
+        const da = new Date(a.date);
+        const db = new Date(b.date);
+        return db - da;
+    });
+
+    renderReservations(allReservations);
+}
+
 
     } catch (error) {
         console.error('抓取預約資料失敗:', error);
