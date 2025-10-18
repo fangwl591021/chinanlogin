@@ -188,18 +188,18 @@ function showPassengerList(){
 async function confirmCheckin(id){
   if(!confirm('確認乘客已搭乘並核銷？'))return;
   try{
-    const res=await fetch(`${WORKER_URL}?mode=confirmCheckin&id=${encodeURIComponent(id)}`);
+    const res=await fetch('https://script.google.com/macros/s/AKfycbwE2fHEnioUohdNqwVzPxB3fUJmTNAYSYi5u2vvzQzzQUbhV7XVkfZwd1aoBwuADdgj_Q/exec?mode=confirmCheckin&id=' + encodeURIComponent(id));
     const result=await res.json();
     if(result.status==='success'){
-      alert('✅ 已完成核銷，狀態已更新');
+      alert('✅ 已完成核銷，J欄已更新為Y');
       const target=allReservations.find(r=>r.id===id);
-      if(target){target.checkinStatus='Y';target.status='已核銷';}
+      if(target){target.checkinStatus='Y';}
       showPassengerList();
     }else{
-      alert('❌ 核銷失敗，請稍後再試');
+      alert('❌ 核銷失敗：' + (result.message || '請稍後再試'));
     }
   }catch(e){
-    alert('❌ 請求失敗，請稍後再試');
+    alert('❌ 請求失敗：' + e.message);
   }
 }
 
