@@ -160,9 +160,28 @@ function showPassengerList(){
   info.textContent=`${selectedDate} ${selectedTimeSlot} | ${routeTimes[selectedTimeSlot].time} ${routeTimes[selectedTimeSlot].direction}`;
   const resList=allReservations.filter(r=>r.date?.startsWith(selectedDate)&&r.route===selectedTimeSlot&&r.status!=='已取消');
   if(resList.length===0){list.innerHTML='<div class="no-data">此時段暫無預約</div>';return;}
+  
+  // 取得今天日期
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  
   let html='';
   resList.forEach(r=>{
     const isCheckedIn=r.checkinStatus==='Y';
+    
+    // 檢查預約日期是否已過期
+    const reservationDate = r.date ? r.date.split('T')[0] : '';
+    const isExpired = reservationDate < todayStr;
+    
+    let actionHtml = '';
+    if(isCheckedIn){
+      actionHtml = '<div class="checked-in">✅ 已核銷</div>';
+    }else if(isExpired){
+      actionHtml = `<button class="checkin-btn" style="background:#ccc;cursor:not-allowed;" disabled title="過期預約無法核銷">❌ 已過期</button>`;
+    }else{
+      actionHtml = `<button class="checkin-btn" onclick="confirmCheckin('${r.id}')">✅ 核銷</button>`;
+    }
+    
     html+=`
       <div class="passenger-card">
         <div class="passenger-main">
@@ -175,9 +194,7 @@ function showPassengerList(){
           </div>
         </div>
         <div class="card-actions">
-          ${isCheckedIn
-            ? '<div class="checked-in">✅ 已核銷</div>'
-            : `<button class="checkin-btn" onclick="confirmCheckin('${r.id}')">✅ 核銷</button>`}
+          ${actionHtml}
         </div>
       </div>`;
   });
