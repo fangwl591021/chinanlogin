@@ -250,7 +250,6 @@ function renderReservations(data) {
 
     data.forEach((item, index) => {
         const row = document.createElement('tr');
-        // 隔行變色
         row.className = index % 2 === 1 ? 'text-center bg-gray-50' : 'text-center'; 
         
         let statusColor = 'text-green-600';
@@ -260,12 +259,12 @@ function renderReservations(data) {
             statusColor = 'text-blue-600';
         }
         
-        // 假設從 GAS 回傳的欄位名稱為：date, trip, name, dept (系所/註記), phone, status
+        // ✅ 改用 Worker 實際回傳的欄位名稱
         row.innerHTML = `
             <td class="p-2 border">${item.date || '--'}</td>
-            <td class="p-2 border">${item.trip || '--'}</td>
+            <td class="p-2 border">${item.route || '--'}</td>
             <td class="p-2 border">${item.name || '--'}</td>
-            <td class="p-2 border">${item.dept || '--'}</td>
+            <td class="p-2 border">${item.department || '--'}</td>
             <td class="p-2 border">${item.phone || '--'}</td>
             <td class="p-2 border ${statusColor} font-semibold">${item.status || '未知'}</td>
         `;
