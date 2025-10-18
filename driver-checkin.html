@@ -802,58 +802,36 @@ async function loadAllReservations() {
 
     // 處理簽到
     // 處理簽到（純前端版，不發送任何訊息）
-// ✅ 修正版：僅寫入試算表，不發送推播訊息
 async function handleCheckin(reservationId, button) {
   if (!confirm('確認此乘客已搭乘？')) return;
   
   try {
     const now = new Date();
     const checkinTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    
-    // 更新前端快取
+
+    // 更新快取資料
     const reservation = allReservations.find(r => r.id === reservationId);
     if (reservation) {
       reservation.checkinTime = checkinTime;
       reservation.checkinStatus = 'Y';
     }
 
-    // ✅ 發送寫入請求到後端（但不推播）
-    const checkinData = {
-      type: 'checkin',
-      reservationId: reservationId,
-      date: selectedDate,
-      route: selectedTimeSlot,
-      checkinTime: checkinTime,
-      checkinStatus: 'Y'
-    };
+    // 更新UI（不再發送任何網路請求）
+    button.disabled = true;
+    button.textContent = '已簽到';
+    button.classList.remove('checkin-btn');
+    button.classList.add('checked-in');
 
-    const res = await fetch(WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(checkinData)
-    });
+    alert(`✅ 簽到成功！狀態已標記為 Y (${checkinTime})`);
 
-    const result = await res.json();
-
-    if (result.status === 'success') {
-      // ✅ 僅更新畫面，不再 alert
-      button.disabled = true;
-      button.textContent = '已簽到';
-      button.classList.remove('checkin-btn');
-      button.classList.add('checked-in');
-
-      console.log(`✅ 寫入成功：${reservationId}，時間 ${checkinTime}`);
-      await showPassengerList();
-    } else {
-      alert('❌ 寫入失敗：' + (result.message || '請稍後再試'));
-    }
+    // 重新顯示乘客列表（即時反映）
+    await showPassengerList();
 
   } catch (error) {
-    console.error('簽到寫入錯誤:', error);
-    alert('❌ 寫入簽到狀態失敗');
+    console.error('簽到錯誤:', error);
+    alert('❌ 簽到失敗，請檢查操作');
   }
 }
-
 
 
     // 切換月份
