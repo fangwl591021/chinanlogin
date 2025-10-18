@@ -209,8 +209,10 @@ function showTimeSlots(){
   for(const [id,info] of Object.entries(routeTimes)){
     const count=allReservations.filter(r=>r.date?.startsWith(selectedDate)&&r.route===id&&r.status!=='已取消').length;
     html+=`<div class="time-slot-btn" onclick="selectTimeSlot('${id}',event)">
-      <div class="route-time">${id} | ${info.time}</div>
-      <div class="time-slot-info">${info.direction}</div>
+      <div>
+        <div class="route-time">${id} | ${info.time}</div>
+        <div class="time-slot-info">${info.direction}</div>
+      </div>
       <div class="reservation-count">${count} 人預約</div>
     </div>`;
   }
@@ -242,6 +244,17 @@ function showPassengerList(){
     const reservationDate = r.date ? r.date.split('T')[0] : '';
     const isExpired = reservationDate < todayStr;
     
+    // 補足電話號碼前導0
+    let phoneDisplay = r.phone || '未提供';
+    if(phoneDisplay !== '未提供' && phoneDisplay.length < 10){
+      phoneDisplay = '0' + phoneDisplay;
+    }
+    const phoneLink = phoneDisplay !== '未提供' ? `<a href="tel:${phoneDisplay}" style="color:#0066cc;text-decoration:none;font-weight:600;">${phoneDisplay}</a>` : phoneDisplay;
+    
+    // 檢查學號、系所是否為空
+    const studentId = r.studentId && r.studentId.toString().trim() ? r.studentId : '未提供';
+    const department = r.department && r.department.toString().trim() ? r.department : '未提供';
+    
     let actionHtml = '';
     if(isCheckedIn){
       actionHtml = '<div class="checked-in">✅ 已核銷</div>';
@@ -256,9 +269,9 @@ function showPassengerList(){
         <div class="passenger-main">
           <div class="passenger-name">${r.name}</div>
           <div class="passenger-info">
-            <div>學號：${r.studentId||'未提供'}</div>
-            <div>系所：${r.department||'未提供'}</div>
-            <div>電話：${r.phone||'未提供'}</div>
+            <div>學號：${studentId}</div>
+            <div>系所：${department}</div>
+            <div>電話：${phoneLink}</div>
             <div>上車：${r.fromStop} → 下車：${r.toStop}</div>
           </div>
         </div>
