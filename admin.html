@@ -236,30 +236,69 @@ const searchInput = document.getElementById('searchInput');
 let allReservations = []; // 儲存所有預約資料
 
 // ✅ 渲染表格
+// ✅ 改良版：日期分組 + A1→A2→B1→B2 排序
 function renderReservations(data) {
   if (!data || data.length === 0) {
     reservationBody.innerHTML = `
-      <tr><td colspan="6" class="p-4 text-center text-gray-500">目前沒有預約資料。</td></tr>`;
+      <tr><td colspan="6" class="p-4 text-center text-gray-500">
+        目前沒有預約資料。
+      </td></tr>`;
     return;
   }
 
+  // 🧠 排序：日期降冪 + 班次順序
+  const order = ['A1', 'A2', 'B1', 'B2'];
+  const sorted = [...data].sort((a, b) => {
+    const dateA = new Date(a.date);
+    const dateB = new Date(b.date);
+    if (dateA.getTime() !== dateB.getTime()) return dateB - dateA;
+
+    const tripA = (a.trip || '').toUpperCase().trim();
+    const tripB = (b.trip || '').toUpperCase().trim();
+    const idxA = order.indexOf(tripA);
+    const idxB = order.indexOf(tripB);
+    return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+  });
+
+  // 🧩 按日期分組
+  const grouped = {};
+  sorted.forEach(item => {
+    const d = item.date || '未指定日期';
+    if (!grouped[d]) grouped[d] = [];
+    grouped[d].push(item);
+  });
+
+  // 🔧 開始渲染
   reservationBody.innerHTML = '';
-  data.forEach((item, index) => {
-    const row = document.createElement('tr');
-    row.className = index % 2 === 1 ? 'text-center bg-gray-50' : 'text-center';
-    let statusColor = 'text-green-600';
-    if (item.status === '已取消') statusColor = 'text-red-600';
-    else if (item.status === '已簽到') statusColor = 'text-blue-600';
-    row.innerHTML = `
-      <td class="p-2 border">${item.date || '--'}</td>
-      <td class="p-2 border">${item.trip || '--'}</td>
-      <td class="p-2 border">${item.name || '--'}</td>
-      <td class="p-2 border">${item.dept || '--'}</td>
-      <td class="p-2 border">${item.phone || '--'}</td>
-      <td class="p-2 border ${statusColor} font-semibold">${item.status || '未知'}</td>`;
-    reservationBody.appendChild(row);
+
+  Object.keys(grouped).forEach(date => {
+    // 日期標題列
+    const headerRow = document.createElement('tr');
+    headerRow.innerHTML = `
+      <td colspan="6" class="bg-green-100 text-green-800 font-bold text-lg text-left px-4 py-2 border-b">
+        📅 ${date}　<small>(${grouped[date].length} 筆預約)</small>
+      </td>`;
+    reservationBody.appendChild(headerRow);
+
+    // 該日期的班次列
+    grouped[date].forEach((item, index) => {
+      const row = document.createElement('tr');
+      row.className = index % 2 === 1 ? 'text-center bg-gray-50' : 'text-center';
+      let statusColor = 'text-green-600';
+      if (item.status === '已取消') statusColor = 'text-red-600';
+      else if (item.status === '已簽到') statusColor = 'text-blue-600';
+      row.innerHTML = `
+        <td class="p-2 border">${item.date || '--'}</td>
+        <td class="p-2 border">${item.trip || '--'}</td>
+        <td class="p-2 border">${item.name || '--'}</td>
+        <td class="p-2 border">${item.dept || '--'}</td>
+        <td class="p-2 border">${item.phone || '--'}</td>
+        <td class="p-2 border ${statusColor} font-semibold">${item.status || '未知'}</td>`;
+      reservationBody.appendChild(row);
+    });
   });
 }
+
 
 // ✅ 搜尋功能
 searchInput.addEventListener('input', (e) => {
