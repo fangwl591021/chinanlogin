@@ -446,6 +446,92 @@ document.querySelectorAll("thead th").forEach((th, index) => {
     renderReservations(sorted);
   });
 });
+// === 🔽 表頭排序控制 ===
+let currentSort = { key: null, direction: null };
+
+// 等待表格載入完成後綁定事件
+function setupSortableHeaders() {
+  const headers = document.querySelectorAll("thead th");
+  const keyMap = ['date', 'trip', 'name', 'dept', 'phone', 'status'];
+
+  headers.forEach((th, index) => {
+    const key = keyMap[index];
+    if (!key) return;
+
+    th.style.cursor = "pointer";
+    th.addEventListener("click", () => {
+      // 若再次點擊同一欄，切換方向
+      if (currentSort.key === key) {
+        if (currentSort.direction === 'asc') currentSort.direction = 'desc';
+        else if (currentSort.direction === 'desc') currentSort.direction = null;
+        else currentSort.direction = 'asc';
+      } else {
+        currentSort.key = key;
+        currentSort.direction = 'asc';
+      }
+
+      // 先移除所有箭頭符號
+      headers.forEach(h => {
+        h.innerHTML = h.innerHTML.replace(/ ▲| ▼/g, '');
+      });
+
+      // 加上箭頭符號
+      if (currentSort.direction === 'asc') th.innerHTML += ' ▲';
+      else if (currentSort.direction === 'desc') th.innerHTML += ' ▼';
+
+      // 執行排序
+      let sorted = [...allReservations];
+
+      if (!currentSort.direction) {
+        // 回到預設排序
+        const order = ['A1', 'A2', 'B1', 'B2'];
+        sorted.sort((a, b) => {
+          const dateA = new Date(a.date);
+          const dateB = new Date(b.date);
+          if (dateA.getTime() !== dateB.getTime()) return dateB - dateA;
+          const idxA = order.indexOf((a.trip || '').toUpperCase().trim());
+          const idxB = order.indexOf((b.trip || '').toUpperCase().trim());
+          return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+        });
+      } else {
+        sorted.sort((a, b) => {
+          let valA = (a[key] || '').toString().trim();
+          let valB = (b[key] || '').toString().trim();
+
+          if (key === 'date') {
+            const dA = new Date(valA);
+            const dB = new Date(valB);
+            return currentSort.direction === 'asc' ? dA - dB : dB - dA;
+          } else if (key === 'trip') {
+            const order = ['A1', 'A2', 'B1', 'B2'];
+            const idxA = order.indexOf(valA.toUpperCase());
+            const idxB = order.indexOf(valB.toUpperCase());
+            return currentSort.direction === 'asc'
+              ? idxA - idxB
+              : idxB - idxA;
+          } else {
+            return currentSort.direction === 'asc'
+              ? valA.localeCompare(valB, 'zh-Hant')
+              : valB.localeCompare(valA, 'zh-Hant');
+          }
+        });
+      }
+
+      renderReservations(sorted);
+    });
+  });
+}
+
+// 在第一次載入資料後執行
+function initAfterLoad() {
+  setupSortableHeaders();
+}
+
+// 修改 fetchReservations 成這樣的最後一行：
+/*
+renderReservations(allReservations);
+initAfterLoad(); // 👈 加這一行
+*/
 
 </script>
 
