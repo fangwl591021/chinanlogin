@@ -146,16 +146,22 @@
     .route-btn:hover { 
       background: #eaf5ea;
     }
-    .route-btn.selected { 
-      background: #3c8050;
-      color: white; 
-    }
-    .route-btn.disabled {
-      background: #f5f5f5 !important;
-      border-color: #ccc !important;
-      color: #999 !important;
-      cursor: not-allowed !important;
-    }
+/* 修改現有的 .route-btn.selected 樣式 */
+.route-btn.selected { 
+  background: #3c8050;
+  color: white !important;
+}
+
+/* 選中狀態下的所有文字都變成白色 */
+.route-btn.selected * {
+  color: white !important;
+}
+
+/* 英文文字稍微透明一點 */
+.route-btn.selected .route-direction span,
+.route-btn.selected div span {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
     .route-btn.disabled:hover { background: #f5f5f5 !important; }
     .route-direction { font-size: 12px; margin-top: 4px; }
     .stop-selector { padding: 0 16px; margin: 20px 0; }
