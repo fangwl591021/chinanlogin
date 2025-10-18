@@ -107,44 +107,88 @@ async function loadAllReservations(){
 }
 
 function renderCalendar(){
-  const y=currentYear,m=currentMonth;
+  const y=currentYear, m=currentMonth;
   const el=document.getElementById('calendar-days');
   el.innerHTML='';
+  
+  // 添加星期標題
   ['日','一','二','三','四','五','六'].forEach(d=>{
-    const e=document.createElement('div');e.className='calendar-day-header';e.textContent=d;el.appendChild(e);
+    const e=document.createElement('div');
+    e.className='calendar-day-header';
+    e.textContent=d;
+    el.appendChild(e);
   });
-  const first=new Date(y,m,1),last=new Date(y,m+1,0),offset=first.getDay();
-  for(let i=offset-1;i>=0;i--){const d=document.createElement('div');d.className='calendar-day other-month';el.appendChild(d);}
-  for(let i=1;i<=last.getDate();i++){
-    const d=document.createElement('div');d.className='calendar-day';d.textContent=i;
-    const dateStr=`${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-    d.onclick=()=>selectDate(dateStr);
+  
+  const first=new Date(y,m,1), last=new Date(y,m+1,0), offset=first.getDay();
+  
+  // 添加上月日期
+  for(let i=offset-1;i>=0;i--){
+    const d=document.createElement('div');
+    d.className='calendar-day other-month';
     el.appendChild(d);
   }
-  document.getElementById('current-month').textContent=`${y}年${m+1}月`;
-}
-
-async function selectDate(dateStr){
-  selectedDate=dateStr;
-  document.getElementById('selectedDate').style.display='block';
-  document.getElementById('selectedDate').textContent=`✅ 已選擇日期：${dateStr}`;
-  showTimeSlots();
-}
-
-function showTimeSlots(){
-  const container=document.getElementById('time-slots');
-  let html='';
-  for(const [id,info] of Object.entries(routeTimes)){
-    const count=allReservations.filter(r=>r.date?.startsWith(selectedDate)&&r.route===id&&r.status!=='已取消').length;
-    html+=`<div class="time-slot-btn" onclick="selectTimeSlot('${id}',event)">
-      <div class="route-time">${id} | ${info.time}</div>
-      <div class="time-slot-info">${info.direction}</div>
-      <div class="reservation-count">${count} 人預約</div>
-    </div>`;
+  
+  // 獲得今天日期
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  
+  // 添加當月日期
+  for(let i=1;i<=last.getDate();i++){
+    const d=document.createElement('div');
+    d.className='calendar-day';
+    
+    const dateStr=`${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+    
+    // 檢查日期狀態
+    let isDisabled = false;
+    let reason = '';
+    
+    // 1. 檢查是否過期
+    if(dateStr < todayStr){
+      d.classList.add('past');
+      reason = '已過期';
+      isDisabled = true;
+    }
+    // 2. 檢查該日期是否有預約
+    else if(allReservations.some(r => r.date?.startsWith(dateStr))){
+      d.textContent=`${i}`;
+      reason = '有預約';
+    }
+    // 3. 其他未來日期可選
+    else{
+      d.textContent=`${i}`;
+      d.onclick=()=>selectDate(dateStr);
+    }
+    
+    // 設定顯示文字
+    if(!isDisabled && reason){
+      d.innerHTML=`${i}<br><small style="font-size:10px;color:#666;">${reason}</small>`;
+    }else if(isDisabled){
+      d.innerHTML=`${i}<br><small style="font-size:10px;color:#999;">${reason}</small>`;
+      d.onclick=null;
+      d.classList.add('disabled');
+    }else{
+      d.textContent=i;
+    }
+    
+    // 標記已選擇的日期
+    if(dateStr === selectedDate){
+      d.classList.add('selected');
+    }
+    
+    el.appendChild(d);
   }
-  container.innerHTML=html;
-  document.getElementById('timeSlotsSection').style.display='block';
-  document.getElementById('passengerSection').style.display='none';
+  
+  // 添加下月日期
+  const totalCells = 42;
+  const nextMonthDays = totalCells - (offset + last.getDate());
+  for(let i=1;i<=nextMonthDays;i++){
+    const d=document.createElement('div');
+    d.className='calendar-day other-month';
+    el.appendChild(d);
+  }
+  
+  document.getElementById('current-month').textContent=`${y}年${m+1}月`;
 }
 
 async function selectTimeSlot(id,event){
