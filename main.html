@@ -786,48 +786,71 @@ async function submitReservation() {
   // ... 其他代碼 ...
   
   if (result.status === 'success') {
-    alert('✅ 預約成功！\n✅ Booking successful!');
+      alert('✅ 預約成功！\n✅ Booking successful!');
 
-    // 🚀 發送預約成功推播通知 - 使用正確格式
-    try {
-      const info = routeTimes[selectedRoute];
-      
-      // 提取純中文站名
-      const extractChineseName = (stop) => stop.split('<')[0];
-      const cleanFromStop = extractChineseName(fromStopValue);
-      const cleanToStop = extractChineseName(toStopValue);
-      
-      // 構建正確的推播格式
-      const pushData = {
-        type: 'push',
-        format: 'card', // 指定為卡片格式
-        title: '穿山甲專車新預約',
-        icon: '🚌',
-        details: [
-          { label: '日期', value: selectedDate },
-          { label: '班次', value: `${selectedRoute} | ${info.time} ${info.direction}` },
-          { label: '姓名', value: userData.name },
-          { label: '電話', value: userData.phone || '未提供' },
-          { label: '上車', value: cleanFromStop },
-          { label: '下車', value: cleanToStop }
-        ]
-      };
+      // 🚀 發送預約成功推播通知
+      try {
+        const info = routeTimes[selectedRoute];
+        const extractChineseName = (stop) => stop.split('<')[0];
+        const cleanFromStop = extractChineseName(fromStopValue);
+        const cleanToStop = extractChineseName(toStopValue);
+        
+        const pushData = {
+          type: 'push',
+          format: 'card',
+          title: '穿山甲專車新預約',
+          details: [
+            { label: '日期', value: selectedDate },
+            { label: '班次', value: `${selectedRoute} | ${info.time} ${info.direction}` },
+            { label: '姓名', value: userData.name },
+            { label: '電話', value: userData.phone || '未提供' },
+            { label: '上車', value: cleanFromStop },
+            { label: '下車', value: cleanToStop }
+          ]
+        };
       
       console.log('📤 發送預約成功推播:', pushData);
-      
-      fetch(WORKER_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pushData)
-      }).catch(err => console.warn('預約推播發送失敗:', err));
-      
-    } catch (pushErr) {
-      console.warn('預約推播通知失敗:', pushErr);
-    }
+        
+        // 發送推播請求
+        fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(pushData)
+        }).catch(err => console.warn('預約推播發送失敗:', err));
+        
+      } catch (pushErr) {
+        console.warn('預約推播通知失敗:', pushErr);
+      }
 
-    // ... 後續代碼 ...
-  }
-}
+      // ⚡️ 立即把這筆預約加入現有陣列（前端立即更新）
+      existingReservations.push({
+        id: result.id || `${userData.userId}-${selectedDate}-${selectedRoute}`,
+        userId: userData.userId,
+        name: userData.name,
+        studentId: userData.studentId,
+        department: userData.department,
+        phone: userData.phone || '',
+        route: selectedRoute,
+        date: selectedDate,
+        fromStop: cleanFromStop,
+        toStop: cleanToStop,
+        status: '已預約'
+      });
+
+      // ⚡️ 立即更新畫面（不等伺服器回傳）
+      renderCurrentReservationCard();
+
+      // 🔁 清除選項、回復按鈕
+      resetReservationForm();
+
+      // 🕐 延遲 1 秒後，再抓伺服器資料，確保最新狀態
+      setTimeout(() => {
+        updateUIAfterReservationChange();
+      }, 1000);
+
+    } else {
+      alert('❌ 預約失敗：' + (result.message || '請稍後再試'));
+    }
 
 // 取消預約時的推播格式修正
 async function cancelReservation(reservationId) {
