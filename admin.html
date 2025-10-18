@@ -227,314 +227,165 @@ table { font-size: var(--text-lg); }
 
 <!-- JS -->
 <script>
+// 🚨🚨🚨 請將這裡替換成您實際部署的 Cloudflare Worker URL 🚨🚨🚨
+// 範例：'https://your-worker-name.your-username.workers.dev'
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/'; 
 
 const sections = document.querySelectorAll("main section");
 const reservationBody = document.getElementById('reservationBody');
 const searchInput = document.getElementById('searchInput');
 
-let allReservations = []; // 儲存所有預約資料
+let allReservations = []; // 用於儲存從 API 獲取的原始資料
 
-// ✅ 渲染表格
-// ✅ 改良版：日期分組 + A1→A2→B1→B2 排序
+// 渲染表格
 function renderReservations(data) {
-  if (!data || data.length === 0) {
-    reservationBody.innerHTML = `
-      <tr><td colspan="6" class="p-4 text-center text-gray-500">
-        目前沒有預約資料。
-      </td></tr>`;
-    return;
-  }
-
-  // 🧠 排序：日期降冪 + 班次順序
-  const order = ['A1', 'A2', 'B1', 'B2'];
-  const sorted = [...data].sort((a, b) => {
-    const dateA = new Date(a.date);
-    const dateB = new Date(b.date);
-    if (dateA.getTime() !== dateB.getTime()) return dateB - dateA;
-
-    const tripA = (a.trip || '').toUpperCase().trim();
-    const tripB = (b.trip || '').toUpperCase().trim();
-    const idxA = order.indexOf(tripA);
-    const idxB = order.indexOf(tripB);
-    return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
-  });
-
-  // 🧩 按日期分組
-  const grouped = {};
-  sorted.forEach(item => {
-    const d = item.date || '未指定日期';
-    if (!grouped[d]) grouped[d] = [];
-    grouped[d].push(item);
-  });
-
-  // 🔧 開始渲染
-  reservationBody.innerHTML = '';
-
-  Object.keys(grouped).forEach(date => {
-    // 日期標題列
-    const headerRow = document.createElement('tr');
-    headerRow.innerHTML = `
-      <td colspan="6" class="bg-green-100 text-green-800 font-bold text-lg text-left px-4 py-2 border-b">
-        📅 ${date}　<small>(${grouped[date].length} 筆預約)</small>
-      </td>`;
-    reservationBody.appendChild(headerRow);
-
-    // 該日期的班次列
-    grouped[date].forEach((item, index) => {
-      const row = document.createElement('tr');
-      row.className = index % 2 === 1 ? 'text-center bg-gray-50' : 'text-center';
-      let statusColor = 'text-green-600';
-      if (item.status === '已取消') statusColor = 'text-red-600';
-      else if (item.status === '已簽到') statusColor = 'text-blue-600';
-      row.innerHTML = `
-        <td class="p-2 border">${item.date || '--'}</td>
-        <td class="p-2 border">${item.trip || '--'}</td>
-        <td class="p-2 border">${item.name || '--'}</td>
-        <td class="p-2 border">${item.dept || '--'}</td>
-        <td class="p-2 border">${item.phone || '--'}</td>
-        <td class="p-2 border ${statusColor} font-semibold">${item.status || '未知'}</td>`;
-      reservationBody.appendChild(row);
-    });
-  });
-}
-
-
-// ✅ 搜尋功能
-searchInput.addEventListener('input', (e) => {
-  const query = e.target.value.toLowerCase().trim();
-  if (query === '') {
-    renderReservations(allReservations);
-    return;
-  }
-  const filtered = allReservations.filter(item =>
-    Object.values(item).some(val => String(val).toLowerCase().includes(query))
-  );
-  renderReservations(filtered);
-});
-
-// ✅ 抓取預約資料
-async function fetchReservations() {
-  reservationBody.innerHTML = `
-    <tr><td colspan="6" id="loadingMessage">
-      <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg> 載入中，請稍候...
-    </td></tr>`;
-
-  try {
-    const res = await fetch(`${WORKER_URL}?mode=reservations`);
-    if (!res.ok) throw new Error(`API 錯誤: ${res.status}`);
-    const data = await res.json();
-
-    // 解析資料
-    if (data && Array.isArray(data.data)) allReservations = data.data;
-    else if (Array.isArray(data)) allReservations = data;
-    else throw new Error('資料格式不正確或為空');
-
-    // ✅ 雙層排序：日期降冪 + 班次順序
-    const order = ['A1', 'A2', 'B1', 'B2'];
-    allReservations.sort((a, b) => {
-      const dateA = new Date(a.date);
-      const dateB = new Date(b.date);
-      if (dateA.getTime() !== dateB.getTime()) return dateB - dateA;
-      const idxA = order.indexOf(a.trip || '');
-      const idxB = order.indexOf(b.trip || '');
-      return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
-    });
-
-    renderReservations(allReservations);
-  } catch (err) {
-    console.error('抓取預約資料失敗:', err);
-    reservationBody.innerHTML = `
-      <tr><td colspan="6" class="p-4 text-center text-red-600 font-bold">
-      ❌ 資料載入失敗: ${err.message}</td></tr>`;
-  }
-}
-
-// ✅ 側邊切換邏輯
-document.querySelectorAll(".sidebar-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".sidebar-btn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-
-    const target = btn.dataset.target;
-    sections.forEach(sec => {
-      sec.id === target ? sec.classList.remove("hidden") : sec.classList.add("hidden");
-    });
-
-    if (target === 'reservations') fetchReservations();
-  });
-});
-
-// ✅ 重新整理資料
-document.getElementById('reloadLink').addEventListener('click', (e) => {
-  e.preventDefault();
-  allReservations = [];
-  fetchReservations();
-});
-
-document.getElementById('config').classList.remove('hidden');
-// === 🔽 表頭排序控制 ===
-let currentSort = { key: 'date', direction: 'desc' }; // 預設日期降冪
-
-// 點擊表頭啟動排序
-document.querySelectorAll("thead th").forEach((th, index) => {
-  th.style.cursor = "pointer";
-
-  th.addEventListener("click", () => {
-    const keyMap = ['date', 'trip', 'name', 'dept', 'phone', 'status'];
-    const key = keyMap[index];
-    if (!key) return;
-
-    // 切換排序方向
-    if (currentSort.key === key) {
-      currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 
-                              currentSort.direction === 'desc' ? 'none' : 'asc';
-    } else {
-      currentSort.key = key;
-      currentSort.direction = 'asc';
+    if (!data || data.length === 0) {
+        reservationBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">
+                                      目前沒有預約資料。
+                                    </td></tr>`;
+        return;
     }
 
-    // 移除其他表頭箭頭
-    document.querySelectorAll("thead th").forEach(h => {
-      h.innerHTML = h.innerHTML.replace(/ ▲| ▼/g, '');
-    });
+    reservationBody.innerHTML = ''; 
 
-    // 更新箭頭符號
-    if (currentSort.direction === 'asc') th.innerHTML += ' ▲';
-    else if (currentSort.direction === 'desc') th.innerHTML += ' ▼';
-
-    // 依目前方向排序
-    let sorted = [...allReservations];
-    if (currentSort.direction !== 'none') {
-      sorted.sort((a, b) => {
-        const valA = (a[key] || '').toString().trim();
-        const valB = (b[key] || '').toString().trim();
-
-        if (key === 'date') {
-          const dA = new Date(valA);
-          const dB = new Date(valB);
-          return currentSort.direction === 'asc' ? dA - dB : dB - dA;
-        } else if (key === 'trip') {
-          const order = ['A1', 'A2', 'B1', 'B2'];
-          const idxA = order.indexOf(valA.toUpperCase());
-          const idxB = order.indexOf(valB.toUpperCase());
-          return currentSort.direction === 'asc'
-            ? (idxA - idxB)
-            : (idxB - idxA);
-        } else {
-          return currentSort.direction === 'asc'
-            ? valA.localeCompare(valB, 'zh-Hant')
-            : valB.localeCompare(valA, 'zh-Hant');
+    data.forEach((item, index) => {
+        const row = document.createElement('tr');
+        // 隔行變色
+        row.className = index % 2 === 1 ? 'text-center bg-gray-50' : 'text-center'; 
+        
+        let statusColor = 'text-green-600';
+        if (item.status === '已取消') {
+            statusColor = 'text-red-600';
+        } else if (item.status === '已簽到') {
+            statusColor = 'text-blue-600';
         }
-      });
-    } else {
-      // 回到原始排序（日期降冪 + 班次順序）
-      const order = ['A1', 'A2', 'B1', 'B2'];
-      sorted.sort((a, b) => {
-        const dateA = new Date(a.date);
-        const dateB = new Date(b.date);
-        if (dateA.getTime() !== dateB.getTime()) return dateB - dateA;
-        const idxA = order.indexOf((a.trip || '').toUpperCase());
-        const idxB = order.indexOf((b.trip || '').toUpperCase());
-        return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
-      });
-    }
-
-    renderReservations(sorted);
-  });
-});
-// === 🔽 表頭排序控制 ===
-let currentSort = { key: null, direction: null };
-
-// 等待表格載入完成後綁定事件
-function setupSortableHeaders() {
-  const headers = document.querySelectorAll("thead th");
-  const keyMap = ['date', 'trip', 'name', 'dept', 'phone', 'status'];
-
-  headers.forEach((th, index) => {
-    const key = keyMap[index];
-    if (!key) return;
-
-    th.style.cursor = "pointer";
-    th.addEventListener("click", () => {
-      // 若再次點擊同一欄，切換方向
-      if (currentSort.key === key) {
-        if (currentSort.direction === 'asc') currentSort.direction = 'desc';
-        else if (currentSort.direction === 'desc') currentSort.direction = null;
-        else currentSort.direction = 'asc';
-      } else {
-        currentSort.key = key;
-        currentSort.direction = 'asc';
-      }
-
-      // 先移除所有箭頭符號
-      headers.forEach(h => {
-        h.innerHTML = h.innerHTML.replace(/ ▲| ▼/g, '');
-      });
-
-      // 加上箭頭符號
-      if (currentSort.direction === 'asc') th.innerHTML += ' ▲';
-      else if (currentSort.direction === 'desc') th.innerHTML += ' ▼';
-
-      // 執行排序
-      let sorted = [...allReservations];
-
-      if (!currentSort.direction) {
-        // 回到預設排序
-        const order = ['A1', 'A2', 'B1', 'B2'];
-        sorted.sort((a, b) => {
-          const dateA = new Date(a.date);
-          const dateB = new Date(b.date);
-          if (dateA.getTime() !== dateB.getTime()) return dateB - dateA;
-          const idxA = order.indexOf((a.trip || '').toUpperCase().trim());
-          const idxB = order.indexOf((b.trip || '').toUpperCase().trim());
-          return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
-        });
-      } else {
-        sorted.sort((a, b) => {
-          let valA = (a[key] || '').toString().trim();
-          let valB = (b[key] || '').toString().trim();
-
-          if (key === 'date') {
-            const dA = new Date(valA);
-            const dB = new Date(valB);
-            return currentSort.direction === 'asc' ? dA - dB : dB - dA;
-          } else if (key === 'trip') {
-            const order = ['A1', 'A2', 'B1', 'B2'];
-            const idxA = order.indexOf(valA.toUpperCase());
-            const idxB = order.indexOf(valB.toUpperCase());
-            return currentSort.direction === 'asc'
-              ? idxA - idxB
-              : idxB - idxA;
-          } else {
-            return currentSort.direction === 'asc'
-              ? valA.localeCompare(valB, 'zh-Hant')
-              : valB.localeCompare(valA, 'zh-Hant');
-          }
-        });
-      }
-
-      renderReservations(sorted);
+        
+        // 假設從 GAS 回傳的欄位名稱為：date, trip, name, dept (系所/註記), phone, status
+        row.innerHTML = `
+            <td class="p-2 border">${item.date || '--'}</td>
+            <td class="p-2 border">${item.trip || '--'}</td>
+            <td class="p-2 border">${item.name || '--'}</td>
+            <td class="p-2 border">${item.dept || '--'}</td>
+            <td class="p-2 border">${item.phone || '--'}</td>
+            <td class="p-2 border ${statusColor} font-semibold">${item.status || '未知'}</td>
+        `;
+        reservationBody.appendChild(row);
     });
-  });
 }
 
-// 在第一次載入資料後執行
-function initAfterLoad() {
-  setupSortableHeaders();
+// 搜尋功能
+searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
+    if (query === '') {
+        renderReservations(allReservations);
+        return;
+    }
+    const filteredData = allReservations.filter(item => {
+        // 搜尋所有欄位
+        return Object.values(item).some(val => 
+            String(val).toLowerCase().includes(query)
+        );
+    });
+    renderReservations(filteredData);
+});
+
+// 實際抓取預約資料
+async function fetchReservations() {
+    // 檢查 Worker URL 是否已設定
+    if (WORKER_URL === 'YOUR_ACTUAL_CLOUDFLARE_WORKER_URL_HERE') {
+        reservationBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-600 font-bold">
+                                      錯誤：請先將程式碼中的 WORKER_URL 替換為您的實際 Worker 網址！
+                                    </td></tr>`;
+        return;
+    }
+    
+    reservationBody.innerHTML = `<tr><td colspan="6" id="loadingMessage">
+                                  <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  載入中，請稍候...
+                                </td></tr>`;
+
+    try {
+        // 調用 Worker API 的 ?mode=reservations
+        const response = await fetch(`${WORKER_URL}?mode=reservations`);
+        
+        if (!response.ok) {
+            throw new Error(`API 錯誤: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        // 假設 Worker 返回的 JSON 結構為 { status: 'success', data: [...] }
+        if (data && Array.isArray(data.data)) {
+    allReservations = data.data;
+
+    // ✅ 按日期降冪排序（最新的在最上面）
+    allReservations.sort((a, b) => {
+        const da = new Date(a.date);
+        const db = new Date(b.date);
+        return db - da;
+    });
+
+    renderReservations(allReservations);
+} else if (Array.isArray(data)) {
+    allReservations = data;
+
+    allReservations.sort((a, b) => {
+        const da = new Date(a.date);
+        const db = new Date(b.date);
+        return db - da;
+    });
+
+    renderReservations(allReservations);
 }
 
-// 修改 fetchReservations 成這樣的最後一行：
-/*
-renderReservations(allReservations);
-initAfterLoad(); // 👈 加這一行
-*/
+
+    } catch (error) {
+        console.error('抓取預約資料失敗:', error);
+        reservationBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-600 font-bold">
+                                      ❌ 資料載入失敗: ${error.message}。請檢查 Worker URL 和網路連線。
+                                    </td></tr>`;
+    }
+}
+
+
+// 初始化頁面和側邊欄切換邏輯
+document.querySelectorAll(".sidebar-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".sidebar-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        
+        const target = btn.dataset.target;
+        sections.forEach(sec => {
+            sec.id === target ? sec.classList.remove("hidden") : sec.classList.add("hidden");
+        });
+
+        // 🎯 點擊「預約查詢」時，抓取資料
+        if (target === 'reservations') {
+            // 只有在資料尚未載入時才執行抓取，避免重複請求
+            if (allReservations.length === 0) {
+              fetchReservations();
+            } else {
+              // 如果資料已載入，重新渲染以確保最新的篩選狀態被重置
+              renderReservations(allReservations);
+            }
+        }
+    });
+});
+
+// 重新整理資料連結
+document.getElementById('reloadLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    allReservations = []; // 強制清空資料，讓下次載入強制重新抓取
+    fetchReservations();
+});
+
+// 預設載入設定頁面 (避免 dashboard 顯示錯誤的圖表)
+document.getElementById('config').classList.remove('hidden');
 
 </script>
-
 
 </body>
 </html>
