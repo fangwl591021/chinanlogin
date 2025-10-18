@@ -13,8 +13,9 @@ header{background:#3c8050;color:#fff;text-align:center;padding:15px;font-size:22
 
 /* === 月曆 === */
 .calendar-section{background:#fff;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
-.calendar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px;}
-.calendar-title{flex:1;text-align:center;font-size:18px;font-weight:bold;min-width:150px;}
+.calendar-header{display:flex;flex-direction:column;gap:12px;margin-bottom:15px;}
+.calendar-header-nav{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.calendar-title{text-align:center;font-size:18px;font-weight:bold;width:100%;}
 .calendar-nav{background:#3498db;color:white;border:none;padding:8px 15px;border-radius:6px;cursor:pointer;font-size:14px;min-width:100px;}
 .calendar-nav:hover{background:#2980b9;}
 .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center;}
@@ -57,9 +58,11 @@ header{background:#3c8050;color:#fff;text-align:center;padding:15px;font-size:22
 <div class="container">
   <div class="calendar-section">
     <div class="calendar-header">
-      <button class="calendar-nav" id="prev-month">◀ 上個月</button>
+      <div class="calendar-header-nav">
+        <button class="calendar-nav" id="prev-month">◀ 上個月</button>
+        <button class="calendar-nav" id="next-month">下個月 ▶</button>
+      </div>
       <h2 class="calendar-title" id="current-month">2025年10月</h2>
-      <button class="calendar-nav" id="next-month">下個月 ▶</button>
     </div>
     <div class="calendar-grid" id="calendar-days"></div>
   </div>
@@ -156,6 +159,7 @@ function renderCalendar(){
     // 2. 檢查該日期是否有預約
     else if(allReservations.some(r => r.date?.startsWith(dateStr))){
       reason = '有預約';
+      d.onclick=()=>selectDate(dateStr);
     }
     // 3. 其他未來日期可選
     else{
