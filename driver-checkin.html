@@ -159,11 +159,14 @@
     }
     
     .time-slots {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      margin-top: 15px;
-    }
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 改為固定兩欄 */
+  gap: 20px;
+  margin-top: 20px;
+  justify-items: center; /* 水平置中 */
+  align-items: stretch; /* 高度一致 */
+}
+
     
     .time-slot-btn {
       padding: 15px;
