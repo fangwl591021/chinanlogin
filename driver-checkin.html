@@ -233,6 +233,15 @@ function showPassengerList(){
   const info=document.getElementById('selected-info');
   info.textContent=`${selectedDate} ${selectedTimeSlot} | ${routeTimes[selectedTimeSlot].time} ${routeTimes[selectedTimeSlot].direction}`;
   const resList=allReservations.filter(r=>r.date?.startsWith(selectedDate)&&r.route===selectedTimeSlot&&r.status!=='已取消');
+  
+  // 除錯：看第一筆預約的數據
+  if(resList.length > 0){
+    console.log('第一筆預約資料:', resList[0]);
+    console.log('phone 欄位:', resList[0].phone);
+    console.log('phone 類型:', typeof resList[0].phone);
+    console.log('phone 長度:', String(resList[0].phone).length);
+  }
+  
   if(resList.length===0){list.innerHTML='<div class="no-data">此時段暫無預約</div>';return;}
   
   const today = new Date();
