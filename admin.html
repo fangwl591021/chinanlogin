@@ -289,6 +289,7 @@ searchInput.addEventListener('input', (e) => {
 });
 
 // 實際抓取預約資料
+// 實際抓取預約資料
 async function fetchReservations() {
     // 檢查 Worker URL 是否已設定
     if (WORKER_URL === 'YOUR_ACTUAL_CLOUDFLARE_WORKER_URL_HERE') {
@@ -316,33 +317,45 @@ async function fetchReservations() {
         
         const data = await response.json();
         
-        // 假設 Worker 返回的 JSON 結構為 { status: 'success', data: [...] }
+        // ✅ 除錯日誌：看 Worker 實際回傳什麼
+        console.log('📊 Worker 回傳的完整資料:', data);
+        console.log('📊 data.data:', data.data);
+        console.log('📊 data.reservations:', data.reservations);
+        console.log('📊 是否為陣列:', Array.isArray(data));
+        
+        // 嘗試從不同位置取得預約資料
         if (data && Array.isArray(data.data)) {
-    allReservations = data.data;
+            console.log('✅ 使用 data.data');
+            allReservations = data.data;
+        } else if (data && Array.isArray(data.reservations)) {
+            console.log('✅ 使用 data.reservations');
+            allReservations = data.reservations;
+        } else if (Array.isArray(data)) {
+            console.log('✅ 直接使用 data（陣列）');
+            allReservations = data;
+        } else {
+            console.error('❌ 資料格式不符合預期:', data);
+            throw new Error('資料格式不正確：無法找到預約陣列');
+        }
+        
+        // ✅ 驗證資料是否為空
+        if (!allReservations || allReservations.length === 0) {
+            console.warn('⚠️ 預約資料為空');
+        } else {
+            console.log(`✅ 載入成功，共 ${allReservations.length} 筆預約`);
+        }
 
-    // ✅ 按日期降冪排序（最新的在最上面）
-    allReservations.sort((a, b) => {
-        const da = new Date(a.date);
-        const db = new Date(b.date);
-        return db - da;
-    });
+        // ✅ 按日期降冪排序（最新的在最上面）
+        allReservations.sort((a, b) => {
+            const da = new Date(a.date || '1970-01-01');
+            const db = new Date(b.date || '1970-01-01');
+            return db - da;
+        });
 
-    renderReservations(allReservations);
-} else if (Array.isArray(data)) {
-    allReservations = data;
-
-    allReservations.sort((a, b) => {
-        const da = new Date(a.date);
-        const db = new Date(b.date);
-        return db - da;
-    });
-
-    renderReservations(allReservations);
-}
-
+        renderReservations(allReservations);
 
     } catch (error) {
-        console.error('抓取預約資料失敗:', error);
+        console.error('❌ 抓取預約資料失敗:', error);
         reservationBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-600 font-bold">
                                       ❌ 資料載入失敗: ${error.message}。請檢查 Worker URL 和網路連線。
                                     </td></tr>`;
