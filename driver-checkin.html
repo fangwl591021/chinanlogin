@@ -43,8 +43,8 @@ header{background:#3c8050;color:#fff;text-align:center;padding:15px;font-size:22
 .passenger-info{font-size:13px;color:#555;line-height:1.4;}
 .passenger-status{font-size:13px;font-weight:600;color:#3c8050;margin-top:6px;}
 .card-actions{display:flex;gap:8px;align-items:center;margin-top:6px;}
-.cancel-btn{background:#e74c3c;color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;}
-.cancel-btn:hover{background:#c0392b;}
+.checkin-btn{background:#3c8050;color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;}
+.checkin-btn:hover{background:#2f6842;}
 .checked-in{color:#3c8050;font-weight:bold;}
 .no-data{text-align:center;color:#777;margin-top:20px;}
 </style>
@@ -70,7 +70,7 @@ header{background:#3c8050;color:#fff;text-align:center;padding:15px;font-size:22
   </div>
 
   <div id="passengerSection" class="passenger-section" style="display:none;">
-    <h2>預約者列表</h2>
+    <h2>乘客核銷列表</h2>
     <div id="selected-info" style="margin-bottom:10px;color:#555;"></div>
     <div id="passenger-list"></div>
   </div>
@@ -176,8 +176,8 @@ function showPassengerList(){
         </div>
         <div class="card-actions">
           ${isCheckedIn
-            ? '<div class="checked-in">✅ 已簽到</div>'
-            : `<button class="cancel-btn" onclick="cancelReservation('${r.id}')">❌ 取消</button>`}
+            ? '<div class="checked-in">✅ 已核銷</div>'
+            : `<button class="checkin-btn" onclick="confirmCheckin('${r.id}')">✅ 核銷</button>`}
         </div>
       </div>`;
   });
@@ -185,22 +185,21 @@ function showPassengerList(){
   document.getElementById('passengerSection').style.display='block';
 }
 
-async function cancelReservation(id){
-  if(!confirm('確定要取消這筆預約嗎？'))return;
+async function confirmCheckin(id){
+  if(!confirm('確認乘客已搭乘並核銷？'))return;
   try{
-    const res=await fetch(`${WORKER_URL}?mode=cancelReservation&id=${encodeURIComponent(id)}`);
+    const res=await fetch(`${WORKER_URL}?mode=confirmCheckin&id=${encodeURIComponent(id)}`);
     const result=await res.json();
     if(result.status==='success'){
-      alert('✅ 已成功取消，資料已更新');
+      alert('✅ 已完成核銷，狀態已更新');
       const target=allReservations.find(r=>r.id===id);
-      if(target)target.status='已取消';
+      if(target){target.checkinStatus='Y';target.status='已核銷';}
       showPassengerList();
-      showTimeSlots();
     }else{
-      alert('❌ 取消失敗，請稍後再試');
+      alert('❌ 核銷失敗，請稍後再試');
     }
   }catch(e){
-    alert('❌ 取消請求失敗');
+    alert('❌ 請求失敗，請稍後再試');
   }
 }
 
