@@ -214,7 +214,7 @@ async function confirmCheckin(id){
     const result = await res.json();
     
     if(result.status === 'success'){
-      alert('✅ 已完成核銷');
+      alert('✅ 已完成核銷，J欄已更新為Y');
       target.checkinStatus = 'Y';
       showPassengerList();
     }else{
