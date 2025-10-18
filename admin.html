@@ -376,6 +376,77 @@ document.getElementById('reloadLink').addEventListener('click', (e) => {
 });
 
 document.getElementById('config').classList.remove('hidden');
+// === 🔽 表頭排序控制 ===
+let currentSort = { key: 'date', direction: 'desc' }; // 預設日期降冪
+
+// 點擊表頭啟動排序
+document.querySelectorAll("thead th").forEach((th, index) => {
+  th.style.cursor = "pointer";
+
+  th.addEventListener("click", () => {
+    const keyMap = ['date', 'trip', 'name', 'dept', 'phone', 'status'];
+    const key = keyMap[index];
+    if (!key) return;
+
+    // 切換排序方向
+    if (currentSort.key === key) {
+      currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 
+                              currentSort.direction === 'desc' ? 'none' : 'asc';
+    } else {
+      currentSort.key = key;
+      currentSort.direction = 'asc';
+    }
+
+    // 移除其他表頭箭頭
+    document.querySelectorAll("thead th").forEach(h => {
+      h.innerHTML = h.innerHTML.replace(/ ▲| ▼/g, '');
+    });
+
+    // 更新箭頭符號
+    if (currentSort.direction === 'asc') th.innerHTML += ' ▲';
+    else if (currentSort.direction === 'desc') th.innerHTML += ' ▼';
+
+    // 依目前方向排序
+    let sorted = [...allReservations];
+    if (currentSort.direction !== 'none') {
+      sorted.sort((a, b) => {
+        const valA = (a[key] || '').toString().trim();
+        const valB = (b[key] || '').toString().trim();
+
+        if (key === 'date') {
+          const dA = new Date(valA);
+          const dB = new Date(valB);
+          return currentSort.direction === 'asc' ? dA - dB : dB - dA;
+        } else if (key === 'trip') {
+          const order = ['A1', 'A2', 'B1', 'B2'];
+          const idxA = order.indexOf(valA.toUpperCase());
+          const idxB = order.indexOf(valB.toUpperCase());
+          return currentSort.direction === 'asc'
+            ? (idxA - idxB)
+            : (idxB - idxA);
+        } else {
+          return currentSort.direction === 'asc'
+            ? valA.localeCompare(valB, 'zh-Hant')
+            : valB.localeCompare(valA, 'zh-Hant');
+        }
+      });
+    } else {
+      // 回到原始排序（日期降冪 + 班次順序）
+      const order = ['A1', 'A2', 'B1', 'B2'];
+      sorted.sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        if (dateA.getTime() !== dateB.getTime()) return dateB - dateA;
+        const idxA = order.indexOf((a.trip || '').toUpperCase());
+        const idxB = order.indexOf((b.trip || '').toUpperCase());
+        return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+      });
+    }
+
+    renderReservations(sorted);
+  });
+});
+
 </script>
 
 
