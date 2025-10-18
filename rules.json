@@ -1,9 +1,27 @@
 {
+  "testMode": true,
+  "testUserId": "Ue7a07fe317565389fbf4479172088f87",
+  "groupId": "C596050d1193b9b930ac25469c61ba12a",
+
+  "bookingMode": "single",
   "seatLimit": 7,
   "maxPerDay": 1,
   "advanceMinutes": 30,
   "dailyDeadline": "19:00",
   "maxDaysAhead": 7,
+
+  "routePairs": {
+    "A1": "B1",
+    "B1": "A1",
+    "A2": "B2",
+    "B2": "A2"
+  },
+
+  "autoRoundtripMap": {
+    "A1": "B2",
+    "B1": "A2"
+  },
+
   "availableRoutes": [
     {
       "id": "A1",
@@ -30,6 +48,7 @@
       "eng": "Puli Bus Terminal → NCNU"
     }
   ],
+
   "stopList": [
     ["行政大樓", "NCNU Administrative Building"],
     ["中餐廳", "Zhong Can Ting(Chinese Restaurant)"],
