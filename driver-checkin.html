@@ -245,9 +245,12 @@ function showPassengerList(){
     const isExpired = reservationDate < todayStr;
     
     // 補足電話號碼前導0
-    let phoneDisplay = r.phone || '未提供';
-    if(phoneDisplay !== '未提供' && phoneDisplay.length < 10){
-      phoneDisplay = '0' + phoneDisplay;
+    // 補足電話號碼前導0
+let phoneDisplay = r.phone ? String(r.phone).trim() : '未提供';
+if(phoneDisplay !== '未提供' && phoneDisplay.length === 9){
+  phoneDisplay = '0' + phoneDisplay;
+}
+const phoneLink = phoneDisplay !== '未提供' ? `<a href="tel:${phoneDisplay}" style="color:#0066cc;text-decoration:none;font-weight:600;">${phoneDisplay}</a>` : phoneDisplay;
     }
     const phoneLink = phoneDisplay !== '未提供' ? `<a href="tel:${phoneDisplay}" style="color:#0066cc;text-decoration:none;font-weight:600;">${phoneDisplay}</a>` : phoneDisplay;
     
