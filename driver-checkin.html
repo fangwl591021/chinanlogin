@@ -14,17 +14,19 @@ header{background:#3c8050;color:#fff;text-align:center;padding:15px;font-size:22
 /* === 月曆 === */
 .calendar-section{background:#fff;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
 .calendar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px;}
-.calendar-title{flex:1;text-align:center;font-size:18px;font-weight:bold;}
+.calendar-title{flex:1;text-align:center;font-size:18px;font-weight:bold;min-width:150px;}
 .calendar-nav{background:#3498db;color:white;border:none;padding:8px 15px;border-radius:6px;cursor:pointer;font-size:14px;min-width:100px;}
 .calendar-nav:hover{background:#2980b9;}
 .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center;}
-.calendar-day-header{padding:10px 0;font-weight:bold;background:#27ACB2;color:white;border-radius:4px;}
-.calendar-day{padding:12px 0;border-radius:6px;background:white;border:1px solid #e0e0e0;cursor:pointer;transition:all .2s;}
+.calendar-day-header{padding:10px 0;font-weight:bold;background:#27ACB2;color:white;border-radius:4px;font-size:13px;}
+.calendar-day{padding:8px 0;border-radius:6px;background:white;border:1px solid #e0e0e0;cursor:pointer;transition:all .2s;min-height:50px;display:flex;flex-direction:column;justify-content:center;align-items:center;font-size:14px;}
 .calendar-day:hover{background:#eaf5ea;border-color:#3c8050;}
-.calendar-day.disabled{background:#f8f9fa;color:#999;cursor:not-allowed;}
-.calendar-day.past{background:#f5f5f5;color:#ccc;cursor:not-allowed;}
+.calendar-day.disabled{background:#f8f9fa;color:#999;cursor:not-allowed;min-height:40px;padding:4px 0;}
+.calendar-day.past{background:#f5f5f5;color:#ccc;cursor:not-allowed;min-height:35px;padding:3px 0;font-size:12px;}
 .calendar-day.selected{background:#3c8050;color:white;font-weight:bold;border-color:#3c8050;}
 .calendar-day.other-month{color:#ccc;background:#f8f9fa;}
+.calendar-day small{font-size:9px;color:#666;display:block;margin-top:2px;line-height:1.2;}
+.calendar-day.past small{color:#999;}
 
 /* === 時段卡片 === */
 .time-slots-section{background:#fff;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
@@ -142,33 +144,31 @@ function renderCalendar(){
     // 檢查日期狀態
     let isDisabled = false;
     let reason = '';
+    let isPast = false;
     
     // 1. 檢查是否過期
     if(dateStr < todayStr){
       d.classList.add('past');
       reason = '已過期';
       isDisabled = true;
+      isPast = true;
     }
     // 2. 檢查該日期是否有預約
     else if(allReservations.some(r => r.date?.startsWith(dateStr))){
-      d.textContent=`${i}`;
       reason = '有預約';
     }
     // 3. 其他未來日期可選
     else{
-      d.textContent=`${i}`;
       d.onclick=()=>selectDate(dateStr);
     }
     
     // 設定顯示文字
-    if(!isDisabled && reason){
-      d.innerHTML=`${i}<br><small style="font-size:10px;color:#666;">${reason}</small>`;
-    }else if(isDisabled){
-      d.innerHTML=`${i}<br><small style="font-size:10px;color:#999;">${reason}</small>`;
+    if(!isPast){
+      d.innerHTML=`${i}${reason ? `<small>${reason}</small>` : ''}`;
+    }else{
+      d.innerHTML=`${i}<small>${reason}</small>`;
       d.onclick=null;
       d.classList.add('disabled');
-    }else{
-      d.textContent=i;
     }
     
     // 標記已選擇的日期
@@ -191,6 +191,29 @@ function renderCalendar(){
   document.getElementById('current-month').textContent=`${y}年${m+1}月`;
 }
 
+async function selectDate(dateStr){
+  selectedDate=dateStr;
+  document.getElementById('selectedDate').style.display='block';
+  document.getElementById('selectedDate').textContent=`✅ 已選擇日期：${dateStr}`;
+  showTimeSlots();
+}
+
+function showTimeSlots(){
+  const container=document.getElementById('time-slots');
+  let html='';
+  for(const [id,info] of Object.entries(routeTimes)){
+    const count=allReservations.filter(r=>r.date?.startsWith(selectedDate)&&r.route===id&&r.status!=='已取消').length;
+    html+=`<div class="time-slot-btn" onclick="selectTimeSlot('${id}',event)">
+      <div class="route-time">${id} | ${info.time}</div>
+      <div class="time-slot-info">${info.direction}</div>
+      <div class="reservation-count">${count} 人預約</div>
+    </div>`;
+  }
+  container.innerHTML=html;
+  document.getElementById('timeSlotsSection').style.display='block';
+  document.getElementById('passengerSection').style.display='none';
+}
+
 async function selectTimeSlot(id,event){
   selectedTimeSlot=id;
   document.querySelectorAll('.time-slot-btn').forEach(b=>b.classList.remove('selected'));
@@ -205,15 +228,12 @@ function showPassengerList(){
   const resList=allReservations.filter(r=>r.date?.startsWith(selectedDate)&&r.route===selectedTimeSlot&&r.status!=='已取消');
   if(resList.length===0){list.innerHTML='<div class="no-data">此時段暫無預約</div>';return;}
   
-  // 取得今天日期
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
   
   let html='';
   resList.forEach(r=>{
     const isCheckedIn=r.checkinStatus==='Y';
-    
-    // 檢查預約日期是否已過期
     const reservationDate = r.date ? r.date.split('T')[0] : '';
     const isExpired = reservationDate < todayStr;
     
@@ -248,35 +268,13 @@ function showPassengerList(){
 
 async function confirmCheckin(id){
   if(!confirm('確認乘客已搭乘並核銷？'))return;
-  
   try{
-    // 檢查預約日期是否已過期
-    const target = allReservations.find(r => r.id === id);
-    if(!target){
-      alert('❌ 找不到預約記錄');
-      return;
-    }
-    
-    // 提取日期字串
-    const reservationDate = target.date ? target.date.split('T')[0] : '';
-    const today = new Date();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-    
-    console.log('預約日期:', reservationDate, '今天:', todayStr);
-    
-    // 如果預約日期在今天之前，不能核銷
-    if(reservationDate < todayStr){
-      alert('❌ 該預約已過期，無法補核銷。只能在當天或未來日期核銷');
-      return;
-    }
-    
-    // 日期有效，發送核銷請求
-    const res = await fetch('https://script.google.com/macros/s/AKfycbwE2fHEnioUohdNqwVzPxB3fUJmTNAYSYi5u2vvzQzzQUbhV7XVkfZwd1aoBwuADdgj_Q/exec?mode=confirmCheckin&id=' + encodeURIComponent(id));
-    const result = await res.json();
-    
-    if(result.status === 'success'){
+    const res=await fetch('https://script.google.com/macros/s/AKfycbwE2fHEnioUohdNqwVzPxB3fUJmTNAYSYi5u2vvzQzzQUbhV7XVkfZwd1aoBwuADdgj_Q/exec?mode=confirmCheckin&id=' + encodeURIComponent(id));
+    const result=await res.json();
+    if(result.status==='success'){
       alert('✅ 已完成核銷，J欄已更新為Y');
-      target.checkinStatus = 'Y';
+      const target=allReservations.find(r=>r.id===id);
+      if(target){target.checkinStatus='Y';}
       showPassengerList();
     }else{
       alert('❌ 核銷失敗：' + (result.message || '請稍後再試'));
@@ -286,8 +284,25 @@ async function confirmCheckin(id){
   }
 }
 
-async function showPreviousMonth(){currentMonth--;if(currentMonth<0){currentMonth=11;currentYear--;}renderCalendar();}
-async function showNextMonth(){currentMonth++;if(currentMonth>11){currentMonth=0;currentYear++;}renderCalendar();}
+async function showPreviousMonth(){
+  currentMonth--;
+  if(currentMonth<0){
+    currentMonth=11;
+    currentYear--;
+  }
+  await loadAllReservations();
+  renderCalendar();
+}
+
+async function showNextMonth(){
+  currentMonth++;
+  if(currentMonth>11){
+    currentMonth=0;
+    currentYear++;
+  }
+  await loadAllReservations();
+  renderCalendar();
+}
 </script>
 </body>
 </html>
