@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v3.2</title>
+<title>穿山甲專車後台 v3.3</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -89,6 +89,17 @@ table { font-size: var(--text-lg); }
   aside { width:220px; }
   .card { padding:20px; }
 }
+
+/* 載入中指示器 */
+#loadingMessage {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 30px;
+    font-size: var(--text-xl);
+    color: #64748b;
+}
+
 </style>
 </head>
 
@@ -109,7 +120,7 @@ table { font-size: var(--text-lg); }
   </nav>
 
   <div class="p-4 border-t text-center text-gray-600 text-sm">
-    ⚙️ <a href="#" class="underline">重新整理資料</a>
+    ⚙️ <a href="#" id="reloadLink" class="underline">重新整理資料</a>
   </div>
 </aside>
 
@@ -175,12 +186,14 @@ table { font-size: var(--text-lg); }
             <th class="p-3 border">日期</th>
             <th class="p-3 border">班次</th>
             <th class="p-3 border">姓名</th>
-            <th class="p-3 border">系所</th>
+            <th class="p-3 border">系所/註記</th>
             <th class="p-3 border">電話</th>
             <th class="p-3 border">狀態</th>
           </tr>
         </thead>
-        <tbody id="reservationBody"></tbody>
+        <tbody id="reservationBody">
+          <tr><td colspan="6" id="loadingMessage">點擊「預約查詢」載入資料...</td></tr>
+        </tbody>
       </table>
     </div>
   </section>
@@ -214,17 +227,152 @@ table { font-size: var(--text-lg); }
 
 <!-- JS -->
 <script>
+// 🚨🚨🚨 請將這裡替換成您實際部署的 Cloudflare Worker URL 🚨🚨🚨
+// 範例：'https://your-worker-name.your-username.workers.dev'
+const WORKER_URL = 'YOUR_ACTUAL_CLOUDFLARE_WORKER_URL_HERE'; 
+
 const sections = document.querySelectorAll("main section");
-document.querySelectorAll(".sidebar-btn").forEach(btn=>{
-  btn.addEventListener("click",()=>{
-    document.querySelectorAll(".sidebar-btn").forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-    const target=btn.dataset.target;
-    sections.forEach(sec=>{
-      sec.id===target ? sec.classList.remove("hidden") : sec.classList.add("hidden");
+const reservationBody = document.getElementById('reservationBody');
+const searchInput = document.getElementById('searchInput');
+
+let allReservations = []; // 用於儲存從 API 獲取的原始資料
+
+// 渲染表格
+function renderReservations(data) {
+    if (!data || data.length === 0) {
+        reservationBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">
+                                      目前沒有預約資料。
+                                    </td></tr>`;
+        return;
+    }
+
+    reservationBody.innerHTML = ''; 
+
+    data.forEach((item, index) => {
+        const row = document.createElement('tr');
+        // 隔行變色
+        row.className = index % 2 === 1 ? 'text-center bg-gray-50' : 'text-center'; 
+        
+        let statusColor = 'text-green-600';
+        if (item.status === '已取消') {
+            statusColor = 'text-red-600';
+        } else if (item.status === '已簽到') {
+            statusColor = 'text-blue-600';
+        }
+        
+        // 假設從 GAS 回傳的欄位名稱為：date, trip, name, dept (系所/註記), phone, status
+        row.innerHTML = `
+            <td class="p-2 border">${item.date || '--'}</td>
+            <td class="p-2 border">${item.trip || '--'}</td>
+            <td class="p-2 border">${item.name || '--'}</td>
+            <td class="p-2 border">${item.dept || '--'}</td>
+            <td class="p-2 border">${item.phone || '--'}</td>
+            <td class="p-2 border ${statusColor} font-semibold">${item.status || '未知'}</td>
+        `;
+        reservationBody.appendChild(row);
     });
-  });
+}
+
+// 搜尋功能
+searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
+    if (query === '') {
+        renderReservations(allReservations);
+        return;
+    }
+    const filteredData = allReservations.filter(item => {
+        // 搜尋所有欄位
+        return Object.values(item).some(val => 
+            String(val).toLowerCase().includes(query)
+        );
+    });
+    renderReservations(filteredData);
 });
+
+// 實際抓取預約資料
+async function fetchReservations() {
+    // 檢查 Worker URL 是否已設定
+    if (WORKER_URL === 'YOUR_ACTUAL_CLOUDFLARE_WORKER_URL_HERE') {
+        reservationBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-600 font-bold">
+                                      錯誤：請先將程式碼中的 WORKER_URL 替換為您的實際 Worker 網址！
+                                    </td></tr>`;
+        return;
+    }
+    
+    reservationBody.innerHTML = `<tr><td colspan="6" id="loadingMessage">
+                                  <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  載入中，請稍候...
+                                </td></tr>`;
+
+    try {
+        // 調用 Worker API 的 ?mode=reservations
+        const response = await fetch(`${WORKER_URL}?mode=reservations`);
+        
+        if (!response.ok) {
+            throw new Error(`API 錯誤: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        // 假設 Worker 返回的 JSON 結構為 { status: 'success', data: [...] }
+        if (data && Array.isArray(data.data)) {
+            allReservations = data.data;
+            renderReservations(allReservations);
+        } else if (Array.isArray(data)) {
+            // 如果 Worker 直接返回陣列 (這是比較常見的 GAS 格式，但 Worker 應該返回物件)
+            // 為了兼容性，先接受陣列，但建議 Worker 遵循 { status: 'success', data: [...] } 結構
+            allReservations = data;
+            renderReservations(allReservations);
+        } else {
+            throw new Error('資料格式不正確或為空');
+        }
+
+    } catch (error) {
+        console.error('抓取預約資料失敗:', error);
+        reservationBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-600 font-bold">
+                                      ❌ 資料載入失敗: ${error.message}。請檢查 Worker URL 和網路連線。
+                                    </td></tr>`;
+    }
+}
+
+
+// 初始化頁面和側邊欄切換邏輯
+document.querySelectorAll(".sidebar-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".sidebar-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        
+        const target = btn.dataset.target;
+        sections.forEach(sec => {
+            sec.id === target ? sec.classList.remove("hidden") : sec.classList.add("hidden");
+        });
+
+        // 🎯 點擊「預約查詢」時，抓取資料
+        if (target === 'reservations') {
+            // 只有在資料尚未載入時才執行抓取，避免重複請求
+            if (allReservations.length === 0) {
+              fetchReservations();
+            } else {
+              // 如果資料已載入，重新渲染以確保最新的篩選狀態被重置
+              renderReservations(allReservations);
+            }
+        }
+    });
+});
+
+// 重新整理資料連結
+document.getElementById('reloadLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    allReservations = []; // 強制清空資料，讓下次載入強制重新抓取
+    fetchReservations();
+});
+
+// 預設載入設定頁面 (避免 dashboard 顯示錯誤的圖表)
+document.getElementById('config').classList.remove('hidden');
+
 </script>
 
 </body>
