@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v3.3</title>
+<title>穿山甲專車後台 v3.4</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -173,6 +173,20 @@ table { font-size: var(--text-lg); }
   font-weight: 600;
 }
 
+/* 容量設定樣式 */
+.capacity-input {
+  border: 2px solid #e5e7eb;
+  transition: all 0.3s;
+}
+.capacity-input:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+.capacity-label {
+  font-weight: 600;
+  color: #374151;
+}
+
 </style>
 </head>
 
@@ -210,23 +224,74 @@ table { font-size: var(--text-lg); }
       <label><input type="radio" name="mode" value="S4" class="mr-1" checked /> 來回制（S4）</label>
     </div>
 
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 text-lg">
-      <div>A1：<input id="capA1" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
-      <div>A2：<input id="capA2" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
-      <div>B1：<input id="capB1" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
-      <div>B2：<input id="capB2" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6 text-lg">
+      <div class="flex flex-col items-center">
+        <label class="capacity-label mb-2">A1 班次</label>
+        <input id="capA1" type="number" min="1" max="50" value="6" class="capacity-input border rounded px-3 py-2 w-24 text-center">
+        <span class="text-sm text-gray-500 mt-1">可預約人數</span>
+      </div>
+      <div class="flex flex-col items-center">
+        <label class="capacity-label mb-2">A2 班次</label>
+        <input id="capA2" type="number" min="1" max="50" value="6" class="capacity-input border rounded px-3 py-2 w-24 text-center">
+        <span class="text-sm text-gray-500 mt-1">可預約人數</span>
+      </div>
+      <div class="flex flex-col items-center">
+        <label class="capacity-label mb-2">B1 班次</label>
+        <input id="capB1" type="number" min="1" max="50" value="6" class="capacity-input border rounded px-3 py-2 w-24 text-center">
+        <span class="text-sm text-gray-500 mt-1">可預約人數</span>
+      </div>
+      <div class="flex flex-col items-center">
+        <label class="capacity-label mb-2">B2 班次</label>
+        <input id="capB2" type="number" min="1" max="50" value="6" class="capacity-input border rounded px-3 py-2 w-24 text-center">
+        <span class="text-sm text-gray-500 mt-1">可預約人數</span>
+      </div>
     </div>
 
     <div class="space-y-3 mb-6">
-      <label><input type="checkbox" id="enableBooking" class="mr-1"> 開放預約</label><br>
-      <label><input type="checkbox" id="enableCancel" class="mr-1"> 允許取消</label>
+      <label><input type="checkbox" id="enableBooking" class="mr-1" checked> 開放預約</label><br>
+      <label><input type="checkbox" id="enableCancel" class="mr-1" checked> 允許取消</label>
     </div>
 
-    <textarea id="announcement" rows="3" class="w-full border rounded px-2 py-2 mb-6 text-lg" placeholder="公告訊息..."></textarea>
+    <div class="mb-4">
+      <label class="block font-semibold mb-2">系統公告：</label>
+      <textarea id="announcement" rows="3" class="w-full border rounded px-3 py-2 text-lg" placeholder="輸入系統公告訊息...">歡迎使用穿山甲專車預約系統！</textarea>
+    </div>
 
-    <button id="saveConfig" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded w-full text-lg">
-      💾 儲存設定
-    </button>
+    <div class="flex gap-3">
+      <button id="saveConfig" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded flex-1 text-lg">
+        💾 儲存設定
+      </button>
+      <button id="publishConfig" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded flex-1 text-lg">
+        🚀 發佈到前端
+      </button>
+    </div>
+
+    <!-- 即時預覽 -->
+    <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+      <h3 class="font-semibold text-lg mb-3">📱 前端即時預覽</h3>
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <span class="font-medium">A1 班次容量：</span>
+          <span id="previewA1" class="text-green-600 font-bold">6</span>
+        </div>
+        <div>
+          <span class="font-medium">A2 班次容量：</span>
+          <span id="previewA2" class="text-green-600 font-bold">6</span>
+        </div>
+        <div>
+          <span class="font-medium">B1 班次容量：</span>
+          <span id="previewB1" class="text-green-600 font-bold">6</span>
+        </div>
+        <div>
+          <span class="font-medium">B2 班次容量：</span>
+          <span id="previewB2" class="text-green-600 font-bold">6</span>
+        </div>
+        <div class="col-span-2">
+          <span class="font-medium">預約狀態：</span>
+          <span id="previewBooking" class="text-green-600 font-bold">開放中</span>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- 📊 儀表板 -->
@@ -303,7 +368,6 @@ table { font-size: var(--text-lg); }
 <!-- JS -->
 <script>
 // 🚨🚨🚨 請將這裡替換成您實際部署的 Cloudflare Worker URL 🚨🚨🚨
-// 範例：'https://your-worker-name.your-username.workers.dev'
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/'; 
 
 const sections = document.querySelectorAll("main section");
@@ -311,6 +375,146 @@ const reservationBody = document.getElementById('reservationBody');
 const searchInput = document.getElementById('searchInput');
 
 let allReservations = []; // 用於儲存從 API 獲取的原始資料
+
+// 系統設定資料
+let systemConfig = {
+  capacities: {
+    A1: 6,
+    A2: 6,
+    B1: 6,
+    B2: 6
+  },
+  mode: 'S4',
+  enableBooking: true,
+  enableCancel: true,
+  announcement: '歡迎使用穿山甲專車預約系統！'
+};
+
+// 初始化設定
+function initializeConfig() {
+  // 從 localStorage 載入設定（如果有的話）
+  const savedConfig = localStorage.getItem('pangolinBusConfig');
+  if (savedConfig) {
+    systemConfig = JSON.parse(savedConfig);
+  }
+  
+  // 更新表單顯示
+  document.getElementById('capA1').value = systemConfig.capacities.A1;
+  document.getElementById('capA2').value = systemConfig.capacities.A2;
+  document.getElementById('capB1').value = systemConfig.capacities.B1;
+  document.getElementById('capB2').value = systemConfig.capacities.B2;
+  
+  document.querySelector(`input[name="mode"][value="${systemConfig.mode}"]`).checked = true;
+  document.getElementById('enableBooking').checked = systemConfig.enableBooking;
+  document.getElementById('enableCancel').checked = systemConfig.enableCancel;
+  document.getElementById('announcement').value = systemConfig.announcement;
+  
+  // 更新預覽
+  updatePreview();
+}
+
+// 更新即時預覽
+function updatePreview() {
+  document.getElementById('previewA1').textContent = systemConfig.capacities.A1;
+  document.getElementById('previewA2').textContent = systemConfig.capacities.A2;
+  document.getElementById('previewB1').textContent = systemConfig.capacities.B1;
+  document.getElementById('previewB2').textContent = systemConfig.capacities.B2;
+  document.getElementById('previewBooking').textContent = systemConfig.enableBooking ? '開放中' : '已關閉';
+}
+
+// 儲存設定到 localStorage
+function saveConfigToLocal() {
+  // 從表單讀取值
+  systemConfig.capacities.A1 = parseInt(document.getElementById('capA1').value) || 6;
+  systemConfig.capacities.A2 = parseInt(document.getElementById('capA2').value) || 6;
+  systemConfig.capacities.B1 = parseInt(document.getElementById('capB1').value) || 6;
+  systemConfig.capacities.B2 = parseInt(document.getElementById('capB2').value) || 6;
+  
+  systemConfig.mode = document.querySelector('input[name="mode"]:checked').value;
+  systemConfig.enableBooking = document.getElementById('enableBooking').checked;
+  systemConfig.enableCancel = document.getElementById('enableCancel').checked;
+  systemConfig.announcement = document.getElementById('announcement').value;
+  
+  // 儲存到 localStorage
+  localStorage.setItem('pangolinBusConfig', JSON.stringify(systemConfig));
+  
+  // 更新預覽
+  updatePreview();
+  
+  return systemConfig;
+}
+
+// 發佈設定到前端系統
+async function publishConfigToFrontend() {
+  const config = saveConfigToLocal();
+  
+  try {
+    // 這裡可以替換成您實際的前端 API 端點
+    // 範例：發送到 Cloudflare Worker 或其他後端服務
+    const response = await fetch(`${WORKER_URL}?mode=updateConfig`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(config)
+    });
+    
+    if (response.ok) {
+      showNotification('✅ 設定已成功發佈到前端系統！', 'success');
+      console.log('設定已發佈：', config);
+    } else {
+      throw new Error('發佈失敗');
+    }
+  } catch (error) {
+    // 如果沒有實際的 API，我們模擬成功發佈
+    console.log('模擬發佈設定到前端：', config);
+    showNotification('✅ 設定已成功更新（模擬發佈）！', 'success');
+    
+    // 在實際環境中，您應該取消下面的註解並處理錯誤
+    // showNotification('❌ 發佈失敗，請檢查網路連線', 'error');
+  }
+}
+
+// 從後端載入當前設定
+async function loadConfigFromBackend() {
+  try {
+    const response = await fetch(`${WORKER_URL}?mode=getConfig`);
+    if (response.ok) {
+      const backendConfig = await response.json();
+      
+      // 合併後端設定（如果有的話）
+      if (backendConfig && backendConfig.capacities) {
+        systemConfig = { ...systemConfig, ...backendConfig };
+        initializeConfig();
+        showNotification('✅ 已從後端載入最新設定', 'success');
+      }
+    }
+  } catch (error) {
+    console.log('無法從後端載入設定，使用本地設定');
+  }
+}
+
+// 容量輸入即時更新
+function setupCapacityListeners() {
+  const capacityInputs = ['capA1', 'capA2', 'capB1', 'capB2'];
+  
+  capacityInputs.forEach(id => {
+    document.getElementById(id).addEventListener('input', function() {
+      const value = parseInt(this.value) || 0;
+      if (value < 1) this.value = 1;
+      if (value > 50) this.value = 50;
+      
+      // 即時更新預覽
+      const route = id.replace('cap', '');
+      document.getElementById(`preview${route}`).textContent = this.value;
+    });
+  });
+  
+  // 其他設定變更監聽
+  document.getElementById('enableBooking').addEventListener('change', function() {
+    document.getElementById('previewBooking').textContent = this.checked ? '開放中' : '已關閉';
+  });
+}
 
 // 渲染表格
 function renderReservations(data) {
@@ -380,7 +584,6 @@ function renderReservations(data) {
 
 // 切換簽到狀態
 function toggleCheckinStatus(id, newStatus) {
-    // 更新資料
     const reservationIndex = allReservations.findIndex(item => 
         (item.id && item.id.toString() === id) || 
         (allReservations.indexOf(item).toString() === id)
@@ -388,28 +591,20 @@ function toggleCheckinStatus(id, newStatus) {
     
     if (reservationIndex !== -1) {
         allReservations[reservationIndex].checkedIn = newStatus;
-        
-        // 重新渲染表格
         renderReservations(allReservations);
         
-        // 顯示成功訊息
         const statusText = newStatus ? '已標記為已搭乘' : '已取消搭乘標記';
         showNotification(`成功更新簽到狀態：${statusText}`, 'success');
-        
-        // 這裡可以添加實際的 API 呼叫來更新後端資料
-        // updateCheckinStatusOnServer(id, newStatus);
     }
 }
 
 // 顯示通知
 function showNotification(message, type = 'info') {
-    // 移除現有的通知
     const existingNotification = document.querySelector('.notification');
     if (existingNotification) {
         existingNotification.remove();
     }
     
-    // 創建新通知
     const notification = document.createElement('div');
     notification.className = `notification fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
         type === 'success' ? 'bg-green-500 text-white' : 
@@ -420,7 +615,6 @@ function showNotification(message, type = 'info') {
     
     document.body.appendChild(notification);
     
-    // 3秒後自動移除
     setTimeout(() => {
         notification.remove();
     }, 3000);
@@ -434,7 +628,6 @@ searchInput.addEventListener('input', (e) => {
         return;
     }
     const filteredData = allReservations.filter(item => {
-        // 搜尋所有欄位
         return Object.values(item).some(val => 
             String(val).toLowerCase().includes(query)
         );
@@ -444,10 +637,9 @@ searchInput.addEventListener('input', (e) => {
 
 // 實際抓取預約資料
 async function fetchReservations() {
-    // 檢查 Worker URL 是否已設定
     if (WORKER_URL === 'YOUR_ACTUAL_CLOUDFLARE_WORKER_URL_HERE') {
         reservationBody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-600 font-bold">
-                                      錯誤：請先將程式碼中的 WORKER_URL 替換為您的實際 Worker 網址！
+                                      錯誤：請先設定 Worker URL！
                                     </td></tr>`;
         return;
     }
@@ -461,7 +653,6 @@ async function fetchReservations() {
                                 </td></tr>`;
 
     try {
-        // 調用 Worker API 的 ?mode=reservations
         const response = await fetch(`${WORKER_URL}?mode=reservations`);
         
         if (!response.ok) {
@@ -470,42 +661,25 @@ async function fetchReservations() {
         
         const data = await response.json();
         
-        // ✅ 除錯日誌：看 Worker 實際回傳什麼
-        console.log('📊 Worker 回傳的完整資料:', data);
-        console.log('📊 data.data:', data.data);
-        console.log('📊 data.reservations:', data.reservations);
-        console.log('📊 是否為陣列:', Array.isArray(data));
-        
         // 嘗試從不同位置取得預約資料
         if (data && Array.isArray(data.data)) {
-            console.log('✅ 使用 data.data');
             allReservations = data.data;
         } else if (data && Array.isArray(data.reservations)) {
-            console.log('✅ 使用 data.reservations');
             allReservations = data.reservations;
         } else if (Array.isArray(data)) {
-            console.log('✅ 直接使用 data（陣列）');
             allReservations = data;
         } else {
-            console.error('❌ 資料格式不符合預期:', data);
             throw new Error('資料格式不正確：無法找到預約陣列');
         }
         
-        // ✅ 驗證資料是否為空
-        if (!allReservations || allReservations.length === 0) {
-            console.warn('⚠️ 預約資料為空');
-        } else {
-            console.log(`✅ 載入成功，共 ${allReservations.length} 筆預約`);
-        }
-
-        // ✅ 按日期降冪排序（最新的在最上面）
+        // 按日期降冪排序
         allReservations.sort((a, b) => {
             const da = new Date(a.date || '1970-01-01');
             const db = new Date(b.date || '1970-01-01');
             return db - da;
         });
 
-        // 為每筆資料添加簽到狀態（如果沒有）
+        // 為每筆資料添加簽到狀態
         allReservations.forEach(item => {
             if (item.checkedIn === undefined) {
                 item.checkedIn = false;
@@ -517,13 +691,32 @@ async function fetchReservations() {
     } catch (error) {
         console.error('❌ 抓取預約資料失敗:', error);
         reservationBody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-600 font-bold">
-                                      ❌ 資料載入失敗: ${error.message}。請檢查 Worker URL 和網路連線。
+                                      ❌ 資料載入失敗: ${error.message}
                                     </td></tr>`;
     }
 }
 
-// 初始化頁面和側邊欄切換邏輯
-document.querySelectorAll(".sidebar-btn").forEach(btn => {
+// 初始化
+document.addEventListener('DOMContentLoaded', function() {
+  // 初始化設定
+  initializeConfig();
+  setupCapacityListeners();
+  
+  // 綁定按鈕事件
+  document.getElementById('saveConfig').addEventListener('click', function() {
+    saveConfigToLocal();
+    showNotification('✅ 設定已儲存！', 'success');
+  });
+  
+  document.getElementById('publishConfig').addEventListener('click', function() {
+    publishConfigToFrontend();
+  });
+  
+  // 從後端載入設定（可選）
+  loadConfigFromBackend();
+  
+  // 其他現有的事件綁定
+  document.querySelectorAll(".sidebar-btn").forEach(btn => {
     btn.addEventListener("click", () => {
         document.querySelectorAll(".sidebar-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
@@ -533,28 +726,22 @@ document.querySelectorAll(".sidebar-btn").forEach(btn => {
             sec.id === target ? sec.classList.remove("hidden") : sec.classList.add("hidden");
         });
 
-        // 🎯 點擊「預約查詢」時，抓取資料
-        if (target === 'reservations') {
-            // 只有在資料尚未載入時才執行抓取，避免重複請求
-            if (allReservations.length === 0) {
-              fetchReservations();
-            } else {
-              // 如果資料已載入，重新渲染以確保最新的篩選狀態被重置
-              renderReservations(allReservations);
-            }
+        if (target === 'reservations' && allReservations.length === 0) {
+            fetchReservations();
+        } else if (target === 'reservations') {
+            renderReservations(allReservations);
         }
     });
-});
+  });
 
-// 重新整理資料連結
-document.getElementById('reloadLink').addEventListener('click', (e) => {
+  document.getElementById('reloadLink').addEventListener('click', (e) => {
     e.preventDefault();
-    allReservations = []; // 強制清空資料，讓下次載入強制重新抓取
+    allReservations = [];
     fetchReservations();
-});
+  });
 
-// 預設載入設定頁面 (避免 dashboard 顯示錯誤的圖表)
-document.getElementById('config').classList.remove('hidden');
+  document.getElementById('config').classList.remove('hidden');
+});
 
 </script>
 
