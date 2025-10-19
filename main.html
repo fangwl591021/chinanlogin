@@ -461,46 +461,6 @@ async function init() {
   }
 }
 
-console.log('✅ 並行載入完成');
-
-if (!userCheckResult.registered) {
-  console.error('❌ 用戶未註冊:', userCheckResult);
-  alert('⚠️ 用戶未註冊\n系統將跳轉到註冊頁面');
-  location.href = 'register.html';
-  return;
-}
-    
-    userData = userCheckResult.user;
-    existingReservations = reservationsResult.reservations || [];
-    
-    // 更新用戶信息顯示
-    document.getElementById('userInfo').innerHTML = `
-      <div class="user-name">${userData.name}</div>
-      <div class="user-info">${userData.department} | ${userData.studentId}</div>
-    `;
-    
-    // 直接渲染預約卡片
-    renderCurrentReservationCard();
-    
-    console.log('🎉 系統初始化完成 System initialization completed');
-    
-  } catch (error) {
-    console.error('💥 初始化錯誤 Initialization error:', error);
-    document.getElementById('userInfo').innerHTML = `
-      <div style="color: red; text-align: center;">
-        <p>❌ 系統初始化失敗</p>
-        <p class="en-text-dark">System initialization failed</p>
-        <p>錯誤: ${error.message}</p>
-        <p class="en-text-dark">Error: ${error.message}</p>
-        <button onclick="location.reload()" style="padding: 10px; margin: 10px;">
-          重新加載
-          <span class="en-text-dark">Reload</span>
-        </button>
-      </div>
-    `;
-  }
-}
-
 // 打開預約規則
 function openRules() {
   window.open('https://line.me/R/home/public/post?postId=1176044641970348675', '_blank');
