@@ -231,9 +231,14 @@ async function fetchReservations() {
   try {
     const res = await fetch(`${WORKER_URL}?mode=reservations`);
     const data = await res.json();
-    allReservations = data.data || data || [];
+    
+    // ✅ 改成符合 GAS 回應格式
+    allReservations = data.reservations || data.data || data || [];
+    
+    console.log('📊 預約資料:', allReservations);
     renderReservations(allReservations);
   } catch (e) {
+    console.error('❌ 載入錯誤:', e);
     tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-600">❌ 無法載入資料</td></tr>`;
   }
 }
@@ -241,21 +246,30 @@ async function fetchReservations() {
 // === 渲染資料 ===
 function renderReservations(data) {
   const tbody = document.getElementById('reservationBody');
-  if (!data.length) {
+  if (!data || !data.length) {
     tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">目前沒有預約資料。</td></tr>`;
     return;
   }
   tbody.innerHTML = '';
-  data.forEach((r,i)=>{
+  data.forEach((r, i) => {
     const row = document.createElement('tr');
-    row.className = i%2?'bg-gray-50 text-center':'text-center';
-    const color = r.status==='已取消'?'text-red-600':(r.status==='已簽到'?'text-blue-600':'text-green-600');
+    row.className = i % 2 ? 'bg-gray-50 text-center' : 'text-center';
+    
+    // ✅ 相容多種欄位名稱
+    const date = r.date || r.reservationDate || '';
+    const trip = r.route || r.trip || r.id || '';
+    const name = r.name || '';
+    const phone = r.phone || '';
+    const status = r.status || r.checkinStatus || '未知';
+    
+    const color = status === '已取消' ? 'text-red-600' : (status === '已簽到' || status === 'Y' ? 'text-blue-600' : 'text-green-600');
+    
     row.innerHTML = `
-      <td class="p-2 border">${r.date||''}</td>
-      <td class="p-2 border">${r.trip||''}</td>
-      <td class="p-2 border">${r.name||''}</td>
-      <td class="p-2 border">${r.phone||''}</td>
-      <td class="p-2 border font-semibold ${color}">${r.status||'--'}</td>`;
+      <td class="p-2 border">${date}</td>
+      <td class="p-2 border">${trip}</td>
+      <td class="p-2 border">${name}</td>
+      <td class="p-2 border">${phone}</td>
+      <td class="p-2 border font-semibold ${color}">${status}</td>`;
     tbody.appendChild(row);
   });
 }
