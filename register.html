@@ -14,23 +14,24 @@
 </head>
 <body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen flex items-center justify-center p-4">
 
-   <!-- 🟢 開場 LOGO + Loading -->
+  <!-- 🟢 開場 LOGO + Loading -->
   <div id="splash" class="flex flex-col items-center justify-center w-full h-screen fade-in">
     <img src="https://voom-obs.line-scdn.net/h9F1A8P9IemhZVGlmbgJ9EXBscUdzUyB6TF1OS3pRTx9KU3t5WyddDVVgUxJAbmB5TxZCDkheWAV0bSB2YDhsTEFkYQZdfXc_TAVZSVJkYlFdeA/L1080x1920" 
      width="400" 
      style="height: auto;">
-    <div class="flex items-center space-x-2 text-green-700 font-semibold text-lg">
+    <div class="flex items-center space-x-2 text-green-700 font-semibold text-lg mt-4">
       <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
       <span>登入中，請稍候...</span>
     </div>
+    <div id="debugInfo" class="mt-8 text-xs text-gray-500 text-center max-w-xs"></div>
   </div>
-
 
   <!-- 📝 註冊表單 -->
   <div id="registerForm" class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm hidden fade-in">
     <div class="text-center mb-6">
       <h1 class="text-xl font-bold text-gray-800 mb-2">學生接駁車註冊</h1>
       <h2 class="text-sm text-gray-600 mb-4">請填寫資料完成註冊</h2>
+      <div id="userIdDisplay" class="text-xs text-gray-400 mb-2"></div>
     </div>
 
     <div class="space-y-3">
@@ -109,19 +110,27 @@ const GAS_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 let currentUserId = null;
 let startTime = Date.now();
 
-// 顯示表單
+function updateDebugInfo(msg) {
+  const debug = document.getElementById('debugInfo');
+  if (debug) {
+    debug.innerHTML = (debug.innerHTML ? debug.innerHTML + '<br>' : '') + msg;
+  }
+  console.log('🔍 DEBUG:', msg);
+}
+
 function showForm() {
   document.getElementById('splash').classList.add('hidden');
   document.getElementById('registerForm').classList.remove('hidden');
+  if (currentUserId) {
+    document.getElementById('userIdDisplay').textContent = `(ID: ${currentUserId.substring(0, 12)}...)`;
+  }
 }
 
-// 顯示錯誤
 function showError(message) {
   document.getElementById('splash').classList.add('hidden');
   alert('⚠️ ' + message);
 }
 
-// 優化註冊按鈕狀態
 function setButtonLoading(loading) {
   const btn = document.getElementById('registerBtn');
   const btnText = document.getElementById('btnText');
@@ -144,41 +153,66 @@ function setButtonLoading(loading) {
   try {
     startTime = Date.now();
     
-    // 初始化 LIFF
-    const [liffInit] = await Promise.all([
-      liff.init({ liffId: "2006590746-KJodGOda" }),
-      new Promise(resolve => setTimeout(resolve, 200))
-    ]);
+    updateDebugInfo('初始化 LIFF...');
+    
+    const liffInit = await liff.init({ liffId: "2006590746-KJodGOda" });
+    updateDebugInfo(`LIFF 初始化完成: ${Date.now() - startTime}ms`);
     
     if (!liff.isLoggedIn()) {
+      updateDebugInfo('使用者未登入，跳轉到 LINE 登入...');
       liff.login();
       return;
     }
 
     const profile = await liff.getProfile();
     currentUserId = profile.userId;
-    
-    console.log(`LIFF初始化完成，耗時: ${Date.now() - startTime}ms`);
+    updateDebugInfo(`✅ 獲取用戶ID: ${currentUserId.substring(0, 20)}...`);
 
-    // 檢查是否已註冊
+    // 🔑 檢查是否已註冊（改進版本）
     const checkStart = Date.now();
-    const res = await fetch(`${GAS_URL}?check=${currentUserId}`);
-    const result = await res.json();
+    updateDebugInfo(`檢查註冊狀態中... (ID: ${currentUserId})`);
     
-    console.log(`檢查註冊狀態完成，耗時: ${Date.now() - checkStart}ms`);
-
-    if (result.registered) {
-      // 直接跳轉
-      window.location.href = 'main.html';
-    } else {
-      showForm();
+    const checkUrl = `${GAS_URL}?check=${encodeURIComponent(currentUserId)}`;
+    console.log('📡 檢查 URL:', checkUrl);
+    
+    const res = await fetch(checkUrl);
+    const text = await res.text();
+    console.log('📨 原始回應:', text);
+    
+    let result = {};
+    try {
+      result = JSON.parse(text);
+    } catch (e) {
+      console.error('❌ JSON 解析失敗:', e);
+      updateDebugInfo(`⚠️ 回應解析失敗: ${text.substring(0, 100)}`);
     }
     
-    console.log(`總初始化時間: ${Date.now() - startTime}ms`);
+    updateDebugInfo(`檢查完成: ${Date.now() - checkStart}ms`);
+    console.log('🔍 檢查結果:', result);
+
+    // 🟡 改進的判斷邏輯
+    const isRegistered = result.registered === true || 
+                        result.registered === 'true' || 
+                        result.exists === true ||
+                        result.exists === 'true' ||
+                        result.status === 'registered';
+    
+    updateDebugInfo(`註冊狀態: ${isRegistered ? '已註冊 ✅' : '未註冊 📝'}`);
+
+    if (isRegistered) {
+      updateDebugInfo('跳轉到主頁面...');
+      setTimeout(() => {
+        window.location.href = 'main.html';
+      }, 1000);
+    } else {
+      updateDebugInfo('顯示註冊表單');
+      showForm();
+    }
 
   } catch (err) {
-    console.error('初始化錯誤', err);
-    showError('系統發生錯誤，請稍後再試');
+    console.error('❌ 初始化錯誤', err);
+    updateDebugInfo(`❌ 錯誤: ${err.message}`);
+    showError('系統發生錯誤，請稍後再試\n\n' + err.message);
   }
 })();
 
@@ -193,7 +227,6 @@ async function registerUser() {
     return;
   }
 
-  // 簡單驗證
   if (phone.length < 7) {
     alert('⚠️ 請輸入有效的電話號碼');
     return;
@@ -210,9 +243,11 @@ async function registerUser() {
     name,
     phone,
     studentId,
-    department
+    department,
+    timestamp: new Date().toISOString()
   };
 
+  console.log('📤 發送註冊資料:', data);
   setButtonLoading(true);
 
   try {
@@ -223,43 +258,50 @@ async function registerUser() {
       body: JSON.stringify(data)
     });
     
-    const result = await res.json();
-    console.log(`註冊請求完成，耗時: ${Date.now() - registerStart}ms`);
+    const text = await res.text();
+    console.log('📨 註冊回應:', text);
     
-    if (result.status === 'success') {
-      // 標記用戶已註冊
+    let result = {};
+    try {
+      result = JSON.parse(text);
+    } catch (e) {
+      console.error('❌ 回應解析失敗:', e);
+    }
+    
+    console.log(`✅ 註冊請求完成，耗時: ${Date.now() - registerStart}ms`);
+    
+    if (result.status === 'success' || result.message?.includes('成功') || res.ok) {
+      // 標記用戶已註冊 (客戶端快取)
       localStorage.setItem('pangolin_registered', 'true');
-      // 顯示成功訊息後跳轉
+      localStorage.setItem('pangolin_userId', currentUserId);
+      
       const btn = document.getElementById('registerBtn');
       btn.classList.remove('bg-green-500', 'hover:bg-green-600');
       btn.classList.add('bg-green-600');
-      document.getElementById('btnText').textContent = '註冊成功！';
+      document.getElementById('btnText').textContent = '✅ 註冊成功！';
       
-      // 短暫顯示成功狀態後跳轉
       setTimeout(() => {
         window.location.href = 'main.html';
-      }, 600);
+      }, 1000);
     } else {
-      alert('❌ 註冊失敗，請稍後再試');
+      alert(`❌ 註冊失敗\n${result.message || '未知錯誤'}`);
       setButtonLoading(false);
     }
   } catch (err) {
-    console.error('註冊失敗', err);
-    alert('❌ 連線錯誤，請檢查網路後重試');
+    console.error('❌ 註冊失敗', err);
+    alert('❌ 連線錯誤，請檢查網路後重試\n\n' + err.message);
     setButtonLoading(false);
   }
 }
 
-// 添加表單快速填寫功能（開發用）
 document.addEventListener('DOMContentLoaded', function() {
-  // 在開發環境中快速填寫表單
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     setTimeout(() => {
       if (document.getElementById('name') && !document.getElementById('name').value) {
         document.getElementById('name').value = '測試學生';
         document.getElementById('phone').value = '0912345678';
         document.getElementById('studentId').value = 'D1234567';
-        document.getElementById('department').value = '資訊工程學系 - Department of Computer Science and Information Engineering';
+        document.getElementById('department').value = 'cs';
       }
     }, 1000);
   }
