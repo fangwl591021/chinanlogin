@@ -181,24 +181,32 @@ let userProfile = { name: '', picture: '', role: 'user' };
 let allReservations = [];
 
 // === LIFF 初始化 ===
+// === LIFF 初始化 ===
 async function initLiff() {
   await liff.init({ liffId: LIFF_ID });
   if (!liff.isLoggedIn()) {
     liff.login();
     return;
   }
+
   const profile = await liff.getProfile();
   userProfile.name = profile.displayName;
   userProfile.picture = profile.pictureUrl;
+  userProfile.id = profile.userId;
+
   document.getElementById('userName').textContent = profile.displayName;
   document.getElementById('userPicture').src = profile.pictureUrl;
 
-  // 查詢角色
-  const res = await fetch(`${WORKER_URL}?mode=getRole&userName=${encodeURIComponent(profile.displayName)}`);
+  // ✅ 改成同時帶 userId + userName 查詢角色
+  const res = await fetch(
+    `${WORKER_URL}?mode=getRole&userId=${profile.userId}&userName=${encodeURIComponent(profile.displayName)}`
+  );
   const data = await res.json();
   userProfile.role = data.role || 'user';
+
   showRoleUI(userProfile.role);
 }
+
 
 // === 顯示角色對應UI ===
 function showRoleUI(role) {
