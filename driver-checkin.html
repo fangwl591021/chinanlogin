@@ -6,60 +6,56 @@
 <title>穿山甲專車 - 司機核銷系統</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Microsoft JhengHei',sans-serif;}
-body{background:#f5f6f7;color:#333;line-height:1.6;}
-.container{max-width:900px;margin:0 auto;padding:20px;}
+body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden;}
+.container{width:100%;margin:0;padding:12px;box-sizing:border-box;}
 
 /* === 頂部資訊 === */
-.header{background:#3c8050;color:white;padding:15px;border-radius:12px;margin-bottom:20px;text-align:center;}
+.header{background:#3c8050;color:white;padding:15px;border-radius:12px;margin-bottom:15px;text-align:center;}
 .header h1{font-size:22px;margin-bottom:5px;}
 .header p{font-size:13px;opacity:0.9;}
 
 /* === 月曆 === */
-.calendar-section{background:white;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
-.calendar-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;gap:10px;}
-.calendar-nav button{background:#3c8050;color:white;border:none;padding:8px 15px;border-radius:6px;cursor:pointer;font-size:14px;}
+.calendar-section{background:white;border-radius:12px;padding:15px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+.calendar-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;gap:8px;}
+.calendar-nav button{background:#3c8050;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;flex:0 0 auto;}
 .calendar-nav button:hover{background:#2f6842;}
-.calendar-title{text-align:center;font-size:18px;font-weight:bold;flex:1;}
-.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
-.day-header{padding:10px 0;font-weight:bold;background:#27ACB2;color:white;text-align:center;border-radius:4px;font-size:12px;}
-.day-cell{padding:12px 0;background:white;border:1px solid #e0e0e0;text-align:center;border-radius:6px;cursor:pointer;transition:all .2s;min-height:50px;display:flex;flex-direction:column;justify-content:center;font-size:14px;}
+.calendar-title{text-align:center;font-size:16px;font-weight:bold;flex:1;white-space:nowrap;}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.day-header{padding:8px 0;font-weight:bold;background:#27ACB2;color:white;text-align:center;border-radius:4px;font-size:11px;}
+.day-cell{padding:8px 0;background:white;border:1px solid #e0e0e0;text-align:center;border-radius:6px;cursor:pointer;transition:all .2s;font-size:12px;aspect-ratio:1;}
 .day-cell:hover{background:#eaf5ea;border-color:#3c8050;}
 .day-cell.disabled{background:#f8f9fa;color:#999;cursor:not-allowed;}
 .day-cell.past{background:#f5f5f5;color:#ccc;cursor:not-allowed;}
 .day-cell.selected{background:#3c8050;color:white;font-weight:bold;}
 .day-cell.other-month{color:#ccc;background:#f8f9fa;}
-.day-cell small{font-size:10px;color:#666;margin-top:4px;}
 
 /* === 核銷列表 === */
-.checkin-section{background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
-.checkin-section h2{margin-bottom:15px;color:#333;border-bottom:2px solid #3c8050;padding-bottom:10px;}
+.checkin-section{background:white;border-radius:12px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+.checkin-section h2{margin-bottom:12px;color:#333;border-bottom:2px solid #3c8050;padding-bottom:8px;font-size:16px;}
 .reservation-table{width:100%;border-collapse:collapse;}
 .table-header{background:#3c8050;color:white;font-weight:bold;text-align:left;}
-.table-header th{padding:12px;font-size:14px;border:1px solid #2f6842;}
-.table-row{border-bottom:1px solid #e0e0e0;hover-effect:true;}
+.table-header th{padding:10px 8px;font-size:12px;border:1px solid #2f6842;}
+.table-row{border-bottom:1px solid #e0e0e0;}
 .table-row:hover{background:#f8faf8;}
-.table-row td{padding:12px;border:1px solid #e0e0e0;font-size:13px;}
+.table-row td{padding:10px 8px;border:1px solid #e0e0e0;font-size:12px;word-break:break-word;}
 .passenger-name{color:#0066cc;cursor:pointer;font-weight:600;text-decoration:underline;}
 .passenger-name:hover{color:#0052a3;}
-.status-booked{color:#3c8050;font-weight:bold;}
-.status-checkedin{color:#27ACB2;font-weight:bold;}
-.status-cancelled{color:#ccc;text-decoration:line-through;}
-.checkin-btn{background:#3c8050;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;}
+.checkin-btn{background:#3c8050;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap;}
 .checkin-btn:hover{background:#2f6842;}
 .checkin-btn:disabled{background:#ccc;cursor:not-allowed;}
-.no-data{text-align:center;color:#999;padding:40px 20px;}
+.no-data{text-align:center;color:#999;padding:30px 12px;}
 
 /* === 彈出窗口 === */
 .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;}
 .modal.active{display:flex;}
-.modal-content{background:white;border-radius:12px;padding:30px;max-width:400px;box-shadow:0 4px 20px rgba(0,0,0,0.3);}
+.modal-content{background:white;border-radius:12px;padding:24px;max-width:90%;width:100%;max-width:380px;box-shadow:0 4px 20px rgba(0,0,0,0.3);}
 .modal-header{font-size:18px;font-weight:bold;margin-bottom:20px;border-bottom:2px solid #3c8050;padding-bottom:10px;}
 .modal-body{margin-bottom:20px;line-height:2;}
 .modal-body div{margin-bottom:12px;}
-.modal-label{color:#666;font-size:13px;}
-.modal-value{color:#333;font-weight:600;font-size:15px;}
+.modal-label{color:#666;font-size:12px;}
+.modal-value{color:#333;font-weight:600;font-size:14px;}
 .phone-link{color:#0066cc;text-decoration:none;font-weight:600;cursor:pointer;}
-.modal-close{background:#e0e0e0;color:#333;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;}
+.modal-close{background:#e0e0e0;color:#333;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;width:100%;}
 .modal-close:hover{background:#ccc;}
 </style>
 </head>
@@ -75,28 +71,26 @@ body{background:#f5f6f7;color:#333;line-height:1.6;}
   <!-- 月曆 -->
   <div class="calendar-section">
     <div class="calendar-nav">
-      <button id="prev-month">◀ 上月</button>
+      <button id="prev-month">◀</button>
       <h2 class="calendar-title" id="current-month">2025年10月</h2>
-      <button id="next-month">下月 ▶</button>
-      <button id="toggle-calendar" style="background:#666;padding:8px 12px;">收合</button>
+      <button id="next-month">▶</button>
+      <button id="toggle-calendar">收合</button>
     </div>
     <div class="calendar-grid" id="calendar-grid" style="display:none;"></div>
   </div>
 
   <!-- 核銷列表 -->
-  <div id="checkin-section" class="checkin-section" style="display:none;">
-    <h2 id="checkin-title">核銷列表</h2>
+  <div id="checkin-section" class="checkin-section">
+    <h2 id="checkin-title">全部預約列表</h2>
     <table class="reservation-table">
       <thead class="table-header">
         <tr>
-          <th>日期</th>
-          <th>班次</th>
-          <th>姓名</th>
-          <th>電話</th>
-          <th>上車</th>
-          <th>下車</th>
-          <th>狀態</th>
-          <th>操作</th>
+          <th style="width:18%;">日期</th>
+          <th style="width:10%;">班次</th>
+          <th style="width:22%;">姓名</th>
+          <th style="width:20%;">上車</th>
+          <th style="width:20%;">下車</th>
+          <th style="width:10%;">操作</th>
         </tr>
       </thead>
       <tbody id="reservation-list"></tbody>
@@ -156,7 +150,6 @@ async function loadAllReservations() {
     const res = await fetch(`${WORKER_URL}?mode=reservations`);
     const result = await res.json();
     allReservations = (result.reservations || []).filter(r => r.status !== '已取消');
-    console.log('已載入預約:', allReservations.length);
   } catch (e) {
     console.error('載入失敗:', e);
     allReservations = [];
@@ -167,7 +160,6 @@ function renderCalendar() {
   const grid = document.getElementById('calendar-grid');
   grid.innerHTML = '';
   
-  // 星期標題
   ['日', '一', '二', '三', '四', '五', '六'].forEach(d => {
     const h = document.createElement('div');
     h.className = 'day-header';
@@ -180,27 +172,22 @@ function renderCalendar() {
   const offset = first.getDay();
   const today = formatDate(new Date());
   
-  // 前月日期
   for (let i = offset - 1; i >= 0; i--) {
     const d = document.createElement('div');
     d.className = 'day-cell other-month';
     grid.appendChild(d);
   }
   
-  // 當月日期
   for (let i = 1; i <= last.getDate(); i++) {
     const d = document.createElement('div');
     d.className = 'day-cell';
     const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
     
-    // 檢查日期狀態
     const hasReservation = allReservations.some(r => r.date?.startsWith(dateStr));
     const isPast = dateStr < today;
     
     if (isPast) {
       d.classList.add('past');
-    } else if (hasReservation) {
-      d.onclick = () => selectDate(dateStr);
     } else {
       d.onclick = () => selectDate(dateStr);
     }
@@ -210,14 +197,9 @@ function renderCalendar() {
     }
     
     d.textContent = i;
-    if (hasReservation) {
-      d.innerHTML += `<small>有預約</small>`;
-    }
-    
     grid.appendChild(d);
   }
   
-  // 次月日期
   const totalCells = 42;
   const nextMonthDays = totalCells - (offset + last.getDate());
   for (let i = 1; i <= nextMonthDays; i++) {
@@ -241,7 +223,6 @@ function showCheckinList() {
   const tbody = document.getElementById('reservation-list');
   tbody.innerHTML = '';
   
-  // 按日期、班次排序
   const routes = ['A1', 'B1', 'A2', 'B2'];
   const filtered = allReservations
     .filter(r => r.date?.startsWith(selectedDate))
@@ -251,8 +232,7 @@ function showCheckinList() {
     });
   
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="no-data">此日期無預約</td></tr>';
-    document.getElementById('checkin-section').style.display = 'block';
+    tbody.innerHTML = '<tr><td colspan="6" class="no-data">此日期無預約</td></tr>';
     document.getElementById('checkin-title').textContent = `${selectedDate} 核銷列表`;
     return;
   }
@@ -264,7 +244,6 @@ function showAllReservations() {
   const tbody = document.getElementById('reservation-list');
   tbody.innerHTML = '';
   
-  // 按日期、班次排序
   const routes = ['A1', 'B1', 'A2', 'B2'];
   const sorted = [...allReservations].sort((a, b) => {
     const dateCompare = (a.date || '').localeCompare(b.date || '');
@@ -274,8 +253,7 @@ function showAllReservations() {
   });
   
   if (sorted.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="no-data">暫無預約</td></tr>';
-    document.getElementById('checkin-section').style.display = 'block';
+    tbody.innerHTML = '<tr><td colspan="6" class="no-data">暫無預約</td></tr>';
     document.getElementById('checkin-title').textContent = '全部預約列表';
     return;
   }
@@ -292,8 +270,6 @@ function renderReservationRows(filtered, title) {
     tr.className = 'table-row';
     
     const isCheckedIn = r.checkinStatus === 'Y';
-    const statusClass = isCheckedIn ? 'status-checkedin' : 'status-booked';
-    const statusText = isCheckedIn ? '已核銷' : '未核銷';
     
     let phoneDisplay = r.phone || '未提供';
     if (phoneDisplay !== '未提供' && phoneDisplay.length < 10) {
@@ -304,20 +280,17 @@ function renderReservationRows(filtered, title) {
       <td>${r.date?.split('T')[0] || ''}</td>
       <td><strong>${r.route}</strong></td>
       <td><span class="passenger-name" onclick="showModal('${r.name}', '${r.department}', '${r.studentId}', '${phoneDisplay}')">${r.name}</span></td>
-      <td>${phoneDisplay}</td>
       <td>${r.fromStop}</td>
       <td>${r.toStop}</td>
-      <td><span class="${statusClass}">${statusText}</span></td>
       <td>
         ${isCheckedIn 
-          ? '<button class="checkin-btn" disabled>✅ 已核銷</button>' 
+          ? '<button class="checkin-btn" disabled>✅</button>' 
           : `<button class="checkin-btn" onclick="confirmCheckin('${r.id}')">核銷</button>`}
       </td>
     `;
     tbody.appendChild(tr);
   });
   
-  document.getElementById('checkin-section').style.display = 'block';
   document.getElementById('checkin-title').textContent = title;
 }
 
@@ -353,7 +326,7 @@ async function confirmCheckin(id) {
       alert('✅ 核銷成功');
       const target = allReservations.find(r => r.id === id);
       if (target) target.checkinStatus = 'Y';
-      showCheckinList();
+      selectedDate ? showCheckinList() : showAllReservations();
     } else {
       alert('❌ 核銷失敗：' + (result.message || '請稍後再試'));
     }
@@ -389,7 +362,6 @@ function formatDate(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-// 點擊彈窗外關閉
 document.getElementById('infoModal').addEventListener('click', (e) => {
   if (e.target.id === 'infoModal') closeModal();
 });
