@@ -365,28 +365,100 @@ async function init() {
     const profile = await liff.getProfile();
     console.log('用戶信息 User info:', profile);
     
-    // 三重並行處理：用戶驗證、載入預約、預載月曆資料
+    // 🔧 關鍵修改：改進錯誤處理和重試機制
     let userCheckResult, reservationsResult;
 
-try {
-  // 逐個載入，而不是並行，這樣可以看到哪個環節出問題
-  console.log('🔍 檢查用戶註冊狀態...');
-  const checkRes = await fetch(`${WORKER_URL}?mode=check&userId=${encodeURIComponent(profile.userId)}`);
-  userCheckResult = await checkRes.json();
-  console.log('✅ 檢查結果:', userCheckResult);
+    try {
+      console.log('🔍 檢查用戶註冊狀態...');
+      const checkRes = await fetch(`${WORKER_URL}?mode=check&userId=${encodeURIComponent(profile.userId)}`);
+      
+      if (!checkRes.ok) {
+        throw new Error(`HTTP error! status: ${checkRes.status}`);
+      }
+      
+      const text = await checkRes.text();
+      console.log('📨 檢查回應原始文本:', text);
+      
+      try {
+        userCheckResult = JSON.parse(text);
+      } catch (parseError) {
+        console.error('❌ JSON 解析失敗:', parseError);
+        // 嘗試重新請求
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const retryRes = await fetch(`${WORKER_URL}?mode=check&userId=${encodeURIComponent(profile.userId)}`);
+        userCheckResult = await retryRes.json();
+      }
+      
+      console.log('✅ 檢查結果:', userCheckResult);
 
-  console.log('🔍 載入預約資料...');
-  const resRes = await fetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`);
-  reservationsResult = await resRes.json();
-  console.log('✅ 預約結果:', reservationsResult);
+    } catch (err) {
+      console.error('❌ 用戶檢查失敗:', err);
+      // 如果檢查失敗，顯示友好錯誤並提供重試選項
+      document.getElementById('userInfo').innerHTML = `
+        <div style="text-align: center; color: #666;">
+          <p>⏳ 系統連線中...</p>
+          <p class="en-text-dark">System connecting...</p>
+          <button onclick="location.reload()" style="padding: 10px; margin: 10px; background: #3c8050; color: white; border: none; border-radius: 6px;">
+            重新載入
+            <span class="en-text-dark">Reload</span>
+          </button>
+        </div>
+      `;
+      return;
+    }
+    
+    // 🔧 關鍵修改：改進註冊狀態檢查
+    if (!userCheckResult || userCheckResult.registered === false) {
+      console.error('❌ 用戶未註冊或檢查失敗:', userCheckResult);
+      
+      // 添加延遲後跳轉，避免立即重定向
+      setTimeout(() => {
+        if (confirm('您尚未完成註冊，是否要前往註冊頁面？\nYou have not completed registration. Go to registration page?')) {
+          location.href = 'register.html';
+        }
+      }, 1000);
+      return;
+    }
+    
+    // 繼續載入其他資料...
+    console.log('🔍 載入預約資料...');
+    const resRes = await fetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`);
+    reservationsResult = await resRes.json();
+    console.log('✅ 預約結果:', reservationsResult);
 
-  console.log('🔍 預載月曆資料...');
-  await preloadCalendarData();
-  console.log('✅ 月曆資料已預載');
+    console.log('🔍 預載月曆資料...');
+    await preloadCalendarData();
+    console.log('✅ 月曆資料已預載');
 
-} catch (err) {
-  console.error('❌ 初始化載入失敗:', err);
-  throw err;
+    userData = userCheckResult.user;
+    existingReservations = reservationsResult.reservations || [];
+    
+    // 更新用戶信息顯示
+    document.getElementById('userInfo').innerHTML = `
+      <div class="user-name">${userData.name}</div>
+      <div class="user-info">${userData.department} | ${userData.studentId}</div>
+    `;
+    
+    // 直接渲染預約卡片
+    renderCurrentReservationCard();
+    
+    console.log('🎉 系統初始化完成 System initialization completed');
+    
+  } catch (error) {
+    console.error('💥 初始化錯誤 Initialization error:', error);
+    document.getElementById('userInfo').innerHTML = `
+      <div style="color: red; text-align: center;">
+        <p>❌ 系統初始化失敗</p>
+        <p class="en-text-dark">System initialization failed</p>
+        <p>錯誤: ${error.message}</p>
+        <p class="en-text-dark">Error: ${error.message}</p>
+        <button onclick="location.reload()" style="padding: 10px; margin: 10px;">
+          重新加載
+          <span class="en-text-dark">Reload</span>
+        </button>
+      </div>
+    `;
+  }
 }
 
 console.log('✅ 並行載入完成');
