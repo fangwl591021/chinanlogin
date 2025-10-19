@@ -294,10 +294,7 @@ body {
   <!-- 核銷區 -->
   <section id="checkin" class="card hidden">
     <h2 class="section-title">✅ 核銷管理</h2>
-    <p style="margin-bottom: 20px; color: #666; font-size: 14px;">跳轉到司機核銷系統進行核銷作業</p>
-    <a href="https://fangwl591021.github.io/chinanlogin/driver-checkin.html" style="display: inline-block; background: #3c8050; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer;">
-      🚌 進入司機核銷系統
-    </a>
+    <p style="color: #999; font-size: 14px;">進入司機核銷系統進行核銷作業...</p>
   </section>
 
   <!-- 司機 -->
@@ -377,12 +374,16 @@ function setupNavigation() {
 }
 
 function showSection(sectionId) {
+  if (sectionId === 'checkin') {
+    window.location.href = 'https://fangwl591021.github.io/chinanlogin/driver-checkin.html';
+    return;
+  }
+  
   document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
   const section = document.getElementById(sectionId);
   if (section) {
     section.classList.remove('hidden');
     if (sectionId === 'reservations') renderReservations(allReservations);
-    if (sectionId === 'checkin') renderCheckinList(allReservations.filter(r => r.status !== '已取消'));
   }
 }
 
