@@ -39,7 +39,6 @@ body {
   margin-right:10px;
 }
 
-/* 頂部資訊條 */
 #topBar {
   position: sticky;
   top: 0;
@@ -63,11 +62,33 @@ body {
   border-radius: 50%;
   border: 2px solid #fff;
 }
-#userProfile span {
+
+#bottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 0;
+  z-index: 50;
+}
+.nav-btn {
+  flex: 1;
+  text-align: center;
+  color: #475569;
+  font-size: 14px;
   font-weight: 600;
+  cursor: pointer;
+  padding: 8px 0;
+}
+.nav-btn.active {
+  color: #3c8050;
+  font-weight: 800;
 }
 
-/* 搜尋框 */
 .search-input {
   width: 100%;
   padding: 10px 12px;
@@ -78,7 +99,6 @@ body {
   box-sizing: border-box;
 }
 
-/* 查詢表格 */
 .table-wrapper {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -144,7 +164,6 @@ body {
   padding: 40px 20px;
 }
 
-/* 彈出窗口 */
 .modal {
   display: none;
   position: fixed;
@@ -212,12 +231,30 @@ body {
 .modal-close:hover {
   background: #ccc;
 }
+
+.checkin-btn {
+  background: #3c8050;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.checkin-btn:hover {
+  background: #2f6842;
+}
+.checkin-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
 </style>
 </head>
 
 <body>
 
-<!-- 頂部資訊列 -->
 <div id="topBar">
   <div style="font-weight: bold; font-size: 18px;">🚌 穿山甲後台系統</div>
   <div id="userProfile">
@@ -226,11 +263,16 @@ body {
   </div>
 </div>
 
-<!-- 主內容 -->
 <main id="mainContent" style="padding-bottom: 100px;">
 
-  <!-- 預約查詢 -->
-  <section id="reservations" class="card">
+  <!-- 儀表板 -->
+  <section id="dashboard" class="card hidden">
+    <h2 class="section-title">📊 營運儀表板</h2>
+    <p>儀表板功能區</p>
+  </section>
+
+  <!-- 查詢 -->
+  <section id="reservations" class="card hidden">
     <h2 class="section-title">🧾 預約查詢與管理</h2>
     <input type="text" id="searchInput" class="search-input" placeholder="輸入姓名 / 日期 / 班次搜尋...">
     <div class="table-wrapper">
@@ -249,7 +291,37 @@ body {
     </div>
   </section>
 
+  <!-- 核銷區 -->
+  <section id="checkin" class="card hidden">
+    <h2 class="section-title">✅ 核銷管理</h2>
+    <p style="margin-bottom: 20px; color: #666; font-size: 14px;">跳轉到司機核銷系統進行核銷作業</p>
+    <a href="https://fangwl591021.github.io/chinanlogin/driver-checkin.html" style="display: inline-block; background: #3c8050; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer;">
+      🚌 進入司機核銷系統
+    </a>
+  </section>
+
+  <!-- 司機 -->
+  <section id="drivers" class="card hidden">
+    <h2 class="section-title">🚐 司機班表</h2>
+    <p>此區顯示各班次司機配置，未來可串接 Google Calendar。</p>
+  </section>
+
+  <!-- 設定 -->
+  <section id="config" class="card hidden">
+    <h2 class="section-title">⚙️ 營運設定中心</h2>
+    <p>（Admin 專用功能）</p>
+    <button style="background:#3c8050;color:white;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;font-weight:600;margin-top:10px;">💾 儲存設定</button>
+  </section>
+
 </main>
+
+<div id="bottomNav">
+  <div class="nav-btn" data-target="dashboard">📊 儀表板</div>
+  <div class="nav-btn" data-target="reservations">🧾 查詢</div>
+  <div class="nav-btn" data-target="checkin">✅ 核銷</div>
+  <div class="nav-btn" data-target="drivers">🚐 司機</div>
+  <div class="nav-btn" data-target="config">⚙️ 設定</div>
+</div>
 
 <!-- 詳細資訊彈出窗 -->
 <div id="infoModal" class="modal">
@@ -277,17 +349,47 @@ body {
 
 <script>
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbza2qFcrQt1PS6Y4p4u2gSXovvFxWecEjjIh5ov1cIk_65zgdFJA0xjVuS3qr7WvlgAzA/exec';
+
 let allReservations = [];
 let userProfile = { name: '', picture: '', role: 'user' };
 
 document.addEventListener('DOMContentLoaded', () => {
   initializeSystem();
-  document.getElementById('searchInput').addEventListener('input', filterReservations);
+  setupNavigation();
 });
+
+function setupNavigation() {
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.target;
+      showSection(target);
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+  
+  document.getElementById('searchInput').addEventListener('input', filterReservations);
+  document.getElementById('checkinSearchInput').addEventListener('input', filterCheckinList);
+  document.getElementById('infoModal').addEventListener('click', (e) => {
+    if (e.target.id === 'infoModal') closeModal();
+  });
+}
+
+function showSection(sectionId) {
+  document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
+  const section = document.getElementById(sectionId);
+  if (section) {
+    section.classList.remove('hidden');
+    if (sectionId === 'reservations') renderReservations(allReservations);
+    if (sectionId === 'checkin') renderCheckinList(allReservations.filter(r => r.status !== '已取消'));
+  }
+}
 
 async function initializeSystem() {
   await fetchReservations();
-  renderReservations(allReservations);
+  showSection('dashboard');
+  document.querySelector('[data-target="dashboard"]').classList.add('active');
 }
 
 async function fetchReservations() {
@@ -296,7 +398,6 @@ async function fetchReservations() {
     const result = await res.json();
     allReservations = result.reservations || [];
     
-    // 按日期、班次排序
     const routes = ['A1', 'B1', 'A2', 'B2'];
     allReservations.sort((a, b) => {
       const dateCompare = (a.date || '').localeCompare(b.date || '');
@@ -328,11 +429,9 @@ function renderReservations(data) {
       phoneDisplay = '0' + phoneDisplay;
     }
     
-    // 預約狀態
     const reservationStatus = r.status === '已取消' ? '已取消' : '已預約';
     const reservationStatusClass = r.status === '已取消' ? 'status-cancelled' : 'status-booked';
     
-    // 搭乘狀態
     const checkinStatus = r.checkinStatus === 'Y' ? '已搭乘' : '未搭乘';
     const checkinStatusClass = r.checkinStatus === 'Y' ? 'status-checkedin' : 'status-notcheckedin';
     
@@ -342,6 +441,42 @@ function renderReservations(data) {
       <td><span class="passenger-name" onclick="showModal('${r.name}', '${r.department}', '${r.studentId}', '${phoneDisplay}')">${r.name}</span></td>
       <td><span class="${reservationStatusClass}">${reservationStatus}</span></td>
       <td><span class="${checkinStatusClass}">${checkinStatus}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderCheckinList(data) {
+  const tbody = document.getElementById('checkin-list');
+  tbody.innerHTML = '';
+  
+  if (!data || data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="no-data">暫無預約資料</td></tr>';
+    return;
+  }
+  
+  data.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.className = 'table-row';
+    
+    let phoneDisplay = r.phone || '未提供';
+    if (phoneDisplay !== '未提供' && phoneDisplay.length < 10) {
+      phoneDisplay = '0' + phoneDisplay;
+    }
+    
+    const isCheckedIn = r.checkinStatus === 'Y';
+    
+    tr.innerHTML = `
+      <td>${r.date?.split('T')[0] || ''}</td>
+      <td><strong>${r.route}</strong></td>
+      <td><span class="passenger-name" onclick="showModal('${r.name}', '${r.department}', '${r.studentId}', '${phoneDisplay}')">${r.name}</span></td>
+      <td>${r.fromStop}</td>
+      <td>${r.toStop}</td>
+      <td>
+        ${isCheckedIn 
+          ? '<button class="checkin-btn" disabled>✅</button>' 
+          : `<button class="checkin-btn" onclick="confirmCheckin('${r.id}')">核銷</button>`}
+      </td>
     `;
     tbody.appendChild(tr);
   });
@@ -364,6 +499,44 @@ function filterReservations() {
   renderReservations(filtered);
 }
 
+function filterCheckinList() {
+  const query = document.getElementById('checkinSearchInput').value.toLowerCase();
+  const data = allReservations.filter(r => r.status !== '已取消');
+  
+  if (!query) {
+    renderCheckinList(data);
+    return;
+  }
+  
+  const filtered = data.filter(r => {
+    return (r.name || '').toLowerCase().includes(query) ||
+           (r.date || '').includes(query) ||
+           (r.route || '').includes(query);
+  });
+  
+  renderCheckinList(filtered);
+}
+
+async function confirmCheckin(id) {
+  if (!confirm('確認此乘客已核銷？')) return;
+  
+  try {
+    const res = await fetch(`${GAS_URL}?mode=confirmCheckin&id=${encodeURIComponent(id)}`);
+    const result = await res.json();
+    
+    if (result.status === 'success') {
+      alert('✅ 核銷成功');
+      const target = allReservations.find(r => r.id === id);
+      if (target) target.checkinStatus = 'Y';
+      renderCheckinList(allReservations.filter(r => r.status !== '已取消'));
+    } else {
+      alert('❌ 核銷失敗：' + (result.message || '請稍後再試'));
+    }
+  } catch (e) {
+    alert('❌ 錯誤：' + e.message);
+  }
+}
+
 function showModal(name, department, studentId, phone) {
   document.getElementById('modal-name').textContent = name;
   document.getElementById('modal-department').textContent = department || '未提供';
@@ -384,10 +557,6 @@ function showModal(name, department, studentId, phone) {
 function closeModal() {
   document.getElementById('infoModal').classList.remove('active');
 }
-
-document.getElementById('infoModal').addEventListener('click', (e) => {
-  if (e.target.id === 'infoModal') closeModal();
-});
 </script>
 </body>
 </html>
