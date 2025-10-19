@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v3.5</title>
+<title>穿山甲專車後台 v3.6</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -14,7 +14,7 @@ body {
   background: #f8fafc;
   color: #334155;
   margin: 0;
-  padding-bottom: 70px; /* 預留底部導覽列空間 */
+  padding-bottom: 70px;
 }
 .card {
   background:white;
@@ -66,6 +66,7 @@ button:hover { opacity:0.9; }
   display: flex;
   align-items: center;
   gap: 10px;
+  cursor:pointer;
 }
 #userProfile img {
   width: 40px;
@@ -121,27 +122,8 @@ button:hover { opacity:0.9; }
   <!-- 🔧 營運設定 -->
   <section id="config" class="card hidden">
     <h2 class="section-title">🔧 營運設定中心</h2>
-    <label class="block font-semibold mb-2">運營模式：</label>
-    <div class="flex gap-6 mb-4 text-lg">
-      <label><input type="radio" name="mode" value="S3" class="mr-1" /> 單趟制（S3）</label>
-      <label><input type="radio" name="mode" value="S4" class="mr-1" checked /> 來回制（S4）</label>
-    </div>
-
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 text-lg">
-      <div>A1：<input id="capA1" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
-      <div>A2：<input id="capA2" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
-      <div>B1：<input id="capB1" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
-      <div>B2：<input id="capB2" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
-    </div>
-
-    <div class="space-y-3 mb-6">
-      <label><input type="checkbox" id="enableBooking" class="mr-1"> 開放預約</label><br>
-      <label><input type="checkbox" id="enableCancel" class="mr-1"> 允許取消</label>
-    </div>
-
-    <textarea id="announcement" rows="3" class="w-full border rounded px-2 py-2 mb-6 text-lg" placeholder="公告訊息..."></textarea>
-
-    <button id="saveConfig" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded w-full text-lg">
+    <p>（Admin 專用功能）</p>
+    <button class="bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded w-full text-lg mt-4">
       💾 儲存設定
     </button>
   </section>
@@ -196,6 +178,7 @@ button:hover { opacity:0.9; }
 const LIFF_ID = '2006590746-KJodGOda';
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 let userProfile = { name: '', picture: '', role: 'user' };
+let allReservations = [];
 
 // === LIFF 初始化 ===
 async function initLiff() {
@@ -221,20 +204,52 @@ async function initLiff() {
 function showRoleUI(role) {
   const sections = document.querySelectorAll('main section');
   sections.forEach(s => s.classList.add('hidden'));
+  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
 
-  const navBtns = document.querySelectorAll('.nav-btn');
-  navBtns.forEach(btn => btn.classList.remove('active'));
+  let defaultSection = 'reservations';
+  if (role === 'admin') defaultSection = 'config';
+  if (role === 'driver') defaultSection = 'drivers';
 
-  if (role === 'admin') {
-    document.getElementById('config').classList.remove('hidden');
-    document.querySelector('[data-target="config"]').classList.add('active');
-  } else if (role === 'driver') {
-    document.getElementById('drivers').classList.remove('hidden');
-    document.querySelector('[data-target="drivers"]').classList.add('active');
-  } else {
-    document.getElementById('reservations').classList.remove('hidden');
-    document.querySelector('[data-target="reservations"]').classList.add('active');
+  document.getElementById(defaultSection).classList.remove('hidden');
+  document.querySelector(`[data-target="${defaultSection}"]`).classList.add('active');
+
+  if (role !== 'driver') fetchReservations();
+}
+
+// === 抓取預約資料 ===
+async function fetchReservations() {
+  const tbody = document.getElementById('reservationBody');
+  tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">⏳ 載入中...</td></tr>`;
+  try {
+    const res = await fetch(`${WORKER_URL}?mode=reservations`);
+    const data = await res.json();
+    allReservations = data.data || data || [];
+    renderReservations(allReservations);
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-600">❌ 無法載入資料</td></tr>`;
   }
+}
+
+// === 渲染資料 ===
+function renderReservations(data) {
+  const tbody = document.getElementById('reservationBody');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">目前沒有預約資料。</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = '';
+  data.forEach((r,i)=>{
+    const row = document.createElement('tr');
+    row.className = i%2?'bg-gray-50 text-center':'text-center';
+    const color = r.status==='已取消'?'text-red-600':(r.status==='已簽到'?'text-blue-600':'text-green-600');
+    row.innerHTML = `
+      <td class="p-2 border">${r.date||''}</td>
+      <td class="p-2 border">${r.trip||''}</td>
+      <td class="p-2 border">${r.name||''}</td>
+      <td class="p-2 border">${r.phone||''}</td>
+      <td class="p-2 border font-semibold ${color}">${r.status||'--'}</td>`;
+    tbody.appendChild(row);
+  });
 }
 
 // === 底部導覽切換 ===
@@ -246,10 +261,11 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     document.querySelectorAll('main section').forEach(sec => {
       sec.id === target ? sec.classList.remove('hidden') : sec.classList.add('hidden');
     });
+    if (target === 'reservations') fetchReservations();
   });
 });
 
-// === 登出功能 ===
+// === 登出 ===
 document.getElementById('userProfile').addEventListener('click', () => {
   if (confirm('確定要登出？')) {
     liff.logout();
