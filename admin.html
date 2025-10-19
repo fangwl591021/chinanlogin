@@ -255,17 +255,27 @@ function renderReservations(data) {
     const row = document.createElement('tr');
     row.className = i % 2 ? 'bg-gray-50 text-center' : 'text-center';
     
-    // ✅ 相容多種欄位名稱
-    const date = r.date || r.reservationDate || '';
+    // ✅ 日期：只顯示月日 (MM-DD)
+    const dateStr = r.date || r.reservationDate || '';
+    const dateObj = new Date(dateStr);
+    const monthDay = dateObj.getMonth() >= 0 
+      ? `${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`
+      : dateStr.substring(5, 10); // 若無法解析，直接取 YYYY-MM-DD 後面部分
+    
+    // ✅ 電話：補上首位0
+    let phone = r.phone || '';
+    if (phone && !phone.startsWith('0')) {
+      phone = '0' + phone;
+    }
+    
     const trip = r.route || r.trip || r.id || '';
     const name = r.name || '';
-    const phone = r.phone || '';
     const status = r.status || r.checkinStatus || '未知';
     
     const color = status === '已取消' ? 'text-red-600' : (status === '已簽到' || status === 'Y' ? 'text-blue-600' : 'text-green-600');
     
     row.innerHTML = `
-      <td class="p-2 border">${date}</td>
+      <td class="p-2 border">${monthDay}</td>
       <td class="p-2 border">${trip}</td>
       <td class="p-2 border">${name}</td>
       <td class="p-2 border">${phone}</td>
