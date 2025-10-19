@@ -3,325 +3,105 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v3.6</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<title>穿山甲專車 - 司機核銷系統</title>
 <style>
-body {
-  font-family: "Noto Sans TC", system-ui, sans-serif;
-  background: #f8fafc;
-  color: #334155;
-  margin: 0;
-  padding-bottom: 70px;
-}
-.card {
-  background:white;
-  border-radius:16px;
-  padding:16px;
-  box-shadow:0 2px 10px rgba(0,0,0,0.08);
-  margin:16px auto;
-  max-width:100%;
-}
-.section-title {
-  font-weight:800;
-  font-size:20px;
-  color:#14532d;
-  margin-bottom:16px;
-  display:flex;
-  align-items:center;
-}
-.section-title::before {
-  content:"";
-  display:inline-block;
-  width:8px;
-  height:24px;
-  background:#22c55e;
-  border-radius:3px;
-  margin-right:10px;
-}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Microsoft JhengHei',sans-serif;}
+body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden;}
+.container{width:100%;margin:0;padding:12px;box-sizing:border-box;}
 
-#topBar {
-  position: sticky;
-  top: 0;
-  background: #3c8050;
-  color: white;
-  padding: 12px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 50;
-}
-#userProfile {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor:pointer;
-}
-#userProfile img {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 2px solid #fff;
-}
+/* === 頂部資訊 === */
+.header{background:#3c8050;color:white;padding:15px;border-radius:12px;margin-bottom:15px;text-align:center;}
+.header h1{font-size:22px;margin-bottom:5px;}
+.header p{font-size:13px;opacity:0.9;}
 
-#bottomNav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background: white;
-  border-top: 1px solid #e5e7eb;
-  display: flex;
-  justify-content: space-around;
-  padding: 8px 0;
-  z-index: 50;
-}
-.nav-btn {
-  flex: 1;
-  text-align: center;
-  color: #475569;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 8px 0;
-}
-.nav-btn.active {
-  color: #3c8050;
-  font-weight: 800;
-}
+/* === 月曆 === */
+.calendar-section{background:white;border-radius:12px;padding:15px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+.calendar-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;gap:8px;}
+.calendar-nav button{background:#3c8050;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;flex:0 0 auto;}
+.calendar-nav button:hover{background:#2f6842;}
+.calendar-title{text-align:center;font-size:16px;font-weight:bold;flex:1;white-space:nowrap;}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.day-header{padding:8px 0;font-weight:bold;background:#27ACB2;color:white;text-align:center;border-radius:4px;font-size:11px;}
+.day-cell{padding:8px 0;background:white;border:1px solid #e0e0e0;text-align:center;border-radius:6px;cursor:pointer;transition:all .2s;font-size:12px;aspect-ratio:1;}
+.day-cell:hover{background:#eaf5ea;border-color:#3c8050;}
+.day-cell.disabled{background:#f8f9fa;color:#999;cursor:not-allowed;}
+.day-cell.past{background:#f5f5f5;color:#ccc;cursor:not-allowed;}
+.day-cell.selected{background:#3c8050;color:white;font-weight:bold;}
+.day-cell.other-month{color:#ccc;background:#f8f9fa;}
 
-.search-input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 14px;
-  margin-bottom: 15px;
-  box-sizing: border-box;
-}
+/* === 核銷列表 === */
+.checkin-section{background:white;border-radius:12px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+.checkin-section h2{margin-bottom:12px;color:#333;border-bottom:2px solid #3c8050;padding-bottom:8px;font-size:16px;}
+.reservation-table{width:100%;border-collapse:collapse;}
+.table-header{background:#3c8050;color:white;font-weight:bold;text-align:left;}
+.table-header th{padding:10px 8px;font-size:12px;border:1px solid #2f6842;}
+.table-row{border-bottom:1px solid #e0e0e0;}
+.table-row:hover{background:#f8faf8;}
+.table-row td{padding:10px 6px;border:1px solid #e0e0e0;font-size:12px;word-break:break-word;word-spacing:100vw;}
+.stop-cell{word-break:break-word;word-spacing:100vw;line-height:1.4;}
+.checkin-btn{padding:8px 14px;font-size:13px;}
+.passenger-name{color:#0066cc;cursor:pointer;font-weight:600;text-decoration:underline;}
+.passenger-name:hover{color:#0052a3;}
+.checkin-btn{background:#3c8050;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap;}
+.checkin-btn:hover{background:#2f6842;}
+.checkin-btn:disabled{background:#ccc;cursor:not-allowed;}
+.no-data{text-align:center;color:#999;padding:30px 12px;}
 
-.table-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.reservation-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-.table-header {
-  background: #3c8050;
-  color: white;
-  font-weight: bold;
-}
-.table-header th {
-  padding: 10px 6px;
-  text-align: left;
-  font-size: 12px;
-  border: 1px solid #2f6842;
-  word-break: break-word;
-}
-.table-row {
-  border-bottom: 1px solid #e5e7eb;
-}
-.table-row:hover {
-  background: #f8faf8;
-}
-.table-row td {
-  padding: 10px 6px;
-  font-size: 12px;
-  border: 1px solid #e5e7eb;
-  word-break: break-word;
-}
-.passenger-name {
-  color: #0066cc;
-  cursor: pointer;
-  font-weight: 600;
-  text-decoration: underline;
-}
-.passenger-name:hover {
-  color: #0052a3;
-}
-.status-booked {
-  color: #3c8050;
-  font-weight: 600;
-}
-.status-cancelled {
-  color: #ccc;
-  text-decoration: line-through;
-}
-.status-checkedin {
-  color: #27ACB2;
-  font-weight: 600;
-}
-.status-notcheckedin {
-  color: #f44336;
-  font-weight: 600;
-}
-.no-data {
-  text-align: center;
-  color: #999;
-  padding: 40px 20px;
-}
-
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-  z-index: 1000;
-  align-items: center;
-  justify-content: center;
-}
-.modal.active {
-  display: flex;
-}
-.modal-content {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  max-width: 90%;
-  width: 100%;
-  max-width: 380px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-}
-.modal-header {
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  border-bottom: 2px solid #3c8050;
-  padding-bottom: 10px;
-}
-.modal-body {
-  margin-bottom: 20px;
-  line-height: 2;
-}
-.modal-body div {
-  margin-bottom: 12px;
-}
-.modal-label {
-  color: #666;
-  font-size: 12px;
-}
-.modal-value {
-  color: #333;
-  font-weight: 600;
-  font-size: 14px;
-}
-.phone-link {
-  color: #0066cc;
-  text-decoration: none;
-  font-weight: 600;
-  cursor: pointer;
-}
-.modal-close {
-  background: #e0e0e0;
-  color: #333;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  width: 100%;
-}
-.modal-close:hover {
-  background: #ccc;
-}
-
-.checkin-btn {
-  background: #3c8050;
-  color: white;
-  border: none;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.checkin-btn:hover {
-  background: #2f6842;
-}
-.checkin-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
+/* === 彈出窗口 === */
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;}
+.modal.active{display:flex;}
+.modal-content{background:white;border-radius:12px;padding:24px;max-width:90%;width:100%;max-width:380px;box-shadow:0 4px 20px rgba(0,0,0,0.3);}
+.modal-header{font-size:18px;font-weight:bold;margin-bottom:20px;border-bottom:2px solid #3c8050;padding-bottom:10px;}
+.modal-body{margin-bottom:20px;line-height:2;}
+.modal-body div{margin-bottom:12px;}
+.modal-label{color:#666;font-size:12px;}
+.modal-value{color:#333;font-weight:600;font-size:14px;}
+.phone-link{color:#0066cc;text-decoration:none;font-weight:600;cursor:pointer;}
+.modal-close{background:#e0e0e0;color:#333;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;width:100%;}
+.modal-close:hover{background:#ccc;}
 </style>
 </head>
 
 <body>
+<div class="container">
+  <!-- 頂部 -->
+  <div class="header">
+    <h1>🚌 穿山甲專車核銷系統</h1>
+    <p>司機簽到核銷作業</p>
+  </div>
 
-<div id="topBar">
-  <div style="font-weight: bold; font-size: 18px;">🚌 穿山甲後台系統</div>
-  <div id="userProfile">
-    <img id="userPicture" src="" alt="頭像">
-    <span id="userName">登入中...</span>
+  <!-- 月曆 -->
+  <div class="calendar-section">
+    <div class="calendar-nav">
+      <button id="prev-month">◀</button>
+      <h2 class="calendar-title" id="current-month">2025年10月</h2>
+      <button id="next-month">▶</button>
+      <button id="toggle-calendar">收合</button>
+    </div>
+    <div class="calendar-grid" id="calendar-grid" style="display:none;"></div>
+  </div>
+
+  <!-- 核銷列表 -->
+  <div id="checkin-section" class="checkin-section">
+    <h2 id="checkin-title">全部預約列表</h2>
+    <table class="reservation-table">
+      <thead class="table-header">
+        <tr>
+          <th style="width:18%;">日期</th>
+          <th style="width:10%;">班次</th>
+          <th style="width:22%;">姓名</th>
+          <th style="width:20%;">上車</th>
+          <th style="width:20%;">下車</th>
+          <th style="width:10%;">操作</th>
+        </tr>
+      </thead>
+      <tbody id="reservation-list"></tbody>
+    </table>
   </div>
 </div>
 
-<main id="mainContent" style="padding-bottom: 100px;">
-
-  <!-- 儀表板 -->
-  <section id="dashboard" class="card hidden">
-    <h2 class="section-title">📊 營運儀表板</h2>
-    <p>儀表板功能區</p>
-  </section>
-
-  <!-- 查詢 -->
-  <section id="reservations" class="card hidden">
-    <h2 class="section-title">🧾 預約查詢與管理</h2>
-    <input type="text" id="searchInput" class="search-input" placeholder="輸入姓名 / 日期 / 班次搜尋...">
-    <div class="table-wrapper">
-      <table class="reservation-table">
-        <thead class="table-header">
-          <tr>
-            <th style="width:15%;">日期</th>
-            <th style="width:8%;">班次</th>
-            <th style="width:15%;">姓名</th>
-            <th style="width:13%;">預約狀態</th>
-            <th style="width:13%;">搭乘狀態</th>
-          </tr>
-        </thead>
-        <tbody id="reservation-list"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- 核銷區 -->
-  <section id="checkin" class="card hidden">
-    <h2 class="section-title">✅ 核銷管理</h2>
-    <p style="color: #999; font-size: 14px;">進入司機核銷系統進行核銷作業...</p>
-  </section>
-
-  <!-- 司機 -->
-  <section id="drivers" class="card hidden">
-    <h2 class="section-title">🚐 司機班表</h2>
-    <p>此區顯示各班次司機配置，未來可串接 Google Calendar。</p>
-  </section>
-
-  <!-- 設定 -->
-  <section id="config" class="card hidden">
-    <h2 class="section-title">⚙️ 營運設定中心</h2>
-    <p>（Admin 專用功能）</p>
-    <button style="background:#3c8050;color:white;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;font-weight:600;margin-top:10px;">💾 儲存設定</button>
-  </section>
-
-</main>
-
-<div id="bottomNav">
-  <div class="nav-btn" data-target="dashboard">📊 儀表板</div>
-  <div class="nav-btn" data-target="reservations">🧾 查詢</div>
-  <div class="nav-btn" data-target="checkin">✅ 核銷</div>
-  <div class="nav-btn" data-target="drivers">🚐 司機</div>
-  <div class="nav-btn" data-target="config">⚙️ 設定</div>
-</div>
-
 <!-- 詳細資訊彈出窗 -->
-<div id="infoModal" class="modal" onclick="if(event.target.id === 'infoModal') closeModal();">
+<div id="infoModal" class="modal">
   <div class="modal-content">
     <div class="modal-header" id="modal-name"></div>
     <div class="modal-body">
@@ -348,134 +128,168 @@ body {
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbza2qFcrQt1PS6Y4p4u2gSXovvFxWecEjjIh5ov1cIk_65zgdFJA0xjVuS3qr7WvlgAzA/exec';
 
+let currentDate = new Date();
+let currentMonth = currentDate.getMonth();
+let currentYear = currentDate.getFullYear();
+let selectedDate = null;
 let allReservations = [];
-let userProfile = { name: '', picture: '', role: 'user' };
 
 document.addEventListener('DOMContentLoaded', () => {
-  initializeSystem();
-  setupNavigation();
-});
-
-function setupNavigation() {
-  document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const target = btn.dataset.target;
-      showSection(target);
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    });
-  });
-  
-  document.getElementById('searchInput').addEventListener('input', filterReservations);
-  document.getElementById('checkinSearchInput').addEventListener('input', filterCheckinList);
+  document.getElementById('prev-month').onclick = () => changeMonth(-1);
+  document.getElementById('next-month').onclick = () => changeMonth(1);
+  document.getElementById('toggle-calendar').onclick = toggleCalendar;
   const modal = document.getElementById('infoModal');
   if (modal) {
     modal.addEventListener('click', (e) => {
       if (e.target.id === 'infoModal') closeModal();
     });
   }
-}
-
-function showSection(sectionId) {
-  if (sectionId === 'checkin') {
-    window.location.href = 'https://fangwl591021.github.io/chinanlogin/driver-checkin.html';
-    return;
-  }
-  
-  document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
-  const section = document.getElementById(sectionId);
-  if (section) {
-    section.classList.remove('hidden');
-    if (sectionId === 'reservations') renderReservations(allReservations);
-  }
-}
+  initializeSystem();
+});
 
 async function initializeSystem() {
-  await fetchReservations();
-  showSection('dashboard');
-  document.querySelector('[data-target="dashboard"]').classList.add('active');
+  await loadAllReservations();
+  renderCalendar();
+  showAllReservations();
 }
 
-async function fetchReservations() {
+async function loadAllReservations() {
   try {
     const res = await fetch(`${WORKER_URL}?mode=reservations`);
     const result = await res.json();
-    allReservations = result.reservations || [];
-    
-    const routes = ['A1', 'B1', 'A2', 'B2'];
-    allReservations.sort((a, b) => {
-      const dateCompare = (a.date || '').localeCompare(b.date || '');
-      if (dateCompare !== 0) return dateCompare;
-      const routeOrder = routes.indexOf(a.route) - routes.indexOf(b.route);
-      return routeOrder !== 0 ? routeOrder : (a.name || '').localeCompare(b.name || '');
-    });
+    allReservations = (result.reservations || []).filter(r => r.status !== '已取消');
   } catch (e) {
     console.error('載入失敗:', e);
     allReservations = [];
   }
 }
 
-function renderReservations(data) {
+function renderCalendar() {
+  const grid = document.getElementById('calendar-grid');
+  grid.innerHTML = '';
+  
+  ['日', '一', '二', '三', '四', '五', '六'].forEach(d => {
+    const h = document.createElement('div');
+    h.className = 'day-header';
+    h.textContent = d;
+    grid.appendChild(h);
+  });
+  
+  const first = new Date(currentYear, currentMonth, 1);
+  const last = new Date(currentYear, currentMonth + 1, 0);
+  const offset = first.getDay();
+  const today = formatDate(new Date());
+  
+  for (let i = offset - 1; i >= 0; i--) {
+    const d = document.createElement('div');
+    d.className = 'day-cell other-month';
+    grid.appendChild(d);
+  }
+  
+  for (let i = 1; i <= last.getDate(); i++) {
+    const d = document.createElement('div');
+    d.className = 'day-cell';
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+    
+    const hasReservation = allReservations.some(r => r.date?.startsWith(dateStr));
+    const isPast = dateStr < today;
+    
+    if (isPast) {
+      d.classList.add('past');
+    } else {
+      d.onclick = () => selectDate(dateStr);
+    }
+    
+    if (dateStr === selectedDate) {
+      d.classList.add('selected');
+    }
+    
+    d.textContent = i;
+    grid.appendChild(d);
+  }
+  
+  const totalCells = 42;
+  const nextMonthDays = totalCells - (offset + last.getDate());
+  for (let i = 1; i <= nextMonthDays; i++) {
+    const d = document.createElement('div');
+    d.className = 'day-cell other-month';
+    grid.appendChild(d);
+  }
+  
+  document.getElementById('current-month').textContent = `${currentYear}年${currentMonth + 1}月`;
+}
+
+async function selectDate(dateStr) {
+  selectedDate = dateStr;
+  renderCalendar();
+  showCheckinList();
+}
+
+function showCheckinList() {
+  if (!selectedDate) return;
+  
   const tbody = document.getElementById('reservation-list');
   tbody.innerHTML = '';
   
-  if (!data || data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="no-data">暫無預約資料</td></tr>';
+  const routes = ['A1', 'B1', 'A2', 'B2'];
+  const filtered = allReservations
+    .filter(r => r.date?.startsWith(selectedDate))
+    .sort((a, b) => {
+      const routeOrder = routes.indexOf(a.route) - routes.indexOf(b.route);
+      return routeOrder !== 0 ? routeOrder : (a.name || '').localeCompare(b.name || '');
+    });
+  
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="no-data">此日期無預約</td></tr>';
+    document.getElementById('checkin-title').textContent = `${selectedDate} 核銷列表`;
     return;
   }
   
-  data.forEach(r => {
-    const tr = document.createElement('tr');
-    tr.className = 'table-row';
-    
-    let phoneDisplay = r.phone || '未提供';
-    if (phoneDisplay !== '未提供' && phoneDisplay.length < 10) {
-      phoneDisplay = '0' + phoneDisplay;
-    }
-    
-    const reservationStatus = r.status === '已取消' ? '已取消' : '已預約';
-    const reservationStatusClass = r.status === '已取消' ? 'status-cancelled' : 'status-booked';
-    
-    const checkinStatus = r.checkinStatus === 'Y' ? '已搭乘' : '未搭乘';
-    const checkinStatusClass = r.checkinStatus === 'Y' ? 'status-checkedin' : 'status-notcheckedin';
-    
-    tr.innerHTML = `
-      <td>${r.date?.split('T')[0] || ''}</td>
-      <td><strong>${r.route}</strong></td>
-      <td><span class="passenger-name" onclick="showModal('${r.name}', '${r.department}', '${r.studentId}', '${phoneDisplay}')">${r.name}</span></td>
-      <td><span class="${reservationStatusClass}">${reservationStatus}</span></td>
-      <td><span class="${checkinStatusClass}">${checkinStatus}</span></td>
-    `;
-    tbody.appendChild(tr);
-  });
+  renderReservationRows(filtered, `${selectedDate} 核銷列表 (共 ${filtered.length} 筆)`);
 }
 
-function renderCheckinList(data) {
-  const tbody = document.getElementById('checkin-list');
+function showAllReservations() {
+  const tbody = document.getElementById('reservation-list');
   tbody.innerHTML = '';
   
-  if (!data || data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="no-data">暫無預約資料</td></tr>';
+  const routes = ['A1', 'B1', 'A2', 'B2'];
+  const sorted = [...allReservations].sort((a, b) => {
+    const dateCompare = (a.date || '').localeCompare(b.date || '');
+    if (dateCompare !== 0) return dateCompare;
+    const routeOrder = routes.indexOf(a.route) - routes.indexOf(b.route);
+    return routeOrder !== 0 ? routeOrder : (a.name || '').localeCompare(b.name || '');
+  });
+  
+  if (sorted.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="no-data">暫無預約</td></tr>';
+    document.getElementById('checkin-title').textContent = '全部預約列表';
     return;
   }
   
-  data.forEach(r => {
+  renderReservationRows(sorted, `全部預約列表 (共 ${sorted.length} 筆)`);
+}
+
+function renderReservationRows(filtered, title) {
+  const tbody = document.getElementById('reservation-list');
+  tbody.innerHTML = '';
+  
+  filtered.forEach(r => {
     const tr = document.createElement('tr');
     tr.className = 'table-row';
-    
-    let phoneDisplay = r.phone || '未提供';
-    if (phoneDisplay !== '未提供' && phoneDisplay.length < 10) {
-      phoneDisplay = '0' + phoneDisplay;
-    }
     
     const isCheckedIn = r.checkinStatus === 'Y';
     
+    let phoneDisplay = r.phone || '未提供';
+    if (phoneDisplay !== '未提供' && phoneDisplay.length < 10) {
+      phoneDisplay = '0' + phoneDisplay;
+    }
+    
     tr.innerHTML = `
       <td>${r.date?.split('T')[0] || ''}</td>
       <td><strong>${r.route}</strong></td>
       <td><span class="passenger-name" onclick="showModal('${r.name}', '${r.department}', '${r.studentId}', '${phoneDisplay}')">${r.name}</span></td>
-      <td>${r.fromStop}</td>
-      <td>${r.toStop}</td>
+      <td><span class="stop-cell">${r.fromStop}</span></td>
+      <td><span class="stop-cell">${r.toStop}</span></td>
       <td>
         ${isCheckedIn 
           ? '<button class="checkin-btn" disabled>✅</button>' 
@@ -484,61 +298,8 @@ function renderCheckinList(data) {
     `;
     tbody.appendChild(tr);
   });
-}
-
-function filterReservations() {
-  const query = document.getElementById('searchInput').value.toLowerCase();
   
-  if (!query) {
-    renderReservations(allReservations);
-    return;
-  }
-  
-  const filtered = allReservations.filter(r => {
-    return (r.name || '').toLowerCase().includes(query) ||
-           (r.date || '').includes(query) ||
-           (r.route || '').includes(query);
-  });
-  
-  renderReservations(filtered);
-}
-
-function filterCheckinList() {
-  const query = document.getElementById('checkinSearchInput').value.toLowerCase();
-  const data = allReservations.filter(r => r.status !== '已取消');
-  
-  if (!query) {
-    renderCheckinList(data);
-    return;
-  }
-  
-  const filtered = data.filter(r => {
-    return (r.name || '').toLowerCase().includes(query) ||
-           (r.date || '').includes(query) ||
-           (r.route || '').includes(query);
-  });
-  
-  renderCheckinList(filtered);
-}
-
-async function confirmCheckin(id) {
-  if (!confirm('確認此乘客已核銷？')) return;
-  
-  try {
-    const res = await fetch(`${GAS_URL}?mode=confirmCheckin&id=${encodeURIComponent(id)}`);
-    const result = await res.json();
-    
-    if (result.status === 'success') {
-      alert('✅ 核銷成功');
-      const target = allReservations.find(r => r.id === id);
-      if (target) target.checkinStatus = 'Y';
-      renderCheckinList(allReservations.filter(r => r.status !== '已取消'));
-    } else {
-      alert('❌ 核銷失敗：' + (result.message || '請稍後再試'));
-    }
-  } catch (e) {
-    alert('❌ 錯誤：' + e.message);
-  }
+  document.getElementById('checkin-title').textContent = title;
 }
 
 function showModal(name, department, studentId, phone) {
@@ -556,6 +317,57 @@ function showModal(name, department, studentId, phone) {
   }
   
   document.getElementById('infoModal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('infoModal').classList.remove('active');
+}
+
+async function confirmCheckin(id) {
+  if (!confirm('確認此乘客已核銷？')) return;
+  
+  try {
+    const res = await fetch(`${GAS_URL}?mode=confirmCheckin&id=${encodeURIComponent(id)}`);
+    const result = await res.json();
+    
+    if (result.status === 'success') {
+      alert('✅ 核銷成功');
+      const target = allReservations.find(r => r.id === id);
+      if (target) target.checkinStatus = 'Y';
+      selectedDate ? showCheckinList() : showAllReservations();
+    } else {
+      alert('❌ 核銷失敗：' + (result.message || '請稍後再試'));
+    }
+  } catch (e) {
+    alert('❌ 錯誤：' + e.message);
+  }
+}
+
+async function changeMonth(delta) {
+  currentMonth += delta;
+  if (currentMonth < 0) {
+    currentMonth = 11;
+    currentYear--;
+  } else if (currentMonth > 11) {
+    currentMonth = 0;
+    currentYear++;
+  }
+  selectedDate = null;
+  await loadAllReservations();
+  renderCalendar();
+  showAllReservations();
+}
+
+function toggleCalendar() {
+  const grid = document.getElementById('calendar-grid');
+  const btn = document.getElementById('toggle-calendar');
+  const isHidden = grid.style.display === 'none';
+  grid.style.display = isHidden ? 'grid' : 'none';
+  btn.textContent = isHidden ? '收合' : '展開';
+}
+
+function formatDate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 function closeModal() {
