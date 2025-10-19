@@ -3,294 +3,261 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v3.4.1</title>
+<title>穿山甲專車後台 v3.5</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
 <style>
 body {
   font-family: "Noto Sans TC", system-ui, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  transition: background 0.3s, color 0.3s;
+  background: #f8fafc;
+  color: #334155;
+  margin: 0;
+  padding-bottom: 70px; /* 預留底部導覽列空間 */
 }
-:root {
-  --bg: #f9fafb;
-  --text: #1f2937;
-  --card-bg: #ffffff;
-  --border: #e5e7eb;
-}
-.dark {
-  --bg: #1e293b;
-  --text: #e2e8f0;
-  --card-bg: #334155;
-  --border: #475569;
-}
-.hidden { display: none; }
 .card {
-  background: var(--card-bg);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  margin-bottom: 20px;
+  background:white;
+  border-radius:16px;
+  padding:24px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.08);
+  margin:16px auto;
+  max-width:900px;
+}
+.section-title {
+  font-weight:800;
+  font-size:22px;
+  color:#14532d;
+  margin-bottom:16px;
+  display:flex;
+  align-items:center;
+}
+.section-title::before {
+  content:"";
+  display:inline-block;
+  width:8px;
+  height:24px;
+  background:#22c55e;
+  border-radius:3px;
+  margin-right:10px;
 }
 button {
-  border-radius: 10px;
-  padding: 12px 16px;
-  font-weight: 600;
-  transition: all 0.2s;
+  font-size:18px;
+  font-weight:600;
+  border-radius:10px;
+  padding:12px 16px;
+  transition: all .2s;
 }
-button:active { transform: scale(0.98); }
-nav {
+button:hover { opacity:0.9; }
+
+/* 頂部資訊條 */
+#topBar {
+  position: sticky;
+  top: 0;
+  background: #3c8050;
+  color: white;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 50;
+}
+#userProfile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#userProfile img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+#userProfile span {
+  font-weight: 600;
+}
+
+/* 手機底部導覽列 */
+#bottomNav {
   position: fixed;
   bottom: 0;
   left: 0;
   width: 100%;
-  background: var(--card-bg);
+  background: white;
+  border-top: 1px solid #e5e7eb;
   display: flex;
   justify-content: space-around;
-  border-top: 1px solid var(--border);
-  padding: 10px 0;
+  padding: 8px 0;
   z-index: 50;
 }
-nav button {
+.nav-btn {
   flex: 1;
-  font-size: 16px;
-}
-nav button.active {
-  color: white;
-  background: #3c8050;
-}
-header {
-  background: #3c8050;
-  color: white;
   text-align: center;
-  padding: 14px 10px;
-  position: sticky;
-  top: 0;
-  z-index: 50;
-}
-.toggle-theme {
-  position: absolute;
-  right: 16px;
-  top: 14px;
-  cursor: pointer;
-  font-size: 20px;
-}
-.toast {
-  position: fixed;
-  top: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #3c8050;
-  color: white;
-  padding: 10px 18px;
-  border-radius: 10px;
-  font-weight: 600;
-  z-index: 9999;
-}
-.status-tag {
-  padding: 3px 8px;
-  border-radius: 20px;
-  font-size: 14px;
+  color: #475569;
+  font-size: 16px;
   font-weight: 600;
 }
-.status-confirmed { background:#d1fae5; color:#065f46; }
-.status-cancelled { background:#fecaca; color:#991b1b; }
-#loginScreen {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+.nav-btn.active {
+  color: #3c8050;
+  font-weight: 800;
 }
 </style>
 </head>
 
-<body class="pb-24">
+<body>
 
-<!-- 🌿 登入畫面 -->
-<div id="loginScreen">
-  <h1 class="text-2xl font-bold text-green-700 mb-6">🚌 穿山甲專車後台系統</h1>
-  <button id="loginBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg text-lg">
-    使用 LINE 登入
-  </button>
+<!-- 🔝 頂部資訊列 -->
+<div id="topBar">
+  <div class="font-bold text-xl">🚌 穿山甲後台系統</div>
+  <div id="userProfile">
+    <img id="userPicture" src="" alt="頭像">
+    <span id="userName">登入中...</span>
+  </div>
 </div>
 
-<!-- 🌿 登入後主畫面 -->
-<div id="mainApp" class="hidden">
+<!-- 主內容 -->
+<main id="mainContent">
 
-  <header>
-    <h1 class="text-xl font-bold">🚌 穿山甲專車後台</h1>
-    <span class="toggle-theme" id="themeToggle">🌞</span>
-    <div class="text-sm mt-1" id="userInfo">登入中...</div>
-  </header>
-
-  <section id="config" class="card">
-    <h2 class="text-xl font-bold mb-3">🔧 營運設定</h2>
-    <label class="block font-semibold mb-2">預約模式：</label>
-    <div class="mb-4">
-      <label class="mr-3"><input type="radio" name="mode" value="single" checked> 單程制</label>
-      <label><input type="radio" name="mode" value="roundtrip"> 來回制</label>
+  <!-- 🔧 營運設定 -->
+  <section id="config" class="card hidden">
+    <h2 class="section-title">🔧 營運設定中心</h2>
+    <label class="block font-semibold mb-2">運營模式：</label>
+    <div class="flex gap-6 mb-4 text-lg">
+      <label><input type="radio" name="mode" value="S3" class="mr-1" /> 單趟制（S3）</label>
+      <label><input type="radio" name="mode" value="S4" class="mr-1" checked /> 來回制（S4）</label>
     </div>
-    <div class="mb-4">
-      <label class="font-semibold">公告訊息：</label>
-      <textarea id="announcement" rows="3" class="w-full border rounded px-3 py-2 mt-2 text-lg" placeholder="請輸入公告..."></textarea>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 text-lg">
+      <div>A1：<input id="capA1" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
+      <div>A2：<input id="capA2" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
+      <div>B1：<input id="capB1" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
+      <div>B2：<input id="capB2" type="number" value="6" class="border rounded px-2 w-24 text-center"></div>
     </div>
-    <button id="saveConfig" class="bg-green-600 hover:bg-green-700 text-white w-full text-lg">💾 儲存設定</button>
+
+    <div class="space-y-3 mb-6">
+      <label><input type="checkbox" id="enableBooking" class="mr-1"> 開放預約</label><br>
+      <label><input type="checkbox" id="enableCancel" class="mr-1"> 允許取消</label>
+    </div>
+
+    <textarea id="announcement" rows="3" class="w-full border rounded px-2 py-2 mb-6 text-lg" placeholder="公告訊息..."></textarea>
+
+    <button id="saveConfig" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded w-full text-lg">
+      💾 儲存設定
+    </button>
   </section>
 
-  <section id="reservations" class="card hidden">
-    <h2 class="text-xl font-bold mb-3">🧾 預約查詢</h2>
-    <div id="reservationList" class="space-y-2 text-base text-gray-700"></div>
-  </section>
-
-  <section id="drivers" class="card hidden">
-    <h2 class="text-xl font-bold mb-3">🚐 司機核銷</h2>
-    <p>此功能僅限司機操作。</p>
-    <div id="driverList" class="space-y-2 text-base"></div>
-  </section>
-
+  <!-- 📊 儀表板 -->
   <section id="dashboard" class="card hidden">
-    <h2 class="text-xl font-bold mb-3">📊 營運儀表板</h2>
-    <p>（開發中）</p>
+    <h2 class="section-title">📊 營運儀表板</h2>
+    <canvas id="chartTrips" height="120"></canvas>
   </section>
 
-  <nav>
-    <button data-target="config" class="active">🔧 設定</button>
-    <button data-target="reservations">🧾 查詢</button>
-    <button data-target="drivers">🚐 核銷</button>
-    <button data-target="dashboard">📊 儀表板</button>
-    <button id="logoutBtn" class="bg-red-600 text-white">登出</button>
-  </nav>
+  <!-- 🧾 預約查詢 -->
+  <section id="reservations" class="card hidden">
+    <h2 class="section-title">🧾 預約查詢與管理</h2>
+    <div class="flex gap-3 mb-4">
+      <input id="searchInput" placeholder="輸入姓名 / 日期 / 班次搜尋..." class="border rounded px-3 py-2 w-full text-lg">
+    </div>
+    <div id="reservationTable" class="overflow-x-auto text-base">
+      <table class="min-w-full border">
+        <thead class="bg-green-700 text-white">
+          <tr>
+            <th class="p-3 border">日期</th>
+            <th class="p-3 border">班次</th>
+            <th class="p-3 border">姓名</th>
+            <th class="p-3 border">電話</th>
+            <th class="p-3 border">狀態</th>
+          </tr>
+        </thead>
+        <tbody id="reservationBody">
+          <tr><td colspan="5" class="p-4 text-center text-gray-500">尚未載入資料</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 🚐 司機班表 -->
+  <section id="drivers" class="card hidden">
+    <h2 class="section-title">🚐 司機班表</h2>
+    <p>此區顯示各班次司機配置，未來可串接 Google Calendar。</p>
+  </section>
+
+</main>
+
+<!-- 📱 底部導覽列 -->
+<div id="bottomNav">
+  <div class="nav-btn" data-target="dashboard">📊 儀表板</div>
+  <div class="nav-btn" data-target="reservations">🧾 查詢</div>
+  <div class="nav-btn" data-target="drivers">🚐 司機</div>
+  <div class="nav-btn" data-target="config">⚙️ 設定</div>
 </div>
 
 <script>
-const LIFF_ID = "2006590746-KJodGOda";
-let userProfile = null;
-let userRole = "user";
+const LIFF_ID = '2006590746-KJodGOda';
+const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+let userProfile = { name: '', picture: '', role: 'user' };
 
-async function init() {
+// === LIFF 初始化 ===
+async function initLiff() {
   await liff.init({ liffId: LIFF_ID });
   if (!liff.isLoggedIn()) {
-    document.getElementById("loginScreen").classList.remove("hidden");
+    liff.login();
     return;
   }
-  showMainApp();
+  const profile = await liff.getProfile();
+  userProfile.name = profile.displayName;
+  userProfile.picture = profile.pictureUrl;
+  document.getElementById('userName').textContent = profile.displayName;
+  document.getElementById('userPicture').src = profile.pictureUrl;
+
+  // 查詢角色
+  const res = await fetch(`${WORKER_URL}?mode=getRole&userName=${encodeURIComponent(profile.displayName)}`);
+  const data = await res.json();
+  userProfile.role = data.role || 'user';
+  showRoleUI(userProfile.role);
 }
 
-document.getElementById("loginBtn").addEventListener("click", () => {
-  liff.login();
-});
+// === 顯示角色對應UI ===
+function showRoleUI(role) {
+  const sections = document.querySelectorAll('main section');
+  sections.forEach(s => s.classList.add('hidden'));
 
-async function showMainApp() {
-  userProfile = await liff.getProfile();
-  document.getElementById("loginScreen").classList.add("hidden");
-  document.getElementById("mainApp").classList.remove("hidden");
-  const name = userProfile.displayName || "使用者";
-  document.getElementById("userInfo").textContent = `${name}（${userRole}）`;
-  showToast(`歡迎回來，${name}！`);
-  loadTheme();
-  loadSection("config");
-  renderReservations();
-}
+  const navBtns = document.querySelectorAll('.nav-btn');
+  navBtns.forEach(btn => btn.classList.remove('active'));
 
-// 🔘 登出
-document.getElementById("logoutBtn").addEventListener("click", () => {
-  liff.logout();
-  localStorage.clear();
-  document.getElementById("mainApp").classList.add("hidden");
-  document.getElementById("loginScreen").classList.remove("hidden");
-});
-
-// 🌙 主題切換
-const themeToggle = document.getElementById("themeToggle");
-themeToggle.addEventListener("click", () => {
-  document.body.classList.toggle("dark");
-  const isDark = document.body.classList.contains("dark");
-  localStorage.setItem("darkMode", isDark ? "1" : "0");
-  themeToggle.textContent = isDark ? "🌙" : "🌞";
-});
-function loadTheme() {
-  const dark = localStorage.getItem("darkMode") === "1";
-  if (dark) {
-    document.body.classList.add("dark");
-    themeToggle.textContent = "🌙";
+  if (role === 'admin') {
+    document.getElementById('config').classList.remove('hidden');
+    document.querySelector('[data-target="config"]').classList.add('active');
+  } else if (role === 'driver') {
+    document.getElementById('drivers').classList.remove('hidden');
+    document.querySelector('[data-target="drivers"]').classList.add('active');
+  } else {
+    document.getElementById('reservations').classList.remove('hidden');
+    document.querySelector('[data-target="reservations"]').classList.add('active');
   }
 }
 
-// 模擬資料
-const demoReservations = [
-  { name:"張小明", date:"2025-10-19", route:"A1", status:"已確認" },
-  { name:"王小美", date:"2025-10-20", route:"B2", status:"已確認" },
-  { name:"林大華", date:"2025-10-21", route:"A2", status:"已取消" }
-];
-
-// 🧾 渲染預約
-function renderReservations() {
-  const list = document.getElementById("reservationList");
-  list.innerHTML = "";
-  demoReservations.forEach((r, i) => {
-    const div = document.createElement("div");
-    div.className = "flex justify-between items-center border-b border-gray-300 py-2";
-    const statusClass = r.status === "已取消" ? "status-cancelled" : "status-confirmed";
-    div.innerHTML = `
-      <div>
-        <p><strong>${r.name}</strong>｜${r.route}</p>
-        <p class="text-sm text-gray-500">${r.date}</p>
-      </div>
-      <div class="flex gap-2 items-center">
-        <span class="status-tag ${statusClass}">${r.status}</span>
-        ${
-          userRole === "admin" && r.status !== "已取消"
-          ? `<button class="bg-red-500 text-white px-3 py-1 rounded cancel-btn" data-idx="${i}">取消</button>` 
-          : ""
-        }
-      </div>`;
-    list.appendChild(div);
-  });
-
-  document.querySelectorAll(".cancel-btn").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      const idx = btn.dataset.idx;
-      demoReservations[idx].status = "已取消";
-      renderReservations();
-      showToast(`已取消 ${demoReservations[idx].name} 的預約`);
+// === 底部導覽切換 ===
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const target = btn.dataset.target;
+    document.querySelectorAll('main section').forEach(sec => {
+      sec.id === target ? sec.classList.remove('hidden') : sec.classList.add('hidden');
     });
   });
-}
-
-// 🔄 切換頁面
-document.querySelectorAll("nav button[data-target]").forEach(btn=>{
-  btn.addEventListener("click",()=>{
-    document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-    loadSection(btn.dataset.target);
-  });
-});
-function loadSection(target){
-  document.querySelectorAll("section").forEach(sec=>sec.classList.add("hidden"));
-  document.getElementById(target).classList.remove("hidden");
-  if(target === "reservations") renderReservations();
-}
-
-// 💾 儲存設定
-document.getElementById("saveConfig").addEventListener("click",()=>{
-  const announcement = document.getElementById("announcement").value;
-  localStorage.setItem("announcement", announcement);
-  showToast("✅ 設定已儲存");
 });
 
-// 🔔 提示
-function showToast(msg){
-  const div = document.createElement("div");
-  div.className = "toast";
-  div.textContent = msg;
-  document.body.appendChild(div);
-  setTimeout(()=>div.remove(),2500);
-}
+// === 登出功能 ===
+document.getElementById('userProfile').addEventListener('click', () => {
+  if (confirm('確定要登出？')) {
+    liff.logout();
+    location.reload();
+  }
+});
 
-// 啟動 LIFF
-init();
+initLiff();
 </script>
 </body>
 </html>
