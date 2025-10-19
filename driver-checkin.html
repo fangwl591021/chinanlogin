@@ -29,6 +29,57 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
 .day-cell.selected{background:#3c8050;color:white;font-weight:bold;}
 .day-cell.other-month{color:#ccc;background:#f8f9fa;}
 
+/* === 行車路線圖 === */
+.route-map-section {
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.route-map-section h2 {
+  color: #2e7d32;
+  margin-bottom: 10px;
+  font-size: 16px;
+  border-bottom: 2px solid #3c8050;
+  padding-bottom: 6px;
+}
+.route-line {
+  margin-bottom: 20px;
+}
+.route-line h3 {
+  font-size: 15px;
+  color: #333;
+  margin-bottom: 8px;
+}
+.stops {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.8;
+}
+.stops span,
+.stops strong {
+  font-size: 13px;
+}
+.stops strong {
+  color: #2e7d32;
+  font-weight: bold;
+}
+.stops .arrow {
+  color: #888;
+  font-size: 12px;
+}
+.a-line {
+  border-left: 4px solid #2e7d32;
+  padding-left: 8px;
+}
+.b-line {
+  border-left: 4px solid #1565c0;
+  padding-left: 8px;
+}
+
 /* === 核銷列表 === */
 .checkin-section{background:white;border-radius:12px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
 .checkin-section h2{margin-bottom:12px;color:#333;border-bottom:2px solid #3c8050;padding-bottom:8px;font-size:16px;}
@@ -81,6 +132,49 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
     <div class="calendar-grid" id="calendar-grid" style="display:none;"></div>
   </div>
 
+  <!-- === 新增區塊：行車路線圖 === -->
+  <div class="route-map-section">
+    <h2>🚏 行車路線示意圖</h2>
+
+    <div class="route-line a-line">
+      <h3>🅰️ A線（暨大 → 埔里總站）</h3>
+      <div class="stops">
+        <span>行政大樓</span><span class="arrow">➔</span>
+        <span>中餐廳</span><span class="arrow">➔</span>
+        <span>科技學院</span><span class="arrow">➔</span>
+        <span>學人會館</span><span class="arrow">➔</span>
+        <span>中城</span><span class="arrow">➔</span>
+        <span>下城</span><span class="arrow">➔</span>
+        <span>坪頂</span><span class="arrow">➔</span>
+        <span>愛蘭橋</span><span class="arrow">➔</span>
+        <span>大成國小</span><span class="arrow">➔</span>
+        <span>中山安七街口</span><span class="arrow">➔</span>
+        <span>榮民診所</span><span class="arrow">➔</span>
+        <strong>埔里酒廠</strong><span class="arrow">➔</span>
+        <strong>埔里總站</strong>
+      </div>
+    </div>
+
+    <div class="route-line b-line">
+      <h3>🅱️ B線（埔里總站 → 暨大）</h3>
+      <div class="stops">
+        <strong>埔里總站</strong><span class="arrow">➔</span>
+        <strong>埔里酒廠</strong><span class="arrow">➔</span>
+        <span>榮民診所</span><span class="arrow">➔</span>
+        <span>中山安七街口</span><span class="arrow">➔</span>
+        <span>大成國小</span><span class="arrow">➔</span>
+        <span>愛蘭橋</span><span class="arrow">➔</span>
+        <span>坪頂</span><span class="arrow">➔</span>
+        <span>下城</span><span class="arrow">➔</span>
+        <span>中城</span><span class="arrow">➔</span>
+        <span>學人會館</span><span class="arrow">➔</span>
+        <span>科技學院</span><span class="arrow">➔</span>
+        <span>中餐廳</span><span class="arrow">➔</span>
+        <strong>行政大樓</strong>
+      </div>
+    </div>
+  </div>
+
   <!-- 核銷列表 -->
   <div id="checkin-section" class="checkin-section">
     <h2 id="checkin-title">全部預約列表</h2>
@@ -105,20 +199,9 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
   <div class="modal-content">
     <div class="modal-header" id="modal-name"></div>
     <div class="modal-body">
-      <div>
-        <div class="modal-label">科系</div>
-        <div class="modal-value" id="modal-department"></div>
-      </div>
-      <div>
-        <div class="modal-label">學號</div>
-        <div class="modal-value" id="modal-studentid"></div>
-      </div>
-      <div>
-        <div class="modal-label">電話</div>
-        <div class="modal-value">
-          <a id="modal-phone" href="#" class="phone-link"></a>
-        </div>
-      </div>
+      <div><div class="modal-label">科系</div><div class="modal-value" id="modal-department"></div></div>
+      <div><div class="modal-label">學號</div><div class="modal-value" id="modal-studentid"></div></div>
+      <div><div class="modal-label">電話</div><div class="modal-value"><a id="modal-phone" href="#" class="phone-link"></a></div></div>
     </div>
     <button class="modal-close" onclick="closeModal()">關閉</button>
   </div>
@@ -139,11 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('next-month').onclick = () => changeMonth(1);
   document.getElementById('toggle-calendar').onclick = toggleCalendar;
   const modal = document.getElementById('infoModal');
-  if (modal) {
-    modal.addEventListener('click', (e) => {
-      if (e.target.id === 'infoModal') closeModal();
-    });
-  }
+  if (modal) modal.addEventListener('click', (e) => { if (e.target.id === 'infoModal') closeModal(); });
   initializeSystem();
 });
 
@@ -167,212 +246,101 @@ async function loadAllReservations() {
 function renderCalendar() {
   const grid = document.getElementById('calendar-grid');
   grid.innerHTML = '';
-  
-  ['日', '一', '二', '三', '四', '五', '六'].forEach(d => {
+  ['日','一','二','三','四','五','六'].forEach(d => {
     const h = document.createElement('div');
     h.className = 'day-header';
     h.textContent = d;
     grid.appendChild(h);
   });
-  
   const first = new Date(currentYear, currentMonth, 1);
   const last = new Date(currentYear, currentMonth + 1, 0);
   const offset = first.getDay();
   const today = formatDate(new Date());
-  
-  for (let i = offset - 1; i >= 0; i--) {
-    const d = document.createElement('div');
-    d.className = 'day-cell other-month';
-    grid.appendChild(d);
+  for (let i=offset-1;i>=0;i--){const d=document.createElement('div');d.className='day-cell other-month';grid.appendChild(d);}
+  for (let i=1;i<=last.getDate();i++){
+    const d=document.createElement('div');d.className='day-cell';
+    const dateStr=`${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+    const isPast=dateStr<today;
+    if(isPast)d.classList.add('past');else d.onclick=()=>selectDate(dateStr);
+    if(dateStr===selectedDate)d.classList.add('selected');
+    d.textContent=i;grid.appendChild(d);
   }
-  
-  for (let i = 1; i <= last.getDate(); i++) {
-    const d = document.createElement('div');
-    d.className = 'day-cell';
-    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-    
-    const hasReservation = allReservations.some(r => r.date?.startsWith(dateStr));
-    const isPast = dateStr < today;
-    
-    if (isPast) {
-      d.classList.add('past');
-    } else {
-      d.onclick = () => selectDate(dateStr);
-    }
-    
-    if (dateStr === selectedDate) {
-      d.classList.add('selected');
-    }
-    
-    d.textContent = i;
-    grid.appendChild(d);
-  }
-  
-  const totalCells = 42;
-  const nextMonthDays = totalCells - (offset + last.getDate());
-  for (let i = 1; i <= nextMonthDays; i++) {
-    const d = document.createElement('div');
-    d.className = 'day-cell other-month';
-    grid.appendChild(d);
-  }
-  
-  document.getElementById('current-month').textContent = `${currentYear}年${currentMonth + 1}月`;
+  const totalCells=42;const nextMonthDays=totalCells-(offset+last.getDate());
+  for(let i=1;i<=nextMonthDays;i++){const d=document.createElement('div');d.className='day-cell other-month';grid.appendChild(d);}
+  document.getElementById('current-month').textContent=`${currentYear}年${currentMonth+1}月`;
 }
 
-async function selectDate(dateStr) {
-  selectedDate = dateStr;
-  renderCalendar();
-  showCheckinList();
+async function selectDate(dateStr){selectedDate=dateStr;renderCalendar();showCheckinList();}
+function showCheckinList(){
+  if(!selectedDate)return;
+  const tbody=document.getElementById('reservation-list');
+  tbody.innerHTML='';
+  const routes=['A1','B1','A2','B2'];
+  const filtered=allReservations.filter(r=>r.date?.startsWith(selectedDate))
+    .sort((a,b)=>routes.indexOf(a.route)-routes.indexOf(b.route));
+  if(filtered.length===0){tbody.innerHTML='<tr><td colspan="6" class="no-data">此日期無預約</td></tr>';document.getElementById('checkin-title').textContent=`${selectedDate} 核銷列表`;return;}
+  renderReservationRows(filtered,`${selectedDate} 核銷列表 (共 ${filtered.length} 筆)`);
 }
-
-function showCheckinList() {
-  if (!selectedDate) return;
-  
-  const tbody = document.getElementById('reservation-list');
-  tbody.innerHTML = '';
-  
-  const routes = ['A1', 'B1', 'A2', 'B2'];
-  const filtered = allReservations
-    .filter(r => r.date?.startsWith(selectedDate))
-    .sort((a, b) => {
-      const routeOrder = routes.indexOf(a.route) - routes.indexOf(b.route);
-      return routeOrder !== 0 ? routeOrder : (a.name || '').localeCompare(b.name || '');
-    });
-  
-  if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="no-data">此日期無預約</td></tr>';
-    document.getElementById('checkin-title').textContent = `${selectedDate} 核銷列表`;
-    return;
-  }
-  
-  renderReservationRows(filtered, `${selectedDate} 核銷列表 (共 ${filtered.length} 筆)`);
-}
-
-function showAllReservations() {
-  const tbody = document.getElementById('reservation-list');
-  tbody.innerHTML = '';
-  
-  const routes = ['A1', 'B1', 'A2', 'B2'];
-  const sorted = [...allReservations].sort((a, b) => {
-    const dateCompare = (a.date || '').localeCompare(b.date || '');
-    if (dateCompare !== 0) return dateCompare;
-    const routeOrder = routes.indexOf(a.route) - routes.indexOf(b.route);
-    return routeOrder !== 0 ? routeOrder : (a.name || '').localeCompare(b.name || '');
+function showAllReservations(){
+  const tbody=document.getElementById('reservation-list');
+  tbody.innerHTML='';
+  const routes=['A1','B1','A2','B2'];
+  const sorted=[...allReservations].sort((a,b)=>{
+    const dateCompare=(a.date||'').localeCompare(b.date||'');
+    if(dateCompare!==0)return dateCompare;
+    return routes.indexOf(a.route)-routes.indexOf(b.route);
   });
-  
-  if (sorted.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="no-data">暫無預約</td></tr>';
-    document.getElementById('checkin-title').textContent = '全部預約列表';
-    return;
-  }
-  
-  renderReservationRows(sorted, `全部預約列表 (共 ${sorted.length} 筆)`);
+  if(sorted.length===0){tbody.innerHTML='<tr><td colspan="6" class="no-data">暫無預約</td></tr>';return;}
+  renderReservationRows(sorted,`全部預約列表 (共 ${sorted.length} 筆)`);
 }
-
-function renderReservationRows(filtered, title) {
-  const tbody = document.getElementById('reservation-list');
-  tbody.innerHTML = '';
-  
-  filtered.forEach(r => {
-    const tr = document.createElement('tr');
-    tr.className = 'table-row';
-    
-    const isCheckedIn = r.checkinStatus === 'Y';
-    
-    let phoneDisplay = r.phone || '未提供';
-    if (phoneDisplay !== '未提供' && phoneDisplay.length < 10) {
-      phoneDisplay = '0' + phoneDisplay;
-    }
-    
-    tr.innerHTML = `
-      <td>${r.date?.split('T')[0] || ''}</td>
+function renderReservationRows(filtered,title){
+  const tbody=document.getElementById('reservation-list');tbody.innerHTML='';
+  filtered.forEach(r=>{
+    const tr=document.createElement('tr');tr.className='table-row';
+    const isCheckedIn=r.checkinStatus==='Y';
+    const phoneDisplay=r.phone?.padStart(10,'0')||'未提供';
+    tr.innerHTML=`
+      <td>${r.date?.split('T')[0]||''}</td>
       <td><strong>${r.route}</strong></td>
-      <td><span class="passenger-name" onclick="showModal('${r.name}', '${r.department}', '${r.studentId}', '${phoneDisplay}')">${r.name}</span></td>
-      <td><span class="stop-cell">${r.fromStop}</span></td>
-      <td><span class="stop-cell">${r.toStop}</span></td>
-      <td>
-        ${isCheckedIn 
-          ? '<button class="checkin-btn" disabled>✅</button>' 
-          : `<button class="checkin-btn" onclick="confirmCheckin('${r.id}')">核銷</button>`}
-      </td>
-    `;
+      <td><span class="passenger-name" onclick="showModal('${r.name}','${r.department}','${r.studentId}','${phoneDisplay}')">${r.name}</span></td>
+      <td class="stop-cell">${r.fromStop}</td>
+      <td class="stop-cell">${r.toStop}</td>
+      <td>${isCheckedIn?'<button class="checkin-btn" disabled>✅</button>':`<button class="checkin-btn" onclick="confirmCheckin('${r.id}')">核銷</button>`}</td>`;
     tbody.appendChild(tr);
   });
-  
-  document.getElementById('checkin-title').textContent = title;
+  document.getElementById('checkin-title').textContent=title;
 }
-
-function showModal(name, department, studentId, phone) {
-  document.getElementById('modal-name').textContent = name;
-  document.getElementById('modal-department').textContent = department || '未提供';
-  document.getElementById('modal-studentid').textContent = studentId || '未提供';
-  
-  const phoneLink = document.getElementById('modal-phone');
-  if (phone && phone !== '未提供') {
-    phoneLink.href = `tel:${phone}`;
-    phoneLink.textContent = phone;
-  } else {
-    phoneLink.textContent = '未提供';
-    phoneLink.href = '#';
-  }
-  
+function showModal(name,dep,stu,phone){
+  document.getElementById('modal-name').textContent=name;
+  document.getElementById('modal-department').textContent=dep||'未提供';
+  document.getElementById('modal-studentid').textContent=stu||'未提供';
+  const phoneLink=document.getElementById('modal-phone');
+  if(phone&&phone!=='未提供'){phoneLink.href=`tel:${phone}`;phoneLink.textContent=phone;}
+  else{phoneLink.textContent='未提供';phoneLink.href='#';}
   document.getElementById('infoModal').classList.add('active');
 }
-
-function closeModal() {
-  document.getElementById('infoModal').classList.remove('active');
+function closeModal(){document.getElementById('infoModal').classList.remove('active');}
+async function confirmCheckin(id){
+  if(!confirm('確認此乘客已核銷？'))return;
+  try{
+    const res=await fetch(`${GAS_URL}?mode=confirmCheckin&id=${encodeURIComponent(id)}`);
+    const result=await res.json();
+    if(result.status==='success'){alert('✅ 核銷成功');const t=allReservations.find(r=>r.id===id);if(t)t.checkinStatus='Y';selectedDate?showCheckinList():showAllReservations();}
+    else alert('❌ 核銷失敗：'+(result.message||'請稍後再試'));
+  }catch(e){alert('❌ 錯誤：'+e.message);}
 }
-
-async function confirmCheckin(id) {
-  if (!confirm('確認此乘客已核銷？')) return;
-  
-  try {
-    const res = await fetch(`${GAS_URL}?mode=confirmCheckin&id=${encodeURIComponent(id)}`);
-    const result = await res.json();
-    
-    if (result.status === 'success') {
-      alert('✅ 核銷成功');
-      const target = allReservations.find(r => r.id === id);
-      if (target) target.checkinStatus = 'Y';
-      selectedDate ? showCheckinList() : showAllReservations();
-    } else {
-      alert('❌ 核銷失敗：' + (result.message || '請稍後再試'));
-    }
-  } catch (e) {
-    alert('❌ 錯誤：' + e.message);
-  }
+async function changeMonth(d){
+  currentMonth+=d;if(currentMonth<0){currentMonth=11;currentYear--;}else if(currentMonth>11){currentMonth=0;currentYear++;}
+  selectedDate=null;await loadAllReservations();renderCalendar();showAllReservations();
 }
-
-async function changeMonth(delta) {
-  currentMonth += delta;
-  if (currentMonth < 0) {
-    currentMonth = 11;
-    currentYear--;
-  } else if (currentMonth > 11) {
-    currentMonth = 0;
-    currentYear++;
-  }
-  selectedDate = null;
-  await loadAllReservations();
-  renderCalendar();
-  showAllReservations();
+function toggleCalendar(){
+  const grid=document.getElementById('calendar-grid');
+  const btn=document.getElementById('toggle-calendar');
+  const isHidden=grid.style.display==='none';
+  grid.style.display=isHidden?'grid':'none';
+  btn.textContent=isHidden?'收合':'展開';
 }
-
-function toggleCalendar() {
-  const grid = document.getElementById('calendar-grid');
-  const btn = document.getElementById('toggle-calendar');
-  const isHidden = grid.style.display === 'none';
-  grid.style.display = isHidden ? 'grid' : 'none';
-  btn.textContent = isHidden ? '收合' : '展開';
-}
-
-function formatDate(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
-
-function closeModal() {
-  document.getElementById('infoModal').classList.remove('active');
-}
+function formatDate(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;}
 </script>
 </body>
 </html>
