@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v3.6</title>
+<title>穿山甲專車後台 v3.7</title>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
@@ -63,7 +63,6 @@ body {
   border-radius: 50%;
   border: 2px solid #fff;
 }
-
 #bottomNav {
   position: fixed;
   bottom: 0;
@@ -89,7 +88,6 @@ body {
   color: #3c8050;
   font-weight: 800;
 }
-
 .no-access {
   text-align:center;
   padding:40px 20px;
@@ -97,10 +95,27 @@ body {
   font-weight:bold;
   font-size:18px;
 }
+.stat-box {
+  background:#f1f5f9;
+  border-radius:12px;
+  padding:12px;
+  margin-bottom:12px;
+}
+.stat-box h3 {
+  font-size:16px;
+  font-weight:700;
+  color:#14532d;
+}
+.stat-box p {
+  font-size:20px;
+  font-weight:800;
+  color:#3c8050;
+}
 </style>
 </head>
 
 <body>
+<!-- 上方導覽列 -->
 <div id="topBar">
   <div style="font-weight: bold; font-size: 18px;">🚌 穿山甲後台系統</div>
   <div id="userProfile">
@@ -109,8 +124,24 @@ body {
   </div>
 </div>
 
-<main id="mainContent" style="padding-bottom: 100px; display:none;">
-  <section id="reservations" class="card">
+<!-- 無權限畫面 -->
+<div id="noAccess" class="no-access" style="display:none;">
+  🚫 您沒有權限使用此系統<br>
+  如需開通，請聯絡管理員。
+</div>
+
+<!-- 主內容 -->
+<main id="mainContent" style="display:none; padding-bottom:100px;">
+  <!-- 儀表板 -->
+  <section id="dashboard" class="card">
+    <h2 class="section-title">📊 營運儀表板</h2>
+    <div class="stat-box"><h3>總預約數</h3><p id="totalRes">--</p></div>
+    <div class="stat-box"><h3>今日預約</h3><p id="todayRes">--</p></div>
+    <div class="stat-box"><h3>核銷率</h3><p id="checkinRate">--%</p></div>
+  </section>
+
+  <!-- 查詢 -->
+  <section id="reservations" class="card hidden">
     <h2 class="section-title">🧾 預約查詢與管理</h2>
     <input type="text" id="searchInput" class="w-full border p-2 rounded-md mb-3" placeholder="搜尋姓名 / 日期 / 班次...">
     <div class="overflow-x-auto">
@@ -128,111 +159,126 @@ body {
       </table>
     </div>
   </section>
+
+  <!-- 核銷 -->
+  <section id="checkin" class="card hidden">
+    <h2 class="section-title">✅ 司機核銷系統</h2>
+    <p class="text-gray-600 mb-4">點擊下方按鈕進入司機核銷作業頁面。</p>
+    <a href="https://liff.line.me/2006590746-A8YD0ZD9" class="inline-block bg-green-600 text-white px-5 py-3 rounded-lg font-bold hover:bg-green-700">前往核銷系統 🚐</a>
+  </section>
+
+  <!-- 司機 -->
+  <section id="drivers" class="card hidden">
+    <h2 class="section-title">🚐 司機班表</h2>
+    <p>此區顯示每日司機配置，未來可串接 Google Calendar。</p>
+    <ul class="list-disc pl-6 text-sm text-gray-700">
+      <li>A1 - 陳司機</li>
+      <li>A2 - 王司機</li>
+      <li>B1 - 吳司機</li>
+      <li>B2 - 李司機</li>
+    </ul>
+  </section>
+
+  <!-- 設定 -->
+  <section id="config" class="card hidden">
+    <h2 class="section-title">⚙️ 營運設定中心</h2>
+    <p>（Admin 專用功能）</p>
+    <button class="bg-green-700 text-white px-4 py-2 rounded-md font-bold mt-3 hover:bg-green-800">💾 儲存設定</button>
+  </section>
 </main>
 
-<div id="noAccess" class="no-access" style="display:none;">
-  🚫 您沒有權限使用此系統<br>
-  如需開通，請聯絡管理員。
+<!-- 下方導航 -->
+<div id="bottomNav">
+  <div class="nav-btn" data-target="dashboard">📊 儀表板</div>
+  <div class="nav-btn" data-target="reservations">🧾 查詢</div>
+  <div class="nav-btn" data-target="checkin">✅ 核銷</div>
+  <div class="nav-btn" data-target="drivers">🚐 司機</div>
+  <div class="nav-btn" data-target="config">⚙️ 設定</div>
 </div>
 
 <script>
-const LIFF_ID = "2006590746-A8YD0ZD9"; // ⚙️ 你的後台 LIFF ID
-const WORKER_URL = "https://delicate-math-7e61.fangwl591021.workers.dev/";
+const LIFF_ID = "2006590746-A8YD0ZD9";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbza2qFcrQt1PS6Y4p4u2gSXovvFxWecEjjIh5ov1cIk_65zgdFJA0xjVuS3qr7WvlgAzA/exec";
-
+const WORKER_URL = "https://delicate-math-7e61.fangwl591021.workers.dev/";
 let allReservations = [];
-let userProfile = {};
 
 document.addEventListener("DOMContentLoaded", async () => {
   await initLiff();
+  setupNav();
 });
 
 async function initLiff() {
-  try {
-    await liff.init({ liffId: LIFF_ID });
-    if (!liff.isLoggedIn()) {
-      liff.login();
-      return;
-    }
-
-    const profile = await liff.getProfile();
-    userProfile = {
-      userId: profile.userId,
-      name: profile.displayName,
-      picture: profile.pictureUrl || "",
-    };
-
-    document.getElementById("userName").textContent = userProfile.name;
-    document.getElementById("userPicture").src = userProfile.picture;
-
-    await verifyAdmin(userProfile.userId);
-  } catch (err) {
-    console.error("LIFF 初始化錯誤:", err);
-    alert("登入發生錯誤，請重新開啟");
-  }
+  await liff.init({ liffId: LIFF_ID });
+  if (!liff.isLoggedIn()) return liff.login();
+  const profile = await liff.getProfile();
+  document.getElementById("userName").textContent = profile.displayName;
+  document.getElementById("userPicture").src = profile.pictureUrl;
+  await verifyAdmin(profile.userId);
 }
 
-// ✅ 驗證是否為管理員
 async function verifyAdmin(userId) {
-  try {
-    const res = await fetch(`${GAS_URL}?mode=check&userId=${encodeURIComponent(userId)}`);
-    const result = await res.json();
-
-    const user = result.user || {};
-    const isAdmin = (user.role === "admin" || user.role === "管理員");
-
-    if (isAdmin) {
-      document.getElementById("mainContent").style.display = "block";
-      await fetchReservations();
-    } else {
-      document.getElementById("noAccess").style.display = "block";
-      if (liff.isInClient()) {
-        setTimeout(() => liff.closeWindow(), 3000);
-      }
-    }
-  } catch (err) {
-    console.error("權限檢查錯誤:", err);
-    alert("系統檢查錯誤，請稍後再試");
+  const res = await fetch(`${GAS_URL}?mode=check&userId=${encodeURIComponent(userId)}`);
+  const data = await res.json();
+  const user = data.user || {};
+  if (user.role === "admin") {
+    document.getElementById("mainContent").style.display = "block";
+    loadReservations();
+  } else {
+    document.getElementById("noAccess").style.display = "block";
+    if (liff.isInClient()) setTimeout(() => liff.closeWindow(), 2500);
   }
 }
 
-// ✅ 從 Worker 載入預約資料
-async function fetchReservations() {
-  try {
-    const res = await fetch(`${WORKER_URL}?mode=reservations`);
-    const result = await res.json();
-    allReservations = result.reservations || [];
-    renderReservations(allReservations);
-  } catch (e) {
-    console.error("載入預約資料失敗:", e);
-  }
+async function loadReservations() {
+  const res = await fetch(`${WORKER_URL}?mode=reservations`);
+  const result = await res.json();
+  allReservations = result.reservations || [];
+  renderReservations(allReservations);
+  updateStats();
 }
 
-// ✅ 顯示預約資料
 function renderReservations(data) {
   const tbody = document.getElementById("reservation-list");
   tbody.innerHTML = "";
-
-  if (data.length === 0) {
+  if (!data.length) {
     tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 p-4">暫無資料</td></tr>`;
     return;
   }
-
-  data.forEach(r => {
-    const resStatus = r.status === "已取消" ? "❌ 已取消" : "✅ 已預約";
-    const resColor = r.status === "已取消" ? "text-gray-400" : "text-green-700";
-    const chkStatus = r.checkinStatus === "Y" ? "🟢 已搭乘" : "⚪ 未搭乘";
-
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td class="border p-2 text-sm">${r.date?.split("T")[0] || ""}</td>
-      <td class="border p-2 text-sm">${r.route}</td>
-      <td class="border p-2 text-sm font-semibold">${r.name}</td>
-      <td class="border p-2 text-sm ${resColor}">${resStatus}</td>
-      <td class="border p-2 text-sm">${chkStatus}</td>
-    `;
+  data.forEach(r=>{
+    const chk=r.checkinStatus==="Y"?"🟢 已搭乘":"⚪ 未搭乘";
+    const resSt=r.status==="已取消"?"❌ 已取消":"✅ 已預約";
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td class="border p-2 text-sm">${r.date?.split("T")[0]||""}</td>
+    <td class="border p-2 text-sm">${r.route}</td>
+    <td class="border p-2 text-sm">${r.name}</td>
+    <td class="border p-2 text-sm">${resSt}</td>
+    <td class="border p-2 text-sm">${chk}</td>`;
     tbody.appendChild(tr);
   });
+}
+
+function updateStats(){
+  const total=allReservations.length;
+  const today=new Date().toISOString().split("T")[0];
+  const todayRes=allReservations.filter(r=>r.date?.includes(today)).length;
+  const checked=allReservations.filter(r=>r.checkinStatus==="Y").length;
+  const rate=total?Math.round((checked/total)*100):0;
+  document.getElementById("totalRes").textContent=total;
+  document.getElementById("todayRes").textContent=todayRes;
+  document.getElementById("checkinRate").textContent=rate+"%";
+}
+
+function setupNav(){
+  document.querySelectorAll(".nav-btn").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      const id=btn.dataset.target;
+      document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
+      document.getElementById(id).classList.remove("hidden");
+    });
+  });
+  document.querySelector('[data-target="dashboard"]').classList.add("active");
 }
 </script>
 </body>
