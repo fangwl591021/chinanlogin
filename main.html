@@ -367,8 +367,8 @@ async function init() {
     
     // 三重並行處理：用戶驗證、載入預約、預載月曆資料
     const [userCheckResult, reservationsResult] = await Promise.all([
-  fetch(`${GAS_URL}?mode=check&userId=${encodeURIComponent(profile.userId)}`).then(r => r.json()),
-  fetch(`${GAS_URL}?mode=reservations&userId=${profile.userId}`).then(r => r.json()),
+  fetch(`${WORKER_URL}?mode=check&userId=${encodeURIComponent(profile.userId)}`).then(r => r.json()),
+  fetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`).then(r => r.json()),
   preloadCalendarData()
 ]);
 
