@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>穿山甲專車後台 v3.6</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
 body {
@@ -89,172 +90,17 @@ body {
   font-weight: 800;
 }
 
-.search-input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 14px;
-  margin-bottom: 15px;
-  box-sizing: border-box;
-}
-
-.table-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.reservation-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-.table-header {
-  background: #3c8050;
-  color: white;
-  font-weight: bold;
-}
-.table-header th {
-  padding: 10px 6px;
-  text-align: left;
-  font-size: 12px;
-  border: 1px solid #2f6842;
-  word-break: break-word;
-}
-.table-row {
-  border-bottom: 1px solid #e5e7eb;
-}
-.table-row:hover {
-  background: #f8faf8;
-}
-.table-row td {
-  padding: 10px 6px;
-  font-size: 12px;
-  border: 1px solid #e5e7eb;
-  word-break: break-word;
-}
-.passenger-name {
-  color: #0066cc;
-  cursor: pointer;
-  font-weight: 600;
-  text-decoration: underline;
-}
-.passenger-name:hover {
-  color: #0052a3;
-}
-.status-booked {
-  color: #3c8050;
-  font-weight: 600;
-}
-.status-cancelled {
-  color: #ccc;
-  text-decoration: line-through;
-}
-.status-checkedin {
-  color: #27ACB2;
-  font-weight: 600;
-}
-.status-notcheckedin {
-  color: #f44336;
-  font-weight: 600;
-}
-.no-data {
-  text-align: center;
-  color: #999;
-  padding: 40px 20px;
-}
-
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-  z-index: 1000;
-  align-items: center;
-  justify-content: center;
-}
-.modal.active {
-  display: flex;
-}
-.modal-content {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  max-width: 90%;
-  width: 100%;
-  max-width: 380px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-}
-.modal-header {
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  border-bottom: 2px solid #3c8050;
-  padding-bottom: 10px;
-}
-.modal-body {
-  margin-bottom: 20px;
-  line-height: 2;
-}
-.modal-body div {
-  margin-bottom: 12px;
-}
-.modal-label {
-  color: #666;
-  font-size: 12px;
-}
-.modal-value {
-  color: #333;
-  font-weight: 600;
-  font-size: 14px;
-}
-.phone-link {
-  color: #0066cc;
-  text-decoration: none;
-  font-weight: 600;
-  cursor: pointer;
-}
-.modal-close {
-  background: #e0e0e0;
-  color: #333;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  width: 100%;
-}
-.modal-close:hover {
-  background: #ccc;
-}
-
-.checkin-btn {
-  background: #3c8050;
-  color: white;
-  border: none;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.checkin-btn:hover {
-  background: #2f6842;
-}
-.checkin-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
+.no-access {
+  text-align:center;
+  padding:40px 20px;
+  color:#b91c1c;
+  font-weight:bold;
+  font-size:18px;
 }
 </style>
 </head>
 
 <body>
-
 <div id="topBar">
   <div style="font-weight: bold; font-size: 18px;">🚌 穿山甲後台系統</div>
   <div id="userProfile">
@@ -263,303 +109,130 @@ body {
   </div>
 </div>
 
-<main id="mainContent" style="padding-bottom: 100px;">
-
-  <!-- 儀表板 -->
-  <section id="dashboard" class="card hidden">
-    <h2 class="section-title">📊 營運儀表板</h2>
-    <p>儀表板功能區</p>
-  </section>
-
-  <!-- 查詢 -->
-  <section id="reservations" class="card hidden">
+<main id="mainContent" style="padding-bottom: 100px; display:none;">
+  <section id="reservations" class="card">
     <h2 class="section-title">🧾 預約查詢與管理</h2>
-    <input type="text" id="searchInput" class="search-input" placeholder="輸入姓名 / 日期 / 班次搜尋...">
-    <div class="table-wrapper">
-      <table class="reservation-table">
-        <thead class="table-header">
+    <input type="text" id="searchInput" class="w-full border p-2 rounded-md mb-3" placeholder="搜尋姓名 / 日期 / 班次...">
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse">
+        <thead class="bg-green-700 text-white">
           <tr>
-            <th style="width:15%;">日期</th>
-            <th style="width:8%;">班次</th>
-            <th style="width:15%;">姓名</th>
-            <th style="width:13%;">預約狀態</th>
-            <th style="width:13%;">搭乘狀態</th>
+            <th class="p-2 text-sm border">日期</th>
+            <th class="p-2 text-sm border">班次</th>
+            <th class="p-2 text-sm border">姓名</th>
+            <th class="p-2 text-sm border">預約狀態</th>
+            <th class="p-2 text-sm border">搭乘狀態</th>
           </tr>
         </thead>
         <tbody id="reservation-list"></tbody>
       </table>
     </div>
   </section>
-
-  <!-- 核銷區 -->
-  <section id="checkin" class="card hidden">
-    <h2 class="section-title">✅ 核銷管理</h2>
-    <p style="color: #999; font-size: 14px;">進入司機核銷系統進行核銷作業...</p>
-  </section>
-
-  <!-- 司機 -->
-  <section id="drivers" class="card hidden">
-    <h2 class="section-title">🚐 司機班表</h2>
-    <p>此區顯示各班次司機配置，未來可串接 Google Calendar。</p>
-  </section>
-
-  <!-- 設定 -->
-  <section id="config" class="card hidden">
-    <h2 class="section-title">⚙️ 營運設定中心</h2>
-    <p>（Admin 專用功能）</p>
-    <button style="background:#3c8050;color:white;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;font-weight:600;margin-top:10px;">💾 儲存設定</button>
-  </section>
-
 </main>
 
-<div id="bottomNav">
-  <div class="nav-btn" data-target="dashboard">📊 儀表板</div>
-  <div class="nav-btn" data-target="reservations">🧾 查詢</div>
-  <div class="nav-btn" data-target="checkin">✅ 核銷</div>
-  <div class="nav-btn" data-target="drivers">🚐 司機</div>
-  <div class="nav-btn" data-target="config">⚙️ 設定</div>
-</div>
-
-<!-- 詳細資訊彈出窗 -->
-<div id="infoModal" class="modal" onclick="if(event.target.id === 'infoModal') closeModal();">
-  <div class="modal-content">
-    <div class="modal-header" id="modal-name"></div>
-    <div class="modal-body">
-      <div>
-        <div class="modal-label">科系</div>
-        <div class="modal-value" id="modal-department"></div>
-      </div>
-      <div>
-        <div class="modal-label">學號</div>
-        <div class="modal-value" id="modal-studentid"></div>
-      </div>
-      <div>
-        <div class="modal-label">電話</div>
-        <div class="modal-value">
-          <a id="modal-phone" href="#" class="phone-link"></a>
-        </div>
-      </div>
-    </div>
-    <button class="modal-close" onclick="closeModal()">關閉</button>
-  </div>
+<div id="noAccess" class="no-access" style="display:none;">
+  🚫 您沒有權限使用此系統<br>
+  如需開通，請聯絡管理員。
 </div>
 
 <script>
-const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbza2qFcrQt1PS6Y4p4u2gSXovvFxWecEjjIh5ov1cIk_65zgdFJA0xjVuS3qr7WvlgAzA/exec';
+const LIFF_ID = "2006590746-A8YD0ZD9"; // ⚙️ 你的後台 LIFF ID
+const WORKER_URL = "https://delicate-math-7e61.fangwl591021.workers.dev/";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbza2qFcrQt1PS6Y4p4u2gSXovvFxWecEjjIh5ov1cIk_65zgdFJA0xjVuS3qr7WvlgAzA/exec";
 
 let allReservations = [];
-let userProfile = { name: '', picture: '', role: 'user' };
+let userProfile = {};
 
-document.addEventListener('DOMContentLoaded', () => {
-  initializeSystem();
-  setupNavigation();
+document.addEventListener("DOMContentLoaded", async () => {
+  await initLiff();
 });
 
-function setupNavigation() {
-  document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const target = btn.dataset.target;
-      showSection(target);
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    });
-  });
-  
-  document.getElementById('searchInput').addEventListener('input', filterReservations);
-  document.getElementById('checkinSearchInput').addEventListener('input', filterCheckinList);
-  const modal = document.getElementById('infoModal');
-  if (modal) {
-    modal.addEventListener('click', (e) => {
-      if (e.target.id === 'infoModal') closeModal();
-    });
+async function initLiff() {
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+
+    const profile = await liff.getProfile();
+    userProfile = {
+      userId: profile.userId,
+      name: profile.displayName,
+      picture: profile.pictureUrl || "",
+    };
+
+    document.getElementById("userName").textContent = userProfile.name;
+    document.getElementById("userPicture").src = userProfile.picture;
+
+    await verifyAdmin(userProfile.userId);
+  } catch (err) {
+    console.error("LIFF 初始化錯誤:", err);
+    alert("登入發生錯誤，請重新開啟");
   }
 }
 
-function showSection(sectionId) {
-  if (sectionId === 'checkin') {
-    window.location.href = 'https://liff.line.me/2006590746-A8YD0ZD9';
-    return;
-  }
-  
-  document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
-  const section = document.getElementById(sectionId);
-  if (section) {
-    section.classList.remove('hidden');
-    if (sectionId === 'reservations') renderReservations(allReservations);
+// ✅ 驗證是否為管理員
+async function verifyAdmin(userId) {
+  try {
+    const res = await fetch(`${GAS_URL}?mode=check&userId=${encodeURIComponent(userId)}`);
+    const result = await res.json();
+
+    const user = result.user || {};
+    const isAdmin = (user.role === "admin" || user.role === "管理員");
+
+    if (isAdmin) {
+      document.getElementById("mainContent").style.display = "block";
+      await fetchReservations();
+    } else {
+      document.getElementById("noAccess").style.display = "block";
+      if (liff.isInClient()) {
+        setTimeout(() => liff.closeWindow(), 3000);
+      }
+    }
+  } catch (err) {
+    console.error("權限檢查錯誤:", err);
+    alert("系統檢查錯誤，請稍後再試");
   }
 }
 
-async function initializeSystem() {
-  await fetchReservations();
-  showSection('dashboard');
-  document.querySelector('[data-target="dashboard"]').classList.add('active');
-}
-
+// ✅ 從 Worker 載入預約資料
 async function fetchReservations() {
   try {
     const res = await fetch(`${WORKER_URL}?mode=reservations`);
     const result = await res.json();
     allReservations = result.reservations || [];
-    
-    const routes = ['A1', 'B1', 'A2', 'B2'];
-    allReservations.sort((a, b) => {
-      const dateCompare = (a.date || '').localeCompare(b.date || '');
-      if (dateCompare !== 0) return dateCompare;
-      const routeOrder = routes.indexOf(a.route) - routes.indexOf(b.route);
-      return routeOrder !== 0 ? routeOrder : (a.name || '').localeCompare(b.name || '');
-    });
-  } catch (e) {
-    console.error('載入失敗:', e);
-    allReservations = [];
-  }
-}
-
-function renderReservations(data) {
-  const tbody = document.getElementById('reservation-list');
-  tbody.innerHTML = '';
-  
-  if (!data || data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="no-data">暫無預約資料</td></tr>';
-    return;
-  }
-  
-  data.forEach(r => {
-    const tr = document.createElement('tr');
-    tr.className = 'table-row';
-    
-    let phoneDisplay = r.phone || '未提供';
-    if (phoneDisplay !== '未提供' && phoneDisplay.length < 10) {
-      phoneDisplay = '0' + phoneDisplay;
-    }
-    
-    const reservationStatus = r.status === '已取消' ? '已取消' : '已預約';
-    const reservationStatusClass = r.status === '已取消' ? 'status-cancelled' : 'status-booked';
-    
-    const checkinStatus = r.checkinStatus === 'Y' ? '已搭乘' : '未搭乘';
-    const checkinStatusClass = r.checkinStatus === 'Y' ? 'status-checkedin' : 'status-notcheckedin';
-    
-    tr.innerHTML = `
-      <td>${r.date?.split('T')[0] || ''}</td>
-      <td><strong>${r.route}</strong></td>
-      <td><span class="passenger-name" onclick="showModal('${r.name}', '${r.department}', '${r.studentId}', '${phoneDisplay}')">${r.name}</span></td>
-      <td><span class="${reservationStatusClass}">${reservationStatus}</span></td>
-      <td><span class="${checkinStatusClass}">${checkinStatus}</span></td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-function renderCheckinList(data) {
-  const tbody = document.getElementById('checkin-list');
-  tbody.innerHTML = '';
-  
-  if (!data || data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="no-data">暫無預約資料</td></tr>';
-    return;
-  }
-  
-  data.forEach(r => {
-    const tr = document.createElement('tr');
-    tr.className = 'table-row';
-    
-    let phoneDisplay = r.phone || '未提供';
-    if (phoneDisplay !== '未提供' && phoneDisplay.length < 10) {
-      phoneDisplay = '0' + phoneDisplay;
-    }
-    
-    const isCheckedIn = r.checkinStatus === 'Y';
-    
-    tr.innerHTML = `
-      <td>${r.date?.split('T')[0] || ''}</td>
-      <td><strong>${r.route}</strong></td>
-      <td><span class="passenger-name" onclick="showModal('${r.name}', '${r.department}', '${r.studentId}', '${phoneDisplay}')">${r.name}</span></td>
-      <td>${r.fromStop}</td>
-      <td>${r.toStop}</td>
-      <td>
-        ${isCheckedIn 
-          ? '<button class="checkin-btn" disabled>✅</button>' 
-          : `<button class="checkin-btn" onclick="confirmCheckin('${r.id}')">核銷</button>`}
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-function filterReservations() {
-  const query = document.getElementById('searchInput').value.toLowerCase();
-  
-  if (!query) {
     renderReservations(allReservations);
-    return;
-  }
-  
-  const filtered = allReservations.filter(r => {
-    return (r.name || '').toLowerCase().includes(query) ||
-           (r.date || '').includes(query) ||
-           (r.route || '').includes(query);
-  });
-  
-  renderReservations(filtered);
-}
-
-function filterCheckinList() {
-  const query = document.getElementById('checkinSearchInput').value.toLowerCase();
-  const data = allReservations.filter(r => r.status !== '已取消');
-  
-  if (!query) {
-    renderCheckinList(data);
-    return;
-  }
-  
-  const filtered = data.filter(r => {
-    return (r.name || '').toLowerCase().includes(query) ||
-           (r.date || '').includes(query) ||
-           (r.route || '').includes(query);
-  });
-  
-  renderCheckinList(filtered);
-}
-
-async function confirmCheckin(id) {
-  if (!confirm('確認此乘客已核銷？')) return;
-  
-  try {
-    const res = await fetch(`${GAS_URL}?mode=confirmCheckin&id=${encodeURIComponent(id)}`);
-    const result = await res.json();
-    
-    if (result.status === 'success') {
-      alert('✅ 核銷成功');
-      const target = allReservations.find(r => r.id === id);
-      if (target) target.checkinStatus = 'Y';
-      renderCheckinList(allReservations.filter(r => r.status !== '已取消'));
-    } else {
-      alert('❌ 核銷失敗：' + (result.message || '請稍後再試'));
-    }
   } catch (e) {
-    alert('❌ 錯誤：' + e.message);
+    console.error("載入預約資料失敗:", e);
   }
 }
 
-function showModal(name, department, studentId, phone) {
-  document.getElementById('modal-name').textContent = name;
-  document.getElementById('modal-department').textContent = department || '未提供';
-  document.getElementById('modal-studentid').textContent = studentId || '未提供';
-  
-  const phoneLink = document.getElementById('modal-phone');
-  if (phone && phone !== '未提供') {
-    phoneLink.href = `tel:${phone}`;
-    phoneLink.textContent = phone;
-  } else {
-    phoneLink.textContent = '未提供';
-    phoneLink.href = '#';
-  }
-  
-  document.getElementById('infoModal').classList.add('active');
-}
+// ✅ 顯示預約資料
+function renderReservations(data) {
+  const tbody = document.getElementById("reservation-list");
+  tbody.innerHTML = "";
 
-function closeModal() {
-  document.getElementById('infoModal').classList.remove('active');
+  if (data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 p-4">暫無資料</td></tr>`;
+    return;
+  }
+
+  data.forEach(r => {
+    const resStatus = r.status === "已取消" ? "❌ 已取消" : "✅ 已預約";
+    const resColor = r.status === "已取消" ? "text-gray-400" : "text-green-700";
+    const chkStatus = r.checkinStatus === "Y" ? "🟢 已搭乘" : "⚪ 未搭乘";
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="border p-2 text-sm">${r.date?.split("T")[0] || ""}</td>
+      <td class="border p-2 text-sm">${r.route}</td>
+      <td class="border p-2 text-sm font-semibold">${r.name}</td>
+      <td class="border p-2 text-sm ${resColor}">${resStatus}</td>
+      <td class="border p-2 text-sm">${chkStatus}</td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
 </script>
 </body>
