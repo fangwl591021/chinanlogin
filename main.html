@@ -367,18 +367,18 @@ async function init() {
     
     // 三重並行處理：用戶驗證、載入預約、預載月曆資料
     const [userCheckResult, reservationsResult] = await Promise.all([
-      fetch(`${WORKER_URL}?check=${profile.userId}`).then(r => r.json()),
-      fetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`).then(r => r.json()),
-      preloadCalendarData()
-    ]);
-    
-    console.log('✅ 並行載入完成（含月曆資料）Parallel loading completed (including calendar data)');
-    
-    if (!userCheckResult.registered) {
-      console.log('📝 用戶未註冊，跳轉到註冊頁面 User not registered, redirecting to registration page');
-      location.href = 'register.html';
-      return;
-    }
+  fetch(`${GAS_URL}?mode=check&userId=${encodeURIComponent(profile.userId)}`).then(r => r.json()),
+  fetch(`${GAS_URL}?mode=reservations&userId=${profile.userId}`).then(r => r.json()),
+  preloadCalendarData()
+]);
+
+console.log('✅ 並行載入完成（含月曆資料）Parallel loading completed (including calendar data)');
+
+if (!userCheckResult.registered) {
+  console.log('📝 用戶未註冊，跳轉到註冊頁面 User not registered, redirecting to registration page');
+  location.href = 'register.html';
+  return;
+}
     
     userData = userCheckResult.user;
     existingReservations = reservationsResult.reservations || [];
