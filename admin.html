@@ -321,7 +321,7 @@ body {
 </div>
 
 <!-- 詳細資訊彈出窗 -->
-<div id="infoModal" class="modal">
+<div id="infoModal" class="modal" onclick="if(event.target.id === 'infoModal') closeModal();">
   <div class="modal-content">
     <div class="modal-header" id="modal-name"></div>
     <div class="modal-body">
@@ -368,14 +368,17 @@ function setupNavigation() {
   
   document.getElementById('searchInput').addEventListener('input', filterReservations);
   document.getElementById('checkinSearchInput').addEventListener('input', filterCheckinList);
-  document.getElementById('infoModal').addEventListener('click', (e) => {
-    if (e.target.id === 'infoModal') closeModal();
-  });
+  const modal = document.getElementById('infoModal');
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target.id === 'infoModal') closeModal();
+    });
+  }
 }
 
 function showSection(sectionId) {
   if (sectionId === 'checkin') {
-    window.location.href = 'https://fangwl591021.github.io/chinanlogin/driver-checkin.html';
+    window.location.href = 'https://liff.line.me/2006590746-A8YD0ZD9';
     return;
   }
   
