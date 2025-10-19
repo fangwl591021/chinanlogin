@@ -37,7 +37,9 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
 .table-header th{padding:10px 8px;font-size:12px;border:1px solid #2f6842;}
 .table-row{border-bottom:1px solid #e0e0e0;}
 .table-row:hover{background:#f8faf8;}
-.table-row td{padding:10px 8px;border:1px solid #e0e0e0;font-size:12px;word-break:break-word;}
+.table-row td{padding:10px 6px;border:1px solid #e0e0e0;font-size:12px;word-break:break-word;word-spacing:100vw;}
+.stop-cell{word-break:break-word;word-spacing:100vw;line-height:1.4;}
+.checkin-btn{padding:8px 14px;font-size:13px;}
 .passenger-name{color:#0066cc;cursor:pointer;font-weight:600;text-decoration:underline;}
 .passenger-name:hover{color:#0052a3;}
 .checkin-btn{background:#3c8050;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap;}
@@ -280,8 +282,8 @@ function renderReservationRows(filtered, title) {
       <td>${r.date?.split('T')[0] || ''}</td>
       <td><strong>${r.route}</strong></td>
       <td><span class="passenger-name" onclick="showModal('${r.name}', '${r.department}', '${r.studentId}', '${phoneDisplay}')">${r.name}</span></td>
-      <td>${r.fromStop}</td>
-      <td>${r.toStop}</td>
+      <td><span class="stop-cell">${r.fromStop}</span></td>
+      <td><span class="stop-cell">${r.toStop}</span></td>
       <td>
         ${isCheckedIn 
           ? '<button class="checkin-btn" disabled>✅</button>' 
