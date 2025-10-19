@@ -3,195 +3,165 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v4.0</title>
+<title>穿山甲專車後台 v4.1 (Mobile)</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
-body {
-  font-family: "Noto Sans TC", system-ui, sans-serif;
-  background: #f8fafc;
-  color: #334155;
-}
-aside { width:260px; background:#fff; border-right:1px solid #e5e7eb; box-shadow:2px 0 6px rgba(0,0,0,0.05); }
-.sidebar-btn { display:block; width:100%; padding:14px 18px; text-align:left; border-radius:8px; }
-.sidebar-btn:hover { background:#e0f2e9; color:#256d3f; }
-.sidebar-btn.active { background:#3c8050; color:white; font-weight:700; }
-.card { background:white; border-radius:16px; padding:28px; box-shadow:0 2px 10px rgba(0,0,0,0.08); max-width:1080px; margin:auto; }
-.section-title { font-weight:800; font-size:22px; color:#14532d; margin-bottom:16px; display:flex; align-items:center; }
-.section-title::before { content:""; display:inline-block; width:8px; height:24px; background:#22c55e; border-radius:3px; margin-right:10px; }
-button { font-size:18px; font-weight:600; border-radius:10px; padding:12px 16px; transition:all .2s; }
-button:hover { opacity:0.9; }
-.notification { position:fixed; top:1rem; right:1rem; z-index:9999; }
+body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f0fdf4; color: #334155; }
+.card { background:white; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); margin:16px; padding:20px; }
+.tab-btn { flex-1 text-center py-2 text-sm font-semibold text-gray-500; }
+.tab-btn.active { color:#3c8050; font-weight:700; }
+footer { position:fixed; bottom:0; left:0; right:0; background:white; border-top:1px solid #e5e7eb; display:flex; }
+button { border-radius:10px; padding:10px 14px; font-weight:600; }
 </style>
 </head>
+<body class="pb-16">
 
-<body class="flex h-screen overflow-hidden">
+<!-- 🏷️ 首頁 -->
+<section id="tab-home" class="card">
+  <h2 class="text-xl font-bold text-green-700 mb-2">🚌 穿山甲專車後台</h2>
+  <p class="text-gray-600 mb-2">歡迎使用後台系統</p>
+  <p>帳號角色：<span id="userRole" class="font-semibold text-green-700">載入中...</span></p>
+  <p>ID：<span id="userIdText" class="text-sm text-gray-500"></span></p>
+  <div id="homeNotice" class="mt-4 text-gray-700"></div>
+</section>
 
-<!-- 🧭 側邊選單 -->
-<aside class="flex flex-col">
-  <div class="p-5 border-b text-center bg-green-700 text-white">
-    <h1 class="text-2xl font-bold">🚌 後台管理</h1>
-    <p class="text-sm opacity-90">穿山甲專車系統</p>
+<!-- ⚙️ 系統設定 -->
+<section id="tab-config" class="card hidden">
+  <h2 class="text-lg font-bold text-green-700 mb-3">⚙️ 系統設定</h2>
+  <div class="space-y-3">
+    <label><input type="checkbox" id="testMode" class="mr-1"> 啟用測試模式</label><br>
+    <label><input type="radio" name="bookingMode" value="single" checked> 單程制</label>
+    <label class="ml-4"><input type="radio" name="bookingMode" value="roundtrip"> 來回制</label>
   </div>
-
-  <nav class="flex-1 p-3 space-y-2">
-    <button class="sidebar-btn active" data-target="config">🔧 營運設定</button>
-    <button class="sidebar-btn" data-target="dashboard">📊 儀表板</button>
-    <button class="sidebar-btn" data-target="reservations">🧾 預約查詢</button>
-  </nav>
-
-  <div class="p-4 border-t text-center text-gray-600 text-sm">
-    ⚙️ <a href="#" id="reloadLink" class="underline">重新整理資料</a>
+  <textarea id="announcement" class="border rounded w-full p-2 mt-4" rows="3">歡迎使用穿山甲專車預約系統！</textarea>
+  <div class="grid grid-cols-3 gap-2 mt-4">
+    <button id="saveConfig" class="bg-green-600 text-white">💾 儲存</button>
+    <button id="publishConfig" class="bg-blue-600 text-white">🚀 發佈</button>
+    <button id="testPush" class="bg-yellow-500 text-white">📢 測試推播</button>
   </div>
-</aside>
+</section>
 
-<!-- 🖥️ 主內容 -->
-<main class="flex-1 overflow-y-auto p-8">
+<!-- 📊 儀表板 -->
+<section id="tab-dashboard" class="card hidden">
+  <h2 class="text-lg font-bold text-green-700 mb-2">📊 營運儀表板</h2>
+  <p>此功能即將上線。</p>
+</section>
 
-  <!-- 🔧 營運設定 -->
-  <section id="config" class="card block">
-    <h2 class="section-title">🔧 營運設定中心</h2>
+<!-- 🚐 核銷作業 -->
+<section id="tab-checkin" class="card hidden">
+  <h2 class="text-lg font-bold text-green-700 mb-3">🚐 今日核銷作業</h2>
+  <div id="checkinList" class="space-y-2 text-gray-700">載入中...</div>
+</section>
 
-    <!-- 測試模式 -->
-    <div class="mb-4">
-      <label class="font-semibold">系統模式：</label><br>
-      <label class="mr-4"><input type="checkbox" id="testMode" class="mr-1"> 啟用測試模式（不受截止時間限制）</label>
-    </div>
+<!-- ⚠️ 無權限畫面 -->
+<section id="tab-deny" class="card hidden text-center">
+  <h2 class="text-xl font-bold text-red-600 mb-2">⚠️ 無後台權限</h2>
+  <p>您目前為一般乘客身分，無法使用後台功能。</p>
+</section>
 
-    <!-- 預約模式 -->
-    <div class="mb-4">
-      <label class="font-semibold">預約模式：</label><br>
-      <label class="mr-6"><input type="radio" name="bookingMode" value="single" checked> 單程制（禁止同班來回）</label>
-      <label><input type="radio" name="bookingMode" value="roundtrip"> 來回制（自動配對）</label>
-    </div>
-
-    <!-- 班次容量 -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6 text-lg">
-      <template id="capacityTemplate">
-        <div class="flex flex-col items-center">
-          <label class="font-semibold mb-2"></label>
-          <input type="number" min="1" max="50" class="border rounded px-3 py-2 w-24 text-center capacity-input">
-          <span class="text-sm text-gray-500 mt-1">可預約人數</span>
-        </div>
-      </template>
-    </div>
-
-    <!-- 系統公告 -->
-    <div class="mb-4">
-      <label class="font-semibold">系統公告：</label>
-      <textarea id="announcement" rows="3" class="w-full border rounded px-3 py-2 text-lg mt-2">歡迎使用穿山甲專車預約系統！</textarea>
-    </div>
-
-    <!-- 操作按鈕 -->
-    <div class="flex gap-3 mb-6">
-      <button id="saveConfig" class="bg-green-600 hover:bg-green-700 text-white flex-1">💾 儲存設定</button>
-      <button id="publishConfig" class="bg-blue-600 hover:bg-blue-700 text-white flex-1">🚀 發佈設定</button>
-      <button id="testPush" class="bg-yellow-500 hover:bg-yellow-600 text-white flex-1">📢 推播測試</button>
-    </div>
-
-    <!-- 預覽 -->
-    <div class="p-4 bg-gray-50 rounded">
-      <h3 class="font-semibold text-lg mb-2">📱 設定預覽</h3>
-      <p>測試模式：<span id="previewTest" class="text-green-600">關閉</span></p>
-      <p>預約模式：<span id="previewMode" class="text-green-600">單程</span></p>
-    </div>
-  </section>
-
-  <!-- 📊 儀表板 -->
-  <section id="dashboard" class="card hidden">
-    <h2 class="section-title">📊 營運儀表板</h2>
-    <p>（此區保留，未變動）</p>
-  </section>
-
-  <!-- 🧾 預約查詢 -->
-  <section id="reservations" class="card hidden">
-    <h2 class="section-title">🧾 預約查詢</h2>
-    <p>（同前版內容，未更動）</p>
-  </section>
-</main>
+<!-- 📱 底部導覽列 -->
+<footer id="footerNav">
+  <button class="tab-btn active" data-target="home">🏠 首頁</button>
+  <button class="tab-btn" data-target="config">🧭 設定</button>
+  <button class="tab-btn" data-target="dashboard">📊 儀表</button>
+  <button class="tab-btn" data-target="checkin">🚐 核銷</button>
+</footer>
 
 <script>
-const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
-let config = {
-  testMode: false,
-  bookingMode: 'single',
-  capacities: { A1:6, A2:6, B1:6, B2:6 },
-  announcement: ''
-};
+const WORKER_URL = "https://delicate-math-7e61.fangwl591021.workers.dev/";
+let role = "user";
+let userId = "";
 
-// 更新預覽
-function updatePreview() {
-  document.getElementById('previewTest').textContent = config.testMode ? '開啟' : '關閉';
-  document.getElementById('previewMode').textContent = config.bookingMode === 'single' ? '單程' : '來回';
+/* ========= 初始化 LIFF ========= */
+document.addEventListener('DOMContentLoaded', async () => {
+  await liff.init({ liffId: "2006590746-E8P6Yg3v" }).catch(console.error);
+  const profile = await liff.getProfile();
+  userId = profile.userId;
+  document.getElementById('userIdText').textContent = userId;
+  await checkUserRole(userId);
+  setupNav();
+});
+
+/* ========= 角色檢查 ========= */
+async function checkUserRole(userId) {
+  try {
+    const res = await fetch(`${WORKER_URL}?mode=checkRole&userId=${userId}`);
+    const data = await res.json();
+    role = data.role || "user";
+    document.getElementById('userRole').textContent = role;
+    renderUIByRole(role);
+  } catch {
+    document.getElementById('userRole').textContent = "查詢失敗";
+  }
 }
 
-// 儲存設定
+/* ========= 根據角色顯示頁面 ========= */
+function renderUIByRole(r) {
+  const adminTabs = ["home","config","dashboard","checkin"];
+  const driverTabs = ["home","checkin"];
+  const userTabs = ["home","deny"];
+  let visibleTabs = userTabs;
+  if (r === "admin") visibleTabs = adminTabs;
+  else if (r === "driver") visibleTabs = driverTabs;
+
+  // 顯示可用 tab
+  document.querySelectorAll('section[id^="tab-"]').forEach(sec => sec.classList.add('hidden'));
+  document.getElementById('tab-home').classList.remove('hidden');
+  if (r === "user") document.getElementById('tab-deny').classList.remove('hidden');
+
+  // 底部導覽列按鈕可見性
+  document.querySelectorAll('footer .tab-btn').forEach(btn => {
+    const show = visibleTabs.includes(btn.dataset.target);
+    btn.style.display = show ? 'block' : 'none';
+  });
+}
+
+/* ========= 導覽切換 ========= */
+function setupNav() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const target = btn.dataset.target;
+      document.querySelectorAll('section[id^="tab-"]').forEach(sec => {
+        sec.id === 'tab-' + target ? sec.classList.remove('hidden') : sec.classList.add('hidden');
+      });
+    };
+  });
+
+  document.getElementById('saveConfig').onclick = saveConfig;
+  document.getElementById('publishConfig').onclick = publishConfig;
+  document.getElementById('testPush').onclick = sendTestPush;
+}
+
+/* ========= 設定操作 ========= */
+let config = { testMode:false, bookingMode:'single', announcement:'' };
 function saveConfig() {
   config.testMode = document.getElementById('testMode').checked;
   config.bookingMode = document.querySelector('input[name="bookingMode"]:checked').value;
   config.announcement = document.getElementById('announcement').value;
   localStorage.setItem('pangolinAdminConfig', JSON.stringify(config));
-  updatePreview();
-  showNote('✅ 設定已儲存');
+  showMsg('✅ 設定已儲存');
 }
-
-// 發佈設定
 async function publishConfig() {
   saveConfig();
-  try {
-    const res = await fetch(WORKER_URL + '?mode=updateRules', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(config)
-    });
-    showNote(res.ok ? '🚀 已成功發佈設定！' : '❌ 發佈失敗');
-  } catch {
-    showNote('⚠️ 模擬發佈成功（無網路）');
-  }
+  await fetch(WORKER_URL + '?mode=updateRules', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(config) });
+  showMsg('🚀 已發佈設定');
 }
-
-// 推播測試
 async function sendTestPush() {
-  try {
-    const res = await fetch(WORKER_URL + '?mode=testPush');
-    showNote(res.ok ? '📢 測試推播已發送！' : '❌ 發送失敗');
-  } catch {
-    showNote('⚠️ 模擬發送成功');
-  }
+  await fetch(WORKER_URL + '?mode=testPush');
+  showMsg('📢 測試推播已發送');
 }
 
-// 通知
-function showNote(msg) {
+/* ========= 通用提示 ========= */
+function showMsg(msg) {
   const div = document.createElement('div');
-  div.className = 'notification bg-green-600 text-white p-3 rounded shadow';
   div.textContent = msg;
+  div.className = "fixed bottom-20 left-1/2 -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-xl shadow";
   document.body.appendChild(div);
-  setTimeout(()=>div.remove(),2500);
+  setTimeout(()=>div.remove(),2000);
 }
-
-// 初始化
-document.addEventListener('DOMContentLoaded',()=>{
-  const saved = localStorage.getItem('pangolinAdminConfig');
-  if(saved) config = JSON.parse(saved);
-  document.getElementById('testMode').checked = config.testMode;
-  document.querySelector(`input[name="bookingMode"][value="${config.bookingMode}"]`).checked = true;
-  document.getElementById('announcement').value = config.announcement;
-  updatePreview();
-
-  document.getElementById('saveConfig').onclick = saveConfig;
-  document.getElementById('publishConfig').onclick = publishConfig;
-  document.getElementById('testPush').onclick = sendTestPush;
-
-  document.querySelectorAll('.sidebar-btn').forEach(btn=>{
-    btn.onclick=()=>{
-      document.querySelectorAll('.sidebar-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      const target=btn.dataset.target;
-      document.querySelectorAll('main section').forEach(sec=>{
-        sec.id===target ? sec.classList.remove('hidden') : sec.classList.add('hidden');
-      });
-    };
-  });
-});
 </script>
 </body>
 </html>
