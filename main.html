@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>穿山甲專車預約 Pangolin Shuttle Reservation</title>
   <style>
-    /* CSS 樣式保持不變 */
+    /* CSS 樣式 */
     body { font-family: system-ui, sans-serif; background:#f5f6f7; margin:0; padding:0; }
     header { 
       background:#3c8050; color:#fff; text-align:center; padding:15px; font-size:22px; font-weight:bold;
@@ -146,22 +146,22 @@
     .route-btn:hover { 
       background: #eaf5ea;
     }
-/* 修改現有的 .route-btn.selected 樣式 */
-.route-btn.selected { 
-  background: #3c8050;
-  color: white !important;
-}
+    /* 修改現有的 .route-btn.selected 樣式 */
+    .route-btn.selected { 
+      background: #3c8050;
+      color: white !important;
+    }
 
-/* 選中狀態下的所有文字都變成白色 */
-.route-btn.selected * {
-  color: white !important;
-}
+    /* 選中狀態下的所有文字都變成白色 */
+    .route-btn.selected * {
+      color: white !important;
+    }
 
-/* 英文文字稍微透明一點 */
-.route-btn.selected .route-direction span,
-.route-btn.selected div span {
-  color: rgba(255, 255, 255, 0.8) !important;
-}
+    /* 英文文字稍微透明一點 */
+    .route-btn.selected .route-direction span,
+    .route-btn.selected div span {
+      color: rgba(255, 255, 255, 0.8) !important;
+    }
     .route-btn.disabled:hover { background: #f5f5f5 !important; }
     .route-direction { font-size: 12px; margin-top: 4px; }
     .stop-selector { padding: 0 16px; margin: 20px 0; }
@@ -184,6 +184,70 @@
       margin-bottom: 10px;
       color: #333;
     }
+    .profile-warning {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+    .profile-warning p {
+      margin: 0 0 5px 0;
+      color: #856404;
+      font-size: 14px;
+    }
+    .profile-warning a {
+      color: #007bff;
+      text-decoration: underline;
+      font-weight: bold;
+    }
+
+    /* 響應式設計 */
+    @media (max-width: 480px) {
+      .reservation-bubble {
+        min-width: 160px !important;
+      }
+      
+      .bubble-line {
+        font-size: 12px !important;
+      }
+      
+      .route-btn {
+        padding: 10px 8px !important;
+      }
+      
+      header {
+        font-size: 20px !important;
+        padding: 12px !important;
+      }
+    }
+
+    @media (max-width: 360px) {
+      header {
+        font-size: 18px !important;
+      }
+      
+      .user-name {
+        font-size: 18px !important;
+      }
+      
+      .carousel-title {
+        font-size: 16px !important;
+      }
+    }
+
+    /* 無障礙訪問改進 */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
   </style>
 </head>
 <body>
@@ -197,7 +261,7 @@
   </div>
 
   <div style="display: flex; gap: 10px; margin: 10px 16px; align-items: center;">
-    <button id="calendarBtn" onclick="toggleCalendar()" style="flex: 1; position: relative;">
+    <button id="calendarBtn" onclick="toggleCalendar()" style="flex: 1; position: relative;" aria-label="打開月曆 Open Calendar" aria-expanded="false">
       📅 打開月曆
       <span class="en-text">Open Calendar</span>
       <span id="calendarLoading" class="loading-dots" style="display:none"></span>
@@ -206,7 +270,8 @@
     <button id="rulesBtn" onclick="openRules()" 
             style="flex: 0 0 auto; background: #3C8050; color: white; border: none; 
                    padding: 12px 16px; border-radius: 6px; font-size: 16px; 
-                   cursor: pointer; white-space: nowrap; font-weight: bold;">
+                   cursor: pointer; white-space: nowrap; font-weight: bold;"
+            aria-label="查看預約規則 View Reservation Rules">
       📖 預約規則
       <span class="en-text">Reservation Rules</span>
     </button>
@@ -214,36 +279,36 @@
 
   <div id="calendarContainer" style="display:none;margin-top:10px; padding:0 16px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-      <button onclick="changeMonth(-1)" style="width:auto; padding:5px 10px;">◀ 上個月<span class="en-text-dark">Prev Month</span></button>
+      <button onclick="changeMonth(-1)" style="width:auto; padding:5px 10px;" aria-label="上個月 Previous Month">◀ 上個月<span class="en-text-dark">Prev Month</span></button>
       <h3 id="calendarTitle" style="margin:0; font-size:16px;"></h3>
-      <button onclick="changeMonth(1)" style="width:auto; padding:5px 10px;">下個月 ▶<span class="en-text-dark">Next Month</span></button>
+      <button onclick="changeMonth(1)" style="width:auto; padding:5px 10px;" aria-label="下個月 Next Month">下個月 ▶<span class="en-text-dark">Next Month</span></button>
     </div>
-    <div id="calendar" class="calendar"></div>
+    <div id="calendar" class="calendar" role="grid" aria-label="月曆 Calendar"></div>
   </div>
 
-  <div id="selectedDate" class="notice success" style="display:none;"></div>
-  <div id="holidayNotice" class="notice error" style="display:none;"></div>
+  <div id="selectedDate" class="notice success" style="display:none;" role="status"></div>
+  <div id="holidayNotice" class="notice error" style="display:none;" role="alert"></div>
 
   <div id="routeSection" class="route-section" style="display:none;">
     <h3>請選擇搭乘班次<span class="en-text-dark">Please Select Shuttle Time</span></h3>
-    <div id="routeButtons" class="route-buttons"></div>
+    <div id="routeButtons" class="route-buttons" role="group" aria-label="班次選擇 Route Selection"></div>
   </div>
 
   <div id="fromStopSection" class="stop-selector" style="display:none;">
     <h3>請選擇上車站<span class="en-text-dark">Please Select Pick-up Stop</span></h3>
-    <select id="fromStop">
+    <select id="fromStop" aria-label="上車站選擇 Pick-up Stop Selection">
       <option value="">請先選擇班次<span class="en-text-dark">Please select shuttle time first</span></option>
     </select>
   </div>
 
   <div id="toStopSection" class="stop-selector" style="display:none;">
     <h3>請選擇下車站<span class="en-text-dark">Please Select Drop-off Stop</span></h3>
-    <select id="toStop">
+    <select id="toStop" aria-label="下車站選擇 Drop-off Stop Selection">
       <option value="">請先選擇上車站<span class="en-text-dark">Please select pick-up stop first</span></option>
     </select>
   </div>
 
-  <button id="submitBtn" class="submit-btn" onclick="submitReservation()" style="display:none;">
+  <button id="submitBtn" class="submit-btn" onclick="submitReservation()" style="display:none;" aria-label="送出預約 Submit Reservation">
     送出預約
     <span class="en-text">Submit Reservation</span>
   </button>
@@ -293,6 +358,42 @@ let existingReservations = [];
 let noServiceDates = {};
 let calendarDataLoaded = false;
 let calendarLoading = false;
+
+// 資料快取機制
+const cache = {
+  calendarData: null,
+  reservations: null,
+  lastUpdated: null
+};
+
+// 增強型 fetch 函數，包含重試機制
+async function robustFetch(url, options = {}, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url, options);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.warn(`第 ${i + 1} 次請求失敗，${retries - i - 1} 次重試機會`);
+      if (i === retries - 1) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+    }
+  }
+}
+
+// 快取資料獲取函數
+async function getCachedData(key, fetchFunction, cacheDuration = 5 * 60 * 1000) {
+  if (cache[key] && Date.now() - cache.lastUpdated < cacheDuration) {
+    console.log(`✅ 使用快取資料: ${key}`);
+    return cache[key];
+  }
+  
+  console.log(`🔄 載入新資料: ${key}`);
+  const data = await fetchFunction();
+  cache[key] = data;
+  cache.lastUpdated = Date.now();
+  return data;
+}
 
 // 從 rules.json 載入設定
 async function loadRules() {
@@ -368,6 +469,39 @@ function initFromRules() {
   return { stopsOutbound, stopsReturn, routeTimes };
 }
 
+// 顯示用戶資料不完整警告
+function showIncompleteProfileNotice() {
+  const userInfoDiv = document.getElementById('userInfo');
+  const warningDiv = document.createElement('div');
+  warningDiv.className = 'profile-warning';
+  warningDiv.innerHTML = `
+    <p>⚠️ 您的資料不完整，建議 <a href="register.html" onclick="event.preventDefault(); completeProfile();">補全資料</a></p>
+    <p style="margin: 0; color: #666; font-size: 12px;">
+      ⚠️ Your profile is incomplete, please <a href="register.html" onclick="event.preventDefault(); completeProfile();">complete it</a>
+    </p>
+  `;
+  userInfoDiv.appendChild(warningDiv);
+}
+
+// 補全資料函數
+function completeProfile() {
+  if (confirm('是否要前往補全個人資料？\nDo you want to complete your profile?')) {
+    window.location.href = 'register.html';
+  }
+}
+
+// 檢查用戶資料完整性
+function checkProfileCompleteness(userData) {
+  const missingFields = [];
+  if (!userData.studentId || userData.studentId.trim() === '') missingFields.push('學號');
+  if (!userData.phone || userData.phone.trim() === '') missingFields.push('電話');
+  
+  return {
+    isComplete: missingFields.length === 0,
+    missingFields: missingFields
+  };
+}
+
 async function init() {
   try {
     console.log('🚀 開始初始化系統... System initializing...');
@@ -405,35 +539,14 @@ async function init() {
     const profile = await liff.getProfile();
     console.log('用戶信息 User info:', profile);
     
-    // 🔧 關鍵修改：改進錯誤處理和重試機制
-    let userCheckResult, reservationsResult;
-
+    // 使用增強型 fetch 檢查用戶註冊狀態
+    let userCheckResult;
     try {
       console.log('🔍 檢查用戶註冊狀態...');
-      const checkRes = await fetch(`${WORKER_URL}?mode=check&userId=${encodeURIComponent(profile.userId)}`);
-      
-      if (!checkRes.ok) {
-        throw new Error(`HTTP error! status: ${checkRes.status}`);
-      }
-      
-      const text = await checkRes.text();
-      console.log('📨 檢查回應原始文本:', text);
-      
-      try {
-        userCheckResult = JSON.parse(text);
-      } catch (parseError) {
-        console.error('❌ JSON 解析失敗:', parseError);
-        // 嘗試重新請求
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const retryRes = await fetch(`${WORKER_URL}?mode=check&userId=${encodeURIComponent(profile.userId)}`);
-        userCheckResult = await retryRes.json();
-      }
-      
+      userCheckResult = await robustFetch(`${WORKER_URL}?mode=check&userId=${encodeURIComponent(profile.userId)}`);
       console.log('✅ 檢查結果:', userCheckResult);
-
     } catch (err) {
       console.error('❌ 用戶檢查失敗:', err);
-      // 如果檢查失敗，顯示友好錯誤並提供重試選項
       document.getElementById('userInfo').innerHTML = `
         <div style="text-align: center; color: #666;">
           <p>⏳ 系統連線中...</p>
@@ -447,11 +560,10 @@ async function init() {
       return;
     }
     
-    // 🔧 關鍵修改：改進註冊狀態檢查
+    // 檢查註冊狀態
     if (!userCheckResult || userCheckResult.registered === false) {
       console.error('❌ 用戶未註冊或檢查失敗:', userCheckResult);
       
-      // 添加延遲後跳轉，避免立即重定向
       setTimeout(() => {
         if (confirm('您尚未完成註冊，是否要前往註冊頁面？\nYou have not completed registration. Go to registration page?')) {
           location.href = 'register.html';
@@ -460,7 +572,7 @@ async function init() {
       return;
     }
     
-    // 🔧 關鍵修復：確保 userData 存在且有正確結構
+    // 確保 userData 存在且有正確結構
     if (!userCheckResult.user) {
       console.error('❌ userData 為空或未定義');
       throw new Error('用戶資料載入失敗：userData 為空');
@@ -468,33 +580,50 @@ async function init() {
     
     userData = userCheckResult.user;
     
-    // 安全檢查：確保 userData 有必要的屬性
-    if (!userData.name || !userData.studentId || !userData.department) {
+    // 檢查用戶資料完整性
+    const profileCheck = checkProfileCompleteness(userData);
+    if (!profileCheck.isComplete) {
       console.warn('⚠️ 用戶資料不完整:', userData);
-      // 設置預設值避免後續錯誤
       userData.name = userData.name || '未知用戶';
       userData.studentId = userData.studentId || '未知學號';
       userData.department = userData.department || '未知科系';
     }
     
-    // 繼續載入其他資料...
+    // 載入預約資料（使用快取）
     console.log('🔍 載入預約資料...');
-    const resRes = await fetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`);
-    reservationsResult = await resRes.json();
+    const reservationsResult = await getCachedData('reservations', async () => {
+      const res = await robustFetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`);
+      return res;
+    });
     console.log('✅ 預約結果:', reservationsResult);
 
+    // 預載月曆資料
     console.log('🔍 預載月曆資料...');
     await preloadCalendarData();
     console.log('✅ 月曆資料已預載');
 
     existingReservations = reservationsResult.reservations || [];
     
-    // 🔧 安全更新用戶信息顯示
+    // 更新用戶信息顯示
     try {
-      document.getElementById('userInfo').innerHTML = `
+      let userInfoHTML = `
         <div class="user-name">${userData.name || '未知用戶'}</div>
         <div class="user-info">${userData.department || '未知科系'} | ${userData.studentId || '未知學號'}</div>
       `;
+      
+      // 如果資料不完整，顯示警告
+      if (!profileCheck.isComplete) {
+        userInfoHTML += `
+          <div class="profile-warning">
+            <p>⚠️ 您的資料不完整（缺少：${profileCheck.missingFields.join(', ')}），建議 <a href="register.html" onclick="event.preventDefault(); completeProfile();">補全資料</a></p>
+            <p style="margin: 0; color: #666; font-size: 12px;">
+              ⚠️ Your profile is incomplete (missing: ${profileCheck.missingFields.join(', ')}), please <a href="register.html" onclick="event.preventDefault(); completeProfile();">complete it</a>
+            </p>
+          </div>
+        `;
+      }
+      
+      document.getElementById('userInfo').innerHTML = userInfoHTML;
     } catch (displayError) {
       console.error('❌ 更新用戶信息顯示失敗:', displayError);
       document.getElementById('userInfo').innerHTML = `
@@ -551,8 +680,12 @@ async function loadNoServiceDates() {
   try {
     const start = formatDateToLocal(new Date(currentYear, currentMonth - 1, 1));
     const end = formatDateToLocal(new Date(currentYear, currentMonth + 2, 0));
-    const res = await fetch(`${WORKER_URL}?mode=calendar&start=${start}&end=${end}&calendarId=${encodeURIComponent(CALENDAR_ID)}`);
-    const result = await res.json();
+    
+    const result = await getCachedData('calendar', async () => {
+      const res = await robustFetch(`${WORKER_URL}?mode=calendar&start=${start}&end=${end}&calendarId=${encodeURIComponent(CALENDAR_ID)}`);
+      return res;
+    }, 10 * 60 * 1000); // 日曆資料快取10分鐘
+    
     noServiceDates = {};
     if (Array.isArray(result.holidays)) {
       result.holidays.forEach(d => noServiceDates[d.substring(0,10)] = true);
@@ -590,6 +723,8 @@ function toggleCalendar() {
   btn.innerHTML = isHidden
     ? '📅 關閉月曆<span class="en-text">Close Calendar</span>'
     : '📅 打開月曆<span class="en-text">Open Calendar</span>';
+  
+  btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
 
   if (isHidden) {
     renderCalendar();
@@ -680,7 +815,7 @@ function renderCalendar() {
         `${day}<br><small style="font-size:10px;">週末</small><br><small style="color: #666; font-size: 9px;">Weekend</small>` : 
         day;
       
-      html += `<div class="${classes}" onclick="selectDate('${dateStr}')">${dayLabel}</div>`;
+      html += `<div class="${classes}" onclick="selectDate('${dateStr}')" role="button" tabindex="0" aria-label="${dateStr} ${isWeekend ? '週末 Weekend' : ''}">${dayLabel}</div>`;
     }
   }
   
@@ -785,6 +920,7 @@ function selectDate(dateStr) {
   // 關閉月曆
   document.getElementById('calendarContainer').style.display = 'none';
   document.getElementById('calendarBtn').innerHTML = '📅 打開月曆<span class="en-text">Open Calendar</span>';
+  document.getElementById('calendarBtn').setAttribute('aria-expanded', 'false');
   
   // 顯示班次選擇
   showRouteSelection();
@@ -807,7 +943,8 @@ async function showRouteSelection() {
     const seatInfoEn = isFull ? 'Full' : `Available: ${remainingSeats}`;
     
     html += `
-      <div class="${buttonClass}" ${isFull ? '' : `onclick="selectRoute('${id}', '${info.direction}')"`}>
+      <div class="${buttonClass}" ${isFull ? '' : `onclick="selectRoute('${id}', '${info.direction}')"`}
+            role="button" tabindex="${isFull ? '-1' : '0'}" aria-label="${info.time} ${info.direction} ${seatInfo}">
         <div class="route-time">${info.time}</div>
         <div class="route-direction">${info.direction}<br><span style="color: #666; font-size: 11px;">${info.eng}</span></div>
         <div style="font-size: 11px; margin-top: 4px; color: ${isFull ? '#f44336' : '#4caf50'}">
@@ -827,9 +964,8 @@ async function showRouteSelection() {
 // 取得班次預約人數的函數
 async function getRouteReservationCount(dateStr, route) {
   try {
-    const res = await fetch(`${WORKER_URL}?mode=routeCapacity&date=${dateStr}&route=${route}`);
-    const result = await res.json();
-    return result.count || 0;
+    const res = await robustFetch(`${WORKER_URL}?mode=routeCapacity&date=${dateStr}&route=${route}`);
+    return res.count || 0;
   } catch (error) {
     console.error('取得班次人數失敗 Failed to get route count:', error);
     return 0;
@@ -1001,16 +1137,15 @@ async function submitReservation() {
     console.log('📤 發送預約資料:', data);
     
     // 發送請求
-    const res = await fetch(WORKER_URL, {
+    const res = await robustFetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
     
-    const result = await res.json();
-    console.log('📊 預約回應:', result);
+    console.log('📊 預約回應:', res);
     
-    if (result.status === 'success') {
+    if (res.status === 'success') {
       alert('✅ 預約成功！\n✅ Booking successful!');
 
       // 🚀 發送預約成功推播通知
@@ -1022,7 +1157,7 @@ async function submitReservation() {
         
         console.log('📤 發送預約成功推播:', pushData);
         
-        // 發送推播請求
+        // 發送推播請求（不等待回應）
         fetch(WORKER_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1035,7 +1170,7 @@ async function submitReservation() {
 
       // ⚡️ 立即把這筆預約加入現有陣列（前端立即更新）
       existingReservations.push({
-        id: result.id || `${userData.userId}-${selectedDate}-${selectedRoute}`,
+        id: res.id || `${userData.userId}-${selectedDate}-${selectedRoute}`,
         userId: userData.userId,
         name: userData.name,
         studentId: userData.studentId,
@@ -1060,7 +1195,7 @@ async function submitReservation() {
       }, 1000);
 
     } else {
-      alert('❌ 預約失敗：' + (result.message || '請稍後再試'));
+      alert('❌ 預約失敗：' + (res.message || '請稍後再試'));
     }
     
   } catch (error) {
@@ -1105,7 +1240,7 @@ async function cancelReservation(reservationId) {
     }
     
     // 1. 先執行取消預約
-    const response = await fetch(WORKER_URL, {
+    const response = await robustFetch(WORKER_URL, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -1118,22 +1253,7 @@ async function cancelReservation(reservationId) {
       })
     });
 
-    // 檢查響應狀態
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    // 檢查內容類型
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      console.error('非 JSON 響應 Non-JSON response:', text.substring(0, 200));
-      throw new Error('伺服器返回了非 JSON 響應 Server returned non-JSON response');
-    }
-
-    const result = await response.json();
-    
-    if (result.status === 'success') {
+    if (response.status === 'success') {
       alert('✅ 已取消預約\n✅ Reservation cancelled');
 
       // 🚀 發送取消預約推播通知
@@ -1173,7 +1293,7 @@ async function cancelReservation(reservationId) {
       await updateUIAfterReservationChange();
       
     } else {
-      alert('❌ 取消失敗：' + (result.message || '請稍後再試') + '\n❌ Cancellation failed: ' + (result.message || 'Please try again later'));
+      alert('❌ 取消失敗：' + (response.message || '請稍後再試') + '\n❌ Cancellation failed: ' + (response.message || 'Please try again later'));
     }
   } catch (error) {
     console.error('取消預約錯誤 Cancellation error:', error);
@@ -1198,10 +1318,11 @@ async function updateUIAfterReservationChange() {
   
   try {
     // 1. 重新載入用戶的最新預約資料
-    const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
-    if (!res.ok) throw new Error('載入預約資料失敗');
-    
-    const result = await res.json();
+    const result = await getCachedData('reservations', async () => {
+      const res = await robustFetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
+      if (!res.ok) throw new Error('載入預約資料失敗');
+      return res;
+    }, 0); // 強制重新載入，不使用快取
     
     // 關鍵修改：過濾掉已取消的預約
     existingReservations = (result.reservations || []).filter(reservation => 
@@ -1235,13 +1356,11 @@ async function updateUIAfterReservationChange() {
 async function loadExistingReservations() {
   try {
     console.log('載入預約記錄... Loading reservation records...');
-    const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
+    const result = await getCachedData('reservations', async () => {
+      const res = await robustFetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
+      return res;
+    });
     
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    
-    const result = await res.json();
     console.log('預約記錄載入結果 Reservation records loaded:', result);
     
     // 關鍵修改：過濾掉已取消的預約
@@ -1345,7 +1464,7 @@ function renderCurrentReservationCard() {
           </div>
         </div>
         <div class="bubble-footer">
-          <button class="cancel-btn-small" onclick="cancelReservation('${r.id}')">
+          <button class="cancel-btn-small" onclick="cancelReservation('${r.id}')" aria-label="取消預約 Cancel Reservation">
             取消預約<br>
             <span style="color: #ffffff; font-size: 10px; opacity: 0.8;">Cancel</span>
           </button>
@@ -1495,6 +1614,17 @@ class ReservationValidator {
       errors: errors
     };
   }
+
+  // 檢查路線是否已滿
+  static async isRouteFull(dateStr, route) {
+    try {
+      const currentCount = await getRouteReservationCount(dateStr, route);
+      return currentCount >= RESERVATION_RULES.seatLimit;
+    } catch (error) {
+      console.error('檢查路線容量失敗:', error);
+      return true; // 如果檢查失敗，保守起見認為已滿
+    }
+  }
 }
 
 // 錯誤顯示輔助函數
@@ -1514,6 +1644,17 @@ function resetSelection() {
   document.getElementById('submitBtn').style.display = 'none';
 }
 
+// 添加鍵盤導航支持
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    // ESC 鍵關閉月曆
+    if (document.getElementById('calendarContainer').style.display === 'block') {
+      toggleCalendar();
+    }
+  }
+});
+
+// 初始化系統
 window.addEventListener('load', init);
 </script>
 </body>
