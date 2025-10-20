@@ -16,8 +16,70 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
 .card { background:white; border-radius:16px; padding:24px; box-shadow:0 2px 10px rgba(0,0,0,0.08); margin:16px auto; max-width:900px; margin-bottom: 100px; }
 .toast { position: fixed; bottom: 80px; right: 20px; background: #16a34a; color: white; padding: 10px 20px; border-radius: 8px; opacity: 0; transition: opacity .3s ease-in-out; }
 .toast.show { opacity: 1; }
-table { font-size: 14px; }
-th, td { padding: 12px !important; }
+
+/* 問題一：表格響應式設計 */
+.reservation-table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.reservation-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 600px; /* 確保表格有最小寬度 */
+}
+
+.reservation-table th,
+.reservation-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.reservation-table thead {
+  background: #14532d;
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.reservation-table th {
+  font-weight: 600;
+  text-align: center;
+}
+
+.reservation-table th:nth-child(1),
+.reservation-table td:nth-child(1) { width: 120px; text-align: center; } /* 日期 */
+.reservation-table th:nth-child(2),
+.reservation-table td:nth-child(2) { width: 60px; text-align: center; }  /* 班次 */
+.reservation-table th:nth-child(3),
+.reservation-table td:nth-child(3) { width: 80px; text-align: center; }  /* 姓名 */
+.reservation-table th:nth-child(4),
+.reservation-table td:nth-child(4) { width: 100px; text-align: center; } /* 學號 */
+.reservation-table th:nth-child(5),
+.reservation-table td:nth-child(5) { width: 80px; text-align: center; }  /* 狀態 */
+
+.reservation-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+/* 移動端優化 */
+@media (max-width: 768px) {
+  .reservation-table {
+    font-size: 13px;
+  }
+  
+  .reservation-table th,
+  .reservation-table td {
+    padding: 8px 6px;
+  }
+}
+
 input, button { border-radius: 6px; }
 </style>
 </head>
@@ -60,22 +122,21 @@ input, button { border-radius: 6px; }
     <!-- 查詢紀錄 -->
     <section id="records" class="card hidden">
       <h2 class="font-bold text-xl mb-4 text-green-900">📅 預約紀錄查詢</h2>
-      <div id="recordsArea" class="overflow-x-auto"></div>
+      <div id="recordsArea" class="reservation-table-container"></div>
     </section>
 
     <!-- ✅ 核銷功能 -->
     <section id="checkin" class="card hidden">
-  <h2 class="font-bold text-xl mb-4 text-green-900">✅ 乘客核銷</h2>
-  
-  <div class="text-center mb-4">
-    <button onclick="openCheckinPage()" class="bg-green-700 hover:bg-green-800 text-white font-bold px-6 py-3 rounded-lg shadow">
-      🧾 開啟核銷頁面
-    </button>
-  </div>
-  
-  <p class="text-gray-500 text-center text-sm">按下後將開啟 LINE LIFF 核銷頁面</p>
-</section>
-
+      <h2 class="font-bold text-xl mb-4 text-green-900">✅ 乘客核銷</h2>
+      
+      <div class="text-center mb-4">
+        <button onclick="openCheckinPage()" class="bg-green-700 hover:bg-green-800 text-white font-bold px-6 py-3 rounded-lg shadow">
+          🧾 開啟核銷頁面
+        </button>
+      </div>
+      
+      <p class="text-gray-500 text-center text-sm">按下後將開啟 LINE LIFF 核銷頁面</p>
+    </section>
 
     <!-- 系統設定 -->
     <section id="settings" class="card hidden">
@@ -100,6 +161,14 @@ input, button { border-radius: 6px; }
 <script>
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 const LIFF_ID = '2006590746-wgL4l54z';
+
+// 問題三：標準化狀態類型
+const RESERVATION_STATUS = {
+  RESERVED: '已預約',
+  CANCELLED: '已取消', 
+  COMPLETED: '已搭乘',
+  EXPIRED: '已過期'
+};
 
 document.addEventListener('click', e=>{
   const tab = e.target.closest('[data-tab]');
@@ -140,6 +209,7 @@ async function init() {
       </div>`;
   }
 }
+
 function openCheckinPage() {
   const checkinUrl = 'https://liff.line.me/2006590746-G7B12a1K';
   try {
@@ -172,12 +242,56 @@ async function loadDashboard(){
   }catch(e){ console.error('Dashboard 載入失敗:', e); }
 }
 
+// 問題二：修正資料排序
+function sortReservations(reservations) {
+  return reservations.sort((a, b) => {
+    // 統一日期格式並轉換為 Date 物件
+    const dateA = new Date(a.date.replace(/\//g, '-'));
+    const dateB = new Date(b.date.replace(/\//g, '-'));
+    
+    // 日期降序排列（最新的在上）
+    if (dateA.getTime() !== dateB.getTime()) {
+      return dateB.getTime() - dateA.getTime();
+    }
+    
+    // 班次排序規則：A1 → A2 → B1 → B2
+    const shiftOrder = { 'A1': 1, 'A2': 2, 'B1': 3, 'B2': 4 };
+    return (shiftOrder[a.route] || 99) - (shiftOrder[b.route] || 99);
+  });
+}
+
+// 問題三：資料驗證和清理
+function validateReservationData(data) {
+  return data.map(item => {
+    // 統一日期格式
+    const standardizedDate = item.date.replace(/\//g, '-');
+    
+    // 驗證並標準化狀態
+    let standardizedStatus = item.status;
+    if (!Object.values(RESERVATION_STATUS).includes(item.status)) {
+      // 如果狀態不在預定義列表中，根據邏輯設置默認狀態
+      standardizedStatus = RESERVATION_STATUS.RESERVED;
+    }
+    
+    return {
+      ...item,
+      date: standardizedDate,
+      status: standardizedStatus
+    };
+  });
+}
+
 // 預約查詢
 async function loadReservations(){
   try{
     const res = await fetch(`${WORKER_URL}?mode=reservations`);
     const data = await res.json();
-    if(data.status==='success') renderReservations(data.reservations);
+    if(data.status==='success') {
+      // 處理資料：驗證 + 排序
+      const validatedData = validateReservationData(data.reservations);
+      const sortedData = sortReservations(validatedData);
+      renderReservations(sortedData);
+    }
   }catch(e){ console.error('查詢錯誤:', e); }
 }
 
@@ -186,26 +300,28 @@ function renderReservations(list){
     document.getElementById('recordsArea').innerHTML = '<p class="text-center text-gray-500 py-8">暫無預約紀錄</p>';
     return;
   }
-  list.sort((a,b)=>{
-    if(a.date!==b.date) return b.date.localeCompare(a.date);
-    const order={A1:1,A2:2,B1:3,B2:4};
-    return (order[a.route]||99)-(order[b.route]||99);
-  });
+
   const html = `
-  <table class="w-full border-collapse text-sm">
-    <thead class="bg-green-700 text-white sticky top-16">
-      <tr><th class="p-2 text-left">日期</th><th class="p-2">班次</th><th class="p-2">姓名</th><th class="p-2">學號</th><th class="p-2">狀態</th></tr>
+  <table class="reservation-table">
+    <thead>
+      <tr>
+        <th>日期</th>
+        <th>班次</th>
+        <th>姓名</th>
+        <th>學號</th>
+        <th>狀態</th>
+      </tr>
     </thead>
     <tbody>
       ${list.map(r=>{
         const cls = r.status.includes('取消')?'status-cancel':
                     r.status.includes('搭乘')?'status-ok':'status-wait';
-        return `<tr class="border-b hover:bg-gray-50">
-          <td class="p-2">${r.date}</td>
-          <td class="p-2">${r.route}</td>
-          <td class="p-2">${r.name||'-'}</td>
-          <td class="p-2">${r.studentId||'-'}</td>
-          <td class="p-2 ${cls}">${r.status}</td>
+        return `<tr>
+          <td>${r.date}</td>
+          <td>${r.route}</td>
+          <td>${r.name||'-'}</td>
+          <td>${r.studentId||'-'}</td>
+          <td class="${cls}">${r.status}</td>
         </tr>`;
       }).join('')}
     </tbody>
