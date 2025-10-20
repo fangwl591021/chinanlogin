@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v5.9</title>
+<title>穿山甲專車後台 v6.0</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -94,18 +94,17 @@ const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 const LIFF_ID = '2006590746-wgL4l54z';
 const CHECKIN_LIFF_URL = 'https://liff.line.me/2006590746-G7B12a1K';
 
-let reservations = [];
-let checkins = [];
+let allData = [];
 
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
   await initLINE();
   setupNav();
-  await loadData();
+  loadReservations();
 }
 
-// === 初始化 LINE ===
+// === 初始化 LINE 登入 ===
 async function initLINE() {
   try {
     await liff.init({ liffId: LIFF_ID });
@@ -118,80 +117,74 @@ async function initLINE() {
   }
 }
 
-// === 同時載入預約與核銷資料 ===
-async function loadData() {
-  document.getElementById('loadingText').style.display='block';
-  document.getElementById('tableContainer').style.display='none';
+// === 載入預約資料 ===
+async function loadReservations() {
+  document.getElementById('loadingText').style.display = 'block';
+  document.getElementById('tableContainer').style.display = 'none';
 
   try {
-    const [r1, r2] = await Promise.all([
-      fetch(WORKER_URL + '?mode=reservations'),
-      fetch(WORKER_URL + '?mode=checkins')
-    ]);
-    const res1 = await r1.json();
-    const res2 = await r2.json();
+    const res = await fetch(WORKER_URL + '?mode=reservations');
+    const json = await res.json();
+    allData = json.reservations || json.data || [];
 
-    reservations = res1.reservations || [];
-    checkins = res2.checkins || [];
-
-    // 合併核銷紀錄
-    const merged = reservations.map(r=>{
-      const match = checkins.find(c=>
-        (c.userId && r.userId && c.userId===r.userId) ||
-        (c.name && r.name && c.name===r.name && c.route===r.route && c.date===r.date)
-      );
-      if(match) r.status = '已搭乘';
-      return r;
-    });
-
-    renderTable(merged);
-  } catch(e) {
-    console.error(e);
-    document.getElementById('loadingText').textContent='❌ 無法載入資料';
+    renderTable(allData);
+  } catch (e) {
+    document.getElementById('loadingText').textContent = '❌ 無法取得資料';
   }
 }
 
-// === 渲染查詢表格 ===
+// === 渲染表格 ===
 function renderTable(data) {
-  const today = new Date();
   const order = { A1:1, B1:2, A2:3, B2:4 };
 
-  let filtered = data.filter(r=>{
-    const d = new Date(r.date);
-    return (
-      d >= new Date(today.getFullYear(), today.getMonth(), today.getDate()) &&
-      ['已預約','已取消','已搭乘','cancelled','completed'].includes(r.status)
-    );
+  // 轉換狀態
+  data.forEach(r => {
+    if (r.status === 'y') r.statusText = '已搭乘';
+    else if (r.status === 'n') r.statusText = '已預約';
+    else if (r.status === 'cancel' || r.status === '已取消') r.statusText = '已取消';
+    else r.statusText = '已預約';
   });
 
-  filtered.sort((a,b)=>{
+  // 排序：日期由近到遠（新→舊），同日 A1→B1→A2→B2
+  data.sort((a, b) => {
     const da = new Date(a.date), db = new Date(b.date);
-    if (da - db !== 0) return da - db;
-    return (order[a.route]||99)-(order[b.route]||99);
+    if (db - da !== 0) return db - da;
+    return (order[a.route] || 99) - (order[b.route] || 99);
   });
 
   const tbody = document.getElementById('tbl');
-  if(!filtered.length){
-    tbody.innerHTML='<tr><td colspan="4" class="text-center text-gray-400 p-3">暫無資料</td></tr>';
-  }else{
-    tbody.innerHTML=filtered.map(r=>{
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 p-3">暫無資料</td></tr>`;
+  } else {
+    tbody.innerHTML = data.map(r => {
       const dateStr = r.date ? new Date(r.date).toISOString().slice(5,10) : '';
-      let statusText='已預約', statusClass='status-reserved';
-      if(r.status==='已取消'||r.status==='cancelled'){ statusText='已取消'; statusClass='status-cancelled'; }
-      else if(r.status==='已搭乘'||r.status==='completed'){ statusText='已搭乘'; statusClass='status-completed'; }
+      let cls = 'status-reserved';
+      if (r.statusText === '已取消') cls = 'status-cancelled';
+      if (r.statusText === '已搭乘') cls = 'status-completed';
       return `
         <tr>
           <td class="p-2">${dateStr}</td>
-          <td class="p-2">${r.route||''}</td>
-          <td class="p-2">${r.name||''}</td>
-          <td class="p-2 ${statusClass}">${statusText}</td>
+          <td class="p-2">${r.route || ''}</td>
+          <td class="p-2">${r.name || ''}</td>
+          <td class="p-2 ${cls}">${r.statusText}</td>
         </tr>`;
     }).join('');
   }
 
-  document.getElementById('loadingText').style.display='none';
-  document.getElementById('tableContainer').style.display='block';
+  document.getElementById('loadingText').style.display = 'none';
+  document.getElementById('tableContainer').style.display = 'block';
 }
+
+// === 搜尋 ===
+document.getElementById('search').addEventListener('input', e=>{
+  const key = e.target.value.toLowerCase();
+  const filtered = allData.filter(r =>
+    (r.name && r.name.toLowerCase().includes(key)) ||
+    (r.route && r.route.toLowerCase().includes(key)) ||
+    (r.date && r.date.toLowerCase().includes(key))
+  );
+  renderTable(filtered);
+});
 
 // === 導覽 ===
 function setupNav(){
