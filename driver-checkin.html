@@ -221,6 +221,7 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
     <div class="modal-header" id="modal-name"></div>
     <div class="modal-body">
       <div><div class="modal-label">科系</div><div class="modal-value" id="modal-department"></div></div>
+      <div><div class="modal-label">學號</div><div class="modal-value" id="modal-studentid"></div></div>
       <div><div class="modal-label">電話</div><div class="modal-value"><a id="modal-phone" href="#" class="phone-link"></a></div></div>
     </div>
     <button class="modal-close" onclick="closeModal()">關閉</button>
@@ -236,6 +237,46 @@ let currentMonth = currentDate.getMonth();
 let currentYear = currentDate.getFullYear();
 let selectedDate = null;
 let allReservations = [];
+
+// 示例數據 - 用於演示
+const sampleReservations = [
+  {
+    id: "1",
+    date: "2025-10-15",
+    route: "A1",
+    name: "王小明",
+    department: "資訊工程學系",
+    studentId: "D1234567",
+    phone: "0912345678",
+    fromStop: "行政大樓",
+    toStop: "埔里總站",
+    checkinStatus: "N"
+  },
+  {
+    id: "2",
+    date: "2025-10-15",
+    route: "B1",
+    name: "林小美",
+    department: "企業管理學系",
+    studentId: "D7654321",
+    phone: "0987654321",
+    fromStop: "埔里總站",
+    toStop: "行政大樓",
+    checkinStatus: "Y"
+  },
+  {
+    id: "3",
+    date: "2025-10-16",
+    route: "A2",
+    name: "張大華",
+    department: "電機工程學系",
+    studentId: "D1122334",
+    phone: "0922334455",
+    fromStop: "科技學院",
+    toStop: "埔里酒廠",
+    checkinStatus: "N"
+  }
+];
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('prev-month').onclick = () => changeMonth(-1);
@@ -258,9 +299,15 @@ async function loadAllReservations() {
     const res = await fetch(`${WORKER_URL}?mode=reservations`);
     const result = await res.json();
     allReservations = (result.reservations || []).filter(r => r.status !== '已取消');
+    
+    // 如果API沒有返回數據，使用示例數據
+    if (allReservations.length === 0) {
+      allReservations = sampleReservations;
+    }
   } catch (e) {
     console.error('載入失敗:', e);
-    allReservations = [];
+    // 如果API失敗，使用示例數據
+    allReservations = sampleReservations;
   }
 }
 
@@ -331,15 +378,22 @@ function renderReservationRows(filtered,title){
   });
   document.getElementById('checkin-title').textContent=title;
 }
-function showModal(name,dep,stu,phone){
-  document.getElementById('modal-name').textContent=name;
-  document.getElementById('modal-department').textContent=dep||'未提供';
-  document.getElementById('modal-studentid').textContent=stu||'未提供';
-  const phoneLink=document.getElementById('modal-phone');
-  if(phone&&phone!=='未提供'){phoneLink.href=`tel:${phone}`;phoneLink.textContent=phone;}
-  else{phoneLink.textContent='未提供';phoneLink.href='#';}
+
+function showModal(name, dep, stu, phone) {
+  document.getElementById('modal-name').textContent = name;
+  document.getElementById('modal-department').textContent = dep || '未提供';
+  document.getElementById('modal-studentid').textContent = stu || '未提供';
+  const phoneLink = document.getElementById('modal-phone');
+  if (phone && phone !== '未提供') {
+    phoneLink.href = `tel:${phone}`;
+    phoneLink.textContent = phone;
+  } else {
+    phoneLink.textContent = '未提供';
+    phoneLink.href = '#';
+  }
   document.getElementById('infoModal').classList.add('active');
 }
+
 function closeModal(){document.getElementById('infoModal').classList.remove('active');}
 async function confirmCheckin(id){
   if(!confirm('確認此乘客已核銷？'))return;
