@@ -429,11 +429,16 @@ function setupNav() {
       
       const sectionId = this.dataset.id;
       
-      // 更新按鈕狀態
+      // 核銷直接跳轉
+      if (sectionId === 'sectionCheckin') {
+        window.location.href = 'https://liff.line.me/2006590746-A8YD0ZD9';
+        return;
+      }
+      
+      // 其他功能在admin內切換
       navBtns.forEach(b => b.classList.remove('active'));
       this.classList.add('active');
       
-      // 顯示對應區塊
       document.querySelectorAll('.section').forEach(s => {
         s.classList.remove('show');
       });
@@ -443,14 +448,8 @@ function setupNav() {
         targetSection.classList.add('show');
       }
       
-      // 查詢頁面載入表格
       if (sectionId === 'sectionQuery') {
         renderTable(allReservations);
-      }
-      
-      // 核銷頁面點擊後直接去核銷系統
-      if (sectionId === 'sectionCheckin') {
-        window.location.href = 'https://liff.line.me/2006590746-A8YD0ZD9';
       }
     });
   });
