@@ -490,17 +490,19 @@ function completeProfile() {
   }
 }
 
-// 檢查用戶資料完整性
 function checkProfileCompleteness(userData) {
-  const missingFields = [];
-  if (!userData.studentId || userData.studentId.trim() === '') missingFields.push('學號');
-  if (!userData.phone || userData.phone.trim() === '') missingFields.push('電話');
-  
-  return {
-    isComplete: missingFields.length === 0,
-    missingFields: missingFields
-  };
+  const name = (userData.name || '').toString().trim();
+  const phone = (userData.phone || '').toString().trim();
+  const studentId = (userData.studentId || '').toString().trim();
+  const department = (userData.department || '').toString().trim();
+
+  if (!name || !phone || !studentId || !department) {
+    alert('⚠️ 請先完成個人資料註冊。');
+    return false;
+  }
+  return true;
 }
+
 
 async function init() {
   try {
