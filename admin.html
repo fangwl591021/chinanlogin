@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台系統 v6.4.2</title>
+<title>穿山甲專車後台系統 v6.4.3</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -29,7 +29,7 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
-  min-width: 500px; /* 調整最小寬度，移除學號欄位 */
+  min-width: 500px;
 }
 
 .reservation-table th,
@@ -54,19 +54,18 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
 }
 
 .reservation-table th:nth-child(1),
-.reservation-table td:nth-child(1) { width: 120px; text-align: center; } /* 日期 */
+.reservation-table td:nth-child(1) { width: 120px; text-align: center; }
 .reservation-table th:nth-child(2),
-.reservation-table td:nth-child(2) { width: 80px; text-align: center; }  /* 班次 */
+.reservation-table td:nth-child(2) { width: 80px; text-align: center; }
 .reservation-table th:nth-child(3),
-.reservation-table td:nth-child(3) { width: 100px; text-align: center; } /* 姓名 */
+.reservation-table td:nth-child(3) { width: 100px; text-align: center; }
 .reservation-table th:nth-child(4),
-.reservation-table td:nth-child(4) { width: 100px; text-align: center; } /* 狀態 */
+.reservation-table td:nth-child(4) { width: 100px; text-align: center; }
 
 .reservation-table tbody tr:hover {
   background-color: #f8fafc;
 }
 
-/* 移動端優化 */
 @media (max-width: 768px) {
   .reservation-table {
     font-size: 13px;
@@ -178,7 +177,6 @@ input, button { border-radius: 6px; }
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 const LIFF_ID = '2006590746-wgL4l54z';
 
-// 標準化狀態類型
 const RESERVATION_STATUS = {
   RESERVED: '已預約',
   CANCELLED: '已取消', 
@@ -201,7 +199,6 @@ async function init() {
     document.getElementById('userPicture').src = profile.pictureUrl;
     document.getElementById('userName').textContent = userName;
 
-    // 權限檢查
     const roleRes = await fetch(`${WORKER_URL}?mode=getRole&userId=${userId}`);
     const roleJson = await roleRes.json();
     if (roleJson.status !== 'success' || roleJson.role !== 'admin') {
@@ -244,7 +241,6 @@ function showTab(tabId){
   document.querySelector(`[data-tab="${tabId}"]`).classList.add('active-tab');
 }
 
-// 儀表板載入
 async function loadDashboard(){
   try{
     const res = await fetch(`${WORKER_URL}?mode=dashboard`);
@@ -257,61 +253,61 @@ async function loadDashboard(){
   }catch(e){ console.error('Dashboard 載入失敗:', e); }
 }
 
-// 修正資料排序
 function sortReservations(reservations) {
   return reservations.sort((a, b) => {
-    // 統一日期格式並轉換為 Date 物件
     const dateA = new Date(a.date.replace(/\//g, '-'));
     const dateB = new Date(b.date.replace(/\//g, '-'));
     
-    // 日期降序排列（最新的在上）
     if (dateA.getTime() !== dateB.getTime()) {
       return dateB.getTime() - dateA.getTime();
     }
     
-    // 班次排序規則：A1 → A2 → B1 → B2
     const shiftOrder = { 'A1': 1, 'A2': 2, 'B1': 3, 'B2': 4 };
     return (shiftOrder[a.route] || 99) - (shiftOrder[b.route] || 99);
   });
 }
 
-// 資料驗證和清理
+// 修正狀態判斷邏輯
 function validateReservationData(data) {
   return data.map(item => {
-    // 統一日期格式
     const standardizedDate = item.date ? item.date.replace(/\//g, '-') : '無日期';
     
-    // 驗證並標準化狀態
     let standardizedStatus = item.status;
-    if (!Object.values(RESERVATION_STATUS).includes(item.status)) {
-      // 根據狀態內容自動判斷
-      if (item.status.includes('取消')) {
-        standardizedStatus = RESERVATION_STATUS.CANCELLED;
-      } else if (item.status.includes('搭乘')) {
-        standardizedStatus = RESERVATION_STATUS.COMPLETED;
-      } else {
-        standardizedStatus = RESERVATION_STATUS.RESERVED;
-      }
+    
+    // 優先檢查簽到狀態 (J欄位)
+    if (item.checkin === 'Y' || item.checkedIn === true) {
+      standardizedStatus = RESERVATION_STATUS.COMPLETED;
+    }
+    // 其次檢查取消狀態
+    else if (item.status && item.status.includes('取消')) {
+      standardizedStatus = RESERVATION_STATUS.CANCELLED;
+    }
+    // 最後檢查搭乘狀態
+    else if (item.status && item.status.includes('搭乘')) {
+      standardizedStatus = RESERVATION_STATUS.COMPLETED;
+    }
+    // 預設為已預約
+    else {
+      standardizedStatus = RESERVATION_STATUS.RESERVED;
     }
     
     return {
       ...item,
       date: standardizedDate,
       status: standardizedStatus,
-      // 移除學號欄位
-      studentId: undefined
+      studentId: undefined // 移除學號
     };
-  }).filter(item => item.date !== '無日期'); // 過濾掉無日期的資料
+  }).filter(item => item.date !== '無日期');
 }
 
-// 預約查詢
 async function loadReservations(){
   try{
     const res = await fetch(`${WORKER_URL}?mode=reservations`);
     const data = await res.json();
     if(data.status==='success') {
-      // 處理資料：驗證 + 排序
+      console.log('原始資料:', data.reservations); // 除錯用
       const validatedData = validateReservationData(data.reservations);
+      console.log('驗證後資料:', validatedData); // 除錯用
       const sortedData = sortReservations(validatedData);
       allReservations = sortedData;
       renderReservations(sortedData);
@@ -319,7 +315,6 @@ async function loadReservations(){
   }catch(e){ console.error('查詢錯誤:', e); }
 }
 
-// 篩選功能
 function filterReservations() {
   const dateFilter = document.getElementById('dateFilter').value;
   const routeFilter = document.getElementById('routeFilter').value;
