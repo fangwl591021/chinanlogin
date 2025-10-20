@@ -65,13 +65,17 @@ input, button { border-radius: 6px; }
 
     <!-- ✅ 核銷功能 -->
     <section id="checkin" class="card hidden">
-      <h2 class="font-bold text-xl mb-4 text-green-900">✅ 乘客核銷</h2>
-      <div class="flex flex-col md:flex-row gap-3 items-center mb-4">
-        <input id="studentIdInput" type="text" placeholder="請輸入學號" class="flex-1 border px-3 py-2 text-gray-700">
-        <button onclick="checkinPassenger()" class="bg-green-700 text-white px-6 py-2 font-bold">核銷</button>
-      </div>
-      <div id="checkinResult" class="text-center text-gray-600"></div>
-    </section>
+  <h2 class="font-bold text-xl mb-4 text-green-900">✅ 乘客核銷</h2>
+  
+  <div class="text-center mb-4">
+    <button onclick="openCheckinPage()" class="bg-green-700 hover:bg-green-800 text-white font-bold px-6 py-3 rounded-lg shadow">
+      🧾 開啟核銷頁面
+    </button>
+  </div>
+  
+  <p class="text-gray-500 text-center text-sm">按下後將開啟 LINE LIFF 核銷頁面</p>
+</section>
+
 
     <!-- 系統設定 -->
     <section id="settings" class="card hidden">
