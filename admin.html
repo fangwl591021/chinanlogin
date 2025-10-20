@@ -274,8 +274,7 @@ table tbody tr:hover {
   <section id="sectionCheckin" class="section">
     <div class="card">
       <h2 class="section-title">✅ 核銷管理</h2>
-      <p style="color:#666;font-size:14px;margin-bottom:12px;">進入司機核銷系統進行核銷作業</p>
-      <button onclick="window.open('https://liff.line.me/2006590746-A8YD0ZD9', '_blank')" class="link-btn" style="cursor:pointer;">前往核銷系統 🚐</button>
+      <div class="loading"><p>轉向核銷系統中...</p></div>
     </div>
   </section>
 
@@ -364,23 +363,22 @@ async function initLine() {
   
   if (typeof liff === 'undefined') {
     document.getElementById('userName').textContent = '(LIFF 未載入)';
-    return;
-  }
-  
-  try {
-    await liff.init({ liffId: '2006590746-A8YD0ZD9' });
-    
-    if (!liff.isLoggedIn()) {
-      liff.login();
-      return;
+  } else {
+    try {
+      await liff.init({ liffId: '2006590746-A8YD0ZD9' });
+      
+      if (!liff.isLoggedIn()) {
+        liff.login();
+        return;
+      }
+      
+      const profile = await liff.getProfile();
+      document.getElementById('userName').textContent = profile.displayName;
+      document.getElementById('userPicture').src = profile.pictureUrl;
+    } catch (e) {
+      console.error('LINE 初始化失敗:', e);
+      document.getElementById('userName').textContent = '(錯誤)';
     }
-    
-    const profile = await liff.getProfile();
-    document.getElementById('userName').textContent = profile.displayName;
-    document.getElementById('userPicture').src = profile.pictureUrl;
-  } catch (e) {
-    console.error('LINE 初始化失敗:', e);
-    document.getElementById('userName').textContent = '(錯誤)';
   }
   
   await loadReservations();
@@ -455,6 +453,13 @@ function setupNav() {
       // 查詢頁面載入表格
       if (sectionId === 'sectionQuery') {
         renderTable(allReservations);
+      }
+      
+      // 核銷頁面自動跳轉
+      if (sectionId === 'sectionCheckin') {
+        setTimeout(() => {
+          window.location.href = 'https://liff.line.me/2006590746-A8YD0ZD9';
+        }, 500);
       }
     });
   });
