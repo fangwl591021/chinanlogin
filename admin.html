@@ -189,28 +189,19 @@ function setupButtons() {
         return;
       }
       
+      // 查詢按鈕直接跳轉
+      if (sec === 'query') {
+        window.location.href = 'https://liff.line.me/2006590746-G7B12a1K';
+        return;
+      }
+      
       // 其他按鈕在後台內切換
       document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
       this.classList.add('active');
       
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       document.getElementById(sec).classList.add('active');
-      
-      if (sec === 'query') {
-        renderTable(data);
-      }
     });
-  });
-  
-  // 搜尋
-  document.getElementById('search').addEventListener('input', (e) => {
-    const q = e.target.value.toLowerCase();
-    const filtered = data.filter(r =>
-      (r.name || '').toLowerCase().includes(q) ||
-      (r.date || '').includes(q) ||
-      (r.route || '').includes(q)
-    );
-    renderTable(filtered);
   });
 }
 
