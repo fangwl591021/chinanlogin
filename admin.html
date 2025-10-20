@@ -3,21 +3,21 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台系統 v6.4.1</title>
+<title>穿山甲專車後台系統 v6.4.2</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
 body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334155; }
 .nav-btn { flex: 1; text-align: center; padding: 10px 0; font-weight: 600; cursor: pointer; transition: all 0.2s; }
 .active-tab { background: #14532d; color: white; border-radius: 12px; }
-.status-ok { color: #16a34a; font-weight: 700; }
-.status-cancel { color: #dc2626; font-weight: 700; }
-.status-wait { color: #ca8a04; font-weight: 700; }
+.status-reserved { color: #16a34a; font-weight: 700; }
+.status-cancelled { color: #dc2626; font-weight: 700; }
+.status-completed { color: #2563eb; font-weight: 700; }
 .card { background:white; border-radius:16px; padding:24px; box-shadow:0 2px 10px rgba(0,0,0,0.08); margin:16px auto; max-width:900px; margin-bottom: 100px; }
 .toast { position: fixed; bottom: 80px; right: 20px; background: #16a34a; color: white; padding: 10px 20px; border-radius: 8px; opacity: 0; transition: opacity .3s ease-in-out; }
 .toast.show { opacity: 1; }
 
-/* 問題一：表格響應式設計 */
+/* 表格響應式設計 */
 .reservation-table-container {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -29,7 +29,7 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
-  min-width: 600px; /* 確保表格有最小寬度 */
+  min-width: 500px; /* 調整最小寬度，移除學號欄位 */
 }
 
 .reservation-table th,
@@ -56,13 +56,11 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
 .reservation-table th:nth-child(1),
 .reservation-table td:nth-child(1) { width: 120px; text-align: center; } /* 日期 */
 .reservation-table th:nth-child(2),
-.reservation-table td:nth-child(2) { width: 60px; text-align: center; }  /* 班次 */
+.reservation-table td:nth-child(2) { width: 80px; text-align: center; }  /* 班次 */
 .reservation-table th:nth-child(3),
-.reservation-table td:nth-child(3) { width: 80px; text-align: center; }  /* 姓名 */
+.reservation-table td:nth-child(3) { width: 100px; text-align: center; } /* 姓名 */
 .reservation-table th:nth-child(4),
-.reservation-table td:nth-child(4) { width: 100px; text-align: center; } /* 學號 */
-.reservation-table th:nth-child(5),
-.reservation-table td:nth-child(5) { width: 80px; text-align: center; }  /* 狀態 */
+.reservation-table td:nth-child(4) { width: 100px; text-align: center; } /* 狀態 */
 
 .reservation-table tbody tr:hover {
   background-color: #f8fafc;
@@ -122,6 +120,24 @@ input, button { border-radius: 6px; }
     <!-- 查詢紀錄 -->
     <section id="records" class="card hidden">
       <h2 class="font-bold text-xl mb-4 text-green-900">📅 預約紀錄查詢</h2>
+      <div class="mb-4 flex space-x-2">
+        <input type="date" id="dateFilter" class="border p-2 rounded flex-1">
+        <select id="routeFilter" class="border p-2 rounded">
+          <option value="">全部班次</option>
+          <option value="A1">A1</option>
+          <option value="A2">A2</option>
+          <option value="B1">B1</option>
+          <option value="B2">B2</option>
+        </select>
+        <select id="statusFilter" class="border p-2 rounded">
+          <option value="">全部狀態</option>
+          <option value="已預約">已預約</option>
+          <option value="已取消">已取消</option>
+          <option value="已搭乘">已搭乘</option>
+        </select>
+        <button onclick="filterReservations()" class="bg-green-600 text-white px-4 py-2 rounded">篩選</button>
+        <button onclick="clearFilters()" class="bg-gray-500 text-white px-4 py-2 rounded">清除</button>
+      </div>
       <div id="recordsArea" class="reservation-table-container"></div>
     </section>
 
@@ -162,13 +178,14 @@ input, button { border-radius: 6px; }
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 const LIFF_ID = '2006590746-wgL4l54z';
 
-// 問題三：標準化狀態類型
+// 標準化狀態類型
 const RESERVATION_STATUS = {
   RESERVED: '已預約',
   CANCELLED: '已取消', 
-  COMPLETED: '已搭乘',
-  EXPIRED: '已過期'
+  COMPLETED: '已搭乘'
 };
+
+let allReservations = [];
 
 document.addEventListener('click', e=>{
   const tab = e.target.closest('[data-tab]');
@@ -213,10 +230,8 @@ async function init() {
 function openCheckinPage() {
   const checkinUrl = 'https://liff.line.me/2006590746-G7B12a1K';
   try {
-    // 優先使用 LIFF 開啟（LINE 內）
     liff.openWindow({ url: checkinUrl, external: false });
   } catch (e) {
-    // 若不在 LINE 內，改用瀏覽器開啟
     window.open(checkinUrl, '_blank');
   }
 }
@@ -242,7 +257,7 @@ async function loadDashboard(){
   }catch(e){ console.error('Dashboard 載入失敗:', e); }
 }
 
-// 問題二：修正資料排序
+// 修正資料排序
 function sortReservations(reservations) {
   return reservations.sort((a, b) => {
     // 統一日期格式並轉換為 Date 物件
@@ -260,25 +275,33 @@ function sortReservations(reservations) {
   });
 }
 
-// 問題三：資料驗證和清理
+// 資料驗證和清理
 function validateReservationData(data) {
   return data.map(item => {
     // 統一日期格式
-    const standardizedDate = item.date.replace(/\//g, '-');
+    const standardizedDate = item.date ? item.date.replace(/\//g, '-') : '無日期';
     
     // 驗證並標準化狀態
     let standardizedStatus = item.status;
     if (!Object.values(RESERVATION_STATUS).includes(item.status)) {
-      // 如果狀態不在預定義列表中，根據邏輯設置默認狀態
-      standardizedStatus = RESERVATION_STATUS.RESERVED;
+      // 根據狀態內容自動判斷
+      if (item.status.includes('取消')) {
+        standardizedStatus = RESERVATION_STATUS.CANCELLED;
+      } else if (item.status.includes('搭乘')) {
+        standardizedStatus = RESERVATION_STATUS.COMPLETED;
+      } else {
+        standardizedStatus = RESERVATION_STATUS.RESERVED;
+      }
     }
     
     return {
       ...item,
       date: standardizedDate,
-      status: standardizedStatus
+      status: standardizedStatus,
+      // 移除學號欄位
+      studentId: undefined
     };
-  });
+  }).filter(item => item.date !== '無日期'); // 過濾掉無日期的資料
 }
 
 // 預約查詢
@@ -290,9 +313,34 @@ async function loadReservations(){
       // 處理資料：驗證 + 排序
       const validatedData = validateReservationData(data.reservations);
       const sortedData = sortReservations(validatedData);
+      allReservations = sortedData;
       renderReservations(sortedData);
     }
   }catch(e){ console.error('查詢錯誤:', e); }
+}
+
+// 篩選功能
+function filterReservations() {
+  const dateFilter = document.getElementById('dateFilter').value;
+  const routeFilter = document.getElementById('routeFilter').value;
+  const statusFilter = document.getElementById('statusFilter').value;
+
+  const filtered = allReservations.filter(reservation => {
+    const matchDate = !dateFilter || reservation.date === dateFilter;
+    const matchRoute = !routeFilter || reservation.route === routeFilter;
+    const matchStatus = !statusFilter || reservation.status === statusFilter;
+    
+    return matchDate && matchRoute && matchStatus;
+  });
+
+  renderReservations(filtered);
+}
+
+function clearFilters() {
+  document.getElementById('dateFilter').value = '';
+  document.getElementById('routeFilter').value = '';
+  document.getElementById('statusFilter').value = '';
+  renderReservations(allReservations);
 }
 
 function renderReservations(list){
@@ -308,46 +356,23 @@ function renderReservations(list){
         <th>日期</th>
         <th>班次</th>
         <th>姓名</th>
-        <th>學號</th>
         <th>狀態</th>
       </tr>
     </thead>
     <tbody>
       ${list.map(r=>{
-        const cls = r.status.includes('取消')?'status-cancel':
-                    r.status.includes('搭乘')?'status-ok':'status-wait';
+        const cls = r.status === '已取消' ? 'status-cancelled' :
+                   r.status === '已搭乘' ? 'status-completed' : 'status-reserved';
         return `<tr>
           <td>${r.date}</td>
           <td>${r.route}</td>
-          <td>${r.name||'-'}</td>
-          <td>${r.studentId||'-'}</td>
+          <td>${r.name || '-'}</td>
           <td class="${cls}">${r.status}</td>
         </tr>`;
       }).join('')}
     </tbody>
   </table>`;
   document.getElementById('recordsArea').innerHTML = html;
-}
-
-// ✅ 核銷功能
-async function checkinPassenger(){
-  const studentId = document.getElementById('studentIdInput').value.trim();
-  if(!studentId){ alert('請輸入學號'); return; }
-
-  try{
-    const res = await fetch(`${WORKER_URL}?mode=checkin&studentId=${encodeURIComponent(studentId)}`);
-    const data = await res.json();
-
-    if(data.status==='success'){
-      document.getElementById('checkinResult').innerHTML = `<p class="text-green-700 font-bold">✅ ${data.message || '核銷成功'}</p>`;
-      showToast('核銷成功');
-      loadDashboard();
-    }else{
-      document.getElementById('checkinResult').innerHTML = `<p class="text-red-600 font-bold">❌ ${data.message || '找不到該預約'}</p>`;
-    }
-  }catch(e){
-    document.getElementById('checkinResult').innerHTML = `<p class="text-red-600">⚠️ 錯誤：${e.message}</p>`;
-  }
 }
 
 function showToast(msg){
