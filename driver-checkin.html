@@ -148,52 +148,53 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
   </div>
 
   <!-- 行車路線圖 -->
-  <div class="route-map-section">
-    <div class="route-header">
-      <h2>🚏 行車路線示意圖</h2>
-      <button id="toggle-route">收合</button>
+<div class="route-map-section">
+  <div class="route-header">
+    <h2>🚏 行車路線示意圖</h2>
+    <button id="toggle-route">展開</button>
+  </div>
+
+  <div id="route-content" style="display:none;">
+    <div class="route-line a-line">
+      <h3>🅰️ A線（暨大 → 埔里總站）</h3>
+      <div class="stops">
+        <span>行政大樓</span><span class="arrow">➔</span>
+        <span>中餐廳</span><span class="arrow">➔</span>
+        <span>科技學院</span><span class="arrow">➔</span>
+        <span>學人會館</span><span class="arrow">➔</span>
+        <span>中城</span><span class="arrow">➔</span>
+        <span>下城</span><span class="arrow">➔</span>
+        <span>坪頂</span><span class="arrow">➔</span>
+        <span>愛蘭橋</span><span class="arrow">➔</span>
+        <span>大成國小</span><span class="arrow">➔</span>
+        <span>中山安七街口</span><span class="arrow">➔</span>
+        <span>榮民診所</span><span class="arrow">➔</span>
+        <strong>埔里酒廠</strong><span class="arrow">➔</span>
+        <strong>埔里總站</strong>
+      </div>
     </div>
 
-    <div id="route-content">
-      <div class="route-line a-line">
-        <h3>🅰️ A線（暨大 → 埔里總站）</h3>
-        <div class="stops">
-          <span>行政大樓</span><span class="arrow">➔</span>
-          <span>中餐廳</span><span class="arrow">➔</span>
-          <span>科技學院</span><span class="arrow">➔</span>
-          <span>學人會館</span><span class="arrow">➔</span>
-          <span>中城</span><span class="arrow">➔</span>
-          <span>下城</span><span class="arrow">➔</span>
-          <span>坪頂</span><span class="arrow">➔</span>
-          <span>愛蘭橋</span><span class="arrow">➔</span>
-          <span>大成國小</span><span class="arrow">➔</span>
-          <span>中山安七街口</span><span class="arrow">➔</span>
-          <span>榮民診所</span><span class="arrow">➔</span>
-          <strong>埔里酒廠</strong><span class="arrow">➔</span>
-          <strong>埔里總站</strong>
-        </div>
-      </div>
-
-      <div class="route-line b-line">
-        <h3>🅱️ B線（埔里總站 → 暨大）</h3>
-        <div class="stops">
-          <strong>埔里總站</strong><span class="arrow">➔</span>
-          <strong>埔里酒廠</strong><span class="arrow">➔</span>
-          <span>榮民診所</span><span class="arrow">➔</span>
-          <span>中山安七街口</span><span class="arrow">➔</span>
-          <span>大成國小</span><span class="arrow">➔</span>
-          <span>愛蘭橋</span><span class="arrow">➔</span>
-          <span>坪頂</span><span class="arrow">➔</span>
-          <span>下城</span><span class="arrow">➔</span>
-          <span>中城</span><span class="arrow">➔</span>
-          <span>學人會館</span><span class="arrow">➔</span>
-          <span>科技學院</span><span class="arrow">➔</span>
-          <span>中餐廳</span><span class="arrow">➔</span>
-          <strong>行政大樓</strong>
-        </div>
+    <div class="route-line b-line">
+      <h3>🅱️ B線（埔里總站 → 暨大）</h3>
+      <div class="stops">
+        <strong>埔里總站</strong><span class="arrow">➔</span>
+        <strong>埔里酒廠</strong><span class="arrow">➔</span>
+        <span>榮民診所</span><span class="arrow">➔</span>
+        <span>中山安七街口</span><span class="arrow">➔</span>
+        <span>大成國小</span><span class="arrow">➔</span>
+        <span>愛蘭橋</span><span class="arrow">➔</span>
+        <span>坪頂</span><span class="arrow">➔</span>
+        <span>下城</span><span class="arrow">➔</span>
+        <span>中城</span><span class="arrow">➔</span>
+        <span>學人會館</span><span class="arrow">➔</span>
+        <span>科技學院</span><span class="arrow">➔</span>
+        <span>中餐廳</span><span class="arrow">➔</span>
+        <strong>行政大樓</strong>
       </div>
     </div>
   </div>
+</div>
+
 
   <!-- 核銷列表 -->
   <div id="checkin-section" class="checkin-section">
