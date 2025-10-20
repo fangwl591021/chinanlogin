@@ -3,11 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v6.3.1</title>
+<title>穿山甲專車後台 v6.3.2</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
-body { font-family: "Noto Sans TC", system-ui, sans-serif; background:#f8fafc; padding-bottom:80px; }
+body { font-family: "Noto Sans TC", system-ui, sans-serif; background:#f8fafc; margin:0; }
+#loadingScreen { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:#f8fafc; flex-direction:column; color:#14532d; font-weight:bold; font-size:18px; }
+#app { display:none; }
 #topBar { position:sticky; top:0; background:#3c8050; color:white; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; }
 #userInfo { display:flex; align-items:center; gap:10px; }
 #userPicture { width:40px; height:40px; border-radius:50%; border:2px solid white; }
@@ -22,100 +24,105 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background:#f8fafc; p
 .toast.show { opacity:1; }
 .toast.success { background:#22c55e; }
 .toast.error { background:#ef4444; }
+.status-ok { color:#16a34a; font-weight:bold; }
+.status-cancel { color:#dc2626; font-weight:bold; }
+.status-wait { color:#ca8a04; font-weight:bold; }
 </style>
 </head>
 
 <body>
-<!-- 🔝 頂部 -->
-<div id="topBar">
-  <div class="font-bold text-lg">🚌 穿山甲後台系統</div>
-  <div id="userInfo">
-    <img id="userPicture" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect fill='%23ddd' width='40' height='40'/%3E%3C/svg%3E">
-    <span id="userName">載入中...</span>
+<div id="loadingScreen">
+  <div class="animate-pulse text-center">
+    <div class="text-3xl mb-3">🚌 穿山甲後台載入中...</div>
+    <div>請稍候驗證您的身分</div>
   </div>
 </div>
 
-<main>
-  <!-- 📊 儀表板 -->
-  <section id="dashboard" class="section active">
-    <div class="card">
-      <h2 class="section-title">📊 營運儀表板</h2>
-      <div id="statsArea">載入統計中...</div>
+<div id="app">
+  <!-- 🔝 頂部 -->
+  <div id="topBar">
+    <div class="font-bold text-lg">🚌 穿山甲後台系統</div>
+    <div id="userInfo">
+      <img id="userPicture" src="">
+      <span id="userName">載入中...</span>
     </div>
-  </section>
+  </div>
 
-  <!-- 🧾 查詢 -->
-  <section id="query" class="section">
-    <div class="card">
-      <h2 class="section-title">🧾 預約查詢</h2>
-      <input type="text" id="search" placeholder="搜尋姓名、班次或日期..." class="border border-gray-300 rounded-md p-2 w-full mb-3">
-      <div id="tableContainer" style="overflow-x:auto;">
-        <table class="min-w-full text-sm">
-          <thead class="bg-green-700 text-white">
-            <tr><th class="p-2">日期</th><th class="p-2">班次</th><th class="p-2">姓名</th><th class="p-2">狀態</th></tr>
-          </thead>
-          <tbody id="tbl"></tbody>
-        </table>
+  <main>
+    <!-- 📊 儀表板 -->
+    <section id="dashboard" class="section active">
+      <div class="card">
+        <h2 class="section-title">📊 營運儀表板</h2>
+        <div id="statsArea">載入中...</div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- 📋 核銷 -->
-  <section id="checkin" class="section">
-    <div class="card text-center">
-      <h2 class="section-title">📋 核銷管理</h2>
-      <button id="goCheckin" class="bg-green-600 text-white px-4 py-3 rounded w-full text-lg">前往核銷系統</button>
-      <p class="text-gray-500 mt-2 text-sm">開啟 LIFF：2006590746-G7B12a1K</p>
-    </div>
-  </section>
+    <!-- 🧾 查詢 -->
+    <section id="query" class="section">
+      <div class="card">
+        <h2 class="section-title">🧾 預約查詢</h2>
+        <input type="text" id="search" placeholder="搜尋姓名、班次或日期..." class="border border-gray-300 rounded-md p-2 w-full mb-3">
+        <div id="tableContainer" style="overflow-x:auto;">
+          <table class="min-w-full text-sm">
+            <thead class="bg-green-700 text-white sticky top-0">
+              <tr><th class="p-2">日期</th><th class="p-2">班次</th><th class="p-2">姓名</th><th class="p-2">狀態</th></tr>
+            </thead>
+            <tbody id="tbl"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
 
-  <!-- 🚐 司機 -->
-  <section id="driver" class="section">
-    <div class="card">
-      <h2 class="section-title">🚐 司機班表</h2>
-      <ul class="list-disc ml-6 text-gray-700">
-        <li>A1：陳司機</li><li>B1：林司機</li><li>A2：王司機</li><li>B2：吳司機</li>
-      </ul>
-    </div>
-  </section>
+    <!-- 📋 核銷 -->
+    <section id="checkin" class="section">
+      <div class="card text-center">
+        <h2 class="section-title">📋 核銷管理</h2>
+        <button id="goCheckin" class="bg-green-600 text-white px-4 py-3 rounded w-full text-lg">前往核銷系統</button>
+        <p class="text-gray-500 mt-2 text-sm">開啟 LIFF：2006590746-G7B12a1K</p>
+      </div>
+    </section>
 
-  <!-- ⚙️ 系統設定 -->
-  <section id="config" class="section">
-    <div class="card">
-      <h2 class="section-title">⚙️ 系統設定</h2>
-      <div id="ruleForm">
+    <!-- 🚐 司機 -->
+    <section id="driver" class="section">
+      <div class="card">
+        <h2 class="section-title">🚐 司機班表</h2>
+        <ul class="list-disc ml-6 text-gray-700">
+          <li>A1：陳司機</li><li>B1：林司機</li><li>A2：王司機</li><li>B2：吳司機</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ⚙️ 系統設定 -->
+    <section id="config" class="section">
+      <div class="card">
+        <h2 class="section-title">⚙️ 系統設定</h2>
         <label class="block mb-2">每班次搭載人數上限</label>
         <input id="seatLimit" type="number" class="border p-2 w-full mb-3 rounded" />
-
         <label class="block mb-2">未核銷達幾次後禁用</label>
         <input id="maxNoShow" type="number" class="border p-2 w-full mb-3 rounded" />
-
         <label class="block mb-2">禁用週數</label>
         <input id="banWeeks" type="number" class="border p-2 w-full mb-3 rounded" />
-
         <label class="block mb-2">預約模式</label>
         <select id="tripMode" class="border p-2 w-full mb-3 rounded">
           <option value="single">單程</option>
           <option value="round">可來回</option>
         </select>
-
         <button id="saveRules" class="bg-green-600 text-white font-bold py-2 px-4 rounded w-full">💾 儲存設定</button>
         <p id="ruleMeta" class="text-gray-500 text-sm mt-3"></p>
       </div>
-    </div>
-  </section>
-</main>
+    </section>
+  </main>
 
-<!-- 📱 底部導覽 -->
-<div id="bottomNav">
-  <div class="nav-btn active" data-sec="dashboard">📊 儀表板</div>
-  <div class="nav-btn" data-sec="query">🧾 查詢</div>
-  <div class="nav-btn" data-sec="checkin">📋 核銷</div>
-  <div class="nav-btn" data-sec="driver">🚐 司機</div>
-  <div class="nav-btn" data-sec="config">⚙️ 設定</div>
+  <!-- 📱 導覽列 -->
+  <div id="bottomNav">
+    <div class="nav-btn active" data-sec="dashboard">📊 儀表板</div>
+    <div class="nav-btn" data-sec="query">🧾 查詢</div>
+    <div class="nav-btn" data-sec="checkin">📋 核銷</div>
+    <div class="nav-btn" data-sec="driver">🚐 司機</div>
+    <div class="nav-btn" data-sec="config">⚙️ 設定</div>
+  </div>
 </div>
 
-<!-- 💬 Toast -->
 <div id="toast" class="toast"></div>
 
 <script>
@@ -123,94 +130,102 @@ const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 const LIFF_ID = '2006590746-wgL4l54z';
 let allData = [];
 
-/* 🧩 權限驗證模組 */
+/* 🚀 主流程 */
 document.addEventListener('DOMContentLoaded', async () => {
-  await liff.init({ liffId: LIFF_ID });
-  if (!liff.isLoggedIn()) return liff.login();
-  const profile = await liff.getProfile();
-  document.getElementById('userName').textContent = profile.displayName;
-  document.getElementById('userPicture').src = profile.pictureUrl;
-  const res = await fetch(`${WORKER_URL}?mode=getRole&userId=${profile.userId}`);
-  const data = await res.json();
-  if (data.role !== 'admin') {
-    showToast('🚫 無權限進入後台', 'error');
-    setTimeout(()=>liff.closeWindow(),2500);
-    return;
-  } else {
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) return liff.login();
+    const profile = await liff.getProfile();
+    const roleRes = await fetch(`${WORKER_URL}?mode=getRole&userId=${profile.userId}`);
+    const roleData = await roleRes.json();
+
+    if (roleData.role !== 'admin') {
+      showToast('🚫 無權限進入後台', 'error');
+      setTimeout(()=>liff.closeWindow(),2500);
+      return;
+    }
+
+    // ✅ 顯示主畫面
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
     document.getElementById('userName').textContent = profile.displayName + ' (管理員)';
+    document.getElementById('userPicture').src = profile.pictureUrl;
+
+    setupNav();
+    await loadReservations();
+    await loadRules();
+  } catch (e) {
+    console.error(e);
+    showToast('⚠️ 初始化錯誤','error');
   }
-  setupNav();
-  loadReservations();
-  loadRules();
 });
 
-/* 💬 Toast 模組 */
-function showToast(msg, type='success') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `toast show ${type}`;
+/* 💬 Toast */
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className=`toast show ${type}`;
   setTimeout(()=>t.classList.remove('show'),3000);
 }
 
-/* 📊 資料載入 */
-async function loadReservations() {
-  try {
-    const res = await fetch(`${WORKER_URL}?mode=reservations`);
-    const json = await res.json();
-    allData = json.reservations || [];
-    renderTable(allData);
-  } catch {
-    showToast('資料載入失敗', 'error');
-  }
-}
-
-/* 🔍 查詢 */
+/* 🔍 查詢表格 */
 function renderTable(data){
-  const tbody = document.getElementById('tbl');
-  tbody.innerHTML = data.map(r=>`
-    <tr>
+  const tbody=document.getElementById('tbl');
+  tbody.innerHTML=data.map(r=>{
+    let cls=r.status.includes('取消')?'status-cancel':(r.status.includes('搭乘')?'status-ok':'status-wait');
+    return `<tr>
       <td class="p-2">${r.date}</td>
       <td class="p-2">${r.route}</td>
       <td class="p-2">${r.name}</td>
-      <td class="p-2">${r.status}</td>
-    </tr>`).join('');
+      <td class="p-2 ${cls}">${r.status}</td>
+    </tr>`;
+  }).join('');
 }
+
+/* 📊 載入資料並排序 */
+async function loadReservations(){
+  try{
+    const res=await fetch(`${WORKER_URL}?mode=reservations`);
+    const json=await res.json();
+    allData=(json.reservations||[]).sort((a,b)=>{
+      if(a.date<b.date)return 1;
+      if(a.date>b.date)return -1;
+      const order=['A1','A2','B1','B2'];
+      return order.indexOf(a.route)-order.indexOf(b.route);
+    });
+    renderTable(allData);
+  }catch(e){showToast('❌ 資料載入失敗','error');}
+}
+
 document.getElementById('search').addEventListener('input',e=>{
-  const k = e.target.value.toLowerCase();
+  const k=e.target.value.toLowerCase();
   renderTable(allData.filter(r=>
-    r.name?.toLowerCase().includes(k) || r.route?.toLowerCase().includes(k) || r.date?.includes(k)
+    r.name?.toLowerCase().includes(k)||r.route?.toLowerCase().includes(k)||r.date?.includes(k)
   ));
 });
 
-/* ⚙️ 系統設定模組 */
+/* ⚙️ 規則 */
 async function loadRules(){
-  const res = await fetch(`${WORKER_URL}?mode=getRules`);
-  const json = await res.json();
-  const r = json.current;
-  document.getElementById('seatLimit').value = r.seatLimit;
-  document.getElementById('maxNoShow').value = r.maxNoShow;
-  document.getElementById('banWeeks').value = r.banWeeks;
-  document.getElementById('tripMode').value = r.tripMode;
-  document.getElementById('ruleMeta').textContent = `最後更新：${r.lastUpdate}`;
+  const res=await fetch(`${WORKER_URL}?mode=getRules`);
+  const json=await res.json();
+  const r=json.current;
+  seatLimit.value=r.seatLimit;
+  maxNoShow.value=r.maxNoShow;
+  banWeeks.value=r.banWeeks;
+  tripMode.value=r.tripMode;
+  ruleMeta.textContent=`最後更新：${r.lastUpdate}`;
 }
-document.getElementById('saveRules').addEventListener('click', async ()=>{
-  const body = {
-    seatLimit:+seatLimit.value,
-    maxNoShow:+maxNoShow.value,
-    banWeeks:+banWeeks.value,
-    tripMode:tripMode.value
-  };
-  try {
-    const res = await fetch(`${WORKER_URL}?mode=updateRules`,{
-      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
-    });
-    const json = await res.json();
-    if(json.status==='success'){ showToast('✅ 已成功更新設定','success'); loadRules(); }
+document.getElementById('saveRules').addEventListener('click',async()=>{
+  const body={seatLimit:+seatLimit.value,maxNoShow:+maxNoShow.value,banWeeks:+banWeeks.value,tripMode:tripMode.value};
+  try{
+    const res=await fetch(`${WORKER_URL}?mode=updateRules`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const json=await res.json();
+    if(json.status==='success'){showToast('✅ 已成功更新設定','success');loadRules();}
     else showToast('❌ 更新失敗','error');
-  } catch { showToast('❌ 連線錯誤','error'); }
+  }catch{showToast('❌ 連線錯誤','error');}
 });
 
-/* 導覽 */
+/* 📱 導覽 */
 function setupNav(){
   document.querySelectorAll('.nav-btn').forEach(btn=>{
     btn.addEventListener('click',()=>{
