@@ -140,6 +140,16 @@ async function init() {
       </div>`;
   }
 }
+function openCheckinPage() {
+  const checkinUrl = 'https://liff.line.me/2006590746-G7B12a1K';
+  try {
+    // 優先使用 LIFF 開啟（LINE 內）
+    liff.openWindow({ url: checkinUrl, external: false });
+  } catch (e) {
+    // 若不在 LINE 內，改用瀏覽器開啟
+    window.open(checkinUrl, '_blank');
+  }
+}
 
 function showTab(tabId){
   ['dashboard','records','checkin','settings'].forEach(id=>{
