@@ -460,6 +460,23 @@ async function init() {
       return;
     }
     
+    // 🔧 關鍵修復：確保 userData 存在且有正確結構
+    if (!userCheckResult.user) {
+      console.error('❌ userData 為空或未定義');
+      throw new Error('用戶資料載入失敗：userData 為空');
+    }
+    
+    userData = userCheckResult.user;
+    
+    // 安全檢查：確保 userData 有必要的屬性
+    if (!userData.name || !userData.studentId || !userData.department) {
+      console.warn('⚠️ 用戶資料不完整:', userData);
+      // 設置預設值避免後續錯誤
+      userData.name = userData.name || '未知用戶';
+      userData.studentId = userData.studentId || '未知學號';
+      userData.department = userData.department || '未知科系';
+    }
+    
     // 繼續載入其他資料...
     console.log('🔍 載入預約資料...');
     const resRes = await fetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`);
@@ -470,14 +487,23 @@ async function init() {
     await preloadCalendarData();
     console.log('✅ 月曆資料已預載');
 
-    userData = userCheckResult.user;
     existingReservations = reservationsResult.reservations || [];
     
-    // 更新用戶信息顯示
-    document.getElementById('userInfo').innerHTML = `
-      <div class="user-name">${userData.name}</div>
-      <div class="user-info">${userData.department} | ${userData.studentId}</div>
-    `;
+    // 🔧 安全更新用戶信息顯示
+    try {
+      document.getElementById('userInfo').innerHTML = `
+        <div class="user-name">${userData.name || '未知用戶'}</div>
+        <div class="user-info">${userData.department || '未知科系'} | ${userData.studentId || '未知學號'}</div>
+      `;
+    } catch (displayError) {
+      console.error('❌ 更新用戶信息顯示失敗:', displayError);
+      document.getElementById('userInfo').innerHTML = `
+        <div style="color: orange; text-align: center;">
+          <p>⚠️ 用戶信息顯示異常</p>
+          <p class="en-text-dark">User info display error</p>
+        </div>
+      `;
+    }
     
     // 直接渲染預約卡片
     renderCurrentReservationCard();
@@ -486,15 +512,29 @@ async function init() {
     
   } catch (error) {
     console.error('💥 初始化錯誤 Initialization error:', error);
+    
+    let errorMessage = '系統初始化失敗';
+    let errorMessageEn = 'System initialization failed';
+    
+    if (error.message.includes('userData')) {
+      errorMessage = '用戶資料載入失敗，請重新註冊';
+      errorMessageEn = 'User data loading failed, please re-register';
+    }
+    
     document.getElementById('userInfo').innerHTML = `
       <div style="color: red; text-align: center;">
-        <p>❌ 系統初始化失敗</p>
-        <p class="en-text-dark">System initialization failed</p>
+        <p>❌ ${errorMessage}</p>
+        <p class="en-text-dark">❌ ${errorMessageEn}</p>
         <p>錯誤: ${error.message}</p>
         <p class="en-text-dark">Error: ${error.message}</p>
-        <button onclick="location.reload()" style="padding: 10px; margin: 10px;">
-          重新加載
+        <button onclick="location.reload()" style="padding: 10px; margin: 10px; background: #3c8050; color: white; border: none; border-radius: 6px;">
+          重新載入
           <span class="en-text-dark">Reload</span>
+        </button>
+        <br>
+        <button onclick="location.href='register.html'" style="padding: 10px; margin: 10px; background: #ff9800; color: white; border: none; border-radius: 6px;">
+          重新註冊
+          <span class="en-text-dark">Re-register</span>
         </button>
       </div>
     `;
