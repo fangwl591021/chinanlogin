@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v5.2</title>
+<title>穿山甲專車後台 v5.4</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -17,204 +17,118 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
 .section { display: none; }
 .section.active { display: block; }
 #bottomNav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; display: flex; }
-.nav-btn { flex: 1; padding: 10px 0; text-align: center; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #666; }
+.nav-btn { flex: 1; padding: 10px 0; text-align: center; font-size: 12px; font-weight: 600; cursor: pointer; color: #666; }
 .nav-btn.active { color: #3c8050; border-top: 3px solid #3c8050; }
-.stat-box { background: linear-gradient(135deg, #3c8050, #2d5f3f); color: white; padding: 16px; border-radius: 8px; margin-bottom: 12px; text-align: center; }
-.stat-label { font-size: 12px; opacity: 0.8; }
-.stat-value { font-size: 32px; font-weight: 800; margin-top: 4px; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-table thead { background: #3c8050; color: white; }
-table th, table td { padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb; }
 .status-reserved { color: #3c8050; font-weight: 600; }
 .status-cancelled { color: #ef4444; font-weight: 600; }
 .status-completed { color: #10b981; font-weight: 600; }
-.loading {
-  text-align:center; padding:20px; color:#666; font-size:15px;
-}
+.loading { text-align: center; color: #888; padding: 20px; font-size: 16px; }
 </style>
 </head>
 
 <body>
-
-<!-- 🔝 頂部資訊條 -->
+<!-- 頂部 -->
 <div id="topBar">
   <div style="font-weight: bold; font-size: 18px;">🚌 穿山甲後台</div>
   <div id="userInfo">
     <img id="userPicture" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect fill='%23ddd' width='40' height='40'/%3E%3C/svg%3E" alt="頭像">
-    <span id="userName">登入中...</span>
+    <span id="userName">載入中...</span>
   </div>
 </div>
 
-<!-- 🧭 主內容 -->
 <main>
-  <!-- 📊 儀表板 -->
-  <section id="dash" class="section active">
-    <div class="card">
-      <h2 class="section-title">📊 營運儀表板</h2>
-      <div class="stat-box"><div class="stat-label">總預約數</div><div class="stat-value" id="stat1">--</div></div>
-      <div class="stat-box"><div class="stat-label">今日預約</div><div class="stat-value" id="stat2">--</div></div>
-      <div class="stat-box"><div class="stat-label">核銷率</div><div class="stat-value" id="stat3">--%</div></div>
-    </div>
-  </section>
-
-  <!-- 🧾 查詢 -->
-  <section id="query" class="section">
+  <!-- 查詢 -->
+  <section id="query" class="section active">
     <div class="card">
       <h2 class="section-title">🧾 預約查詢</h2>
-      <input type="text" id="search" placeholder="搜尋姓名、班次或日期..." style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; margin-bottom:12px;">
-      <div style="overflow-x: auto;">
-        <table>
-          <thead><tr><th>日期</th><th>班次</th><th>姓名</th><th>狀態</th></tr></thead>
-          <tbody id="tbl"><tr><td colspan="4" class="loading">🔍 查詢中...</td></tr></tbody>
+      <input type="text" id="search" placeholder="搜尋姓名、班次或日期..." class="border border-gray-300 rounded-md p-2 w-full mb-3">
+      <div id="loadingText" class="loading">⏳ 查詢中...</div>
+      <div id="tableContainer" style="overflow-x:auto; display:none;">
+        <table class="min-w-full text-sm">
+          <thead class="bg-green-700 text-white">
+            <tr>
+              <th class="p-2">日期</th>
+              <th class="p-2">班次</th>
+              <th class="p-2">姓名</th>
+              <th class="p-2">狀態</th>
+            </tr>
+          </thead>
+          <tbody id="tbl"></tbody>
         </table>
       </div>
     </div>
   </section>
 
-  <!-- ✅ 核銷 -->
-  <section id="check" class="section">
+  <!-- 儀表板 -->
+  <section id="dash" class="section">
     <div class="card">
-      <h2 class="section-title">✅ 核銷管理</h2>
-      <p>此功能會開啟專屬核銷 LIFF 頁面。</p>
+      <h2 class="section-title">📊 營運儀表板</h2>
+      <p>未來將顯示預約統計。</p>
     </div>
   </section>
 
-  <!-- 🚐 司機 -->
-  <section id="driver" class="section">
-    <div class="card">
-      <h2 class="section-title">🚐 司機班表</h2>
-      <ul style="list-style:none;">
-        <li style="padding:8px 0;">A1 - 陳司機</li>
-        <li style="padding:8px 0;">A2 - 王司機</li>
-        <li style="padding:8px 0;">B1 - 吳司機</li>
-        <li style="padding:8px 0;">B2 - 李司機</li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- ⚙️ 設定 -->
+  <!-- 設定 -->
   <section id="config" class="section">
     <div class="card">
-      <h2 class="section-title">⚙️ 營運設定</h2>
-      <p>Admin 專用功能</p>
+      <h2 class="section-title">⚙️ 系統設定</h2>
+      <p>Admin 專用功能。</p>
     </div>
   </section>
 </main>
 
-<!-- 📱 底部導覽列 -->
+<!-- 底部導覽 -->
 <div id="bottomNav">
-  <button class="nav-btn active" data-sec="dash">📊 儀表板</button>
-  <button class="nav-btn" data-sec="query">🧾 查詢</button>
-  <button class="nav-btn" data-sec="check">✅ 核銷</button>
-  <button class="nav-btn" data-sec="driver">🚐 司機</button>
-  <button class="nav-btn" data-sec="config">⚙️ 設定</button>
+  <div class="nav-btn active" data-sec="query">🧾 查詢</div>
+  <div class="nav-btn" data-sec="dash">📊 儀表板</div>
+  <div class="nav-btn" data-sec="config">⚙️ 設定</div>
 </div>
 
 <script>
-const LIFF_ID = '2006590746-wgL4l54z';
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/?mode=reservations';
 let data = [];
-let isDev = location.search.includes('dev');
 
-document.addEventListener('DOMContentLoaded', init);
-
-function init() {
-  if (isDev) {
-    document.getElementById('userName').textContent = '開發者模式';
-  } else {
-    initLINE();
-  }
+document.addEventListener('DOMContentLoaded', () => {
+  initLINE();
+  setupNav();
   loadData();
-  setupButtons();
-}
+});
 
+// === LIFF 初始化 ===
 async function initLINE() {
   try {
-    await liff.init({ liffId: LIFF_ID });
-    if (!liff.isLoggedIn()) { liff.login(); return; }
+    await liff.init({ liffId: '2006590746-wgL4l54z' });
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
     const profile = await liff.getProfile();
     document.getElementById('userName').textContent = profile.displayName;
     document.getElementById('userPicture').src = profile.pictureUrl;
-  } catch (err) {
-    console.error('LIFF 錯誤:', err);
-    document.getElementById('userName').textContent = '(登入失敗)';
+  } catch (e) {
+    document.getElementById('userName').textContent = '測試模式';
   }
 }
 
+// === 載入資料 ===
 async function loadData() {
-  const tbody = document.getElementById('tbl');
-  tbody.innerHTML = `<tr><td colspan="4" class="loading">🔍 查詢中...</td></tr>`;
+  document.getElementById('loadingText').style.display = 'block';
+  document.getElementById('tableContainer').style.display = 'none';
+  
   try {
     const res = await fetch(WORKER_URL);
     const result = await res.json();
     data = result.reservations || [];
-    if (!data.length) throw new Error('空資料');
-    updateStats();
-  } catch (err) {
-    console.warn('資料載入失敗，使用範例資料');
-    data = [
-      { date: '2025-10-19T22:00:00', route: 'A1', name: '王小明', status: 'reserved' },
-      { date: '2025-10-19T22:30:00', route: 'B1', name: '陳小華', status: 'completed' },
-      { date: '2025-10-19T23:00:00', route: 'A2', name: '李小美', status: 'cancelled' },
-      { date: '2025-10-19T23:30:00', route: 'B2', name: '林大偉', status: 'reserved' }
-    ];
-    updateStats();
+
+    renderTable(data);
+  } catch (e) {
+    console.error(e);
+    document.getElementById('loadingText').textContent = '❌ 無法取得資料';
   }
 }
 
-function updateStats() {
-  const total = data.filter(r => r.status !== 'cancelled').length;
-  const today = new Date().toISOString().split('T')[0];
-  const todayCount = data.filter(r => r.date?.includes(today) && r.status !== 'cancelled').length;
-  const completed = data.filter(r => r.status === 'completed').length;
-  const rate = total ? Math.round((completed / total) * 100) : 0;
-  document.getElementById('stat1').textContent = total;
-  document.getElementById('stat2').textContent = todayCount;
-  document.getElementById('stat3').textContent = rate + '%';
-}
-
-function setupButtons() {
-  document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const sec = this.dataset.sec;
-
-      if (sec === 'check') {
-        if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
-          liff.openWindow({ url: 'https://liff.line.me/2006590746-A8YD0ZD9', external: false });
-        } else {
-          window.open('https://liff.line.me/2006590746-A8YD0ZD9', '_blank');
-        }
-        return;
-      }
-
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
-      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-      document.getElementById(sec).classList.add('active');
-
-      if (sec === 'query') renderTable(data);
-    });
-  });
-
-  document.getElementById('search').addEventListener('input', function() {
-    const keyword = this.value.toLowerCase();
-    const filtered = keyword
-      ? data.filter(r =>
-          (r.name && r.name.toLowerCase().includes(keyword)) ||
-          (r.route && r.route.toLowerCase().includes(keyword)) ||
-          (r.date && r.date.toLowerCase().includes(keyword))
-        )
-      : data;
-    renderTable(filtered);
-  });
-}
-
-// ✅ 日期降冪（最新在上），同日 A1→B1→A2→B2
+// === 排序 + 顯示表格 ===
 function renderTable(rows) {
-  if (!Array.isArray(rows)) return;
   const order = { A1: 1, B1: 2, A2: 3, B2: 4 };
-
-  // ✅ 日期降冪（最近在上），同日 A1→B1→A2→B2
   rows.sort((a, b) => {
     const da = new Date(a.date);
     const db = new Date(b.date);
@@ -224,34 +138,52 @@ function renderTable(rows) {
 
   const tbody = document.getElementById('tbl');
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">暫無資料</td></tr>`;
-    return;
+    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 p-3">暫無資料</td></tr>`;
+  } else {
+    tbody.innerHTML = rows.map(r => {
+      const dateStr = r.date ? new Date(r.date).toISOString().slice(5,10).replace('-', '-') : '';
+      let statusText = '已預約', statusClass = 'status-reserved';
+      if (r.status === 'cancelled' || r.status === '已取消') {
+        statusText = '已取消'; statusClass = 'status-cancelled';
+      } else if (r.status === 'completed' || r.status === '已搭乘' || r.status === '簽到') {
+        statusText = '已搭乘'; statusClass = 'status-completed';
+      }
+      return `
+        <tr>
+          <td class="p-2">${dateStr}</td>
+          <td class="p-2">${r.route || ''}</td>
+          <td class="p-2">${r.name || ''}</td>
+          <td class="p-2 ${statusClass}">${statusText}</td>
+        </tr>`;
+    }).join('');
   }
 
-  tbody.innerHTML = rows.map(r => {
-    let statusText = '已預約', statusClass = 'status-reserved';
-    if (r.status === 'cancelled' || r.status === '已取消') {
-      statusText = '已取消';
-      statusClass = 'status-cancelled';
-    } else if (r.status === 'completed' || r.status === '已搭乘' || r.status === '簽到') {
-      statusText = '已搭乘';
-      statusClass = 'status-completed';
-    }
-
-    // ✅ 顯示月日
-    const dateStr = r.date ? new Date(r.date).toISOString().slice(5, 10).replace('-', '-') : '';
-
-    return `
-      <tr>
-        <td>${dateStr}</td>
-        <td>${r.route || ''}</td>
-        <td>${r.name || ''}</td>
-        <td class="${statusClass}">${statusText}</td>
-      </tr>`;
-  }).join('');
+  document.getElementById('loadingText').style.display = 'none';
+  document.getElementById('tableContainer').style.display = 'block';
 }
 
+// === 搜尋 ===
+document.getElementById('search').addEventListener('input', e => {
+  const keyword = e.target.value.toLowerCase();
+  const filtered = data.filter(r =>
+    (r.name && r.name.toLowerCase().includes(keyword)) ||
+    (r.route && r.route.toLowerCase().includes(keyword)) ||
+    (r.date && r.date.includes(keyword))
+  );
+  renderTable(filtered);
+});
 
+// === 底部導覽 ===
+function setupNav() {
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+      document.getElementById(btn.dataset.sec).classList.add('active');
+    });
+  });
+}
 </script>
 </body>
 </html>
