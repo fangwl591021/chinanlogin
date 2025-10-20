@@ -189,12 +189,13 @@ function getStatusText(record) {
 // === 渲染表格 ===
 function renderTable(data) {
   const order = { A1:1, B1:2, A2:3, B2:4 };
-  data.sort((a,b)=>{
-    const da = new Date(a.date || a.a);
-    const db = new Date(b.date || b.a);
-    if (db - da !== 0) return db - da;
-    return (order[a.route || a.d]||99) - (order[b.route || b.d]||99);
-  });
+  // ✅ 正確排序：從今天往後依序排列（近 → 遠）
+data.sort((a,b)=>{
+  const da = new Date(a.date);
+  const db = new Date(b.date);
+  if (da - db !== 0) return da - db;   // 今天最上方，未來依序往下
+  return (order[a.route] || 99) - (order[b.route] || 99); // 同日 A1→B1→A2→B2
+});
 
   const tbody = document.getElementById('tbl');
   if(!data.length){
