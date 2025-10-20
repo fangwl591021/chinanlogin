@@ -496,11 +496,16 @@ function checkProfileCompleteness(userData) {
   const studentId = (userData.studentId || '').toString().trim();
   const department = (userData.department || '').toString().trim();
 
-  if (!name || !phone || !studentId || !department) {
-    alert('⚠️ 請先完成個人資料註冊。');
-    return false;
-  }
-  return true;
+  const missingFields = [];
+  if (!name) missingFields.push('姓名 Name');
+  if (!phone) missingFields.push('電話 Phone');
+  if (!studentId) missingFields.push('學號 Student ID');
+  if (!department) missingFields.push('科系 Department');
+
+  return {
+    isComplete: missingFields.length === 0,
+    missingFields: missingFields
+  };
 }
 
 
