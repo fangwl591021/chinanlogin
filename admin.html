@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v5.7</title>
+<title>穿山甲專車後台 v5.8</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -133,14 +133,8 @@ async function initLINE() {
     document.getElementById('userName').textContent = profile.displayName;
     document.getElementById('userPicture').src = profile.pictureUrl;
     userId = profile.userId;
-
-    // 查詢角色
-    const res = await fetch(`${WORKER_URL}?mode=check&userId=${userId}`);
-    const info = await res.json();
-    userRole = info.user?.role || 'user';
   } catch {
     document.getElementById('userName').textContent = '測試模式';
-    userRole = 'admin';
   }
 }
 
@@ -154,7 +148,6 @@ async function loadReservations() {
     const json = await res.json();
     allData = json.reservations || [];
     renderTable(allData);
-    updateStats();
   } catch (e) {
     document.getElementById('loadingText').textContent = '❌ 無法取得資料';
   }
@@ -162,18 +155,30 @@ async function loadReservations() {
 
 // === 渲染表格 ===
 function renderTable(data) {
+  const today = new Date();
   const order = { A1:1, B1:2, A2:3, B2:4 };
-  data.sort((a,b)=>{
+
+  // 過濾有效狀態、日期從今天開始往後
+  let filtered = data.filter(r => {
+    const d = new Date(r.date);
+    return (
+      d >= new Date(today.getFullYear(), today.getMonth(), today.getDate()) &&
+      ['已預約','已取消','已搭乘','cancelled','completed'].includes(r.status)
+    );
+  });
+
+  // 排序：日期升冪 → A1,B1,A2,B2
+  filtered.sort((a,b)=>{
     const da = new Date(a.date), db = new Date(b.date);
-    if (db - da !== 0) return db - da;
+    if (da - db !== 0) return da - db;
     return (order[a.route]||99)-(order[b.route]||99);
   });
 
   const tbody = document.getElementById('tbl');
-  if (!data.length) {
+  if (!filtered.length) {
     tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 p-3">暫無資料</td></tr>`;
   } else {
-    tbody.innerHTML = data.map(r=>{
+    tbody.innerHTML = filtered.map(r=>{
       const dateStr = r.date ? new Date(r.date).toISOString().slice(5,10) : '';
       let statusText='已預約', statusClass='status-reserved';
       if (r.status==='已取消'||r.status==='cancelled'){ statusText='已取消'; statusClass='status-cancelled'; }
@@ -183,53 +188,13 @@ function renderTable(data) {
           <td class="p-2">${dateStr}</td>
           <td class="p-2">${r.route||''}</td>
           <td class="p-2">${r.name||''}</td>
-          <td class="p-2 ${statusClass}" onclick="changeStatus('${r.id}','${r.status||'已預約'}')">${statusText}</td>
+          <td class="p-2 ${statusClass}">${statusText}</td>
         </tr>`;
     }).join('');
   }
 
   document.getElementById('loadingText').style.display='none';
   document.getElementById('tableContainer').style.display='block';
-}
-
-// === 點擊狀態修改（Admin） ===
-async function changeStatus(id, current) {
-  if (userRole !== 'admin') return;
-  const next = current === '已取消' ? '已搭乘' :
-               current === '已搭乘' ? '已預約' : '已取消';
-  if (!confirm(`確定將狀態改為「${next}」？`)) return;
-  try {
-    await fetch(WORKER_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ type:'updateStatus', id, status:next })
-    });
-    alert(`✅ 已更新狀態為「${next}」`);
-    loadReservations();
-  } catch (e) {
-    alert('❌ 更新失敗');
-  }
-}
-
-// === 搜尋 ===
-document.getElementById('search').addEventListener('input', e=>{
-  const key = e.target.value.toLowerCase();
-  const filtered = allData.filter(r =>
-    (r.name && r.name.toLowerCase().includes(key)) ||
-    (r.route && r.route.toLowerCase().includes(key)) ||
-    (r.date && r.date.includes(key))
-  );
-  renderTable(filtered);
-});
-
-// === 統計 ===
-function updateStats() {
-  const total = allData.length;
-  const cancelled = allData.filter(x=>x.status==='已取消'||x.status==='cancelled').length;
-  const completed = allData.filter(x=>x.status==='已搭乘'||x.status==='completed').length;
-  document.getElementById('statTotal').textContent = total;
-  document.getElementById('statCancelled').textContent = cancelled;
-  document.getElementById('statCompleted').textContent = completed;
 }
 
 // === 導覽 ===
@@ -243,7 +208,6 @@ function setupNav() {
     });
   });
 
-  // 📋 核銷直接開啟 LIFF
   document.getElementById('goCheckin').addEventListener('click',()=>{
     if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
       liff.openWindow({ url: CHECKIN_LIFF_URL, external: false });
