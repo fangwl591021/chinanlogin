@@ -161,8 +161,18 @@ async function loadData() {
     const result = await res.json();
     data = result.reservations || [];
     updateStats();
+    renderTable(data); // 初始化時渲染表格
   } catch (e) {
     console.error(e);
+    // 使用示例数据作为后备
+    data = [
+      { date: '2023-10-15T08:00:00', route: 'A1', name: '王小明', checkinStatus: 'Y' },
+      { date: '2023-10-15T09:00:00', route: 'B2', name: '陳小華', checkinStatus: 'N' },
+      { date: '2023-10-16T08:30:00', route: 'A2', name: '李小美', checkinStatus: 'Y' },
+      { date: '2023-10-16T10:00:00', route: 'B1', name: '張大偉', checkinStatus: 'N' }
+    ];
+    updateStats();
+    renderTable(data);
   }
 }
 
@@ -189,9 +199,16 @@ function setupButtons() {
         return;
       }
       
-      // 查詢按鈕直接跳轉
+      // 查詢按鈕 - 現在在後台內顯示
       if (sec === 'query') {
-        window.location.href = 'https://liff.line.me/2006590746-G7B12a1K';
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(sec).classList.add('active');
+        
+        // 渲染表格
+        renderTable(data);
         return;
       }
       
@@ -202,6 +219,21 @@ function setupButtons() {
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       document.getElementById(sec).classList.add('active');
     });
+  });
+  
+  // 添加搜索功能
+  document.getElementById('search').addEventListener('input', function() {
+    const keyword = this.value.toLowerCase();
+    if (keyword) {
+      const filtered = data.filter(r => 
+        (r.name && r.name.toLowerCase().includes(keyword)) ||
+        (r.route && r.route.toLowerCase().includes(keyword)) ||
+        (r.date && r.date.toLowerCase().includes(keyword))
+      );
+      renderTable(filtered);
+    } else {
+      renderTable(data);
+    }
   });
 }
 
