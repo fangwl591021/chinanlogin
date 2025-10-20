@@ -274,7 +274,7 @@ table tbody tr:hover {
   <section id="sectionCheckin" class="section">
     <div class="card">
       <h2 class="section-title">✅ 核銷管理</h2>
-      <div class="loading"><p>轉向核銷系統中...</p></div>
+      <p style="color:#666;font-size:14px;">此功能由司機在 LINE 核銷系統中操作。</p>
     </div>
   </section>
 
@@ -453,13 +453,6 @@ function setupNav() {
       // 查詢頁面載入表格
       if (sectionId === 'sectionQuery') {
         renderTable(allReservations);
-      }
-      
-      // 核銷頁面自動跳轉
-      if (sectionId === 'sectionCheckin') {
-        setTimeout(() => {
-          window.location.href = 'https://liff.line.me/2006590746-A8YD0ZD9';
-        }, 500);
       }
     });
   });
