@@ -116,8 +116,8 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
 
 <!-- 📱 底部導覽 -->
 <div id="bottomNav">
-  <div class="nav-btn active" data-sec="query">🧾 查詢</div>
-  <div class="nav-btn" data-sec="dashboard">📊 儀表板</div>
+  <div class="nav-btn" data-sec="query">🧾 查詢</div>
+  <div class="nav-btn active" data-sec="dashboard">📊 儀表板</div>
   <div class="nav-btn" data-sec="checkin">📋 核銷</div>
   <div class="nav-btn" data-sec="driver">🚐 司機</div>
   <div class="nav-btn" data-sec="config">⚙️ 設定</div>
@@ -135,6 +135,8 @@ async function init() {
   await initLINE();
   setupNav();
   loadReservations();
+  // 進入系統後預設停在儀表板
+  showSection('dashboard');
 }
 
 // === 初始化 LINE ===
@@ -159,24 +161,34 @@ async function loadReservations() {
     const res = await fetch(WORKER_URL + '?mode=reservations');
     const json = await res.json();
     allData = json.reservations || json.data || [];
+    
+    // 調試：打印第一筆數據結構
+    console.log('API 返回的數據結構:', allData[0]);
 
     renderTable(allData);
     updateStats(allData);
   } catch (e) {
+    console.error('錯誤:', e);
     document.getElementById('loadingText').textContent = '❌ 無法取得資料';
   }
 }
 
 // === 轉換狀態 ===
 function getStatusText(record) {
+  // 打印所有欄位用於調試
+  console.log('記錄:', record);
+  
   // j 欄位為 'Y' 表示已搭乘
   if (record.j && record.j.toUpperCase() === 'Y') {
+    console.log('已搭乘');
     return '已搭乘';
   }
   // h 欄位判斷已預約或已取消
   if (record.h === '已取消') {
+    console.log('已取消');
     return '已取消';
   }
+  console.log('已預約');
   return '已預約';
 }
 
@@ -240,10 +252,7 @@ document.getElementById('search').addEventListener('input', e=>{
 function setupNav(){
   document.querySelectorAll('.nav-btn').forEach(btn=>{
     btn.addEventListener('click',()=>{
-      document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-      document.getElementById(btn.dataset.sec).classList.add('active');
+      showSection(btn.dataset.sec);
     });
   });
   document.getElementById('goCheckin').addEventListener('click',()=>{
@@ -253,6 +262,13 @@ function setupNav(){
       window.open(CHECKIN_LIFF_URL,'_blank');
     }
   });
+}
+
+function showSection(sectionId) {
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`[data-sec="${sectionId}"]`).classList.add('active');
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(sectionId).classList.add('active');
 }
 </script>
 </body>
