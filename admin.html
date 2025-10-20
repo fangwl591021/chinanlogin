@@ -3,534 +3,227 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v4.0</title>
+<title>穿山甲專車後台 v5.0</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: "Noto Sans TC", system-ui, sans-serif;
-  background: #f8fafc;
-  color: #334155;
-  padding-bottom: 80px;
-}
-
-#topBar {
-  position: sticky;
-  top: 0;
-  background: #3c8050;
-  color: white;
-  padding: 12px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 50;
-}
-
-#userInfo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-#userPicture {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 2px solid white;
-}
-
-#userName {
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.card {
-  background: white;
-  border-radius: 12px;
-  padding: 16px;
-  margin: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.section-title {
-  font-weight: 800;
-  font-size: 18px;
-  color: #14532d;
-  margin-bottom: 16px;
-}
-
-.section {
-  display: none;
-}
-
-.section.show {
-  display: block;
-}
-
-#bottomNav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background: white;
-  border-top: 1px solid #ddd;
-  display: flex;
-  z-index: 50;
-}
-
-.nav-btn {
-  flex: 1;
-  padding: 10px 0;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 600;
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: #666;
-}
-
-.nav-btn.active {
-  color: #3c8050;
-  border-top: 3px solid #3c8050;
-}
-
-.stat-box {
-  background: linear-gradient(135deg, #3c8050, #2d5f3f);
-  color: white;
-  padding: 16px;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  text-align: center;
-}
-
-.stat-label {
-  font-size: 12px;
-  opacity: 0.8;
-}
-
-.stat-value {
-  font-size: 32px;
-  font-weight: 800;
-  margin-top: 4px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-table thead {
-  background: #3c8050;
-  color: white;
-}
-
-table th, table td {
-  padding: 8px;
-  text-align: left;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-table tbody tr:hover {
-  background: #f0f9ff;
-}
-
-.search-input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  margin-bottom: 12px;
-}
-
-.link-btn {
-  display: inline-block;
-  background: #3c8050;
-  color: white;
-  padding: 10px 16px;
-  border-radius: 6px;
-  text-decoration: none;
-  font-weight: 600;
-  margin-top: 12px;
-}
-
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-  z-index: 1000;
-}
-
-.modal.show {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 300px;
-}
-
-.modal-header {
-  font-size: 16px;
-  font-weight: 700;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #3c8050;
-}
-
-.modal-item {
-  margin-bottom: 10px;
-  font-size: 13px;
-}
-
-.modal-label {
-  color: #666;
-  font-size: 11px;
-}
-
-.modal-value {
-  font-weight: 600;
-}
-
-.close-btn {
-  width: 100%;
-  padding: 10px;
-  background: #e5e7eb;
-  border: none;
-  border-radius: 6px;
-  margin-top: 12px;
-  cursor: pointer;
-}
-
-.loading {
-  text-align: center;
-  padding: 40px 20px;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; padding-bottom: 80px; }
+#topBar { position: sticky; top: 0; background: #3c8050; color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+#userInfo { display: flex; align-items: center; gap: 10px; }
+#userPicture { width: 40px; height: 40px; border-radius: 50%; border: 2px solid white; }
+.card { background: white; border-radius: 12px; padding: 16px; margin: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.section-title { font-weight: 800; font-size: 18px; color: #14532d; margin-bottom: 16px; }
+.section { display: none; }
+.section.active { display: block; }
+#bottomNav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; display: flex; }
+.nav-btn { flex: 1; padding: 10px 0; text-align: center; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #666; }
+.nav-btn.active { color: #3c8050; border-top: 3px solid #3c8050; }
+.stat-box { background: linear-gradient(135deg, #3c8050, #2d5f3f); color: white; padding: 16px; border-radius: 8px; margin-bottom: 12px; text-align: center; }
+.stat-label { font-size: 12px; opacity: 0.8; }
+.stat-value { font-size: 32px; font-weight: 800; margin-top: 4px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table thead { background: #3c8050; color: white; }
+table th, table td { padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb; }
 </style>
 </head>
 
 <body>
 
-<!-- 頂部 -->
 <div id="topBar">
   <div style="font-weight: bold; font-size: 18px;">🚌 穿山甲後台</div>
   <div id="userInfo">
-    <img id="userPicture" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect fill='%23ccc' width='40' height='40'/%3E%3C/svg%3E" alt="頭像">
+    <img id="userPicture" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect fill='%23ddd' width='40' height='40'/%3E%3C/svg%3E" alt="頭像">
     <span id="userName">載入中...</span>
   </div>
 </div>
 
-<!-- 主內容 -->
-<main id="mainContent">
-
+<main>
   <!-- 儀表板 -->
-  <section id="sectionDashboard" class="section show">
+  <section id="dash" class="section active">
     <div class="card">
       <h2 class="section-title">📊 營運儀表板</h2>
-      <div id="statsContent">
-        <div class="loading"><p>載入統計數據...</p></div>
+      <div class="stat-box">
+        <div class="stat-label">總預約數</div>
+        <div class="stat-value" id="stat1">--</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">今日預約</div>
+        <div class="stat-value" id="stat2">--</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">核銷率</div>
+        <div class="stat-value" id="stat3">--%</div>
       </div>
     </div>
   </section>
 
   <!-- 查詢 -->
-  <section id="sectionQuery" class="section">
+  <section id="query" class="section">
     <div class="card">
       <h2 class="section-title">🧾 預約查詢</h2>
-      <input type="text" id="searchBox" class="search-input" placeholder="搜尋姓名 / 日期 / 班次...">
+      <input type="text" id="search" placeholder="搜尋..." style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; margin-bottom:12px;">
       <div style="overflow-x: auto;">
         <table>
-          <thead>
-            <tr>
-              <th>日期</th>
-              <th>班次</th>
-              <th>姓名</th>
-              <th>預約狀態</th>
-              <th>搭乘狀態</th>
-            </tr>
-          </thead>
-          <tbody id="queryTable"></tbody>
+          <thead><tr><th>日期</th><th>班次</th><th>姓名</th><th>狀態</th></tr></thead>
+          <tbody id="tbl"></tbody>
         </table>
       </div>
     </div>
   </section>
 
   <!-- 核銷 -->
-  <section id="sectionCheckin" class="section">
+  <section id="check" class="section">
+    <div class="card">
+      <h2 class="section-title">✅ 核銷管理</h2>
+      <p>此功能在核銷系統中操作</p>
+    </div>
   </section>
 
   <!-- 司機 -->
-  <section id="sectionDriver" class="section">
+  <section id="driver" class="section">
     <div class="card">
       <h2 class="section-title">🚐 司機班表</h2>
       <ul style="list-style:none;">
-        <li style="padding:8px 0;border-bottom:1px solid #eee;">A1 - 陳司機</li>
-        <li style="padding:8px 0;border-bottom:1px solid #eee;">A2 - 王司機</li>
-        <li style="padding:8px 0;border-bottom:1px solid #eee;">B1 - 吳司機</li>
-        <li style="padding:8px 0;border-bottom:1px solid #eee;">B2 - 李司機</li>
+        <li style="padding:8px 0;">A1 - 陳司機</li>
+        <li style="padding:8px 0;">A2 - 王司機</li>
+        <li style="padding:8px 0;">B1 - 吳司機</li>
+        <li style="padding:8px 0;">B2 - 李司機</li>
       </ul>
     </div>
   </section>
 
   <!-- 設定 -->
-  <section id="sectionConfig" class="section">
+  <section id="config" class="section">
     <div class="card">
       <h2 class="section-title">⚙️ 營運設定</h2>
-      <p>（Admin 專用功能）</p>
-      <button style="background:#3c8050;color:white;padding:10px 16px;border:none;border-radius:6px;font-weight:600;margin-top:12px;cursor:pointer;">💾 儲存設定</button>
+      <p>Admin 專用功能</p>
     </div>
   </section>
-
 </main>
 
-<!-- 底部導航 -->
 <div id="bottomNav">
-  <button class="nav-btn active" data-id="sectionDashboard">📊 儀表板</button>
-  <button class="nav-btn" data-id="sectionQuery">🧾 查詢</button>
-  <button class="nav-btn" data-id="sectionCheckin">✅ 核銷</button>
-  <button class="nav-btn" data-id="sectionDriver">🚐 司機</button>
-  <button class="nav-btn" data-id="sectionConfig">⚙️ 設定</button>
-</div>
-
-<!-- Modal -->
-<div id="infoModal" class="modal">
-  <div class="modal-content">
-    <div class="modal-header" id="modalName"></div>
-    <div class="modal-item">
-      <div class="modal-label">科系</div>
-      <div class="modal-value" id="modalDept"></div>
-    </div>
-    <div class="modal-item">
-      <div class="modal-label">學號</div>
-      <div class="modal-value" id="modalStuid"></div>
-    </div>
-    <div class="modal-item">
-      <div class="modal-label">電話</div>
-      <div class="modal-value"><a id="modalPhone" href="#"></a></div>
-    </div>
-    <button class="close-btn" onclick="closeModal()">關閉</button>
-  </div>
+  <button class="nav-btn active" data-sec="dash">📊 儀表板</button>
+  <button class="nav-btn" data-sec="query">🧾 查詢</button>
+  <button class="nav-btn" data-sec="check">✅ 核銷</button>
+  <button class="nav-btn" data-sec="driver">🚐 司機</button>
+  <button class="nav-btn" data-sec="config">⚙️ 設定</button>
 </div>
 
 <script>
-console.log('✅ 脚本开始加载');
+let data = [];
+let isDev = location.search.includes('dev');
 
-const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbza2qFcrQt1PS6Y4p4u2gSXovvFxWecEjjIh5ov1cIk_65zgdFJA0xjVuS3qr7WvlgAzA/exec';
+// 初始化
+document.addEventListener('DOMContentLoaded', init);
 
-let allReservations = [];
-let isDev = new URLSearchParams(window.location.search).has('dev');
-
-console.log('isDev:', isDev);
-
-// 确保页面加载完成后初始化
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('✅ DOMContentLoaded 触发');
+function init() {
+  console.log('初始化');
   
-  // 强制显示儀表板
-  const dashboard = document.getElementById('sectionDashboard');
-  const checkin = document.getElementById('sectionCheckin');
-  
-  if (dashboard) dashboard.classList.add('show');
-  if (checkin) checkin.classList.remove('show');
-  
-  console.log('✅ 儀表板已显示');
-  
-  setupNav();
-  loadReservations();
-  
-  if (!isDev) {
-    initLine();
+  if (isDev) {
+    document.getElementById('userName').textContent = '開發者';
   } else {
-    console.log('✅ 开发模式');
-    document.getElementById('userName').textContent = '开发者';
+    initLINE();
   }
-}, false);
-
-async function initLine() {
-  console.log('LINE 模式');
   
+  loadData();
+  setupButtons();
+}
+
+async function initLINE() {
   // 等待 LIFF
-  let count = 0;
-  while (typeof liff === 'undefined' && count < 20) {
-    await new Promise(r => setTimeout(r, 300));
-    count++;
+  for (let i = 0; i < 20; i++) {
+    if (typeof liff !== 'undefined') break;
+    await new Promise(r => setTimeout(r, 200));
   }
   
   if (typeof liff === 'undefined') {
-    document.getElementById('userName').textContent = '(LIFF 未載入)';
-  } else {
-    try {
-      await liff.init({ liffId: '2006590746-A8YD0ZD9' });
-      
-      if (!liff.isLoggedIn()) {
-        liff.login();
-        return;
-      }
-      
-      const profile = await liff.getProfile();
-      document.getElementById('userName').textContent = profile.displayName;
-      document.getElementById('userPicture').src = profile.pictureUrl;
-    } catch (e) {
-      console.error('LINE 初始化失敗:', e);
-      document.getElementById('userName').textContent = '(錯誤)';
-    }
+    document.getElementById('userName').textContent = '(LIFF 未加載)';
+    return;
   }
   
-  await loadReservations();
-}
-
-function initDev() {
-  console.log('開發模式');
-  document.getElementById('userName').textContent = '開發者';
-  loadReservations();
-}
-
-async function loadReservations() {
   try {
-    const res = await fetch(`${WORKER_URL}?mode=reservations`);
-    const data = await res.json();
-    allReservations = data.reservations || [];
+    await liff.init({ liffId: '2006590746-A8YD0ZD9' });
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+    const profile = await liff.getProfile();
+    document.getElementById('userName').textContent = profile.displayName;
+    document.getElementById('userPicture').src = profile.pictureUrl;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function loadData() {
+  try {
+    const res = await fetch('https://delicate-math-7e61.fangwl591021.workers.dev/?mode=reservations');
+    const result = await res.json();
+    data = result.reservations || [];
     updateStats();
   } catch (e) {
-    console.error('載入失敗:', e);
+    console.error(e);
   }
 }
 
 function updateStats() {
-  const total = allReservations.length;
+  const total = data.length;
   const today = new Date().toISOString().split('T')[0];
-  const todayCount = allReservations.filter(r => r.date?.includes(today)).length;
-  const checkedIn = allReservations.filter(r => r.checkinStatus === 'Y').length;
-  const rate = total > 0 ? Math.round((checkedIn / total) * 100) : 0;
+  const todayCount = data.filter(r => r.date?.includes(today)).length;
+  const checked = data.filter(r => r.checkinStatus === 'Y').length;
+  const rate = total ? Math.round((checked/total)*100) : 0;
   
-  document.getElementById('statsContent').innerHTML = `
-    <div class="stat-box">
-      <div class="stat-label">總預約數</div>
-      <div class="stat-value">${total}</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-label">今日預約</div>
-      <div class="stat-value">${todayCount}</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-label">核銷率</div>
-      <div class="stat-value">${rate}%</div>
-    </div>
-  `;
+  document.getElementById('stat1').textContent = total;
+  document.getElementById('stat2').textContent = todayCount;
+  document.getElementById('stat3').textContent = rate + '%';
 }
 
-function setupNav() {
-  console.log('✅ 设置导航');
-  
-  const navBtns = document.querySelectorAll('.nav-btn');
-  console.log('找到导航按钮数:', navBtns.length);
-  
-  navBtns.forEach((btn, idx) => {
-    console.log(`按钮 ${idx}:`, btn.dataset.id);
-    
-    btn.addEventListener('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
+function setupButtons() {
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const sec = this.dataset.sec;
       
-      const sectionId = this.dataset.id;
-      console.log('✅ 点击导航:', sectionId);
-      
-      // 核銷直接跳轉 - 修正：跳轉後立即返回
-      if (sectionId === 'sectionCheckin') {
-        console.log('🔴 执行跳转到核销系统');
+      // 核銷按鈕直接跳轉
+      if (sec === 'check') {
         window.location.href = 'https://liff.line.me/2006590746-A8YD0ZD9';
-        return; // 關鍵：立即返回，不執行後續代碼
+        return;
       }
       
-      console.log('切换到:', sectionId);
-      
-      navBtns.forEach(b => b.classList.remove('active'));
+      // 其他按鈕在後台內切換
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
       this.classList.add('active');
       
-      document.querySelectorAll('.section').forEach(s => s.classList.remove('show'));
-      document.getElementById(sectionId).classList.add('show');
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById(sec).classList.add('active');
       
-      if (sectionId === 'sectionQuery') {
-        renderTable(allReservations);
+      if (sec === 'query') {
+        renderTable(data);
       }
-    }, false);
+    });
   });
   
-  document.getElementById('searchBox').addEventListener('input', (e) => {
-    const query = e.target.value.toLowerCase();
-    const filtered = allReservations.filter(r =>
-      (r.name || '').toLowerCase().includes(query) ||
-      (r.date || '').includes(query) ||
-      (r.route || '').includes(query)
+  // 搜尋
+  document.getElementById('search').addEventListener('input', (e) => {
+    const q = e.target.value.toLowerCase();
+    const filtered = data.filter(r =>
+      (r.name || '').toLowerCase().includes(q) ||
+      (r.date || '').includes(q) ||
+      (r.route || '').includes(q)
     );
     renderTable(filtered);
   });
-  
-  document.getElementById('infoModal').addEventListener('click', (e) => {
-    if (e.target.id === 'infoModal') closeModal();
-  });
 }
 
-function renderTable(data) {
-  const tbody = document.getElementById('queryTable');
-  tbody.innerHTML = '';
-  
-  if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">暫無資料</td></tr>';
-    return;
-  }
-  
-  data.forEach(r => {
-    const date = r.date ? r.date.split('T')[0] : '';
-    const status = r.status === '已取消' ? '❌ 已取消' : '✅ 已預約';
-    const checkin = r.checkinStatus === 'Y' ? '🟢 已搭乘' : '⚪ 未搭乘';
-    
-    tbody.innerHTML += `
-      <tr>
-        <td>${date}</td>
-        <td>${r.route}</td>
-        <td style="color:#0066cc;cursor:pointer;text-decoration:underline;font-weight:600;" onclick="showInfo('${r.name}','${r.department || ''}','${r.studentId || ''}','${r.phone || ''}')">${r.name}</td>
-        <td>${status}</td>
-        <td>${checkin}</td>
-      </tr>
-    `;
-  });
-}
-
-function showInfo(name, dept, stuid, phone) {
-  document.getElementById('modalName').textContent = name;
-  document.getElementById('modalDept').textContent = dept || '未提供';
-  document.getElementById('modalStuid').textContent = stuid || '未提供';
-  
-  const phoneLink = document.getElementById('modalPhone');
-  if (phone) {
-    phoneLink.href = `tel:${phone}`;
-    phoneLink.textContent = phone;
-  } else {
-    phoneLink.textContent = '未提供';
-  }
-  
-  document.getElementById('infoModal').classList.add('show');
-}
-
-function closeModal() {
-  document.getElementById('infoModal').classList.remove('show');
+function renderTable(rows) {
+  const tbody = document.getElementById('tbl');
+  tbody.innerHTML = rows.length ? rows.map(r => `
+    <tr>
+      <td>${r.date?.split('T')[0] || ''}</td>
+      <td>${r.route}</td>
+      <td>${r.name}</td>
+      <td>${r.checkinStatus === 'Y' ? '✅' : '⚪'}</td>
+    </tr>
+  `).join('') : '<tr><td colspan="4" style="text-align:center;color:#999;">暫無資料</td></tr>';
 }
 </script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
