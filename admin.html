@@ -3,29 +3,32 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v6.2</title>
+<title>穿山甲專車後台 v7.0</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; padding-bottom: 80px; }
-#topBar { position: sticky; top: 0; background: #3c8050; color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
-#userInfo { display: flex; align-items: center; gap: 10px; }
-#userPicture { width: 40px; height: 40px; border-radius: 50%; border: 2px solid white; }
-.card { background: white; border-radius: 12px; padding: 16px; margin: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-.section-title { font-weight: 800; font-size: 18px; color: #14532d; margin-bottom: 16px; }
-.section { display: none; }
-.section.active { display: block; }
-#bottomNav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; display: flex; justify-content: space-around; z-index:50; }
-.nav-btn { flex: 1; padding: 10px 0; text-align: center; font-size: 12px; font-weight: 600; cursor: pointer; color: #666; }
-.nav-btn.active { color: #3c8050; border-top: 3px solid #3c8050; }
-.status-reserved { color: #3c8050; font-weight: 600; }
-.status-cancelled { color: #ef4444; font-weight: 600; }
-.status-completed { color: #10b981; font-weight: 600; }
-.loading { text-align: center; color: #888; padding: 20px; font-size: 16px; }
-.stat-box { background: linear-gradient(135deg, #3c8050, #256f4f); color: white; padding: 16px; border-radius: 10px; margin-bottom: 12px; text-align: center; }
-.stat-label { font-size: 12px; opacity: 0.8; }
-.stat-value { font-size: 28px; font-weight: 800; margin-top: 4px; }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:"Noto Sans TC",system-ui,sans-serif;background:#f8fafc;padding-bottom:80px;}
+#topBar{position:sticky;top:0;background:#3c8050;color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;}
+#userInfo{display:flex;align-items:center;gap:10px;}
+#userPicture{width:40px;height:40px;border-radius:50%;border:2px solid white;}
+.card{background:white;border-radius:12px;padding:16px;margin:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+.section-title{font-weight:800;font-size:18px;color:#14532d;margin-bottom:16px;}
+.section{display:none;}
+.section.active{display:block;}
+#bottomNav{position:fixed;bottom:0;left:0;width:100%;background:white;border-top:1px solid #ddd;display:flex;justify-content:space-around;z-index:50;}
+.nav-btn{flex:1;padding:10px 0;text-align:center;font-size:12px;font-weight:600;cursor:pointer;color:#666;}
+.nav-btn.active{color:#3c8050;border-top:3px solid #3c8050;}
+.status-reserved{color:#3c8050;font-weight:600;}
+.status-cancelled{color:#ef4444;font-weight:600;}
+.status-completed{color:#10b981;font-weight:600;}
+.loading{text-align:center;color:#888;padding:20px;font-size:16px;}
+.stat-box{background:linear-gradient(135deg,#3c8050,#256f4f);color:white;padding:16px;border-radius:10px;margin-bottom:12px;text-align:center;}
+.stat-label{font-size:12px;opacity:0.8;}
+.stat-value{font-size:28px;font-weight:800;margin-top:4px;}
+input,select{border:1px solid #ddd;border-radius:6px;padding:8px;width:100%;}
+button.save-btn{background:#3c8050;color:white;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:600;}
+button.save-btn:hover{background:#2e6b40;}
 </style>
 </head>
 
@@ -34,14 +37,14 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
 <div id="topBar">
   <div class="font-bold text-lg">🚌 穿山甲後台系統</div>
   <div id="userInfo">
-    <img id="userPicture" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect fill='%23ddd' width='40' height='40'/%3E%3C/svg%3E" alt="頭像">
+    <img id="userPicture" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect fill='%23ddd' width='40' height='40'/%3E%3C/svg%3E">
     <span id="userName">載入中...</span>
   </div>
 </div>
 
 <main>
   <!-- 🧾 查詢 -->
-  <section id="query" class="section">
+  <section id="query" class="section active">
     <div class="card">
       <h2 class="section-title">🧾 預約查詢</h2>
       <input type="text" id="search" placeholder="搜尋姓名、班次或日期..." class="border border-gray-300 rounded-md p-2 w-full mb-3">
@@ -49,12 +52,7 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
       <div id="tableContainer" style="overflow-x:auto; display:none;">
         <table class="min-w-full text-sm">
           <thead class="bg-green-700 text-white">
-            <tr>
-              <th class="p-2">日期</th>
-              <th class="p-2">班次</th>
-              <th class="p-2">姓名</th>
-              <th class="p-2">狀態</th>
-            </tr>
+            <tr><th class="p-2">日期</th><th class="p-2">班次</th><th class="p-2">姓名</th><th class="p-2">狀態</th></tr>
           </thead>
           <tbody id="tbl"></tbody>
         </table>
@@ -63,22 +61,13 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
   </section>
 
   <!-- 📊 儀表板 -->
-  <section id="dashboard" class="section active">
+  <section id="dashboard" class="section">
     <div class="card">
       <h2 class="section-title">📊 營運儀表板</h2>
       <div id="statsArea">
-        <div class="stat-box">
-          <div class="stat-label">已預約</div>
-          <div id="countReserved" class="stat-value">--</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-label">已搭乘</div>
-          <div id="countCompleted" class="stat-value">--</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-label">已取消</div>
-          <div id="countCancelled" class="stat-value">--</div>
-        </div>
+        <div class="stat-box"><div class="stat-label">已預約</div><div id="countReserved" class="stat-value">--</div></div>
+        <div class="stat-box"><div class="stat-label">已搭乘</div><div id="countCompleted" class="stat-value">--</div></div>
+        <div class="stat-box"><div class="stat-label">已取消</div><div id="countCancelled" class="stat-value">--</div></div>
       </div>
     </div>
   </section>
@@ -88,7 +77,8 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
     <div class="card text-center">
       <h2 class="section-title">📋 核銷管理</h2>
       <button id="goCheckin" class="bg-green-600 text-white px-4 py-3 rounded w-full text-lg">前往核銷系統</button>
-        </div>
+      <p class="text-gray-500 mt-2 text-sm">開啟 LIFF：2006590746-G7B12a1K</p>
+    </div>
   </section>
 
   <!-- 🚐 司機 -->
@@ -96,27 +86,37 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
     <div class="card">
       <h2 class="section-title">🚐 司機班表</h2>
       <ul class="list-disc ml-6 text-gray-700">
-        <li>A1：陳司機</li>
-        <li>B1：林司機</li>
-        <li>A2：王司機</li>
-        <li>B2：吳司機</li>
+        <li>A1：陳司機</li><li>B1：林司機</li><li>A2：王司機</li><li>B2：吳司機</li>
       </ul>
     </div>
   </section>
 
-  <!-- ⚙️ 設定 -->
+  <!-- ⚙️ 系統設定 -->
   <section id="config" class="section">
     <div class="card">
       <h2 class="section-title">⚙️ 系統設定</h2>
-      <p>此區為管理者設定專區，後續可加入推播與營運參數。</p>
+      <p class="text-sm text-gray-600 mb-4">修改後將立即生效</p>
+      <label>每班次搭載人數上限</label>
+      <input type="number" id="seatLimit" class="mb-3" min="1" max="20">
+      <label>未核銷達幾次後封鎖</label>
+      <input type="number" id="maxNoShow" class="mb-3" min="1" max="10">
+      <label>封鎖週數</label>
+      <input type="number" id="banWeeks" class="mb-3" min="1" max="12">
+      <label>預約模式</label>
+      <select id="tripMode" class="mb-3">
+        <option value="single">單程</option>
+        <option value="roundtrip">來回</option>
+      </select>
+      <p id="lastUpdate" class="text-xs text-gray-500 mb-3"></p>
+      <button class="save-btn w-full" onclick="saveRules()">💾 儲存設定</button>
     </div>
   </section>
 </main>
 
 <!-- 📱 底部導覽 -->
 <div id="bottomNav">
-  <div class="nav-btn active" data-sec="dashboard">📊 儀表板</div>
   <div class="nav-btn" data-sec="query">🧾 查詢</div>
+  <div class="nav-btn active" data-sec="dashboard">📊 儀表板</div>
   <div class="nav-btn" data-sec="checkin">📋 核銷</div>
   <div class="nav-btn" data-sec="driver">🚐 司機</div>
   <div class="nav-btn" data-sec="config">⚙️ 設定</div>
@@ -129,12 +129,12 @@ const CHECKIN_LIFF_URL = 'https://liff.line.me/2006590746-G7B12a1K';
 let allData = [];
 
 document.addEventListener('DOMContentLoaded', init);
-
 async function init() {
   await initLINE();
   setupNav();
-  await loadReservations();
-  showSection('dashboard'); // 預設顯示儀表板
+  loadReservations();
+  loadRules(); // ← 新增：自動載入設定
+  showSection('dashboard');
 }
 
 // === 初始化 LINE ===
@@ -150,121 +150,111 @@ async function initLINE() {
   }
 }
 
-// === 載入預約資料 ===
+// === 預約查詢 ===
 async function loadReservations() {
-  const loadingEl = document.getElementById('loadingText');
-  const tableEl = document.getElementById('tableContainer');
-  loadingEl.style.display = 'block';
-  tableEl.style.display = 'none';
-
+  document.getElementById('loadingText').style.display = 'block';
+  document.getElementById('tableContainer').style.display = 'none';
   try {
     const res = await fetch(WORKER_URL + '?mode=reservations');
-    const text = await res.text();
-    console.log('🔍 Worker 回傳原始內容:', text);
-    let json = JSON.parse(text);
-    allData = json.reservations || json.data || json || [];
-    console.log('✅ 解析後資料筆數:', allData.length);
-    if (!Array.isArray(allData) || allData.length === 0) {
-      loadingEl.textContent = '⚠️ 沒有預約資料';
-      return;
-    }
+    const json = await res.json();
+    allData = json.reservations || [];
     renderTable(allData);
     updateStats(allData);
   } catch (e) {
-    console.error('❌ 錯誤:', e);
-    loadingEl.textContent = '❌ 無法取得資料';
+    document.getElementById('loadingText').textContent = '❌ 無法取得資料';
   }
 }
 
-// === 狀態文字判斷（語意版） ===
-function getStatusText(record) {
-  const status = (record.status || record.h || '').trim();
-  const checkin = (record.checkinStatus || record.j || '').toUpperCase();
-  if (checkin === 'Y') return '已搭乘';
-  if (status === '已取消') return '已取消';
-  return '已預約';
+function getStatusText(r){
+  if(r.checkinStatus==='Y')return'已搭乘';
+  if(r.status==='已取消')return'已取消';
+  return'已預約';
 }
 
-// === 渲染表格 ===
-function renderTable(data) {
-  const order = { A1:1, B1:2, A2:3, B2:4 };
-  // ✅ 正確排序：從今天往後依序排列（近 → 遠）
-data.sort((a,b)=>{
-  const da = new Date(a.date);
-  const db = new Date(b.date);
-  if (da - db !== 0) return da - db;   // 今天最上方，未來依序往下
-  return (order[a.route] || 99) - (order[b.route] || 99); // 同日 A1→B1→A2→B2
-});
-
-  const tbody = document.getElementById('tbl');
-  if(!data.length){
-    tbody.innerHTML='<tr><td colspan="4" class="text-center text-gray-400 p-3">暫無資料</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = data.map(r=>{
-    const dateStr = (r.date || r.a || '').slice(5,10);
-    const name = r.name || r.b || '';
-    const route = r.route || r.d || '';
-    const statusText = getStatusText(r);
-    let cls='status-reserved';
-    if(statusText==='已取消') cls='status-cancelled';
-    if(statusText==='已搭乘') cls='status-completed';
-    return `
-      <tr>
-        <td class="p-2">${dateStr}</td>
-        <td class="p-2">${route}</td>
-        <td class="p-2">${name}</td>
-        <td class="p-2 ${cls}">${statusText}</td>
-      </tr>`;
+function renderTable(data){
+  const order={A1:1,B1:2,A2:3,B2:4};
+  data.sort((a,b)=>{
+    const da=new Date(a.date),db=new Date(b.date);
+    if(db-da!==0)return db-da;
+    return (order[a.route]||99)-(order[b.route]||99);
+  });
+  const tbody=document.getElementById('tbl');
+  tbody.innerHTML=data.map(r=>{
+    const cls=r.status==='已取消'?'status-cancelled':(r.checkinStatus==='Y'?'status-completed':'status-reserved');
+    return `<tr><td class="p-2">${r.date}</td><td class="p-2">${r.route}</td><td class="p-2">${r.name}</td><td class="p-2 ${cls}">${getStatusText(r)}</td></tr>`;
   }).join('');
-
   document.getElementById('loadingText').style.display='none';
   document.getElementById('tableContainer').style.display='block';
 }
 
-// === 統計數字 ===
 function updateStats(data){
-  const reserved = data.filter(r=>getStatusText(r)==='已預約').length;
-  const completed = data.filter(r=>getStatusText(r)==='已搭乘').length;
-  const cancelled = data.filter(r=>getStatusText(r)==='已取消').length;
-  document.getElementById('countReserved').textContent = reserved;
-  document.getElementById('countCompleted').textContent = completed;
-  document.getElementById('countCancelled').textContent = cancelled;
+  const reserved=data.filter(r=>r.status==='已預約').length;
+  const completed=data.filter(r=>r.checkinStatus==='Y').length;
+  const cancelled=data.filter(r=>r.status==='已取消').length;
+  document.getElementById('countReserved').textContent=reserved;
+  document.getElementById('countCompleted').textContent=completed;
+  document.getElementById('countCancelled').textContent=cancelled;
 }
 
-// === 搜尋 ===
-document.getElementById('search').addEventListener('input', e=>{
-  const key = e.target.value.toLowerCase();
-  const filtered = allData.filter(r =>
-    (r.name && r.name.toLowerCase().includes(key)) ||
-    (r.route && r.route.toLowerCase().includes(key)) ||
-    (r.date && r.date.toLowerCase().includes(key))
-  );
+document.getElementById('search').addEventListener('input',e=>{
+  const key=e.target.value.toLowerCase();
+  const filtered=allData.filter(r=>(r.name||'').toLowerCase().includes(key)||(r.route||'').toLowerCase().includes(key)||(r.date||'').includes(key));
   renderTable(filtered);
 });
 
 // === 導覽 ===
 function setupNav(){
   document.querySelectorAll('.nav-btn').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      showSection(btn.dataset.sec);
-    });
+    btn.addEventListener('click',()=>showSection(btn.dataset.sec));
   });
   document.getElementById('goCheckin').addEventListener('click',()=>{
-    if(typeof liff!=='undefined' && liff.isLoggedIn()){
-      liff.openWindow({ url: CHECKIN_LIFF_URL, external:false });
-    } else {
-      window.open(CHECKIN_LIFF_URL,'_blank');
-    }
+    if(typeof liff!=='undefined'&&liff.isLoggedIn())liff.openWindow({url:CHECKIN_LIFF_URL,external:false});
+    else window.open(CHECKIN_LIFF_URL,'_blank');
   });
 }
 
-function showSection(sectionId) {
+function showSection(id){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelector(`[data-sec="${sectionId}"]`).classList.add('active');
+  document.querySelector(`[data-sec="${id}"]`).classList.add('active');
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.getElementById(sectionId).classList.add('active');
+  document.getElementById(id).classList.add('active');
+}
+
+// === 系統設定 ===
+async function loadRules(){
+  try{
+    const res=await fetch(WORKER_URL+'?mode=getRules');
+    const json=await res.json();
+    const r=json.current||{};
+    document.getElementById('seatLimit').value=r.seatLimit||6;
+    document.getElementById('maxNoShow').value=r.maxNoShow||3;
+    document.getElementById('banWeeks').value=r.banWeeks||2;
+    document.getElementById('tripMode').value=r.tripMode||'single';
+    document.getElementById('lastUpdate').textContent='最後更新：'+(r.lastUpdate||'無');
+  }catch(e){
+    console.error('載入設定失敗',e);
+  }
+}
+
+async function saveRules(){
+  const body={
+    seatLimit:parseInt(document.getElementById('seatLimit').value),
+    maxNoShow:parseInt(document.getElementById('maxNoShow').value),
+    banWeeks:parseInt(document.getElementById('banWeeks').value),
+    tripMode:document.getElementById('tripMode').value,
+    lastUpdate:new Date().toISOString()
+  };
+  try{
+    const res=await fetch(WORKER_URL+'?mode=updateRules',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
+    });
+    const json=await res.json();
+    if(json.status==='success')alert('✅ 規則已更新');
+    else alert('❌ 更新失敗：'+json.message);
+    loadRules();
+  }catch(e){
+    alert('❌ 無法更新設定');
+  }
 }
 </script>
 </body>
