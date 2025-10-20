@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台系統 v6.4.3</title>
+<title>穿山甲專車後台系統 v6.4.4</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -17,7 +17,7 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
 .toast { position: fixed; bottom: 80px; right: 20px; background: #16a34a; color: white; padding: 10px 20px; border-radius: 8px; opacity: 0; transition: opacity .3s ease-in-out; }
 .toast.show { opacity: 1; }
 
-/* 表格響應式設計 */
+/* 表格響應式設計 - 修正版 */
 .reservation-table-container {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -29,13 +29,13 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
-  min-width: 500px;
+  min-width: 320px; /* 大幅縮減最小寬度 */
 }
 
 .reservation-table th,
 .reservation-table td {
-  padding: 12px;
-  text-align: left;
+  padding: 10px 8px; /* 減少內距 */
+  text-align: center; /* 全部置中 */
   border-bottom: 1px solid #e5e7eb;
   white-space: nowrap;
 }
@@ -50,31 +50,42 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
 
 .reservation-table th {
   font-weight: 600;
-  text-align: center;
 }
 
+/* 調整欄位寬度 */
 .reservation-table th:nth-child(1),
-.reservation-table td:nth-child(1) { width: 120px; text-align: center; }
+.reservation-table td:nth-child(1) { width: 80px; }  /* 日期 - 縮減 */
 .reservation-table th:nth-child(2),
-.reservation-table td:nth-child(2) { width: 80px; text-align: center; }
+.reservation-table td:nth-child(2) { width: 50px; }  /* 班次 - 大幅縮減 */
 .reservation-table th:nth-child(3),
-.reservation-table td:nth-child(3) { width: 100px; text-align: center; }
+.reservation-table td:nth-child(3) { width: 70px; }  /* 姓名 - 縮減 */
 .reservation-table th:nth-child(4),
-.reservation-table td:nth-child(4) { width: 100px; text-align: center; }
+.reservation-table td:nth-child(4) { width: 70px; }  /* 狀態 - 縮減 */
 
 .reservation-table tbody tr:hover {
   background-color: #f8fafc;
 }
 
+/* 移動端優化 */
 @media (max-width: 768px) {
   .reservation-table {
     font-size: 13px;
+    min-width: 300px; /* 手機端更小 */
   }
   
   .reservation-table th,
   .reservation-table td {
-    padding: 8px 6px;
+    padding: 8px 4px; /* 手機端內距更小 */
   }
+  
+  .reservation-table th:nth-child(1),
+  .reservation-table td:nth-child(1) { width: 70px; }
+  .reservation-table th:nth-child(2),
+  .reservation-table td:nth-child(2) { width: 45px; }
+  .reservation-table th:nth-child(3),
+  .reservation-table td:nth-child(3) { width: 65px; }
+  .reservation-table th:nth-child(4),
+  .reservation-table td:nth-child(4) { width: 65px; }
 }
 
 input, button { border-radius: 6px; }
@@ -119,24 +130,9 @@ input, button { border-radius: 6px; }
     <!-- 查詢紀錄 -->
     <section id="records" class="card hidden">
       <h2 class="font-bold text-xl mb-4 text-green-900">📅 預約紀錄查詢</h2>
-      <div class="mb-4 flex space-x-2">
-        <input type="date" id="dateFilter" class="border p-2 rounded flex-1">
-        <select id="routeFilter" class="border p-2 rounded">
-          <option value="">全部班次</option>
-          <option value="A1">A1</option>
-          <option value="A2">A2</option>
-          <option value="B1">B1</option>
-          <option value="B2">B2</option>
-        </select>
-        <select id="statusFilter" class="border p-2 rounded">
-          <option value="">全部狀態</option>
-          <option value="已預約">已預約</option>
-          <option value="已取消">已取消</option>
-          <option value="已搭乘">已搭乘</option>
-        </select>
-        <button onclick="filterReservations()" class="bg-green-600 text-white px-4 py-2 rounded">篩選</button>
-        <button onclick="clearFilters()" class="bg-gray-500 text-white px-4 py-2 rounded">清除</button>
-      </div>
+      
+      <!-- 移除篩選欄位 -->
+      
       <div id="recordsArea" class="reservation-table-container"></div>
     </section>
 
@@ -267,7 +263,20 @@ function sortReservations(reservations) {
   });
 }
 
-// 修正狀態判斷邏輯
+// 修正日期格式為月/日
+function formatDateToMonthDay(dateStr) {
+  try {
+    const date = new Date(dateStr.replace(/\//g, '-'));
+    if (isNaN(date.getTime())) return dateStr;
+    
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${month}/${day}`;
+  } catch (e) {
+    return dateStr;
+  }
+}
+
 function validateReservationData(data) {
   return data.map(item => {
     const standardizedDate = item.date ? item.date.replace(/\//g, '-') : '無日期';
@@ -315,29 +324,6 @@ async function loadReservations(){
   }catch(e){ console.error('查詢錯誤:', e); }
 }
 
-function filterReservations() {
-  const dateFilter = document.getElementById('dateFilter').value;
-  const routeFilter = document.getElementById('routeFilter').value;
-  const statusFilter = document.getElementById('statusFilter').value;
-
-  const filtered = allReservations.filter(reservation => {
-    const matchDate = !dateFilter || reservation.date === dateFilter;
-    const matchRoute = !routeFilter || reservation.route === routeFilter;
-    const matchStatus = !statusFilter || reservation.status === statusFilter;
-    
-    return matchDate && matchRoute && matchStatus;
-  });
-
-  renderReservations(filtered);
-}
-
-function clearFilters() {
-  document.getElementById('dateFilter').value = '';
-  document.getElementById('routeFilter').value = '';
-  document.getElementById('statusFilter').value = '';
-  renderReservations(allReservations);
-}
-
 function renderReservations(list){
   if(!list || list.length===0){
     document.getElementById('recordsArea').innerHTML = '<p class="text-center text-gray-500 py-8">暫無預約紀錄</p>';
@@ -359,8 +345,8 @@ function renderReservations(list){
         const cls = r.status === '已取消' ? 'status-cancelled' :
                    r.status === '已搭乘' ? 'status-completed' : 'status-reserved';
         return `<tr>
-          <td>${r.date}</td>
-          <td>${r.route}</td>
+          <td>${formatDateToMonthDay(r.date)}</td>
+          <td>${r.route || '-'}</td>
           <td>${r.name || '-'}</td>
           <td class="${cls}">${r.status}</td>
         </tr>`;
