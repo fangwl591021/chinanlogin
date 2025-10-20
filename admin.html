@@ -154,24 +154,48 @@ async function initLINE() {
 
 // === 載入預約資料 ===
 async function loadReservations() {
-  document.getElementById('loadingText').style.display = 'block';
-  document.getElementById('tableContainer').style.display = 'none';
+  const loadingEl = document.getElementById('loadingText');
+  const tableEl = document.getElementById('tableContainer');
+  loadingEl.style.display = 'block';
+  tableEl.style.display = 'none';
 
   try {
     const res = await fetch(WORKER_URL + '?mode=reservations');
-    const json = await res.json();
-    allData = json.reservations || json.data || [];
-    
-    // 調試：打印第一筆數據結構
-    console.log('API 返回的數據結構:', allData[0]);
+    const text = await res.text();
 
+    // 🧭 觀察實際回傳
+    console.log('🔍 Worker 回傳原始內容:', text);
+
+    let json;
+    try {
+      json = JSON.parse(text);
+    } catch (e) {
+      console.error('❌ JSON 解析錯誤:', e);
+      loadingEl.textContent = '⚠️ 回傳格式異常';
+      return;
+    }
+
+    // 🧩 調整結構解析
+    allData = json.reservations || json.data || json || [];
+    console.log('✅ 解析後資料筆數:', allData.length);
+
+    if (!Array.isArray(allData) || allData.length === 0) {
+      loadingEl.textContent = '⚠️ 沒有預約資料';
+      return;
+    }
+
+    // ✅ 渲染畫面
     renderTable(allData);
     updateStats(allData);
+    loadingEl.style.display = 'none';
+    tableEl.style.display = 'block';
+
   } catch (e) {
-    console.error('錯誤:', e);
-    document.getElementById('loadingText').textContent = '❌ 無法取得資料';
+    console.error('❌ 載入錯誤:', e);
+    loadingEl.textContent = '❌ 無法取得資料';
   }
 }
+
 
 // === 轉換狀態 ===
 function getStatusText(record) {
