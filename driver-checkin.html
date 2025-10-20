@@ -221,7 +221,6 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
     <div class="modal-header" id="modal-name"></div>
     <div class="modal-body">
       <div><div class="modal-label">科系</div><div class="modal-value" id="modal-department"></div></div>
-      
       <div><div class="modal-label">電話</div><div class="modal-value"><a id="modal-phone" href="#" class="phone-link"></a></div></div>
     </div>
     <button class="modal-close" onclick="closeModal()">關閉</button>
@@ -366,11 +365,16 @@ function renderReservationRows(filtered,title){
   filtered.forEach(r=>{
     const tr=document.createElement('tr');tr.className='table-row';
     const isCheckedIn=r.checkinStatus==='Y';
-    const phoneDisplay=r.phone?.padStart(10,'0')||'未提供';
+    
+    // 安全處理特殊字符
+    const safeName = r.name ? r.name.replace(/'/g, "\\'") : '';
+    const safeDepartment = r.department ? r.department.replace(/'/g, "\\'") : '';
+    const safePhone = r.phone ? r.phone.replace(/'/g, "\\'") : '';
+    
     tr.innerHTML=`
       <td>${r.date?.split('T')[0]||''}</td>
       <td><strong>${r.route}</strong></td>
-      <td><span class="passenger-name" onclick="showModal('${r.name}','${r.department}','${r.studentId}','${phoneDisplay}')">${r.name}</span></td>
+      <td><span class="passenger-name" onclick="showModal('${safeName}', '${safeDepartment}', '${safePhone}')">${r.name}</span></td>
       <td class="stop-cell">${r.fromStop}</td>
       <td class="stop-cell">${r.toStop}</td>
       <td>${isCheckedIn?'<button class="checkin-btn" disabled>✅</button>':`<button class="checkin-btn" onclick="confirmCheckin('${r.id}')">核銷</button>`}</td>`;
@@ -379,10 +383,10 @@ function renderReservationRows(filtered,title){
   document.getElementById('checkin-title').textContent=title;
 }
 
-function showModal(name, dep, stu, phone) {
-  document.getElementById('modal-name').textContent = name;
-  document.getElementById('modal-department').textContent = dep || '未提供';
-  document.getElementById('modal-studentid').textContent = stu || '未提供';
+function showModal(name, department, phone) {
+  document.getElementById('modal-name').textContent = name || '未提供';
+  document.getElementById('modal-department').textContent = department || '未提供';
+  
   const phoneLink = document.getElementById('modal-phone');
   if (phone && phone !== '未提供') {
     phoneLink.href = `tel:${phone}`;
@@ -391,6 +395,7 @@ function showModal(name, dep, stu, phone) {
     phoneLink.textContent = '未提供';
     phoneLink.href = '#';
   }
+  
   document.getElementById('infoModal').classList.add('active');
 }
 
