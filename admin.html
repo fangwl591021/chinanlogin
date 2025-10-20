@@ -343,7 +343,7 @@ table tbody tr:hover {
 
 <!-- 下方導航 -->
 <div id="bottomNav">
-  <button class="nav-btn active" data-section="dashboard">📊 儀表板</button>
+  <button class="nav-btn active" data-section="dashboard" style="color:#3c8050;border-top:3px solid #3c8050;">📊 儀表板</button>
   <button class="nav-btn" data-section="reservations">🧾 查詢</button>
   <button class="nav-btn" data-section="checkin">✅ 核銷</button>
   <button class="nav-btn" data-section="drivers">🚐 司機</button>
@@ -465,14 +465,18 @@ function updateStats() {
 }
 
 function setupUI() {
+  // 確保儀表板是第一個顯示的
+  showSection('dashboard');
+  document.querySelector('[data-section="dashboard"]').classList.add('active');
+  
   // 導航
   document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const section = btn.dataset.section;
+    btn.addEventListener('click', function() {
+      const section = this.dataset.section;
       showSection(section);
       
       document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+      this.classList.add('active');
       
       if (section === 'reservations') {
         renderReservations(allReservations);
