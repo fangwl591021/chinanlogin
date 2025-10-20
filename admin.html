@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v5.5</title>
+<title>穿山甲專車後台 v5.7</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -16,7 +16,7 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
 .section-title { font-weight: 800; font-size: 18px; color: #14532d; margin-bottom: 16px; }
 .section { display: none; }
 .section.active { display: block; }
-#bottomNav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; display: flex; }
+#bottomNav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; display: flex; justify-content: space-around; }
 .nav-btn { flex: 1; padding: 10px 0; text-align: center; font-size: 12px; font-weight: 600; cursor: pointer; color: #666; }
 .nav-btn.active { color: #3c8050; border-top: 3px solid #3c8050; }
 .status-reserved { color: #3c8050; font-weight: 600; cursor: pointer; }
@@ -37,7 +37,7 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
 </div>
 
 <main>
-  <!-- 查詢 -->
+  <!-- 🧾 查詢 -->
   <section id="query" class="section active">
     <div class="card">
       <h2 class="section-title">🧾 預約查詢</h2>
@@ -59,7 +59,7 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
     </div>
   </section>
 
-  <!-- 儀表板 -->
+  <!-- 📊 儀表板 -->
   <section id="dash" class="section">
     <div class="card">
       <h2 class="section-title">📊 營運儀表板</h2>
@@ -67,15 +67,29 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
     </div>
   </section>
 
-  <!-- 司機 -->
-  <section id="driver" class="section">
-    <div class="card">
-      <h2 class="section-title">🚐 司機專區</h2>
-      <button id="goCheck" class="bg-green-600 text-white px-4 py-2 rounded w-full text-lg">前往核銷系統</button>
+  <!-- 📋 核銷 -->
+  <section id="checkin" class="section">
+    <div class="card text-center">
+      <h2 class="section-title">📋 核銷管理</h2>
+      <button id="goCheckin" class="bg-green-600 text-white px-4 py-3 rounded w-full text-lg">前往核銷系統</button>
+      <p class="text-gray-500 mt-2 text-sm">開啟 LIFF：2006590746-G7B12a1K</p>
     </div>
   </section>
 
-  <!-- 設定 -->
+  <!-- 🚐 司機 -->
+  <section id="driver" class="section">
+    <div class="card">
+      <h2 class="section-title">🚐 司機班表</h2>
+      <ul class="list-disc ml-6 text-gray-700">
+        <li>A1：陳司機</li>
+        <li>B1：林司機</li>
+        <li>A2：王司機</li>
+        <li>B2：吳司機</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ⚙️ 設定 -->
   <section id="config" class="section">
     <div class="card">
       <h2 class="section-title">⚙️ 系統設定</h2>
@@ -84,10 +98,11 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
   </section>
 </main>
 
-<!-- 底部導覽 -->
+<!-- 📱 底部導覽 -->
 <div id="bottomNav">
   <div class="nav-btn active" data-sec="query">🧾 查詢</div>
   <div class="nav-btn" data-sec="dash">📊 儀表板</div>
+  <div class="nav-btn" data-sec="checkin">📋 核銷</div>
   <div class="nav-btn" data-sec="driver">🚐 司機</div>
   <div class="nav-btn" data-sec="config">⚙️ 設定</div>
 </div>
@@ -95,6 +110,8 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
 <script>
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 const LIFF_ID = '2006590746-wgL4l54z';
+const CHECKIN_LIFF_URL = 'https://liff.line.me/2006590746-G7B12a1K';
+
 let allData = [];
 let userRole = 'user';
 let userId = '';
@@ -117,7 +134,7 @@ async function initLINE() {
     document.getElementById('userPicture').src = profile.pictureUrl;
     userId = profile.userId;
 
-    // 查詢角色（從 GAS）
+    // 查詢角色
     const res = await fetch(`${WORKER_URL}?mode=check&userId=${userId}`);
     const info = await res.json();
     userRole = info.user?.role || 'user';
@@ -225,8 +242,14 @@ function setupNav() {
       document.getElementById(btn.dataset.sec).classList.add('active');
     });
   });
-  document.getElementById('goCheck').addEventListener('click',()=>{
-    liff.openWindow({ url:'https://liff.line.me/2006590746-A8YD0ZD9', external:false });
+
+  // 📋 核銷直接開啟 LIFF
+  document.getElementById('goCheckin').addEventListener('click',()=>{
+    if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+      liff.openWindow({ url: CHECKIN_LIFF_URL, external: false });
+    } else {
+      window.open(CHECKIN_LIFF_URL, '_blank');
+    }
   });
 }
 </script>
