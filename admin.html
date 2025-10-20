@@ -252,38 +252,48 @@ function setupButtons() {
 }
 
 function renderTable(rows) {
+  if (!Array.isArray(rows)) return;
+  
+  // ✅ 自訂班次順序
+  const order = { A1: 1, B1: 2, A2: 3, B2: 4 };
+
+  // ✅ 先排序
+  rows.sort((a, b) => {
+    const da = new Date(a.date);
+    const db = new Date(b.date);
+    if (db - da !== 0) return db - da; // 日期降冪
+    const oa = order[a.route] || 99;
+    const ob = order[b.route] || 99;
+    return oa - ob; // 同日依班次順序
+  });
+
   const tbody = document.getElementById('tbl');
-  tbody.innerHTML = rows.length ? rows.map(r => {
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">暫無資料</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => {
     let statusText, statusClass;
-    
-    // 根據狀態設置顯示文字和樣式
-    switch(r.status) {
-      case 'reserved':
-        statusText = '已預約';
-        statusClass = 'status-reserved';
-        break;
-      case 'cancelled':
-        statusText = '已取消';
-        statusClass = 'status-cancelled';
-        break;
-      case 'completed':
-        statusText = '已搭乘';
-        statusClass = 'status-completed';
-        break;
-      default:
-        statusText = '已預約';
-        statusClass = 'status-reserved';
+    switch (r.status) {
+      case 'reserved': statusText = '已預約'; statusClass = 'status-reserved'; break;
+      case 'cancelled': statusText = '已取消'; statusClass = 'status-cancelled'; break;
+      case 'completed': statusText = '已搭乘'; statusClass = 'status-completed'; break;
+      default: statusText = '已預約'; statusClass = 'status-reserved';
     }
-    
+
+    const dateStr = r.date?.split('T')[0] || '';
     return `
-    <tr>
-      <td>${r.date?.split('T')[0] || ''}</td>
-      <td>${r.route}</td>
-      <td>${r.name}</td>
-      <td class="${statusClass}">${statusText}</td>
-    </tr>
-  `}).join('') : '<tr><td colspan="4" style="text-align:center;color:#999;">暫無資料</td></tr>';
+      <tr>
+        <td>${dateStr}</td>
+        <td>${r.route}</td>
+        <td>${r.name}</td>
+        <td class="${statusClass}">${statusText}</td>
+      </tr>
+    `;
+  }).join('');
 }
+
 </script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
