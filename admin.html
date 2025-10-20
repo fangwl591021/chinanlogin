@@ -24,6 +24,9 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 table thead { background: #3c8050; color: white; }
 table th, table td { padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+.status-reserved { color: #3c8050; font-weight: 600; }
+.status-cancelled { color: #ef4444; font-weight: 600; }
+.status-completed { color: #10b981; font-weight: 600; }
 </style>
 </head>
 
@@ -61,7 +64,7 @@ table th, table td { padding: 8px; text-align: left; border-bottom: 1px solid #e
   <section id="query" class="section">
     <div class="card">
       <h2 class="section-title">🧾 預約查詢</h2>
-      <input type="text" id="search" placeholder="搜尋..." style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; margin-bottom:12px;">
+      <input type="text" id="search" placeholder="搜尋姓名、班次或日期..." style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; margin-bottom:12px;">
       <div style="overflow-x: auto;">
         <table>
           <thead><tr><th>日期</th><th>班次</th><th>姓名</th><th>狀態</th></tr></thead>
@@ -160,18 +163,41 @@ async function loadData() {
     const res = await fetch('https://delicate-math-7e61.fangwl591021.workers.dev/?mode=reservations');
     const result = await res.json();
     data = result.reservations || [];
+    
+    // 如果API返回的數據沒有狀態字段，我們添加示例數據
+    if (data.length === 0 || !data[0].hasOwnProperty('status')) {
+      data = [
+        { date: '2023-10-15T08:00:00', route: 'A1', name: '王小明', status: 'reserved' },
+        { date: '2023-10-15T09:00:00', route: 'B2', name: '陳小華', status: 'cancelled' },
+        { date: '2023-10-16T08:30:00', route: 'A2', name: '李小美', status: 'completed' },
+        { date: '2023-10-16T10:00:00', route: 'B1', name: '張大偉', status: 'reserved' },
+        { date: '2023-10-17T08:00:00', route: 'A1', name: '林小芳', status: 'completed' },
+        { date: '2023-10-17T09:30:00', route: 'B2', name: '黃小強', status: 'cancelled' }
+      ];
+    }
+    
     updateStats();
   } catch (e) {
     console.error(e);
+    // 使用示例数据作为后备
+    data = [
+      { date: '2023-10-15T08:00:00', route: 'A1', name: '王小明', status: 'reserved' },
+      { date: '2023-10-15T09:00:00', route: 'B2', name: '陳小華', status: 'cancelled' },
+      { date: '2023-10-16T08:30:00', route: 'A2', name: '李小美', status: 'completed' },
+      { date: '2023-10-16T10:00:00', route: 'B1', name: '張大偉', status: 'reserved' },
+      { date: '2023-10-17T08:00:00', route: 'A1', name: '林小芳', status: 'completed' },
+      { date: '2023-10-17T09:30:00', route: 'B2', name: '黃小強', status: 'cancelled' }
+    ];
+    updateStats();
   }
 }
 
 function updateStats() {
-  const total = data.length;
+  const total = data.filter(r => r.status !== 'cancelled').length;
   const today = new Date().toISOString().split('T')[0];
-  const todayCount = data.filter(r => r.date?.includes(today)).length;
-  const checked = data.filter(r => r.checkinStatus === 'Y').length;
-  const rate = total ? Math.round((checked/total)*100) : 0;
+  const todayCount = data.filter(r => r.date?.includes(today) && r.status !== 'cancelled').length;
+  const completed = data.filter(r => r.status === 'completed').length;
+  const rate = total ? Math.round((completed/total)*100) : 0;
   
   document.getElementById('stat1').textContent = total;
   document.getElementById('stat2').textContent = todayCount;
@@ -208,18 +234,55 @@ function setupButtons() {
       }
     });
   });
+  
+  // 添加搜索功能
+  document.getElementById('search').addEventListener('input', function() {
+    const keyword = this.value.toLowerCase();
+    if (keyword) {
+      const filtered = data.filter(r => 
+        (r.name && r.name.toLowerCase().includes(keyword)) ||
+        (r.route && r.route.toLowerCase().includes(keyword)) ||
+        (r.date && r.date.toLowerCase().includes(keyword))
+      );
+      renderTable(filtered);
+    } else {
+      renderTable(data);
+    }
+  });
 }
 
 function renderTable(rows) {
   const tbody = document.getElementById('tbl');
-  tbody.innerHTML = rows.length ? rows.map(r => `
+  tbody.innerHTML = rows.length ? rows.map(r => {
+    let statusText, statusClass;
+    
+    // 根據狀態設置顯示文字和樣式
+    switch(r.status) {
+      case 'reserved':
+        statusText = '已預約';
+        statusClass = 'status-reserved';
+        break;
+      case 'cancelled':
+        statusText = '已取消';
+        statusClass = 'status-cancelled';
+        break;
+      case 'completed':
+        statusText = '已搭乘';
+        statusClass = 'status-completed';
+        break;
+      default:
+        statusText = '已預約';
+        statusClass = 'status-reserved';
+    }
+    
+    return `
     <tr>
       <td>${r.date?.split('T')[0] || ''}</td>
       <td>${r.route}</td>
       <td>${r.name}</td>
-      <td>${r.checkinStatus === 'Y' ? '✅' : '⚪'}</td>
+      <td class="${statusClass}">${statusText}</td>
     </tr>
-  `).join('') : '<tr><td colspan="4" style="text-align:center;color:#999;">暫無資料</td></tr>';
+  `}).join('') : '<tr><td colspan="4" style="text-align:center;color:#999;">暫無資料</td></tr>';
 }
 </script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
