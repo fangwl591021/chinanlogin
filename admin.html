@@ -263,38 +263,43 @@ function sortReservations(reservations) {
   });
 }
 
-// 修正日期格式為月/日 - 完全重寫
+// 簡化的日期格式化函數 - 直接提取月/日
 function formatDateToMonthDay(dateStr) {
   console.log('📅 原始日期:', dateStr); // 除錯用
   
   try {
-    // 處理 Date(2025,9,17) 格式
-    if (dateStr.startsWith('Date(')) {
-      const match = dateStr.match(/Date\((\d+),(\d+),(\d+)\)/);
-      if (match) {
-        const year = match[1];
-        const month = String(parseInt(match[2]) + 1).padStart(2, '0'); // 月份從0開始，所以要+1
-        const day = match[3].padStart(2, '0');
-        console.log('✅ 解析 Date() 格式:', { year, month, day });
+    // 如果已經是月/日格式，直接返回
+    if (typeof dateStr === 'string' && dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length >= 2) {
+        const month = parts[0].padStart(2, '0');
+        const day = parts[1].padStart(2, '0');
         return `${month}/${day}`;
       }
     }
     
-    // 處理正常日期格式 (YYYY-MM-DD 或 YYYY/MM/DD)
-    const date = new Date(dateStr.replace(/\//g, '-'));
+    // 處理各種日期格式
+    const date = new Date(dateStr);
     if (!isNaN(date.getTime())) {
       const month = (date.getMonth() + 1).toString().padStart(2, '0');
       const day = date.getDate().toString().padStart(2, '0');
-      console.log('✅ 解析正常日期格式:', { month, day });
       return `${month}/${day}`;
     }
     
     console.warn('❌ 無法解析的日期格式:', dateStr);
-    return dateStr; // 如果無法解析，返回原始字串
+    return dateStr;
   } catch (e) {
     console.error('❌ 日期格式化錯誤:', e, '原始資料:', dateStr);
     return dateStr;
   }
+}
+
+// 修正班次顯示問題
+function getRouteDisplay(route) {
+  if (!route || route === '-' || route === 'undefined') {
+    return '-';
+  }
+  return route;
 }
 
 function validateReservationData(data) {
@@ -323,6 +328,7 @@ function validateReservationData(data) {
     return {
       ...item,
       date: standardizedDate,
+      route: getRouteDisplay(item.route), // 修正班次顯示
       status: standardizedStatus,
       studentId: undefined // 移除學號
     };
@@ -376,7 +382,7 @@ function renderReservations(list){
         
         return `<tr>
           <td>${formatDateToMonthDay(r.date)}</td>
-          <td>${r.route || '-'}</td>
+          <td>${r.route}</td>
           <td>${r.name || '-'}</td>
           <td class="${cls}">${r.status}</td>
         </tr>`;
