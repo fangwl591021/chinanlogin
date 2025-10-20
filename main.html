@@ -491,10 +491,11 @@ function completeProfile() {
 }
 
 function checkProfileCompleteness(userData) {
-  const name = (userData.name || '').toString().trim();
-  const phone = (userData.phone || '').toString().trim();
-  const studentId = (userData.studentId || '').toString().trim();
-  const department = (userData.department || '').toString().trim();
+  // 安全地轉換並檢查每個欄位
+  const name = userData.name ? String(userData.name).trim() : '';
+  const phone = userData.phone ? String(userData.phone).trim() : '';
+  const studentId = userData.studentId ? String(userData.studentId).trim() : '';
+  const department = userData.department ? String(userData.department).trim() : '';
 
   const missingFields = [];
   if (!name) missingFields.push('姓名 Name');
