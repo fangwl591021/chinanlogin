@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v5.1</title>
+<title>穿山甲專車後台 v5.2</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -28,6 +28,9 @@ table th, table td { padding: 8px; text-align: left; border-bottom: 1px solid #e
 .status-reserved { color: #3c8050; font-weight: 600; }
 .status-cancelled { color: #ef4444; font-weight: 600; }
 .status-completed { color: #10b981; font-weight: 600; }
+.loading {
+  text-align:center; padding:20px; color:#666; font-size:15px;
+}
 </style>
 </head>
 
@@ -48,18 +51,9 @@ table th, table td { padding: 8px; text-align: left; border-bottom: 1px solid #e
   <section id="dash" class="section active">
     <div class="card">
       <h2 class="section-title">📊 營運儀表板</h2>
-      <div class="stat-box">
-        <div class="stat-label">總預約數</div>
-        <div class="stat-value" id="stat1">--</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-label">今日預約</div>
-        <div class="stat-value" id="stat2">--</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-label">核銷率</div>
-        <div class="stat-value" id="stat3">--%</div>
-      </div>
+      <div class="stat-box"><div class="stat-label">總預約數</div><div class="stat-value" id="stat1">--</div></div>
+      <div class="stat-box"><div class="stat-label">今日預約</div><div class="stat-value" id="stat2">--</div></div>
+      <div class="stat-box"><div class="stat-label">核銷率</div><div class="stat-value" id="stat3">--%</div></div>
     </div>
   </section>
 
@@ -71,7 +65,7 @@ table th, table td { padding: 8px; text-align: left; border-bottom: 1px solid #e
       <div style="overflow-x: auto;">
         <table>
           <thead><tr><th>日期</th><th>班次</th><th>姓名</th><th>狀態</th></tr></thead>
-          <tbody id="tbl"></tbody>
+          <tbody id="tbl"><tr><td colspan="4" class="loading">🔍 查詢中...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -125,7 +119,6 @@ let isDev = location.search.includes('dev');
 document.addEventListener('DOMContentLoaded', init);
 
 function init() {
-  console.log('初始化系統...');
   if (isDev) {
     document.getElementById('userName').textContent = '開發者模式';
   } else {
@@ -135,14 +128,10 @@ function init() {
   setupButtons();
 }
 
-// === 初始化 LINE 登入 ===
 async function initLINE() {
   try {
     await liff.init({ liffId: LIFF_ID });
-    if (!liff.isLoggedIn()) {
-      liff.login();
-      return;
-    }
+    if (!liff.isLoggedIn()) { liff.login(); return; }
     const profile = await liff.getProfile();
     document.getElementById('userName').textContent = profile.displayName;
     document.getElementById('userPicture').src = profile.pictureUrl;
@@ -152,8 +141,9 @@ async function initLINE() {
   }
 }
 
-// === 載入資料 ===
 async function loadData() {
+  const tbody = document.getElementById('tbl');
+  tbody.innerHTML = `<tr><td colspan="4" class="loading">🔍 查詢中...</td></tr>`;
   try {
     const res = await fetch(WORKER_URL);
     const result = await res.json();
@@ -161,7 +151,7 @@ async function loadData() {
     if (!data.length) throw new Error('空資料');
     updateStats();
   } catch (err) {
-    console.warn('資料載入失敗，使用範例資料', err);
+    console.warn('資料載入失敗，使用範例資料');
     data = [
       { date: '2025-10-19T22:00:00', route: 'A1', name: '王小明', status: 'reserved' },
       { date: '2025-10-19T22:30:00', route: 'B1', name: '陳小華', status: 'completed' },
@@ -172,7 +162,6 @@ async function loadData() {
   }
 }
 
-// === 統計資訊 ===
 function updateStats() {
   const total = data.filter(r => r.status !== 'cancelled').length;
   const today = new Date().toISOString().split('T')[0];
@@ -184,7 +173,6 @@ function updateStats() {
   document.getElementById('stat3').textContent = rate + '%';
 }
 
-// === 導覽列切換 ===
 function setupButtons() {
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', function() {
@@ -221,20 +209,20 @@ function setupButtons() {
   });
 }
 
-// === ✅ 改良版排序 (日期新→舊，同日 A1→B1→A2→B2) ===
+// ✅ 日期升冪（當日往下），同日 A1→B1→A2→B2
 function renderTable(rows) {
   if (!Array.isArray(rows)) return;
   const order = { A1: 1, B1: 2, A2: 3, B2: 4 };
   rows.sort((a, b) => {
     const da = new Date(a.date);
     const db = new Date(b.date);
-    if (db - da !== 0) return db - da;
+    if (da - db !== 0) return da - db; // 日期升冪（當日往下）
     return (order[a.route] || 99) - (order[b.route] || 99);
   });
 
   const tbody = document.getElementById('tbl');
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">暫無資料</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" class="loading">暫無資料</td></tr>`;
     return;
   }
 
