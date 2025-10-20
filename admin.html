@@ -196,25 +196,16 @@ function setupButtons() {
         return;
       }
       
-      // 查詢按鈕用 LIFF openWindow 打開（可返回）
-      if (sec === 'query') {
-        if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
-          liff.openWindow({
-            url: 'https://liff.line.me/2006590746-G7B12a1K',
-            external: false
-          });
-        } else {
-          window.open('https://liff.line.me/2006590746-G7B12a1K', '_blank');
-        }
-        return;
-      }
-      
       // 其他按鈕在後台內切換
       document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
       this.classList.add('active');
       
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       document.getElementById(sec).classList.add('active');
+      
+      if (sec === 'query') {
+        renderTable(data);
+      }
     });
   });
 }
