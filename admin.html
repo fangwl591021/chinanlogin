@@ -167,21 +167,28 @@ async function loadReservations() {
   }
 }
 
+// === 轉換狀態 ===
+function getStatusText(record) {
+  // j 欄位為 'Y' 表示已搭乘
+  if (record.j && record.j.toUpperCase() === 'Y') {
+    return '已搭乘';
+  }
+  // h 欄位判斷已預約或已取消
+  if (record.h === '已取消') {
+    return '已取消';
+  }
+  return '已預約';
+}
+
 // === 渲染表格 ===
 function renderTable(data) {
   const order = { A1:1, B1:2, A2:3, B2:4 };
-  data.forEach(r => {
-    if (r.status === 'y') r.statusText = '已搭乘';
-    else if (r.status === 'n') r.statusText = '已預約';
-    else if (r.status === 'cancel' || r.status === '已取消') r.statusText = '已取消';
-    else r.statusText = '已預約';
-  });
-
+  
   // 日期由近到遠（最新在上）
   data.sort((a,b)=>{
-    const da = new Date(a.date), db = new Date(b.date);
+    const da = new Date(a.a), db = new Date(b.a);
     if (db - da !== 0) return db - da;
-    return (order[a.route]||99) - (order[b.route]||99);
+    return (order[a.d]||99) - (order[b.d]||99);
   });
 
   const tbody = document.getElementById('tbl');
@@ -189,16 +196,17 @@ function renderTable(data) {
     tbody.innerHTML='<tr><td colspan="4" class="text-center text-gray-400 p-3">暫無資料</td></tr>';
   } else {
     tbody.innerHTML=data.map(r=>{
-      const dateStr = r.date ? new Date(r.date).toISOString().slice(5,10) : '';
+      const dateStr = r.a ? new Date(r.a).toISOString().slice(5,10) : '';
+      const statusText = getStatusText(r);
       let cls='status-reserved';
-      if(r.statusText==='已取消') cls='status-cancelled';
-      if(r.statusText==='已搭乘') cls='status-completed';
+      if(statusText==='已取消') cls='status-cancelled';
+      if(statusText==='已搭乘') cls='status-completed';
       return `
         <tr>
           <td class="p-2">${dateStr}</td>
-          <td class="p-2">${r.route||''}</td>
-          <td class="p-2">${r.name||''}</td>
-          <td class="p-2 ${cls}">${r.statusText}</td>
+          <td class="p-2">${r.d||''}</td>
+          <td class="p-2">${r.b||''}</td>
+          <td class="p-2 ${cls}">${statusText}</td>
         </tr>`;
     }).join('');
   }
@@ -209,9 +217,9 @@ function renderTable(data) {
 
 // === 統計數字 ===
 function updateStats(data){
-  const reserved = data.filter(r=>r.status==='n').length;
-  const completed = data.filter(r=>r.status==='y').length;
-  const cancelled = data.filter(r=>r.status==='cancel').length;
+  const reserved = data.filter(r=>getStatusText(r)==='已預約').length;
+  const completed = data.filter(r=>getStatusText(r)==='已搭乘').length;
+  const cancelled = data.filter(r=>getStatusText(r)==='已取消').length;
   document.getElementById('countReserved').textContent = reserved;
   document.getElementById('countCompleted').textContent = completed;
   document.getElementById('countCancelled').textContent = cancelled;
@@ -221,9 +229,9 @@ function updateStats(data){
 document.getElementById('search').addEventListener('input', e=>{
   const key = e.target.value.toLowerCase();
   const filtered = allData.filter(r =>
-    (r.name && r.name.toLowerCase().includes(key)) ||
-    (r.route && r.route.toLowerCase().includes(key)) ||
-    (r.date && r.date.toLowerCase().includes(key))
+    (r.b && r.b.toLowerCase().includes(key)) ||
+    (r.d && r.d.toLowerCase().includes(key)) ||
+    (r.a && r.a.toLowerCase().includes(key))
   );
   renderTable(filtered);
 });
