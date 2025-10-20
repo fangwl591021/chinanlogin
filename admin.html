@@ -275,7 +275,7 @@ table tbody tr:hover {
     <div class="card">
       <h2 class="section-title">✅ 核銷管理</h2>
       <p style="color:#666;font-size:14px;margin-bottom:12px;">進入司機核銷系統進行核銷作業</p>
-      <a href="https://liff.line.me/2006590746-A8YD0ZD9" class="link-btn">前往核銷系統 🚐</a>
+      <button onclick="window.open('https://liff.line.me/2006590746-A8YD0ZD9', '_blank')" class="link-btn" style="cursor:pointer;">前往核銷系統 🚐</button>
     </div>
   </section>
 
@@ -432,7 +432,10 @@ function setupNav() {
   const navBtns = document.querySelectorAll('.nav-btn');
   
   navBtns.forEach(btn => {
-    btn.addEventListener('click', function() {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
       const sectionId = this.dataset.id;
       
       // 更新按鈕狀態
@@ -443,7 +446,11 @@ function setupNav() {
       document.querySelectorAll('.section').forEach(s => {
         s.classList.remove('show');
       });
-      document.getElementById(sectionId).classList.add('show');
+      
+      const targetSection = document.getElementById(sectionId);
+      if (targetSection) {
+        targetSection.classList.add('show');
+      }
       
       // 查詢頁面載入表格
       if (sectionId === 'sectionQuery') {
