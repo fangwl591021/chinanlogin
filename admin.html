@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v5.4</title>
+<title>穿山甲專車後台 v5.5</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -19,9 +19,9 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
 #bottomNav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; display: flex; }
 .nav-btn { flex: 1; padding: 10px 0; text-align: center; font-size: 12px; font-weight: 600; cursor: pointer; color: #666; }
 .nav-btn.active { color: #3c8050; border-top: 3px solid #3c8050; }
-.status-reserved { color: #3c8050; font-weight: 600; }
-.status-cancelled { color: #ef4444; font-weight: 600; }
-.status-completed { color: #10b981; font-weight: 600; }
+.status-reserved { color: #3c8050; font-weight: 600; cursor: pointer; }
+.status-cancelled { color: #ef4444; font-weight: 600; cursor: pointer; }
+.status-completed { color: #10b981; font-weight: 600; cursor: pointer; }
 .loading { text-align: center; color: #888; padding: 20px; font-size: 16px; }
 </style>
 </head>
@@ -29,7 +29,7 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
 <body>
 <!-- 頂部 -->
 <div id="topBar">
-  <div style="font-weight: bold; font-size: 18px;">🚌 穿山甲後台</div>
+  <div class="font-bold text-lg">🚌 穿山甲後台</div>
   <div id="userInfo">
     <img id="userPicture" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect fill='%23ddd' width='40' height='40'/%3E%3C/svg%3E" alt="頭像">
     <span id="userName">載入中...</span>
@@ -63,7 +63,15 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
   <section id="dash" class="section">
     <div class="card">
       <h2 class="section-title">📊 營運儀表板</h2>
-      <p>未來將顯示預約統計。</p>
+      <p>總預約：<span id="statTotal">--</span>，已搭乘：<span id="statCompleted">--</span>，取消：<span id="statCancelled">--</span></p>
+    </div>
+  </section>
+
+  <!-- 司機 -->
+  <section id="driver" class="section">
+    <div class="card">
+      <h2 class="section-title">🚐 司機專區</h2>
+      <button id="goCheck" class="bg-green-600 text-white px-4 py-2 rounded w-full text-lg">前往核銷系統</button>
     </div>
   </section>
 
@@ -71,7 +79,7 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
   <section id="config" class="section">
     <div class="card">
       <h2 class="section-title">⚙️ 系統設定</h2>
-      <p>Admin 專用功能。</p>
+      <p>此區域為 Admin 專用。</p>
     </div>
   </section>
 </main>
@@ -80,108 +88,145 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
 <div id="bottomNav">
   <div class="nav-btn active" data-sec="query">🧾 查詢</div>
   <div class="nav-btn" data-sec="dash">📊 儀表板</div>
+  <div class="nav-btn" data-sec="driver">🚐 司機</div>
   <div class="nav-btn" data-sec="config">⚙️ 設定</div>
 </div>
 
 <script>
-const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/?mode=reservations';
-let data = [];
+const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+const LIFF_ID = '2006590746-wgL4l54z';
+let allData = [];
+let userRole = 'user';
+let userId = '';
 
-document.addEventListener('DOMContentLoaded', () => {
-  initLINE();
+document.addEventListener('DOMContentLoaded', init);
+
+async function init() {
+  await initLINE();
   setupNav();
-  loadData();
-});
+  loadReservations();
+}
 
-// === LIFF 初始化 ===
+// === 初始化 LINE 登入 ===
 async function initLINE() {
   try {
-    await liff.init({ liffId: '2006590746-wgL4l54z' });
-    if (!liff.isLoggedIn()) {
-      liff.login();
-      return;
-    }
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
     const profile = await liff.getProfile();
     document.getElementById('userName').textContent = profile.displayName;
     document.getElementById('userPicture').src = profile.pictureUrl;
-  } catch (e) {
+    userId = profile.userId;
+
+    // 查詢角色（從 GAS）
+    const res = await fetch(`${WORKER_URL}?mode=check&userId=${userId}`);
+    const info = await res.json();
+    userRole = info.user?.role || 'user';
+  } catch {
     document.getElementById('userName').textContent = '測試模式';
+    userRole = 'admin';
   }
 }
 
-// === 載入資料 ===
-async function loadData() {
+// === 載入預約資料 ===
+async function loadReservations() {
   document.getElementById('loadingText').style.display = 'block';
   document.getElementById('tableContainer').style.display = 'none';
-  
-  try {
-    const res = await fetch(WORKER_URL);
-    const result = await res.json();
-    data = result.reservations || [];
 
-    renderTable(data);
+  try {
+    const res = await fetch(WORKER_URL + '?mode=reservations');
+    const json = await res.json();
+    allData = json.reservations || [];
+    renderTable(allData);
+    updateStats();
   } catch (e) {
-    console.error(e);
     document.getElementById('loadingText').textContent = '❌ 無法取得資料';
   }
 }
 
-// === 排序 + 顯示表格 ===
-function renderTable(rows) {
-  const order = { A1: 1, B1: 2, A2: 3, B2: 4 };
-  rows.sort((a, b) => {
-    const da = new Date(a.date);
-    const db = new Date(b.date);
+// === 渲染表格 ===
+function renderTable(data) {
+  const order = { A1:1, B1:2, A2:3, B2:4 };
+  data.sort((a,b)=>{
+    const da = new Date(a.date), db = new Date(b.date);
     if (db - da !== 0) return db - da;
-    return (order[a.route] || 99) - (order[b.route] || 99);
+    return (order[a.route]||99)-(order[b.route]||99);
   });
 
   const tbody = document.getElementById('tbl');
-  if (!rows.length) {
+  if (!data.length) {
     tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 p-3">暫無資料</td></tr>`;
   } else {
-    tbody.innerHTML = rows.map(r => {
-      const dateStr = r.date ? new Date(r.date).toISOString().slice(5,10).replace('-', '-') : '';
-      let statusText = '已預約', statusClass = 'status-reserved';
-      if (r.status === 'cancelled' || r.status === '已取消') {
-        statusText = '已取消'; statusClass = 'status-cancelled';
-      } else if (r.status === 'completed' || r.status === '已搭乘' || r.status === '簽到') {
-        statusText = '已搭乘'; statusClass = 'status-completed';
-      }
+    tbody.innerHTML = data.map(r=>{
+      const dateStr = r.date ? new Date(r.date).toISOString().slice(5,10) : '';
+      let statusText='已預約', statusClass='status-reserved';
+      if (r.status==='已取消'||r.status==='cancelled'){ statusText='已取消'; statusClass='status-cancelled'; }
+      else if (r.status==='已搭乘'||r.status==='completed'){ statusText='已搭乘'; statusClass='status-completed'; }
       return `
         <tr>
           <td class="p-2">${dateStr}</td>
-          <td class="p-2">${r.route || ''}</td>
-          <td class="p-2">${r.name || ''}</td>
-          <td class="p-2 ${statusClass}">${statusText}</td>
+          <td class="p-2">${r.route||''}</td>
+          <td class="p-2">${r.name||''}</td>
+          <td class="p-2 ${statusClass}" onclick="changeStatus('${r.id}','${r.status||'已預約'}')">${statusText}</td>
         </tr>`;
     }).join('');
   }
 
-  document.getElementById('loadingText').style.display = 'none';
-  document.getElementById('tableContainer').style.display = 'block';
+  document.getElementById('loadingText').style.display='none';
+  document.getElementById('tableContainer').style.display='block';
+}
+
+// === 點擊狀態修改（Admin） ===
+async function changeStatus(id, current) {
+  if (userRole !== 'admin') return;
+  const next = current === '已取消' ? '已搭乘' :
+               current === '已搭乘' ? '已預約' : '已取消';
+  if (!confirm(`確定將狀態改為「${next}」？`)) return;
+  try {
+    await fetch(WORKER_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ type:'updateStatus', id, status:next })
+    });
+    alert(`✅ 已更新狀態為「${next}」`);
+    loadReservations();
+  } catch (e) {
+    alert('❌ 更新失敗');
+  }
 }
 
 // === 搜尋 ===
-document.getElementById('search').addEventListener('input', e => {
-  const keyword = e.target.value.toLowerCase();
-  const filtered = data.filter(r =>
-    (r.name && r.name.toLowerCase().includes(keyword)) ||
-    (r.route && r.route.toLowerCase().includes(keyword)) ||
-    (r.date && r.date.includes(keyword))
+document.getElementById('search').addEventListener('input', e=>{
+  const key = e.target.value.toLowerCase();
+  const filtered = allData.filter(r =>
+    (r.name && r.name.toLowerCase().includes(key)) ||
+    (r.route && r.route.toLowerCase().includes(key)) ||
+    (r.date && r.date.includes(key))
   );
   renderTable(filtered);
 });
 
-// === 底部導覽 ===
+// === 統計 ===
+function updateStats() {
+  const total = allData.length;
+  const cancelled = allData.filter(x=>x.status==='已取消'||x.status==='cancelled').length;
+  const completed = allData.filter(x=>x.status==='已搭乘'||x.status==='completed').length;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statCancelled').textContent = cancelled;
+  document.getElementById('statCompleted').textContent = completed;
+}
+
+// === 導覽 ===
 function setupNav() {
-  document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(sec=>sec.classList.remove('active'));
       document.getElementById(btn.dataset.sec).classList.add('active');
     });
+  });
+  document.getElementById('goCheck').addEventListener('click',()=>{
+    liff.openWindow({ url:'https://liff.line.me/2006590746-A8YD0ZD9', external:false });
   });
 }
 </script>
