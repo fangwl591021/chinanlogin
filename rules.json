@@ -1,67 +1,22 @@
 {
-  "testMode": true,
-  "testUserId": "Ue7a07fe317565389fbf4479172088f87",
-  "groupId": "C596050d1193b9b930ac25469c61ba12a",
-
-  "bookingMode": "single",
-  "seatLimit": 7,
-  "maxPerDay": 1,
-  "advanceMinutes": 30,
-  "dailyDeadline": "19:00",
-  "maxDaysAhead": 7,
-
-  "routePairs": {
-    "A1": "B1",
-    "B1": "A1",
-    "A2": "B2",
-    "B2": "A2"
+  "seatLimit": 6,
+  "maxNoShow": 3,
+  "banWeeks": 2,
+  "tripMode": "single",
+  "lastUpdate": "2025-10-20T11:48:47.453Z",
+  "updatedBy": "system",
+  "description": {
+    "seatLimit": "每班次可預約搭乘人數上限，例如 6 表示最多6位乘客",
+    "maxNoShow": "累積未核銷達此次數即觸發封鎖機制",
+    "banWeeks": "封鎖持續週數，期滿自動解除預約限制",
+    "tripMode": "預約模式：single 為單程、roundtrip 為可預約來回",
+    "lastUpdate": "最後一次修改時間（自動生成）",
+    "updatedBy": "最後更新操作者名稱"
   },
-
-  "autoRoundtripMap": {
-    "A1": "B2",
-    "B1": "A2"
-  },
-
-  "availableRoutes": [
-    {
-      "id": "A1",
-      "time": "22:00-22:30",
-      "direction": "暨大→埔里總站",
-      "eng": "NCNU → Puli Bus Terminal"
-    },
-    {
-      "id": "B1",
-      "time": "22:30-23:00",
-      "direction": "埔里總站→暨大",
-      "eng": "Puli Bus Terminal → NCNU"
-    },
-    {
-      "id": "A2",
-      "time": "23:00-23:30",
-      "direction": "暨大→埔里總站",
-      "eng": "NCNU → Puli Bus Terminal"
-    },
-    {
-      "id": "B2",
-      "time": "23:30-24:00",
-      "direction": "埔里總站→暨大",
-      "eng": "Puli Bus Terminal → NCNU"
-    }
-  ],
-
-  "stopList": [
-    ["行政大樓", "NCNU Administrative Building"],
-    ["中餐廳", "Zhong Can Ting(Chinese Restaurant)"],
-    ["科技學院", "College of Science and Technology"],
-    ["學人會館", "Scholars' Residence"],
-    ["中城", "Zhongcheng"],
-    ["下城", "Xiacheng"],
-    ["坪頂", "Pingding"],
-    ["愛蘭橋", "Ailan Bridge"],
-    ["大成國小", "Dacheng Elementary School"],
-    ["中山安七街口", "Zhongshan Anqi St. Intersection"],
-    ["榮民診所", "Veterans Clinic"],
-    ["埔里酒廠", "Puli Distillery"],
-    ["埔里總站", "Puli Bus Terminal"]
-  ]
+  "meta": {
+    "version": "1.0.0",
+    "system": "Pangolin Shuttle",
+    "maintainer": "Tony",
+    "note": "此檔為穿山甲專車後端 fallback 規則檔，供 Worker 初次載入與 KV 初始化使用"
+  }
 }
