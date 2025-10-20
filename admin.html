@@ -213,34 +213,44 @@ function setupButtons() {
 function renderTable(rows) {
   if (!Array.isArray(rows)) return;
   const order = { A1: 1, B1: 2, A2: 3, B2: 4 };
-  
+
+  // ✅ 日期降冪（最近在上），同日 A1→B1→A2→B2
   rows.sort((a, b) => {
     const da = new Date(a.date);
     const db = new Date(b.date);
-    if (db - da !== 0) return db - da; // 日期降冪（新→舊）
-    return (order[a.route] || 99) - (order[b.route] || 99); // 同日班次排序
+    if (db - da !== 0) return db - da;
+    return (order[a.route] || 99) - (order[b.route] || 99);
   });
 
   const tbody = document.getElementById('tbl');
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="4" class="loading">暫無資料</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">暫無資料</td></tr>`;
     return;
   }
 
   tbody.innerHTML = rows.map(r => {
     let statusText = '已預約', statusClass = 'status-reserved';
-    if (r.status === 'cancelled') { statusText = '已取消'; statusClass = 'status-cancelled'; }
-    else if (r.status === 'completed') { statusText = '已搭乘'; statusClass = 'status-completed'; }
+    if (r.status === 'cancelled' || r.status === '已取消') {
+      statusText = '已取消';
+      statusClass = 'status-cancelled';
+    } else if (r.status === 'completed' || r.status === '已搭乘' || r.status === '簽到') {
+      statusText = '已搭乘';
+      statusClass = 'status-completed';
+    }
+
+    // ✅ 顯示月日
+    const dateStr = r.date ? new Date(r.date).toISOString().slice(5, 10).replace('-', '-') : '';
 
     return `
       <tr>
-        <td>${r.date?.split('T')[0] || ''}</td>
+        <td>${dateStr}</td>
         <td>${r.route || ''}</td>
         <td>${r.name || ''}</td>
         <td class="${statusClass}">${statusText}</td>
       </tr>`;
   }).join('');
 }
+
 
 </script>
 </body>
