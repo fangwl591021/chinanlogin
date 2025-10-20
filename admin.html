@@ -10,7 +10,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; padding-bottom: 80px; }
 #topBar { position: sticky; top: 0; background: #3c8050; color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
-#userInfo { display: flex; align-items: center; gap: 10px; }
+#userInfo { display: function getStatusText(record) {flex; align-items: center; gap: 10px; }
 #userPicture { width: 40px; height: 40px; border-radius: 50%; border: 2px solid white; }
 .card { background: white; border-radius: 12px; padding: 16px; margin: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 .section-title { font-weight: 800; font-size: 18px; color: #14532d; margin-bottom: 16px; }
@@ -197,24 +197,66 @@ async function loadReservations() {
 }
 
 
-// === 轉換狀態 ===
+// === 狀態文字判斷（統一語意版） ===
 function getStatusText(record) {
-  // 打印所有欄位用於調試
-  console.log('記錄:', record);
+  const status = (record.status || record.h || '').trim();
+  const checkin = (record.checkinStatus || record.j || '').toUpperCase();
   
-  // j 欄位為 'Y' 表示已搭乘
-  if (record.j && record.j.toUpperCase() === 'Y') {
-    console.log('已搭乘');
-    return '已搭乘';
-  }
-  // h 欄位判斷已預約或已取消
-  if (record.h === '已取消') {
-    console.log('已取消');
-    return '已取消';
-  }
-  console.log('已預約');
+  if (checkin === 'Y') return '已搭乘';
+  if (status === '已取消') return '已取消';
   return '已預約';
 }
+
+// === 渲染表格（支援語意欄位與舊欄位） ===
+function renderTable(data) {
+  const order = { A1:1, B1:2, A2:3, B2:4 };
+  
+  // ✅ 日期由近到遠（最新在上）
+  data.sort((a,b)=>{
+    const da = new Date(a.date || a.a);
+    const db = new Date(b.date || b.a);
+    if (db - da !== 0) return db - da;
+    return (order[a.route || a.d]||99) - (order[b.route || b.d]||99);
+  });
+
+  const tbody = document.getElementById('tbl');
+  if(!data.length){
+    tbody.innerHTML='<tr><td colspan="4" class="text-center text-gray-400 p-3">暫無資料</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.map(r=>{
+    const dateStr = (r.date || r.a || '').slice(5,10);
+    const name = r.name || r.b || '';
+    const route = r.route || r.d || '';
+    const statusText = getStatusText(r);
+    let cls='status-reserved';
+    if(statusText==='已取消') cls='status-cancelled';
+    if(statusText==='已搭乘') cls='status-completed';
+    return `
+      <tr>
+        <td class="p-2">${dateStr}</td>
+        <td class="p-2">${route}</td>
+        <td class="p-2">${name}</td>
+        <td class="p-2 ${cls}">${statusText}</td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('loadingText').style.display='none';
+  document.getElementById('tableContainer').style.display='block';
+}
+
+// === 統計數字（改用語意欄位） ===
+function updateStats(data){
+  const reserved = data.filter(r=>getStatusText(r)==='已預約').length;
+  const completed = data.filter(r=>getStatusText(r)==='已搭乘').length;
+  const cancelled = data.filter(r=>getStatusText(r)==='已取消').length;
+
+  document.getElementById('countReserved').textContent = reserved;
+  document.getElementById('countCompleted').textContent = completed;
+  document.getElementById('countCancelled').textContent = cancelled;
+}
+
 
 // === 渲染表格 ===
 function renderTable(data) {
