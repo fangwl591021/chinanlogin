@@ -263,16 +263,36 @@ function sortReservations(reservations) {
   });
 }
 
-// 修正日期格式為月/日
+// 修正日期格式為月/日 - 完全重寫
 function formatDateToMonthDay(dateStr) {
+  console.log('📅 原始日期:', dateStr); // 除錯用
+  
   try {
-    const date = new Date(dateStr.replace(/\//g, '-'));
-    if (isNaN(date.getTime())) return dateStr;
+    // 處理 Date(2025,9,17) 格式
+    if (dateStr.startsWith('Date(')) {
+      const match = dateStr.match(/Date\((\d+),(\d+),(\d+)\)/);
+      if (match) {
+        const year = match[1];
+        const month = String(parseInt(match[2]) + 1).padStart(2, '0'); // 月份從0開始，所以要+1
+        const day = match[3].padStart(2, '0');
+        console.log('✅ 解析 Date() 格式:', { year, month, day });
+        return `${month}/${day}`;
+      }
+    }
     
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${month}/${day}`;
+    // 處理正常日期格式 (YYYY-MM-DD 或 YYYY/MM/DD)
+    const date = new Date(dateStr.replace(/\//g, '-'));
+    if (!isNaN(date.getTime())) {
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      console.log('✅ 解析正常日期格式:', { month, day });
+      return `${month}/${day}`;
+    }
+    
+    console.warn('❌ 無法解析的日期格式:', dateStr);
+    return dateStr; // 如果無法解析，返回原始字串
   } catch (e) {
+    console.error('❌ 日期格式化錯誤:', e, '原始資料:', dateStr);
     return dateStr;
   }
 }
@@ -314,9 +334,9 @@ async function loadReservations(){
     const res = await fetch(`${WORKER_URL}?mode=reservations`);
     const data = await res.json();
     if(data.status==='success') {
-      console.log('原始資料:', data.reservations); // 除錯用
+      console.log('📊 從 Worker 收到的原始資料:', data.reservations); // 除錯用
       const validatedData = validateReservationData(data.reservations);
-      console.log('驗證後資料:', validatedData); // 除錯用
+      console.log('✅ 驗證後資料:', validatedData); // 除錯用
       const sortedData = sortReservations(validatedData);
       allReservations = sortedData;
       renderReservations(sortedData);
@@ -344,6 +364,16 @@ function renderReservations(list){
       ${list.map(r=>{
         const cls = r.status === '已取消' ? 'status-cancelled' :
                    r.status === '已搭乘' ? 'status-completed' : 'status-reserved';
+        
+        // 除錯：檢查每個項目的資料
+        console.log('📋 渲染項目:', { 
+          date: r.date, 
+          formattedDate: formatDateToMonthDay(r.date),
+          route: r.route,
+          name: r.name,
+          status: r.status 
+        });
+        
         return `<tr>
           <td>${formatDateToMonthDay(r.date)}</td>
           <td>${r.route || '-'}</td>
