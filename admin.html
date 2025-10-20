@@ -336,7 +336,17 @@ let isDev = new URLSearchParams(window.location.search).has('dev');
 
 // 頁面加載
 window.addEventListener('DOMContentLoaded', () => {
-  console.log('初始化...');
+  console.log('🟢 DOMContentLoaded - 開始初始化');
+  console.log('isDev:', isDev);
+  
+  // 確保儀表板顯示
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('show'));
+  document.getElementById('sectionDashboard').classList.add('show');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-id="sectionDashboard"]').classList.add('active');
+  
+  console.log('🟢 已設定儀表板為活躍');
+  
   setupNav();
   
   if (isDev) {
@@ -428,12 +438,16 @@ function setupNav() {
       e.stopPropagation();
       
       const sectionId = this.dataset.id;
+      console.log('🔵 點擊導航:', sectionId);
       
       // 核銷直接跳轉
       if (sectionId === 'sectionCheckin') {
+        console.log('🔴 跳轉到核銷系統');
         window.location.href = 'https://liff.line.me/2006590746-A8YD0ZD9';
         return;
       }
+      
+      console.log('🟡 切換到:', sectionId);
       
       // 其他功能在admin內切換
       navBtns.forEach(b => b.classList.remove('active'));
@@ -451,8 +465,10 @@ function setupNav() {
       if (sectionId === 'sectionQuery') {
         renderTable(allReservations);
       }
-    });
+    }, false);
   });
+  
+  console.log('🟢 導航事件已綁定');
   
   // 搜尋功能
   document.getElementById('searchBox').addEventListener('input', (e) => {
