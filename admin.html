@@ -335,17 +335,16 @@ let allReservations = [];
 let isDev = new URLSearchParams(window.location.search).has('dev');
 
 // 頁面加載
-window.addEventListener('load', init);
-
-async function init() {
+window.addEventListener('DOMContentLoaded', () => {
   console.log('初始化...');
+  setupNav();
   
   if (isDev) {
     initDev();
   } else {
-    await initLine();
+    initLine();
   }
-}
+});
 
 async function initLine() {
   console.log('LINE 模式');
@@ -378,14 +377,12 @@ async function initLine() {
   }
   
   await loadReservations();
-  setupNav();
 }
 
 function initDev() {
   console.log('開發模式');
   document.getElementById('userName').textContent = '開發者';
   loadReservations();
-  setupNav();
 }
 
 async function loadReservations() {
