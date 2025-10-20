@@ -37,12 +37,28 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
   margin-bottom: 15px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
-.route-map-section h2 {
+.route-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+.route-header h2 {
   color: #2e7d32;
-  margin-bottom: 10px;
+  margin: 0;
   font-size: 16px;
-  border-bottom: 2px solid #3c8050;
-  padding-bottom: 6px;
+}
+.route-header button {
+  background: #3c8050;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.route-header button:hover {
+  background: #2f6842;
 }
 .route-line {
   margin-bottom: 20px;
@@ -88,9 +104,8 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
 .table-header th{padding:10px 8px;font-size:12px;border:1px solid #2f6842;}
 .table-row{border-bottom:1px solid #e0e0e0;}
 .table-row:hover{background:#f8faf8;}
-.table-row td{padding:10px 6px;border:1px solid #e0e0e0;font-size:12px;word-break:break-word;word-spacing:100vw;}
-.stop-cell{word-break:break-word;word-spacing:100vw;line-height:1.4;}
-.checkin-btn{padding:8px 14px;font-size:13px;}
+.table-row td{padding:10px 6px;border:1px solid #e0e0e0;font-size:12px;word-break:break-word;}
+.stop-cell{word-break:break-word;line-height:1.4;}
 .passenger-name{color:#0066cc;cursor:pointer;font-weight:600;text-decoration:underline;}
 .passenger-name:hover{color:#0052a3;}
 .checkin-btn{background:#3c8050;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap;}
@@ -132,45 +147,50 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
     <div class="calendar-grid" id="calendar-grid" style="display:none;"></div>
   </div>
 
-  <!-- === 新增區塊：行車路線圖 === -->
+  <!-- 行車路線圖 -->
   <div class="route-map-section">
-    <h2>🚏 行車路線示意圖</h2>
-
-    <div class="route-line a-line">
-      <h3>🅰️ A線（暨大 → 埔里總站）</h3>
-      <div class="stops">
-        <span>行政大樓</span><span class="arrow">➔</span>
-        <span>中餐廳</span><span class="arrow">➔</span>
-        <span>科技學院</span><span class="arrow">➔</span>
-        <span>學人會館</span><span class="arrow">➔</span>
-        <span>中城</span><span class="arrow">➔</span>
-        <span>下城</span><span class="arrow">➔</span>
-        <span>坪頂</span><span class="arrow">➔</span>
-        <span>愛蘭橋</span><span class="arrow">➔</span>
-        <span>大成國小</span><span class="arrow">➔</span>
-        <span>中山安七街口</span><span class="arrow">➔</span>
-        <span>榮民診所</span><span class="arrow">➔</span>
-        <strong>埔里酒廠</strong><span class="arrow">➔</span>
-        <strong>埔里總站</strong>
-      </div>
+    <div class="route-header">
+      <h2>🚏 行車路線示意圖</h2>
+      <button id="toggle-route">收合</button>
     </div>
 
-    <div class="route-line b-line">
-      <h3>🅱️ B線（埔里總站 → 暨大）</h3>
-      <div class="stops">
-        <strong>埔里總站</strong><span class="arrow">➔</span>
-        <strong>埔里酒廠</strong><span class="arrow">➔</span>
-        <span>榮民診所</span><span class="arrow">➔</span>
-        <span>中山安七街口</span><span class="arrow">➔</span>
-        <span>大成國小</span><span class="arrow">➔</span>
-        <span>愛蘭橋</span><span class="arrow">➔</span>
-        <span>坪頂</span><span class="arrow">➔</span>
-        <span>下城</span><span class="arrow">➔</span>
-        <span>中城</span><span class="arrow">➔</span>
-        <span>學人會館</span><span class="arrow">➔</span>
-        <span>科技學院</span><span class="arrow">➔</span>
-        <span>中餐廳</span><span class="arrow">➔</span>
-        <strong>行政大樓</strong>
+    <div id="route-content">
+      <div class="route-line a-line">
+        <h3>🅰️ A線（暨大 → 埔里總站）</h3>
+        <div class="stops">
+          <span>行政大樓</span><span class="arrow">➔</span>
+          <span>中餐廳</span><span class="arrow">➔</span>
+          <span>科技學院</span><span class="arrow">➔</span>
+          <span>學人會館</span><span class="arrow">➔</span>
+          <span>中城</span><span class="arrow">➔</span>
+          <span>下城</span><span class="arrow">➔</span>
+          <span>坪頂</span><span class="arrow">➔</span>
+          <span>愛蘭橋</span><span class="arrow">➔</span>
+          <span>大成國小</span><span class="arrow">➔</span>
+          <span>中山安七街口</span><span class="arrow">➔</span>
+          <span>榮民診所</span><span class="arrow">➔</span>
+          <strong>埔里酒廠</strong><span class="arrow">➔</span>
+          <strong>埔里總站</strong>
+        </div>
+      </div>
+
+      <div class="route-line b-line">
+        <h3>🅱️ B線（埔里總站 → 暨大）</h3>
+        <div class="stops">
+          <strong>埔里總站</strong><span class="arrow">➔</span>
+          <strong>埔里酒廠</strong><span class="arrow">➔</span>
+          <span>榮民診所</span><span class="arrow">➔</span>
+          <span>中山安七街口</span><span class="arrow">➔</span>
+          <span>大成國小</span><span class="arrow">➔</span>
+          <span>愛蘭橋</span><span class="arrow">➔</span>
+          <span>坪頂</span><span class="arrow">➔</span>
+          <span>下城</span><span class="arrow">➔</span>
+          <span>中城</span><span class="arrow">➔</span>
+          <span>學人會館</span><span class="arrow">➔</span>
+          <span>科技學院</span><span class="arrow">➔</span>
+          <span>中餐廳</span><span class="arrow">➔</span>
+          <strong>行政大樓</strong>
+        </div>
       </div>
     </div>
   </div>
@@ -221,6 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('prev-month').onclick = () => changeMonth(-1);
   document.getElementById('next-month').onclick = () => changeMonth(1);
   document.getElementById('toggle-calendar').onclick = toggleCalendar;
+  document.getElementById('toggle-route').onclick = toggleRoute;
   const modal = document.getElementById('infoModal');
   if (modal) modal.addEventListener('click', (e) => { if (e.target.id === 'infoModal') closeModal(); });
   initializeSystem();
@@ -338,6 +359,13 @@ function toggleCalendar(){
   const btn=document.getElementById('toggle-calendar');
   const isHidden=grid.style.display==='none';
   grid.style.display=isHidden?'grid':'none';
+  btn.textContent=isHidden?'收合':'展開';
+}
+function toggleRoute(){
+  const content=document.getElementById('route-content');
+  const btn=document.getElementById('toggle-route');
+  const isHidden=content.style.display==='none';
+  content.style.display=isHidden?'block':'none';
   btn.textContent=isHidden?'收合':'展開';
 }
 function formatDate(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;}
