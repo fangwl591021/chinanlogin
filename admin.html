@@ -3,41 +3,20 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v3.8</title>
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<title>穿山甲專車後台 v3.9</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 body {
   font-family: "Noto Sans TC", system-ui, sans-serif;
   background: #f8fafc;
   color: #334155;
-  margin: 0;
-  padding-bottom: 70px;
-}
-.card {
-  background:white;
-  border-radius:16px;
-  padding:16px;
-  box-shadow:0 2px 10px rgba(0,0,0,0.08);
-  margin:16px auto;
-  max-width:100%;
-}
-.section-title {
-  font-weight:800;
-  font-size:20px;
-  color:#14532d;
-  margin-bottom:16px;
-  display:flex;
-  align-items:center;
-}
-.section-title::before {
-  content:"";
-  display:inline-block;
-  width:8px;
-  height:24px;
-  background:#22c55e;
-  border-radius:3px;
-  margin-right:10px;
+  padding-bottom: 80px;
 }
 
 #topBar {
@@ -51,22 +30,51 @@ body {
   align-items: center;
   z-index: 50;
 }
+
 #userProfile {
   display: flex;
   align-items: center;
   gap: 10px;
-  cursor:pointer;
 }
+
 #userProfile img {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 2px solid #fff;
-  background: #ccc;
+  border: 2px solid white;
+  background: #ddd;
 }
+
 #userName {
   font-weight: 600;
   font-size: 14px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.section-title {
+  font-weight: 800;
+  font-size: 18px;
+  color: #14532d;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 20px;
+  background: #22c55e;
+  border-radius: 2px;
 }
 
 #bottomNav {
@@ -77,22 +85,33 @@ body {
   background: white;
   border-top: 1px solid #e5e7eb;
   display: flex;
-  justify-content: space-around;
-  padding: 8px 0;
   z-index: 50;
 }
+
 .nav-btn {
   flex: 1;
+  padding: 12px 0;
   text-align: center;
-  color: #475569;
-  font-size: 14px;
+  color: #666;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  padding: 8px 0;
+  border: none;
+  background: none;
 }
+
 .nav-btn.active {
   color: #3c8050;
-  font-weight: 800;
+  border-top: 3px solid #3c8050;
+  padding-top: 9px;
+}
+
+.section {
+  display: none;
+}
+
+.section.active {
+  display: block;
 }
 
 .search-input {
@@ -101,73 +120,86 @@ body {
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 14px;
-  margin-bottom: 15px;
-  box-sizing: border-box;
+  margin-bottom: 12px;
 }
 
-.table-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.reservation-table {
+table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
+  font-size: 13px;
 }
-.table-header {
+
+table thead {
   background: #3c8050;
   color: white;
-  font-weight: bold;
 }
-.table-header th {
-  padding: 10px 6px;
+
+table th, table td {
+  padding: 8px;
   text-align: left;
-  font-size: 12px;
-  border: 1px solid #2f6842;
-  word-break: break-word;
-}
-.table-row {
   border-bottom: 1px solid #e5e7eb;
 }
-.table-row:hover {
-  background: #f8faf8;
+
+table tbody tr:hover {
+  background: #f0f9ff;
 }
-.table-row td {
-  padding: 10px 6px;
+
+.stat-card {
+  background: linear-gradient(135deg, #3c8050 0%, #2d5f3f 100%);
+  color: white;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.stat-label {
   font-size: 12px;
-  border: 1px solid #e5e7eb;
-  word-break: break-word;
+  opacity: 0.9;
 }
-.passenger-name {
-  color: #0066cc;
-  cursor: pointer;
-  font-weight: 600;
-  text-decoration: underline;
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  margin-top: 4px;
 }
-.passenger-name:hover {
-  color: #0052a3;
-}
-.status-booked {
-  color: #3c8050;
-  font-weight: 600;
-}
-.status-cancelled {
-  color: #ccc;
-  text-decoration: line-through;
-}
-.status-checkedin {
-  color: #27ACB2;
-  font-weight: 600;
-}
-.status-notcheckedin {
-  color: #f44336;
-  font-weight: 600;
-}
-.no-data {
+
+.loading {
   text-align: center;
-  color: #999;
   padding: 40px 20px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #3c8050;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-msg {
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 16px;
+  border-radius: 8px;
+  margin: 16px;
+  text-align: center;
+}
+
+.link-btn {
+  display: inline-block;
+  background: #3c8050;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  margin-top: 12px;
 }
 
 .modal {
@@ -182,363 +214,231 @@ body {
   align-items: center;
   justify-content: center;
 }
+
 .modal.active {
   display: flex;
 }
+
 .modal-content {
   background: white;
-  border-radius: 12px;
-  padding: 24px;
-  max-width: 90%;
-  width: 100%;
-  max-width: 380px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 300px;
+  width: 90%;
 }
-.modal-header {
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  border-bottom: 2px solid #3c8050;
-  padding-bottom: 10px;
-}
-.modal-body {
-  margin-bottom: 20px;
-  line-height: 2;
-}
-.modal-body div {
+
+.modal-content h3 {
   margin-bottom: 12px;
+  border-bottom: 2px solid #3c8050;
+  padding-bottom: 8px;
 }
+
+.modal-item {
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
 .modal-label {
   color: #666;
   font-size: 12px;
 }
+
 .modal-value {
+  font-weight: 600;
   color: #333;
-  font-weight: 600;
-  font-size: 14px;
-}
-.phone-link {
-  color: #0066cc;
-  text-decoration: none;
-  font-weight: 600;
-  cursor: pointer;
-}
-.modal-close {
-  background: #e0e0e0;
-  color: #333;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  width: 100%;
-}
-.modal-close:hover {
-  background: #ccc;
 }
 
-.checkin-btn {
-  background: #3c8050;
-  color: white;
+.close-btn {
+  width: 100%;
+  padding: 10px;
+  background: #e5e7eb;
   border: none;
-  padding: 6px 10px;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 11px;
   font-weight: 600;
-  white-space: nowrap;
-}
-.checkin-btn:hover {
-  background: #2f6842;
-}
-.checkin-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-/* 無權限 / 載入中 */
-.auth-screen {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: white;
-  z-index: 9999;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 20px;
-}
-.auth-screen.active {
-  display: flex;
-}
-.auth-screen h2 {
-  font-size: 24px;
-  color: #333;
-  margin: 0;
-}
-.auth-screen p {
-  color: #666;
-  font-size: 16px;
-  text-align: center;
-  max-width: 300px;
-}
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f0f0f0;
-  border-top-color: #3c8050;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-.error-box {
-  text-align: center;
-  color: #b91c1c;
-}
-.error-box h2 {
-  color: #b91c1c;
-  font-size: 32px;
+  margin-top: 12px;
 }
 </style>
 </head>
 
 <body>
 
-<div id="authScreen" class="auth-screen active">
-  <div class="spinner"></div>
-  <h2>系統初始化中...</h2>
-  <p>正在驗證身份，請稍候</p>
-</div>
-
 <div id="topBar">
-  <div style="font-weight: bold; font-size: 18px;">🚌 穿山甲後台系統</div>
+  <div style="font-weight: bold; font-size: 18px;">🚌 穿山甲後台</div>
   <div id="userProfile">
-    <img id="userPicture" src="" alt="頭像" style="display:none;">
+    <img id="userPicture" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect fill='%23ddd' width='40' height='40'/%3E%3C/svg%3E" alt="頭像">
     <span id="userName">-</span>
   </div>
 </div>
 
-<main id="mainContent" style="padding-bottom: 100px; display:none;">
+<main id="mainContent">
 
   <!-- 儀表板 -->
-  <section id="dashboard" class="card hidden">
-    <h2 class="section-title">📊 營運儀表板</h2>
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-      <div style="background:#f0fdf4; padding:16px; border-radius:8px; border-left:4px solid #3c8050;">
-        <div style="color:#666; font-size:13px;">總預約數</div>
-        <div style="font-size:28px; font-weight:800; color:#3c8050;" id="stat-total">--</div>
-      </div>
-      <div style="background:#f0fdf4; padding:16px; border-radius:8px; border-left:4px solid #3c8050;">
-        <div style="color:#666; font-size:13px;">今日預約</div>
-        <div style="font-size:28px; font-weight:800; color:#3c8050;" id="stat-today">--</div>
-      </div>
-      <div style="background:#f0fdf4; padding:16px; border-radius:8px; border-left:4px solid #3c8050; grid-column:1/3;">
-        <div style="color:#666; font-size:13px;">核銷率</div>
-        <div style="font-size:28px; font-weight:800; color:#3c8050;" id="stat-rate">--%</div>
+  <section id="dashboard" class="section active">
+    <div class="card">
+      <h2 class="section-title">📊 營運儀表板</h2>
+      <div id="statsContainer">
+        <div class="loading">
+          <div class="spinner"></div>
+          <p>載入中...</p>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- 查詢 -->
-  <section id="reservations" class="card hidden">
-    <h2 class="section-title">🧾 預約查詢與管理</h2>
-    <input type="text" id="searchInput" class="search-input" placeholder="輸入姓名 / 日期 / 班次搜尋...">
-    <div class="table-wrapper">
-      <table class="reservation-table">
-        <thead class="table-header">
-          <tr>
-            <th style="width:15%;">日期</th>
-            <th style="width:8%;">班次</th>
-            <th style="width:15%;">姓名</th>
-            <th style="width:13%;">預約狀態</th>
-            <th style="width:13%;">搭乘狀態</th>
-          </tr>
-        </thead>
-        <tbody id="reservation-list"></tbody>
-      </table>
+  <section id="reservations" class="section">
+    <div class="card">
+      <h2 class="section-title">🧾 預約查詢</h2>
+      <input type="text" id="searchInput" class="search-input" placeholder="搜尋姓名 / 日期 / 班次...">
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>班次</th>
+              <th>姓名</th>
+              <th>預約狀態</th>
+              <th>搭乘狀態</th>
+            </tr>
+          </thead>
+          <tbody id="reservationList"></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
-  <!-- 核銷區 -->
-  <section id="checkin" class="card hidden">
-    <h2 class="section-title">✅ 核銷管理</h2>
-    <p style="color: #999; font-size: 14px; margin-bottom:16px;">進入司機核銷系統進行核銷作業...</p>
-    <a href="https://liff.line.me/2006590746-A8YD0ZD9" style="display:inline-block; background:#3c8050; color:white; padding:10px 16px; border-radius:6px; text-decoration:none; font-weight:600;">前往核銷系統 🚐</a>
+  <!-- 核銷 -->
+  <section id="checkin" class="section">
+    <div class="card">
+      <h2 class="section-title">✅ 核銷管理</h2>
+      <p>進入司機核銷系統進行核銷作業</p>
+      <a href="https://liff.line.me/2006590746-A8YD0ZD9" class="link-btn">前往核銷系統 🚐</a>
+    </div>
   </section>
 
   <!-- 司機 -->
-  <section id="drivers" class="card hidden">
-    <h2 class="section-title">🚐 司機班表</h2>
-    <p>此區顯示各班次司機配置，未來可串接 Google Calendar。</p>
-    <ul style="list-style:none; padding:0; margin-top:12px;">
-      <li style="padding:8px 0; border-bottom:1px solid #eee;">A1 - 陳司機</li>
-      <li style="padding:8px 0; border-bottom:1px solid #eee;">A2 - 王司機</li>
-      <li style="padding:8px 0; border-bottom:1px solid #eee;">B1 - 吳司機</li>
-      <li style="padding:8px 0; border-bottom:1px solid #eee;">B2 - 李司機</li>
-    </ul>
+  <section id="drivers" class="section">
+    <div class="card">
+      <h2 class="section-title">🚐 司機班表</h2>
+      <ul style="list-style: none;">
+        <li style="padding: 8px 0; border-bottom: 1px solid #eee;">✈️ A1 - 陳司機</li>
+        <li style="padding: 8px 0; border-bottom: 1px solid #eee;">✈️ A2 - 王司機</li>
+        <li style="padding: 8px 0; border-bottom: 1px solid #eee;">✈️ B1 - 吳司機</li>
+        <li style="padding: 8px 0; border-bottom: 1px solid #eee;">✈️ B2 - 李司機</li>
+      </ul>
+    </div>
   </section>
 
   <!-- 設定 -->
-  <section id="config" class="card hidden">
-    <h2 class="section-title">⚙️ 營運設定中心</h2>
-    <p>（Admin 專用功能）</p>
-    <button style="background:#3c8050;color:white;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;font-weight:600;margin-top:10px;">💾 儲存設定</button>
+  <section id="config" class="section">
+    <div class="card">
+      <h2 class="section-title">⚙️ 營運設定</h2>
+      <p>（Admin 專用功能）</p>
+      <button style="background: #3c8050; color: white; padding: 10px 16px; border: none; border-radius: 6px; font-weight: 600; margin-top: 12px; cursor: pointer;">💾 儲存設定</button>
+    </div>
   </section>
 
 </main>
 
+<!-- 下方導航 -->
 <div id="bottomNav">
-  <div class="nav-btn" data-target="dashboard">📊 儀表板</div>
-  <div class="nav-btn" data-target="reservations">🧾 查詢</div>
-  <div class="nav-btn" data-target="checkin">✅ 核銷</div>
-  <div class="nav-btn" data-target="drivers">🚐 司機</div>
-  <div class="nav-btn" data-target="config">⚙️ 設定</div>
+  <button class="nav-btn active" data-section="dashboard">📊 儀表板</button>
+  <button class="nav-btn" data-section="reservations">🧾 查詢</button>
+  <button class="nav-btn" data-section="checkin">✅ 核銷</button>
+  <button class="nav-btn" data-section="drivers">🚐 司機</button>
+  <button class="nav-btn" data-section="config">⚙️ 設定</button>
 </div>
 
-<!-- 詳細資訊彈出窗 -->
+<!-- 詳細資訊 Modal -->
 <div id="infoModal" class="modal">
   <div class="modal-content">
-    <div class="modal-header" id="modal-name"></div>
-    <div class="modal-body">
-      <div>
-        <div class="modal-label">科系</div>
-        <div class="modal-value" id="modal-department"></div>
-      </div>
-      <div>
-        <div class="modal-label">學號</div>
-        <div class="modal-value" id="modal-studentid"></div>
-      </div>
-      <div>
-        <div class="modal-label">電話</div>
-        <div class="modal-value">
-          <a id="modal-phone" href="#" class="phone-link"></a>
-        </div>
-      </div>
+    <h3 id="modalName"></h3>
+    <div class="modal-item">
+      <div class="modal-label">科系</div>
+      <div class="modal-value" id="modalDept"></div>
     </div>
-    <button class="modal-close" onclick="closeModal()">關閉</button>
+    <div class="modal-item">
+      <div class="modal-label">學號</div>
+      <div class="modal-value" id="modalStuId"></div>
+    </div>
+    <div class="modal-item">
+      <div class="modal-label">電話</div>
+      <div class="modal-value"><a id="modalPhone" href="#"></a></div>
+    </div>
+    <button class="close-btn" onclick="closeModal()">關閉</button>
   </div>
 </div>
 
 <script>
-const LIFF_ID = '2006590746-A8YD0ZD9';
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbza2qFcrQt1PS6Y4p4u2gSXovvFxWecEjjIh5ov1cIk_65zgdFJA0xjVuS3qr7WvlgAzA/exec';
-const DEV_MODE = new URLSearchParams(window.location.search).has('dev');
 
 let allReservations = [];
-let userProfile = { name: '', picture: '', role: 'user', userId: '' };
+let isDev = new URLSearchParams(window.location.search).has('dev');
 
-async function waitForLIFF() {
-  let attempts = 0;
-  while (typeof liff === 'undefined' && attempts < 50) {
-    await new Promise(r => setTimeout(r, 100));
-    attempts++;
-  }
-  if (typeof liff === 'undefined') {
-    throw new Error('LIFF SDK 加載失敗，請檢查網路連線');
-  }
-}
-
-document.addEventListener('DOMContentLoaded', async () => {
-  try {
-    if (DEV_MODE) {
-      console.log('🔧 進入開發模式');
-      await initDevMode();
-    } else {
-      await waitForLIFF();
-      await initLIFF();
-    }
-  } catch (e) {
-    console.error('初始化失敗:', e);
-    showAuthScreen('❌ 系統錯誤', e.message || '無法初始化系統\n\n提示：本地測試可加上 ?dev 參數');
+// 初始化
+window.addEventListener('load', async () => {
+  if (isDev) {
+    initDevMode();
+  } else {
+    await initLineMode();
   }
 });
 
-async function initLIFF() {
-  try {
-    await liff.init({ liffId: LIFF_ID });
-  } catch (e) {
-    throw new Error('LIFF 初始化失敗: ' + e.message);
+async function initLineMode() {
+  console.log('等待 LINE LIFF...');
+  
+  // 等待 LIFF SDK
+  let attempts = 0;
+  while (typeof liff === 'undefined' && attempts < 30) {
+    await new Promise(r => setTimeout(r, 200));
+    attempts++;
   }
   
-  if (!liff.isLoggedIn()) {
-    liff.login();
+  if (typeof liff === 'undefined') {
+    showError('LIFF SDK 未加載，請嘗試 ?dev 模式');
     return;
   }
   
-  const profile = await liff.getProfile();
-  userProfile.userId = profile.userId;
-  userProfile.name = profile.displayName;
-  userProfile.picture = profile.pictureUrl;
-  
-  document.getElementById('userName').textContent = profile.displayName;
-  document.getElementById('userPicture').src = profile.pictureUrl;
-  document.getElementById('userPicture').style.display = 'block';
-  
-  await verifyAdmin(profile.userId);
-}
-
-async function initDevMode() {
-  // 本地開發模式 (訪問 ?dev 參數)
-  userProfile.userId = 'dev-user-123';
-  userProfile.name = '開發者';
-  userProfile.picture = 'https://via.placeholder.com/40?text=DEV';
-  
-  document.getElementById('userName').textContent = '開發者 (DEV)';
-  document.getElementById('userPicture').src = userProfile.picture;
-  document.getElementById('userPicture').style.display = 'block';
-  
-  userProfile.role = 'admin';
-  await loadReservations();
-  showMainContent();
-}
-
-async function verifyAdmin(userId) {
   try {
-    const res = await fetch(`${GAS_URL}?mode=check&userId=${encodeURIComponent(userId)}`);
-    const data = await res.json();
+    await liff.init({ liffId: '2006590746-A8YD0ZD9' });
     
-    if (data.user && data.user.role === 'admin') {
-      userProfile.role = 'admin';
-      await loadReservations();
-      showMainContent();
-    } else {
-      showAuthScreen('🚫 無權限', '您沒有權限使用此系統\n如需開通，請聯絡管理員。');
-      if (liff.isInClient()) {
-        setTimeout(() => liff.closeWindow(), 3000);
-      }
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
     }
+    
+    const profile = await liff.getProfile();
+    document.getElementById('userName').textContent = profile.displayName;
+    document.getElementById('userPicture').src = profile.pictureUrl;
+    
+    await loadData();
+    setupUI();
   } catch (e) {
-    console.error('驗證失敗:', e);
-    showAuthScreen('❌ 驗證錯誤', e.message);
+    console.error(e);
+    showError('LINE 驗證失敗：' + e.message);
   }
 }
 
-async function loadReservations() {
+function initDevMode() {
+  console.log('開發模式');
+  document.getElementById('userName').textContent = '開發者 (DEV)';
+  loadData();
+  setupUI();
+}
+
+async function loadData() {
   try {
     const res = await fetch(`${WORKER_URL}?mode=reservations`);
-    const result = await res.json();
-    allReservations = result.reservations || [];
-    
-    const routes = ['A1', 'B1', 'A2', 'B2'];
-    allReservations.sort((a, b) => {
-      const dateCompare = (a.date || '').localeCompare(b.date || '');
-      if (dateCompare !== 0) return dateCompare;
-      const routeOrder = routes.indexOf(a.route) - routes.indexOf(b.route);
-      return routeOrder !== 0 ? routeOrder : (a.name || '').localeCompare(b.name || '');
-    });
-    
-    updateStats();
+    const data = await res.json();
+    allReservations = data.reservations || [];
+    console.log('載入預約：', allReservations.length);
   } catch (e) {
-    console.error('載入預約失敗:', e);
-    allReservations = [];
+    console.error('載入失敗:', e);
   }
+  
+  updateStats();
 }
 
 function updateStats() {
@@ -548,119 +448,96 @@ function updateStats() {
   const checked = allReservations.filter(r => r.checkinStatus === 'Y').length;
   const rate = total ? Math.round((checked / total) * 100) : 0;
   
-  document.getElementById('stat-total').textContent = total;
-  document.getElementById('stat-today').textContent = todayCount;
-  document.getElementById('stat-rate').textContent = rate + '%';
-}
-
-function showMainContent() {
-  document.getElementById('authScreen').classList.remove('active');
-  document.getElementById('mainContent').style.display = 'block';
-  setupNavigation();
-  showSection('dashboard');
-}
-
-function showAuthScreen(title, message) {
-  const screen = document.getElementById('authScreen');
-  screen.innerHTML = `
-    <div class="error-box">
-      <h2>${title}</h2>
-      <p>${message}</p>
+  document.getElementById('statsContainer').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">總預約數</div>
+      <div class="stat-value">${total}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">今日預約</div>
+      <div class="stat-value">${todayCount}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">核銷率</div>
+      <div class="stat-value">${rate}%</div>
     </div>
   `;
-  screen.classList.add('active');
-  document.getElementById('mainContent').style.display = 'none';
 }
 
-function setupNavigation() {
+function setupUI() {
+  // 導航
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const target = btn.dataset.target;
-      showSection(target);
+      const section = btn.dataset.section;
+      showSection(section);
+      
       document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      
+      if (section === 'reservations') {
+        renderReservations(allReservations);
+      }
     });
   });
   
-  document.getElementById('searchInput').addEventListener('input', filterReservations);
+  // 搜尋
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase();
+    const filtered = allReservations.filter(r =>
+      (r.name || '').toLowerCase().includes(query) ||
+      (r.date || '').includes(query) ||
+      (r.route || '').includes(query)
+    );
+    renderReservations(filtered);
+  });
+  
+  // Modal 關閉
   document.getElementById('infoModal').addEventListener('click', (e) => {
     if (e.target.id === 'infoModal') closeModal();
   });
 }
 
-function showSection(sectionId) {
-  document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
-  const section = document.getElementById(sectionId);
-  if (section) {
-    section.classList.remove('hidden');
-    if (sectionId === 'reservations') renderReservations(allReservations);
-  }
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
 }
 
 function renderReservations(data) {
-  const tbody = document.getElementById('reservation-list');
+  const tbody = document.getElementById('reservationList');
   tbody.innerHTML = '';
   
-  if (!data || data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="no-data">暫無預約資料</td></tr>';
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">暫無資料</td></tr>';
     return;
   }
   
   data.forEach(r => {
-    const tr = document.createElement('tr');
-    tr.className = 'table-row';
+    const status = r.status === '已取消' ? '❌ 已取消' : '✅ 已預約';
+    const checkin = r.checkinStatus === 'Y' ? '🟢 已搭乘' : '⚪ 未搭乘';
     
-    let phoneDisplay = r.phone || '未提供';
-    if (phoneDisplay !== '未提供' && phoneDisplay.length < 10) {
-      phoneDisplay = '0' + phoneDisplay;
-    }
-    
-    const reservationStatus = r.status === '已取消' ? '已取消' : '已預約';
-    const reservationStatusClass = r.status === '已取消' ? 'status-cancelled' : 'status-booked';
-    
-    const checkinStatus = r.checkinStatus === 'Y' ? '已搭乘' : '未搭乘';
-    const checkinStatusClass = r.checkinStatus === 'Y' ? 'status-checkedin' : 'status-notcheckedin';
-    
-    tr.innerHTML = `
-      <td>${r.date?.split('T')[0] || ''}</td>
-      <td><strong>${r.route}</strong></td>
-      <td><span class="passenger-name" onclick="showModal('${r.name}', '${r.department}', '${r.studentId}', '${phoneDisplay}')">${r.name}</span></td>
-      <td><span class="${reservationStatusClass}">${reservationStatus}</span></td>
-      <td><span class="${checkinStatusClass}">${checkinStatus}</span></td>
+    tbody.innerHTML += `
+      <tr>
+        <td>${r.date?.split('T')[0] || ''}</td>
+        <td><strong>${r.route}</strong></td>
+        <td style="color:#0066cc;cursor:pointer;font-weight:600;" onclick="showInfo('${r.name}','${r.department}','${r.studentId}','${r.phone}')">${r.name}</td>
+        <td>${status}</td>
+        <td>${checkin}</td>
+      </tr>
     `;
-    tbody.appendChild(tr);
   });
 }
 
-function filterReservations() {
-  const query = document.getElementById('searchInput').value.toLowerCase();
+function showInfo(name, dept, stuId, phone) {
+  document.getElementById('modalName').textContent = name;
+  document.getElementById('modalDept').textContent = dept || '未提供';
+  document.getElementById('modalStuId').textContent = stuId || '未提供';
   
-  if (!query) {
-    renderReservations(allReservations);
-    return;
-  }
-  
-  const filtered = allReservations.filter(r => {
-    return (r.name || '').toLowerCase().includes(query) ||
-           (r.date || '').includes(query) ||
-           (r.route || '').includes(query);
-  });
-  
-  renderReservations(filtered);
-}
-
-function showModal(name, department, studentId, phone) {
-  document.getElementById('modal-name').textContent = name;
-  document.getElementById('modal-department').textContent = department || '未提供';
-  document.getElementById('modal-studentid').textContent = studentId || '未提供';
-  
-  const phoneLink = document.getElementById('modal-phone');
-  if (phone && phone !== '未提供') {
+  const phoneLink = document.getElementById('modalPhone');
+  if (phone) {
     phoneLink.href = `tel:${phone}`;
     phoneLink.textContent = phone;
   } else {
     phoneLink.textContent = '未提供';
-    phoneLink.href = '#';
   }
   
   document.getElementById('infoModal').classList.add('active');
@@ -669,6 +546,17 @@ function showModal(name, department, studentId, phone) {
 function closeModal() {
   document.getElementById('infoModal').classList.remove('active');
 }
+
+function showError(msg) {
+  document.getElementById('mainContent').innerHTML = `
+    <div class="error-msg">
+      ❌ ${msg}<br>
+      <small>提示：訪問 ?dev 進入開發模式</small>
+    </div>
+  `;
+}
 </script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
 </body>
 </html>
