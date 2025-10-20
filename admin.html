@@ -451,11 +451,11 @@ function setupNav() {
       const sectionId = this.dataset.id;
       console.log('✅ 点击导航:', sectionId);
       
-      // 核銷直接跳轉
+      // 核銷直接跳轉 - 修正：跳轉後立即返回
       if (sectionId === 'sectionCheckin') {
         console.log('🔴 执行跳转到核销系统');
         window.location.href = 'https://liff.line.me/2006590746-A8YD0ZD9';
-        return;
+        return; // 關鍵：立即返回，不執行後續代碼
       }
       
       console.log('切换到:', sectionId);
