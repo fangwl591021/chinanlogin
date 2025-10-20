@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v6.0</title>
+<title>穿山甲專車後台 v6.1</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -16,20 +16,23 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
 .section-title { font-weight: 800; font-size: 18px; color: #14532d; margin-bottom: 16px; }
 .section { display: none; }
 .section.active { display: block; }
-#bottomNav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; display: flex; justify-content: space-around; }
+#bottomNav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; display: flex; justify-content: space-around; z-index:50; }
 .nav-btn { flex: 1; padding: 10px 0; text-align: center; font-size: 12px; font-weight: 600; cursor: pointer; color: #666; }
 .nav-btn.active { color: #3c8050; border-top: 3px solid #3c8050; }
 .status-reserved { color: #3c8050; font-weight: 600; }
 .status-cancelled { color: #ef4444; font-weight: 600; }
 .status-completed { color: #10b981; font-weight: 600; }
 .loading { text-align: center; color: #888; padding: 20px; font-size: 16px; }
+.stat-box { background: linear-gradient(135deg, #3c8050, #256f4f); color: white; padding: 16px; border-radius: 10px; margin-bottom: 12px; text-align: center; }
+.stat-label { font-size: 12px; opacity: 0.8; }
+.stat-value { font-size: 28px; font-weight: 800; margin-top: 4px; }
 </style>
 </head>
 
 <body>
-<!-- 頂部 -->
+<!-- 🔝 頂部 -->
 <div id="topBar">
-  <div class="font-bold text-lg">🚌 穿山甲後台</div>
+  <div class="font-bold text-lg">🚌 穿山甲後台系統</div>
   <div id="userInfo">
     <img id="userPicture" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect fill='%23ddd' width='40' height='40'/%3E%3C/svg%3E" alt="頭像">
     <span id="userName">載入中...</span>
@@ -59,6 +62,27 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
     </div>
   </section>
 
+  <!-- 📊 儀表板 -->
+  <section id="dashboard" class="section">
+    <div class="card">
+      <h2 class="section-title">📊 營運儀表板</h2>
+      <div id="statsArea">
+        <div class="stat-box">
+          <div class="stat-label">已預約</div>
+          <div id="countReserved" class="stat-value">--</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">已搭乘</div>
+          <div id="countCompleted" class="stat-value">--</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">已取消</div>
+          <div id="countCancelled" class="stat-value">--</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- 📋 核銷 -->
   <section id="checkin" class="section">
     <div class="card text-center">
@@ -80,20 +104,29 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background: #f8fafc; 
       </ul>
     </div>
   </section>
+
+  <!-- ⚙️ 設定 -->
+  <section id="config" class="section">
+    <div class="card">
+      <h2 class="section-title">⚙️ 系統設定</h2>
+      <p>此區為管理者設定專區，後續可加入推播與營運參數。</p>
+    </div>
+  </section>
 </main>
 
 <!-- 📱 底部導覽 -->
 <div id="bottomNav">
   <div class="nav-btn active" data-sec="query">🧾 查詢</div>
+  <div class="nav-btn" data-sec="dashboard">📊 儀表板</div>
   <div class="nav-btn" data-sec="checkin">📋 核銷</div>
   <div class="nav-btn" data-sec="driver">🚐 司機</div>
+  <div class="nav-btn" data-sec="config">⚙️ 設定</div>
 </div>
 
 <script>
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 const LIFF_ID = '2006590746-wgL4l54z';
 const CHECKIN_LIFF_URL = 'https://liff.line.me/2006590746-G7B12a1K';
-
 let allData = [];
 
 document.addEventListener('DOMContentLoaded', init);
@@ -104,7 +137,7 @@ async function init() {
   loadReservations();
 }
 
-// === 初始化 LINE 登入 ===
+// === 初始化 LINE ===
 async function initLINE() {
   try {
     await liff.init({ liffId: LIFF_ID });
@@ -128,6 +161,7 @@ async function loadReservations() {
     allData = json.reservations || json.data || [];
 
     renderTable(allData);
+    updateStats(allData);
   } catch (e) {
     document.getElementById('loadingText').textContent = '❌ 無法取得資料';
   }
@@ -136,8 +170,6 @@ async function loadReservations() {
 // === 渲染表格 ===
 function renderTable(data) {
   const order = { A1:1, B1:2, A2:3, B2:4 };
-
-  // 轉換狀態
   data.forEach(r => {
     if (r.status === 'y') r.statusText = '已搭乘';
     else if (r.status === 'n') r.statusText = '已預約';
@@ -145,34 +177,44 @@ function renderTable(data) {
     else r.statusText = '已預約';
   });
 
-  // 排序：日期由近到遠（新→舊），同日 A1→B1→A2→B2
-  data.sort((a, b) => {
+  // 日期由近到遠（最新在上）
+  data.sort((a,b)=>{
     const da = new Date(a.date), db = new Date(b.date);
     if (db - da !== 0) return db - da;
-    return (order[a.route] || 99) - (order[b.route] || 99);
+    return (order[a.route]||99) - (order[b.route]||99);
   });
 
   const tbody = document.getElementById('tbl');
-  if (!data.length) {
-    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 p-3">暫無資料</td></tr>`;
+  if(!data.length){
+    tbody.innerHTML='<tr><td colspan="4" class="text-center text-gray-400 p-3">暫無資料</td></tr>';
   } else {
-    tbody.innerHTML = data.map(r => {
+    tbody.innerHTML=data.map(r=>{
       const dateStr = r.date ? new Date(r.date).toISOString().slice(5,10) : '';
-      let cls = 'status-reserved';
-      if (r.statusText === '已取消') cls = 'status-cancelled';
-      if (r.statusText === '已搭乘') cls = 'status-completed';
+      let cls='status-reserved';
+      if(r.statusText==='已取消') cls='status-cancelled';
+      if(r.statusText==='已搭乘') cls='status-completed';
       return `
         <tr>
           <td class="p-2">${dateStr}</td>
-          <td class="p-2">${r.route || ''}</td>
-          <td class="p-2">${r.name || ''}</td>
+          <td class="p-2">${r.route||''}</td>
+          <td class="p-2">${r.name||''}</td>
           <td class="p-2 ${cls}">${r.statusText}</td>
         </tr>`;
     }).join('');
   }
 
-  document.getElementById('loadingText').style.display = 'none';
-  document.getElementById('tableContainer').style.display = 'block';
+  document.getElementById('loadingText').style.display='none';
+  document.getElementById('tableContainer').style.display='block';
+}
+
+// === 統計數字 ===
+function updateStats(data){
+  const reserved = data.filter(r=>r.status==='n').length;
+  const completed = data.filter(r=>r.status==='y').length;
+  const cancelled = data.filter(r=>r.status==='cancel').length;
+  document.getElementById('countReserved').textContent = reserved;
+  document.getElementById('countCompleted').textContent = completed;
+  document.getElementById('countCancelled').textContent = cancelled;
 }
 
 // === 搜尋 ===
@@ -199,7 +241,7 @@ function setupNav(){
   document.getElementById('goCheckin').addEventListener('click',()=>{
     if(typeof liff!=='undefined' && liff.isLoggedIn()){
       liff.openWindow({ url: CHECKIN_LIFF_URL, external:false });
-    }else{
+    } else {
       window.open(CHECKIN_LIFF_URL,'_blank');
     }
   });
