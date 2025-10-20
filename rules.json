@@ -14,9 +14,17 @@
     "updatedBy": "最後更新操作者名稱"
   },
   "meta": {
-    "version": "1.0.0",
+    "version": "1.1.0",
     "system": "Pangolin Shuttle",
     "maintainer": "Tony",
-    "note": "此檔為穿山甲專車後端 fallback 規則檔，供 Worker 初次載入與 KV 初始化使用"
+    "environment": "production",
+    "ruleSource": "GitHub Pages",
+    "linkedWorker": "Cloudflare Worker v3.8",
+    "compatibility": {
+      "adminUI": "v6.4",
+      "ruleEditor": "v2.2",
+      "worker": "v3.8"
+    },
+    "note": "此檔為穿山甲專車後端 fallback 規則檔，供 Worker 初次載入與 KV 初始化使用。當 Worker 啟動時若 KV 無資料，將自動載入此檔並同步。"
   }
 }
