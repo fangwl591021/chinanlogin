@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>穿山甲專車規則設定 rule.html v1.0</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+body {
+  font-family: "Noto Sans TC", system-ui, sans-serif;
+  background: #f8fafc;
+  margin: 0;
+  padding: 0;
+}
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin: 24px auto;
+  max-width: 480px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+input, select {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 16px;
+}
+button {
+  width: 100%;
+  background: #3c8050;
+  color: white;
+  padding: 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+button:hover { background: #2e6b40; }
+#userInfo { text-align:center; margin:16px 0; }
+#userPicture { width:60px; height:60px; border-radius:50%; border:2px solid #3c8050; margin-bottom:8px; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2 class="text-2xl font-bold text-green-700 mb-4 text-center">⚙️ 穿山甲專車設定管理</h2>
+  
+  <div id="userInfo">
+    <img id="userPicture" src="https://via.placeholder.com/60" alt="">
+    <div id="userName" class="font-bold text-lg">登入中...</div>
+  </div>
+
+  <div id="formArea" style="display:none;">
+    <label>每班次搭載人數上限</label>
+    <input type="number" id="seatLimit" min="1" max="20">
+    <label>未核銷達幾次後封鎖</label>
+    <input type="number" id="maxNoShow" min="1" max="10">
+    <label>封鎖週數</label>
+    <input type="number" id="banWeeks" min="1" max="12">
+    <label>預約模式</label>
+    <select id="tripMode">
+      <option value="single">單程</option>
+      <option value="roundtrip">來回</option>
+    </select>
+    <p id="lastUpdate" class="text-sm text-gray-500 mb-3"></p>
+    <button id="saveBtn">💾 儲存設定</button>
+  </div>
+
+  <div id="loadingText" class="text-center text-gray-500 mt-4">⏳ 載入中...</div>
+</div>
+
+<script>
+const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+const LIFF_ID = '2006590746-wgL4l54z';
+
+document.addEventListener('DOMContentLoaded', init);
+
+async function init(){
+  await initLINE();
+  await loadRules();
+  document.getElementById('saveBtn').addEventListener('click', saveRules);
+}
+
+// === 初始化 LINE ===
+async function initLINE(){
+  try{
+    await liff.init({ liffId: LIFF_ID });
+    if(!liff.isLoggedIn()){ liff.login(); return; }
+    const profile = await liff.getProfile();
+    document.getElementById('userName').textContent = profile.displayName;
+    document.getElementById('userPicture').src = profile.pictureUrl;
+  }catch(e){
+    document.getElementById('userName').textContent = '測試模式';
+  }
+}
+
+// === 載入設定 ===
+async function loadRules(){
+  try{
+    const res = await fetch(WORKER_URL + '?mode=getRules');
+    const json = await res.json();
+    const r = json.current || {};
+    document.getElementById('seatLimit').value = r.seatLimit || 6;
+    document.getElementById('maxNoShow').value = r.maxNoShow || 3;
+    document.getElementById('banWeeks').value = r.banWeeks || 2;
+    document.getElementById('tripMode').value = r.tripMode || 'single';
+    document.getElementById('lastUpdate').textContent = '最後更新：' + (r.lastUpdate || '無');
+    document.getElementById('loadingText').style.display = 'none';
+    document.getElementById('formArea').style.display = 'block';
+  }catch(e){
+    document.getElementById('loadingText').textContent = '❌ 載入失敗';
+  }
+}
+
+// === 儲存設定 ===
+async function saveRules(){
+  const body = {
+    seatLimit: parseInt(document.getElementById('seatLimit').value),
+    maxNoShow: parseInt(document.getElementById('maxNoShow').value),
+    banWeeks: parseInt(document.getElementById('banWeeks').value),
+    tripMode: document.getElementById('tripMode').value,
+    lastUpdate: new Date().toISOString()
+  };
+  try{
+    const res = await fetch(WORKER_URL + '?mode=updateRules',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+    const json = await res.json();
+    if(json.status==='success') alert('✅ 規則已更新');
+    else alert('❌ 更新失敗：' + json.message);
+    loadRules();
+  }catch(e){
+    alert('❌ 更新錯誤：' + e.message);
+  }
+}
+</script>
+</body>
+</html>
