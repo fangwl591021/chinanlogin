@@ -256,7 +256,34 @@ const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 const CALENDAR_ID = '86eee89e759f27d2a2c7a44853868f7be880aa8e745ba3839933ec84b562631e@group.calendar.google.com';
 
 // 全域變數
-let RESERVATION_RULES = {};
+let RESERVATION_RULES = {
+  seatLimit: 7,
+  maxPerDay: 1,
+  dailyDeadline: '19:00',
+  maxDaysAhead: 7,
+  availableRoutes: [
+    { id: "A1", time: "22:00-22:30", direction: "暨大→埔里總站", eng: "NCNU → Puli Terminal" },
+    { id: "B1", time: "22:30-23:00", direction: "埔里總站→暨大", eng: "Puli Terminal → NCNU" },
+    { id: "A2", time: "23:00-23:30", direction: "暨大→埔里總站", eng: "NCNU → Puli Terminal" },
+    { id: "B2", time: "23:30-24:00", direction: "埔里總站→暨大", eng: "Puli Terminal → NCNU" }
+  ],
+  stopList: [
+    ["行政大樓", "NCNU Administrative Building"],
+    ["中餐廳", "Zhong Can Ting(Chinese Restaurant)"],
+    ["科技學院", "College of Science and Technology"],
+    ["學人會館", "Scholars' Residence"],
+    ["中城", "Zhongcheng"],
+    ["下城", "Xiacheng"],
+    ["坪頂", "Pingding"],
+    ["愛蘭橋", "Ailan Bridge"],
+    ["大成國小", "Dacheng Elementary School"],
+    ["中山安七街口", "Zhongshan Anqi St. Intersection"],
+    ["榮民診所", "Veterans Clinic"],
+    ["埔里酒廠", "Puli Distillery"],
+    ["埔里總站", "Puli Bus Terminal"]
+  ]
+};
+
 let selectedDate = null;
 let selectedRoute = null;
 let currentMonth = new Date().getMonth();
@@ -272,43 +299,55 @@ async function loadRules() {
   try {
     const response = await fetch('rules.json');
     if (!response.ok) throw new Error('規則檔案載入失敗');
-    RESERVATION_RULES = await response.json();
-    console.log('✅ 規則載入成功:', RESERVATION_RULES);
+    const loadedRules = await response.json();
+    console.log('✅ 規則載入成功:', loadedRules);
+    
+    // 合併載入的規則，確保所有必要屬性都存在
+    RESERVATION_RULES = {
+      ...RESERVATION_RULES, // 預設值
+      ...loadedRules // 載入的值
+    };
   } catch (error) {
     console.error('❌ 規則載入失敗，使用預設值:', error);
-    // 預設值
-    RESERVATION_RULES = {
-      seatLimit: 7,
-      maxPerDay: 1,
-      dailyDeadline: '19:00',
-      maxDaysAhead: 7,
-      availableRoutes: [
-        { id: "A1", time: "22:00-22:30", direction: "暨大→埔里總站", eng: "NCNU → Puli Terminal" },
-        { id: "B1", time: "22:30-23:00", direction: "埔里總站→暨大", eng: "Puli Terminal → NCNU" },
-        { id: "A2", time: "23:00-23:30", direction: "暨大→埔里總站", eng: "NCNU → Puli Terminal" },
-        { id: "B2", time: "23:30-24:00", direction: "埔里總站→暨大", eng: "Puli Terminal → NCNU" }
-      ],
-      stopList: [
-        ["行政大樓", "NCNU Administrative Building"],
-        ["中餐廳", "Zhong Can Ting(Chinese Restaurant)"],
-        ["科技學院", "College of Science and Technology"],
-        ["學人會館", "Scholars' Residence"],
-        ["中城", "Zhongcheng"],
-        ["下城", "Xiacheng"],
-        ["坪頂", "Pingding"],
-        ["愛蘭橋", "Ailan Bridge"],
-        ["大成國小", "Dacheng Elementary School"],
-        ["中山安七街口", "Zhongshan Anqi St. Intersection"],
-        ["榮民診所", "Veterans Clinic"],
-        ["埔里酒廠", "Puli Distillery"],
-        ["埔里總站", "Puli Bus Terminal"]
-      ]
-    };
+    // 使用預設的 RESERVATION_RULES
   }
 }
 
 // 根據規則生成站點和路線資料
 function initFromRules() {
+  console.log('🔄 初始化規則資料...', RESERVATION_RULES);
+  
+  // 安全檢查：確保 stopList 存在
+  if (!RESERVATION_RULES.stopList || !Array.isArray(RESERVATION_RULES.stopList)) {
+    console.warn('⚠️ stopList 不存在或不是陣列，使用預設值');
+    RESERVATION_RULES.stopList = [
+      ["行政大樓", "NCNU Administrative Building"],
+      ["中餐廳", "Zhong Can Ting(Chinese Restaurant)"],
+      ["科技學院", "College of Science and Technology"],
+      ["學人會館", "Scholars' Residence"],
+      ["中城", "Zhongcheng"],
+      ["下城", "Xiacheng"],
+      ["坪頂", "Pingding"],
+      ["愛蘭橋", "Ailan Bridge"],
+      ["大成國小", "Dacheng Elementary School"],
+      ["中山安七街口", "Zhongshan Anqi St. Intersection"],
+      ["榮民診所", "Veterans Clinic"],
+      ["埔里酒廠", "Puli Distillery"],
+      ["埔里總站", "Puli Bus Terminal"]
+    ];
+  }
+
+  // 安全檢查：確保 availableRoutes 存在
+  if (!RESERVATION_RULES.availableRoutes || !Array.isArray(RESERVATION_RULES.availableRoutes)) {
+    console.warn('⚠️ availableRoutes 不存在或不是陣列，使用預設值');
+    RESERVATION_RULES.availableRoutes = [
+      { id: "A1", time: "22:00-22:30", direction: "暨大→埔里總站", eng: "NCNU → Puli Terminal" },
+      { id: "B1", time: "22:30-23:00", direction: "埔里總站→暨大", eng: "Puli Terminal → NCNU" },
+      { id: "A2", time: "23:00-23:30", direction: "暨大→埔里總站", eng: "NCNU → Puli Terminal" },
+      { id: "B2", time: "23:30-24:00", direction: "埔里總站→暨大", eng: "Puli Terminal → NCNU" }
+    ];
+  }
+
   // 生成站點資料
   const stopsOutbound = RESERVATION_RULES.stopList.map(stop => 
     `${stop[0]}<br><small style='color: #666;'>${stop[1]}</small>`
@@ -325,6 +364,7 @@ function initFromRules() {
     };
   });
 
+  console.log('✅ 規則初始化完成:', { stopsOutbound, stopsReturn, routeTimes });
   return { stopsOutbound, stopsReturn, routeTimes };
 }
 
