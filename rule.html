@@ -160,14 +160,29 @@ async function loadRules(retry=0){
 
 // === 儲存設定 ===
 async function saveRules(){
+  let userId = 'test-user';
+  
+  if(mode === 'normal'){
+    try {
+      const profile = await liff.getProfile();
+      userId = profile.userId;
+    } catch(e) {
+      console.error('❌ 無法取得 LINE userId', e);
+      alert('❌ 請先登入 LINE');
+      return;
+    }
+  }
+
   const body = {
     seatLimit: parseInt(document.getElementById('seatLimit').value),
     maxNoShow: parseInt(document.getElementById('maxNoShow').value),
     banWeeks: parseInt(document.getElementById('banWeeks').value),
     tripMode: document.getElementById('tripMode').value,
     lastUpdate: new Date().toISOString(),
-    updatedBy: mode === 'test' ? 'test-user' : (await liff.getProfile()).userId   // ✅ 新增操作者
+    updatedBy: userId
   };
+
+  console.log('📤 準備送出:', body);
 
   try{
     const res = await fetch(CONFIG.WORKER_URL + '?mode=updateRules', {
@@ -177,11 +192,13 @@ async function saveRules(){
     });
     const json = await res.json();
 
+    console.log('📥 收到回應:', json);
+
     if(json.status === 'success'){
       showToast('✅ 規則已更新');
       loadRules();
     } else {
-      alert('❌ 更新失敗：' + (json.message || '未知錯誤'));
+      alert('❌ 更新失敗：' + (json.message || '未知錯誤') + '\n你的 userId: ' + (json.userId || userId));
     }
   }catch(e){
     alert('❌ 更新錯誤：' + e.message);
