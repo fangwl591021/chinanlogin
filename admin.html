@@ -382,7 +382,8 @@ function showTab(tabId) {
 
 async function loadDashboard() {
   try {
-    const response = await fetch(`${WORKER_URL}?mode=dashboard`);
+    const response = await fetch(`${WORKER_URL}?mode=dashboard&userId=${currentUserProfile.userId}`);
+
     if (!response.ok) throw new Error(`Dashboard 請求失敗: ${response.status}`);
     
     const data = await response.json();
