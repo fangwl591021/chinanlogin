@@ -100,7 +100,7 @@ button:hover { background: #2e6b40; }
 <script>
 const CONFIG = {
   WORKER_URL: 'https://delicate-math-7e61.fangwl591021.workers.dev/',
-  LIFF_ID: '2006590746-wgL4l54z', // ⚠️ rule.html 專用 LIFF ID 請更換
+  LIFF_ID: '2006590746-gpLmx9md', // ⚠️ rule.html 專用 LIFF ID 請更換
   RETRY_LIMIT: 3
 };
 
@@ -165,26 +165,29 @@ async function saveRules(){
     maxNoShow: parseInt(document.getElementById('maxNoShow').value),
     banWeeks: parseInt(document.getElementById('banWeeks').value),
     tripMode: document.getElementById('tripMode').value,
-    lastUpdate: new Date().toISOString()
+    lastUpdate: new Date().toISOString(),
+    updatedBy: mode === 'test' ? 'test-user' : (await liff.getProfile()).userId   // ✅ 新增操作者
   };
 
   try{
-    const res = await fetch(CONFIG.WORKER_URL + '?mode=updateRules',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(body)
+    const res = await fetch(CONFIG.WORKER_URL + '?mode=updateRules', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
     });
     const json = await res.json();
-    if(json.status==='success'){
+
+    if(json.status === 'success'){
       showToast('✅ 規則已更新');
       loadRules();
-    }else{
-      alert('❌ 更新失敗：' + json.message);
+    } else {
+      alert('❌ 更新失敗：' + (json.message || '未知錯誤'));
     }
   }catch(e){
     alert('❌ 更新錯誤：' + e.message);
   }
 }
+
 
 // === 浮動提示 ===
 function showToast(msg){
