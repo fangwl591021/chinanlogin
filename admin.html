@@ -136,20 +136,44 @@ async function loadReservations() {
     const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${currentUserProfile.userId}`);
     const data = await res.json();
 
+    console.log('📋 預約資料:', data); // 除錯用
+
     if (data.status === 'success' && Array.isArray(data.reservations)) {
-      const rows = data.reservations.map(r => `
-        <tr>
-          <td>${formatDate(r.date)}</td>
-          <td>${r.route}</td>
-          <td>${r.name || '-'}</td>
-          <td>${r.studentId || '-'}</td>
-          <td class="${statusClass(r.status)}">${r.status}</td>
-        </tr>`).join('');
+      if (data.reservations.length === 0) {
+        area.innerHTML = `<p class="text-gray-500">暫無預約資料</p>`;
+        return;
+      }
+
+      const rows = data.reservations.map(r => {
+        console.log('單筆資料:', r); // 檢查每筆資料結構
+        return `
+        <tr class="border-b hover:bg-gray-50">
+          <td class="py-3 px-2">${formatDate(r.date)}</td>
+          <td class="py-3 px-2">${r.route || '-'}</td>
+          <td class="py-3 px-2 font-semibold">${r.name || r.userName || r.displayName || '未提供'}</td>
+          <td class="py-3 px-2">${r.studentId || r.student_id || '-'}</td>
+          <td class="py-3 px-2 ${statusClass(r.status)}">${r.status || '未知'}</td>
+        </tr>`;
+      }).join('');
+      
       area.innerHTML = `
-        <table class="w-full text-sm border-collapse">
-          <thead class="bg-green-800 text-white">
-            <tr><th>日期</th><th>班次</th><th>姓名</th><th>學號</th><th>狀態</th></tr>
-          </thead><tbody>${rows}</tbody></table>`;
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm border-collapse">
+            <thead class="bg-green-800 text-white">
+              <tr>
+                <th class="py-3 px-2">日期</th>
+                <th class="py-3 px-2">班次</th>
+                <th class="py-3 px-2">姓名</th>
+                <th class="py-3 px-2">學號</th>
+                <th class="py-3 px-2">狀態</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        <div class="mt-4 text-sm text-gray-500 text-center">
+          共 ${data.reservations.length} 筆預約紀錄
+        </div>`;
     } else {
       area.innerHTML = `<p class="text-gray-500">暫無預約資料</p>`;
     }
