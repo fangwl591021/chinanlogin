@@ -1,128 +1,183 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>穿山甲專車預約 Pangolin Shuttle Reservation</title>
-  <style>
-    body { font-family: system-ui, sans-serif; background:#f5f6f7; margin:0; padding:0; }
-    header { background:#3c8050; color:#fff; text-align:center; padding:15px; font-size:22px; font-weight:bold; line-height:1.3; }
-    .en-text { display:block; font-size:14px; color:#ffffff; margin-top:2px; }
-    .en-text-dark { display:block; font-size:14px; color:#666666; margin-top:2px; }
-    button { cursor:pointer; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>穿山甲專車預約 Pangolin Shuttle Reservation</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#f5f6f7;margin:0;padding:0;}
+header{background:#3c8050;color:#fff;text-align:center;padding:15px;font-size:22px;font-weight:bold;line-height:1.3;}
+.en-text{display:block;font-size:14px;color:#fff;margin-top:2px;}
+section{max-width:480px;margin:20px auto;padding:16px;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+label{display:block;margin-top:10px;font-weight:bold;}
+select,input,button{width:100%;margin-top:6px;padding:10px;border-radius:8px;border:1px solid #ccc;font-size:16px;}
+button{background:#3c8050;color:#fff;border:none;margin-top:16px;cursor:pointer;}
+button:hover{background:#2f6540;}
+.msg{margin-top:8px;color:#666;text-align:center;font-size:14px;}
+.error{color:red;}
+.success{color:#2e7d32;}
+</style>
 </head>
 <body>
-  <header>
-    穿山甲專車預約
-    <span class="en-text">Pangolin Shuttle Reservation</span>
-  </header>
 
-  <div id="userInfo" style="padding:20px; text-align:center;">
-    ⏳ 系統初始化中...<br><span class="en-text-dark">System initializing...</span>
+<header>
+  穿山甲專車預約
+  <span class="en-text">Pangolin Shuttle Reservation</span>
+</header>
+
+<section>
+  <div id="userInfo" class="msg">⏳ 系統初始化中...</div>
+
+  <div id="bookingArea" style="display:none;">
+    <label>選擇日期：</label>
+    <input type="date" id="reserveDate" />
+
+    <label>選擇班次：</label>
+    <select id="routeSelect"></select>
+
+    <button id="submitBtn">送出預約</button>
+    <div id="resultMsg" class="msg"></div>
   </div>
+</section>
 
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <script>
-  const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script>
+const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+const RULES_URL  = 'https://fangwl591021.github.io/chinanlogin/rules.json';
+let RESERVATION_RULES = {}; 
+let userProfile = {};
+let today = new Date();
 
-  let RESERVATION_RULES = {
-    seatLimit: 7,
-    maxPerDay: 1,
-    dailyDeadline: '19:00',
-    maxDaysAhead: 7
-  };
-
-  // ✅ 安全強化版 fetch
-  async function robustFetch(url, options = {}, retries = 3) {
-    for (let i = 0; i < retries; i++) {
-      try {
-        const res = await fetch(url, options);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const contentType = res.headers.get('content-type') || '';
-        if (contentType.includes('application/json')) return await res.json();
-        console.warn('⚠️ 非 JSON 回應');
-        return { status: 'error', message: '非 JSON 回應' };
-      } catch (err) {
-        console.warn(`第 ${i + 1} 次請求失敗: ${err.message}`);
-        if (i === retries - 1) return { status: 'error', message: err.message };
-        await new Promise(r => setTimeout(r, 1000 * (i + 1)));
-      }
-    }
-  }
-
-  // ✅ 規則載入（404 不中斷）
-  async function loadRules() {
+// ✅ 安全 fetch
+async function robustFetch(url, options = {}, retries = 3) {
+  for (let i=0;i<retries;i++) {
     try {
-      const response = await fetch('rules.json');
-      if (!response.ok) throw new Error('規則檔案載入失敗');
-      const json = await response.json();
-      RESERVATION_RULES = { ...RESERVATION_RULES, ...json };
-      console.log('✅ 規則載入成功');
+      const res = await fetch(url, options);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const type = res.headers.get('content-type') || '';
+      return type.includes('application/json') ? await res.json() : {status:'error',message:'非JSON'};
     } catch (err) {
-      console.warn('⚠️ 規則載入失敗，使用預設值:', err.message);
+      console.warn(`第${i+1}次請求失敗: ${err.message}`);
+      if (i === retries-1) return {status:'error',message:err.message};
+      await new Promise(r=>setTimeout(r,1000*(i+1)));
     }
   }
+}
 
-  // ✅ 初始化主流程（加強容錯）
-  async function init() {
-    const userDiv = document.getElementById('userInfo');
-    try {
-      console.log('🚀 系統初始化開始');
+// ✅ 載入規則（外部 + fallback）
+async function loadRules() {
+  try {
+    const res = await fetch(RULES_URL);
+    if (!res.ok) throw new Error('rules.json 載入失敗');
+    RESERVATION_RULES = await res.json();
+    console.log('✅ 成功載入 rules.json:', RESERVATION_RULES);
+  } catch (err) {
+    console.warn('⚠️ 規則載入失敗，使用 fallback:', err.message);
+    RESERVATION_RULES = {
+      seatLimit:6,
+      maxNoShow:3,
+      banWeeks:2,
+      tripMode:"single",
+      maxPerDay:1,
+      dailyDeadline:"19:00",
+      maxDaysAhead:7,
+      allowWeekend:true,
+      routePolicy:"A1+B2 可預約，禁止 A1+B1 或 A2+B2",
+      lastUpdate:"2025-10-21T03:00:00.000Z",
+      updatedBy:"Tony"
+    };
+  }
+}
 
-      await loadRules();
+// ✅ 初始化
+async function init() {
+  const ui = document.getElementById('userInfo');
+  const area = document.getElementById('bookingArea');
+  try {
+    await loadRules();
 
-      if (typeof liff === 'undefined') throw new Error('LIFF SDK 未加載');
-      await liff.init({ liffId: "2006590746-KJodGOda" });
+    await liff.init({ liffId: "2006590746-KJodGOda" });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+    const profile = await liff.getProfile();
+    userProfile = profile;
+    console.log('👤 LIFF 用戶:', profile);
 
-      if (!liff.isLoggedIn()) {
-        liff.login();
-        return;
-      }
+    const chk = await robustFetch(`${WORKER_URL}?mode=check&userId=${profile.userId}`);
+    const user = (chk && chk.user) ? chk.user : {name: profile.displayName, department:"資訊管理系", studentId:"000000"};
+    ui.innerHTML = `<b>${user.name}</b><br>${user.department}｜${user.studentId}`;
+    area.style.display = "block";
 
-      const profile = await liff.getProfile();
-      console.log('👤 LIFF 用戶:', profile);
+    fillRoutes();
+  } catch (err) {
+    console.error('💥 初始化錯誤:', err);
+    ui.innerHTML = `<span class="error">初始化失敗：${err.message}</span><br><button onclick="init()">重試</button>`;
+  }
+}
 
-      const checkRes = await robustFetch(`${WORKER_URL}?mode=check&userId=${profile.userId}`);
-      console.log('🔍 Worker 回應:', checkRes);
+// ✅ 填入班次清單
+function fillRoutes() {
+  const routes = [
+    {id:"A1", label:"A1｜22:00 暨大 → 埔里總站"},
+    {id:"B1", label:"B1｜22:30 埔里總站 → 暨大"},
+    {id:"A2", label:"A2｜23:00 暨大 → 埔里總站"},
+    {id:"B2", label:"B2｜23:30 埔里總站 → 暨大"}
+  ];
+  const select = document.getElementById('routeSelect');
+  routes.forEach(r=>{
+    const opt = document.createElement('option');
+    opt.value = r.id; opt.textContent = r.label;
+    select.appendChild(opt);
+  });
+}
 
-      let userData;
-      if (!checkRes || checkRes.status === 'error' || !checkRes.user) {
-        console.warn('⚠️ Worker 無法回傳用戶資料，使用預設');
-        userData = {
-          userId: profile.userId || 'local-test-user',
-          name: profile.displayName || '測試用戶',
-          studentId: '000000',
-          department: '資訊管理學系',
-          phone: '0912345678'
-        };
-      } else {
-        userData = checkRes.user;
-      }
-
-      userDiv.innerHTML = `
-        <div style="font-size:18px; font-weight:bold;">${userData.name}</div>
-        <div style="font-size:14px; color:#666;">
-          ${userData.department || '未知科系'}｜${userData.studentId || '未知學號'}
-        </div>
-        <div style="margin-top:8px; color:#3c8050;">✅ 系統初始化完成</div>
-      `;
-      console.log('✅ 初始化完成');
-    } catch (error) {
-      console.error('💥 初始化錯誤:', error);
-      userDiv.innerHTML = `
-        <div style="color:red;">
-          <p>❌ 系統初始化失敗（可重試）</p>
-          <p>${error.message}</p>
-          <button onclick="init()" style="background:#3c8050;color:white;padding:10px 16px;border:none;border-radius:6px;">重新嘗試初始化</button>
-          <br><br>
-          <button onclick="location.href='register.html'" style="background:#ff9800;color:white;padding:10px 16px;border:none;border-radius:6px;">重新註冊</button>
-        </div>
-      `;
+// ✅ 核心邏輯：檢查 routePolicy
+function checkRoutePolicy(selectedRoute, existingRoute) {
+  if (!existingRoute) return true;
+  const policy = RESERVATION_RULES.routePolicy || "";
+  if (policy.includes("禁止")) {
+    if ((existingRoute.startsWith('A1') && selectedRoute.startsWith('B1')) ||
+        (existingRoute.startsWith('A2') && selectedRoute.startsWith('B2')) ||
+        (existingRoute.startsWith('B1') && selectedRoute.startsWith('A1')) ||
+        (existingRoute.startsWith('B2') && selectedRoute.startsWith('A2'))) {
+      return false; // 違反禁止條件
     }
   }
+  return true;
+}
 
-  window.addEventListener('load', init);
-  </script>
+// ✅ 預約送出
+document.getElementById('submitBtn').addEventListener('click', async ()=>{
+  const date = document.getElementById('reserveDate').value;
+  const route = document.getElementById('routeSelect').value;
+  const msg = document.getElementById('resultMsg');
+
+  if(!date){msg.innerHTML="❌ 請選擇日期";return;}
+  const todayStr = new Date().toISOString().split('T')[0];
+  const diffDays = (new Date(date)-new Date(todayStr))/86400000;
+  if(diffDays>RESERVATION_RULES.maxDaysAhead){
+    msg.innerHTML=`❌ 只能預約 ${RESERVATION_RULES.maxDaysAhead} 天內的班次`;return;
+  }
+
+  // 模擬檢查：假設已預約 B1 → 禁止選 A1
+  const existingRoute = window.localStorage.getItem('todayRoute') || null;
+  if(!checkRoutePolicy(route, existingRoute)){
+    msg.innerHTML="⚠️ 違反路線限制規則：禁止連續來回（A1+B1 / A2+B2）";
+    return;
+  }
+
+  // 模擬呼叫 Worker
+  const res = await robustFetch(`${WORKER_URL}?mode=reserve&userId=${userProfile.userId}&date=${date}&route=${route}`);
+  if(res.status==='success'){
+    msg.className='msg success';
+    msg.innerHTML='✅ 預約成功！';
+    window.localStorage.setItem('todayRoute', route);
+  }else{
+    msg.className='msg error';
+    msg.innerHTML='❌ 預約失敗：'+(res.message||'未知錯誤');
+  }
+});
+
+window.addEventListener('load', init);
+</script>
 </body>
 </html>
