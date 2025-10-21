@@ -138,6 +138,14 @@ async function loadReservations() {
 
     console.log('📋 預約資料:', data); // 除錯用
 
+    // 檢查是否為測試資料
+    const hint = document.getElementById('dataSourceHint');
+    if (data.source === 'mock_admin' || data.source === 'mock') {
+      hint.classList.remove('hidden');
+    } else {
+      hint.classList.add('hidden');
+    }
+
     if (data.status === 'success' && Array.isArray(data.reservations)) {
       if (data.reservations.length === 0) {
         area.innerHTML = `<p class="text-gray-500">暫無預約資料</p>`;
