@@ -360,32 +360,43 @@ function showAllReservations(){
   if(sorted.length===0){tbody.innerHTML='<tr><td colspan="6" class="no-data">暫無預約</td></tr>';return;}
   renderReservationRows(sorted,`全部預約列表 (共 ${sorted.length} 筆)`);
 }
-function renderReservationRows(filtered,title){
-  const tbody=document.getElementById('reservation-list');tbody.innerHTML='';
-  filtered.forEach(r=>{
-    const tr=document.createElement('tr');tr.className='table-row';
-    const isCheckedIn=r.checkinStatus==='Y';
+
+// 修復的函數 - 安全處理所有字串值
+function renderReservationRows(filtered, title) {
+  const tbody = document.getElementById('reservation-list');
+  tbody.innerHTML = '';
+  
+  filtered.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.className = 'table-row';
+    const isCheckedIn = r.checkinStatus === 'Y';
     
-    // 安全處理特殊字符
-    const safeName = r.name ? r.name.replace(/'/g, "\\'") : '';
-    const safeDepartment = r.department ? r.department.replace(/'/g, "\\'") : '';
-    const safePhone = r.phone ? r.phone.replace(/'/g, "\\'") : '';
+    // 安全處理所有值，確保它們是字串
+    const safeName = String(r.name || '未提供').replace(/'/g, "\\'");
+    const safeDepartment = String(r.department || '未提供').replace(/'/g, "\\'");
+    const safePhone = String(r.phone || '未提供').replace(/'/g, "\\'");
+    const safeDate = r.date ? r.date.split('T')[0] : '';
+    const safeFromStop = r.fromStop || '未提供';
+    const safeToStop = r.toStop || '未提供';
+    const safeRoute = r.route || '';
+    const safeId = r.id || '';
     
-    tr.innerHTML=`
-      <td>${r.date?.split('T')[0]||''}</td>
-      <td><strong>${r.route}</strong></td>
-      <td><span class="passenger-name" onclick="showModal('${safeName}', '${safeDepartment}', '${safePhone}')">${r.name}</span></td>
-      <td class="stop-cell">${r.fromStop}</td>
-      <td class="stop-cell">${r.toStop}</td>
-      <td>${isCheckedIn?'<button class="checkin-btn" disabled>✅</button>':`<button class="checkin-btn" onclick="confirmCheckin('${r.id}')">核銷</button>`}</td>`;
+    tr.innerHTML = `
+      <td>${safeDate}</td>
+      <td><strong>${safeRoute}</strong></td>
+      <td><span class="passenger-name" onclick="showModal('${safeName}', '${safeDepartment}', '${safePhone}')">${safeName}</span></td>
+      <td class="stop-cell">${safeFromStop}</td>
+      <td class="stop-cell">${safeToStop}</td>
+      <td>${isCheckedIn ? '<button class="checkin-btn" disabled>✅</button>' : `<button class="checkin-btn" onclick="confirmCheckin('${safeId}')">核銷</button>`}</td>`;
     tbody.appendChild(tr);
   });
-  document.getElementById('checkin-title').textContent=title;
+  
+  document.getElementById('checkin-title').textContent = title;
 }
 
 function showModal(name, department, phone) {
-  document.getElementById('modal-name').textContent = name || '未提供';
-  document.getElementById('modal-department').textContent = department || '未提供';
+  document.getElementById('modal-name').textContent = name;
+  document.getElementById('modal-department').textContent = department;
   
   const phoneLink = document.getElementById('modal-phone');
   if (phone && phone !== '未提供') {
@@ -394,6 +405,7 @@ function showModal(name, department, phone) {
   } else {
     phoneLink.textContent = '未提供';
     phoneLink.href = '#';
+    phoneLink.onclick = (e) => e.preventDefault();
   }
   
   document.getElementById('infoModal').classList.add('active');
