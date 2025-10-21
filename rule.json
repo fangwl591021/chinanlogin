@@ -3,28 +3,49 @@
   "maxNoShow": 3,
   "banWeeks": 2,
   "tripMode": "single",
-  "lastUpdate": "2025-10-20T11:48:47.453Z",
-  "updatedBy": "system",
+  "maxPerDay": 1,
+  "dailyDeadline": "19:00",
+  "maxDaysAhead": 7,
+  "allowWeekend": true,
+  "routePolicy": "A1+B2 可預約，禁止 A1+B1 或 A2+B2",
   "description": {
-    "seatLimit": "每班次可預約搭乘人數上限，例如 6 表示最多6位乘客",
+    "seatLimit": "每班次可預約人數上限，例：6 代表每班最多6位乘客",
     "maxNoShow": "累積未核銷達此次數即觸發封鎖機制",
-    "banWeeks": "封鎖持續週數，期滿自動解除預約限制",
+    "banWeeks": "封鎖持續週數（自動解除）",
     "tripMode": "預約模式：single 為單程、roundtrip 為可預約來回",
+    "maxPerDay": "每人每日可預約的最大班次數量",
+    "dailyDeadline": "當日截止預約時間（24h制）",
+    "maxDaysAhead": "開放可預約的最遠天數（例如7表示7天內）",
+    "allowWeekend": "是否允許週末預約",
+    "routePolicy": "路線限制說明：可預約 A1+B2，禁止 A1+B1 或 A2+B2 連續來回",
     "lastUpdate": "最後一次修改時間（自動生成）",
-    "updatedBy": "最後更新操作者名稱"
+    "updatedBy": "最後修改者名稱"
   },
   "meta": {
-    "version": "1.1.0",
+    "version": "1.2.0",
     "system": "Pangolin Shuttle",
-    "maintainer": "Tony",
     "environment": "production",
-    "ruleSource": "GitHub Pages",
+    "maintainer": "Tony",
+    "ruleSource": "GitHub Pages / chinanlogin",
     "linkedWorker": "Cloudflare Worker v3.8",
     "compatibility": {
       "adminUI": "v6.4",
       "ruleEditor": "v2.2",
       "worker": "v3.8"
     },
-    "note": "此檔為穿山甲專車後端 fallback 規則檔，供 Worker 初次載入與 KV 初始化使用。當 Worker 啟動時若 KV 無資料，將自動載入此檔並同步。"
-  }
+    "integration": {
+      "gasEndpoint": "AKfycbyORM9maxvd_9xHBijjUPXbqvPtNzys3J4Q0CzcoYgyUUNfLRz4VViJySyrvr9zLzmMvg",
+      "calendarId": "86eee89e759f27d2a2c7a44853868f7be880aa8e745ba3839933ec84b562631e@group.calendar.google.com",
+      "datasetSheet": "預約紀錄",
+      "userSheet": "註冊人資料"
+    },
+    "security": {
+      "CORS": "enabled",
+      "cachePolicy": "10m",
+      "backupToKV": true
+    },
+    "note": "本檔為穿山甲專車系統後端設定檔，Worker 啟動時若 KV 無資料，將自動載入此檔並同步。"
+  },
+  "lastUpdate": "2025-10-21T03:00:00.000Z",
+  "updatedBy": "Tony"
 }
