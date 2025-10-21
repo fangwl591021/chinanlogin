@@ -1231,7 +1231,7 @@ function resetReservationForm() {
   }
 }
 
-// === 取消預約函數 ===
+// === 修復後的取消預約函數 ===
 async function cancelReservation(reservationId) {
   if (!confirm('確定要取消這筆預約嗎？\nAre you sure you want to cancel this reservation?')) return;
 
@@ -1247,6 +1247,8 @@ async function cancelReservation(reservationId) {
       return;
     }
     
+    console.log('取消的預約資料:', reservationToCancel);
+    
     // 1. 先執行取消預約
     const response = await robustFetch(WORKER_URL, {
       method: 'POST',
@@ -1256,10 +1258,14 @@ async function cancelReservation(reservationId) {
       },
       body: JSON.stringify({ 
         type: 'cancel',
+        id: reservationId, // 關鍵：必須包含預約ID
         userId: userData.userId,
-        date: reservationToCancel.date
+        date: reservationToCancel.date,
+        route: reservationToCancel.route
       })
     });
+
+    console.log('取消預約回應:', response);
 
     if (response.status === 'success') {
       alert('✅ 已取消預約\n✅ Reservation cancelled');
@@ -1318,6 +1324,157 @@ async function cancelReservation(reservationId) {
     
     alert(errorMessage);
   }
+}
+
+// === 增強的核心更新函數 ===
+async function updateUIAfterReservationChange() {
+  console.log('🔄 開始更新UI狀態 Starting UI update after reservation change');
+  
+  try {
+    // 1. 清除快取，強制重新載入最新資料
+    cache.reservations = null;
+    cache.lastUpdated = null;
+    
+    // 2. 重新載入用戶的最新預約資料
+    const result = await robustFetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}&t=${Date.now()}`);
+    
+    console.log('重新載入的預約資料:', result);
+    
+    if (result && result.reservations) {
+      // 關鍵修改：過濾掉已取消的預約
+      existingReservations = result.reservations.filter(reservation => 
+        reservation.status !== '已取消' && reservation.status !== 'cancelled'
+      );
+      
+      console.log('✅ 過濾後的預約資料 Filtered reservations:', existingReservations);
+    } else {
+      console.warn('⚠️ 預約資料為空或格式不正確');
+      existingReservations = [];
+    }
+    
+    // 3. 立即重新渲染預約卡片
+    renderCurrentReservationCard();
+    
+    // 4. 如果月曆是打開的，重新渲染月曆以更新狀態
+    if (document.getElementById('calendarContainer').style.display === 'block') {
+      console.log('🔄 重新渲染月曆狀態 Re-rendering calendar state');
+      renderCalendar();
+    }
+    
+    // 5. 重置預約表單
+    resetReservationForm();
+    
+    console.log('✅ UI更新完成 UI update completed');
+    
+  } catch (error) {
+    console.error('❌ UI更新失敗 UI update failed:', error);
+    // 即使更新失敗，也嘗試重新渲染現有資料
+    renderCurrentReservationCard();
+    if (document.getElementById('calendarContainer').style.display === 'block') {
+      renderCalendar();
+    }
+  }
+}
+
+// === 修復的預約卡片渲染函數 ===
+function renderCurrentReservationCard() {
+  const container = document.getElementById('currentReservationCard');
+  
+  // 關鍵修改：只顯示未取消的預約
+  const activeReservations = existingReservations.filter(r => 
+    r.status !== '已取消' && r.status !== 'cancelled' && r.status !== 'canceled'
+  );
+  
+  console.log('渲染中的有效預約:', activeReservations);
+  
+  if (!activeReservations || activeReservations.length === 0) {
+    container.innerHTML = '<div class="no-reservation">目前沒有預約紀錄<br><span style="color: #666;">No Reservation Records</span></div>';
+    container.style.display = 'block';
+    return;
+  }
+  
+  let html = '<div class="carousel-container">';
+  html += '<div class="carousel-title">🧾 我的預約<br><span style="color: #666; font-size: 14px;">My Reservations</span></div>';
+  html += '<div class="carousel">';
+  
+  activeReservations.forEach(r => {
+    const routeInfo = routeTimes[r.route] || { time: r.route, direction: '未知路線', eng: 'Unknown Route' };
+    const dateObj = new Date(r.date);
+    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+    const weekdayEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayOfWeek = weekdays[dateObj.getDay()];
+    const dayOfWeekEn = weekdayEn[dateObj.getDay()];
+    
+    // 路線方向中英對照
+    let directionZh = routeInfo.direction;
+    let directionEn = routeInfo.eng;
+    
+    // 站點中英對照映射
+    const stopMap = {
+      '行政大樓': 'NCNU Administrative Building',
+      '中餐廳': 'Zhong Can Ting(Chinese Restaurant)',
+      '科技學院': 'College of Science and Technology',
+      '學人會館': 'Scholars\' Residence',
+      '中城': 'Zhongcheng',
+      '下城': 'Xiacheng',
+      '坪頂': 'Pingding',
+      '愛蘭橋': 'Ailan Bridge',
+      '大成國小': 'Dacheng Elementary School',
+      '中山安七街口': 'Zhongshan Anqi St. Intersection',
+      '榮民診所': 'Veterans Clinic',
+      '埔里酒廠': 'Puli Distillery',
+      '埔里總站': 'Puli Bus Terminal'
+    };
+    
+    const fromStopEn = stopMap[r.fromStop] || r.fromStop;
+    const toStopEn = stopMap[r.toStop] || r.toStop;
+    
+    html += `
+      <div class="reservation-bubble" style="min-width: 190px;">
+        <div class="bubble-header">
+          ${r.date.split('T')[0]} (週${dayOfWeek})
+          <span style="color: #ffffff; font-size: 12px;">${r.date.split('T')[0]} (${dayOfWeekEn})</span>
+        </div>
+        <div class="bubble-body">
+          <div class="bubble-line">
+            <strong>班次<br><span style="color: #666; font-size: 11px;">Time</span></strong>
+            <span class="route-time">${routeInfo.time}</span>
+          </div>
+          <div class="bubble-line">
+            <strong>路線<br><span style="color: #666; font-size: 11px;">Route</span></strong>
+            <span>
+              ${directionZh}<br>
+              <span style="color: #666; font-size: 11px;">${directionEn}</span>
+            </span>
+          </div>
+          <div class="bubble-line">
+            <strong>上車站<br><span style="color: #666; font-size: 11px;">From</span></strong>
+            <span>
+              ${r.fromStop}<br>
+              <span style="color: #666; font-size: 11px;">${fromStopEn}</span>
+            </span>
+          </div>
+          <div class="bubble-line">
+            <strong>下車站<br><span style="color: #666; font-size: 11px;">To</span></strong>
+            <span>
+              ${r.toStop}<br>
+              <span style="color: #666; font-size: 11px;">${toStopEn}</span>
+            </span>
+          </div>
+        </div>
+        <div class="bubble-footer">
+          <button class="cancel-btn-small" onclick="cancelReservation('${r.id}')" aria-label="取消預約 Cancel Reservation">
+            取消預約<br>
+            <span style="color: #ffffff; font-size: 10px; opacity: 0.8;">Cancel</span>
+          </button>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += '</div></div>';
+  container.innerHTML = html;
+  container.style.display = 'block';
 }
 
 // === 核心更新函數：在預約變更後立即更新所有相關UI ===
