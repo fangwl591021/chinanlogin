@@ -195,7 +195,7 @@ async function loadAllReservations() {
   try {
     const res = await fetch(`${WORKER_URL}?mode=reservations`);
     const result = await res.json();
-    console.log('API 返回的資料:', result); // 調試用
+    console.log('API 返回的完整資料:', result); // 調試用
     
     let reservations = result.reservations || [];
     
@@ -205,24 +205,74 @@ async function loadAllReservations() {
     // 轉換資料結構，處理不同的欄位名稱
     allReservations = reservations.map(reservation => {
       // 調試用：顯示每個預約的完整結構
-      console.log('單個預約資料:', reservation);
+      console.log('單個預約完整資料:', JSON.stringify(reservation, null, 2));
       
-      // 處理不同的欄位名稱
-      const fromStop = reservation.fromStop || reservation.上車站點 || reservation.上車 || reservation.pickupLocation || '未提供';
-      const toStop = reservation.toStop || reservation.下車站點 || reservation.下車 || reservation.dropoffLocation || '未提供';
-      const checkinStatus = reservation.checkinStatus || reservation.checkin || reservation.核銷狀態 || 'N';
+      // 檢查所有可能的欄位名稱
+      const allKeys = Object.keys(reservation);
+      console.log('所有欄位名稱:', allKeys);
+      
+      // 尋找上車站點相關欄位
+      const fromStopKey = allKeys.find(key => 
+        key.includes('上車') || 
+        key.includes('from') || 
+        key.includes('pickup') || 
+        key.includes('start') ||
+        key.toLowerCase().includes('departure')
+      );
+      
+      // 尋找下車站點相關欄位
+      const toStopKey = allKeys.find(key => 
+        key.includes('下車') || 
+        key.includes('to') || 
+        key.includes('dropoff') || 
+        key.includes('end') ||
+        key.toLowerCase().includes('destination')
+      );
+      
+      // 尋找科系相關欄位
+      const departmentKey = allKeys.find(key => 
+        key.includes('科系') || 
+        key.includes('department') || 
+        key.includes('系所') ||
+        key.includes('major')
+      );
+      
+      // 尋找班次相關欄位
+      const routeKey = allKeys.find(key => 
+        key.includes('班次') || 
+        key.includes('route') || 
+        key.includes('shift') ||
+        key.includes('line')
+      );
+      
+      // 尋找核銷狀態相關欄位
+      const checkinKey = allKeys.find(key => 
+        key.includes('核銷') || 
+        key.includes('checkin') || 
+        key.includes('checked') ||
+        key.includes('status')
+      );
+      
+      const fromStop = fromStopKey ? reservation[fromStopKey] : '未提供';
+      const toStop = toStopKey ? reservation[toStopKey] : '未提供';
+      const department = departmentKey ? reservation[departmentKey] : '未提供';
+      const route = routeKey ? reservation[routeKey] : (reservation.shift || '');
+      const checkinStatus = checkinKey ? reservation[checkinKey] : 'N';
+      
+      console.log('找到的欄位:', { fromStopKey, toStopKey, departmentKey, routeKey, checkinKey });
+      console.log('對應的值:', { fromStop, toStop, department, route, checkinStatus });
       
       return {
         id: String(reservation.id || reservation._id || ''),
         date: String(reservation.date || reservation.日期 || ''),
-        route: String(reservation.route || reservation.shift || reservation.班次 || ''),
+        route: String(route),
         name: String(reservation.name || reservation.姓名 || '未提供'),
-        department: String(reservation.department || reservation.科系 || '未提供'),
+        department: String(department),
         studentId: String(reservation.studentId || reservation.學號 || ''),
         phone: String(reservation.phone || reservation.電話 || '未提供'),
         fromStop: fromStop,
         toStop: toStop,
-        checkinStatus: checkinStatus === 'Y' || checkinStatus === true ? 'Y' : 'N'
+        checkinStatus: checkinStatus === 'Y' || checkinStatus === true || checkinStatus === '已核銷' ? 'Y' : 'N'
       };
     });
     
