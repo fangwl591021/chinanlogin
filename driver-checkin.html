@@ -175,46 +175,6 @@ let currentYear = currentDate.getFullYear();
 let selectedDate = null;
 let allReservations = [];
 
-// 示例數據 - 用於演示
-const sampleReservations = [
-  {
-    id: "1",
-    date: "2025-10-15",
-    route: "A1",
-    name: "王小明",
-    department: "資訊工程學系",
-    studentId: "D1234567",
-    phone: "0912345678",
-    fromStop: "行政大樓",
-    toStop: "埔里總站",
-    checkinStatus: "N"
-  },
-  {
-    id: "2",
-    date: "2025-10-15",
-    route: "B1",
-    name: "林小美",
-    department: "企業管理學系",
-    studentId: "D7654321",
-    phone: "0987654321",
-    fromStop: "埔里總站",
-    toStop: "行政大樓",
-    checkinStatus: "Y"
-  },
-  {
-    id: "3",
-    date: "2025-10-16",
-    route: "A2",
-    name: "張大華",
-    department: "電機工程學系",
-    studentId: "D1122334",
-    phone: "0922334455",
-    fromStop: "科技學院",
-    toStop: "埔里酒廠",
-    checkinStatus: "N"
-  }
-];
-
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('prev-month').onclick = () => changeMonth(-1);
   document.getElementById('next-month').onclick = () => changeMonth(1);
@@ -235,32 +195,86 @@ async function loadAllReservations() {
   try {
     const res = await fetch(`${WORKER_URL}?mode=reservations`);
     const result = await res.json();
-    allReservations = (result.reservations || []).filter(r => r.status !== '已取消');
+    console.log('API 返回的資料:', result); // 調試用
     
-    // 如果API沒有返回數據，使用示例數據
-    if (allReservations.length === 0) {
-      allReservations = sampleReservations;
-    }
+    let reservations = result.reservations || [];
     
-    // 確保所有資料都有正確的格式
-    allReservations = allReservations.map(reservation => ({
-      id: String(reservation.id || ''),
-      date: String(reservation.date || ''),
-      route: String(reservation.route || ''),
-      name: String(reservation.name || '未提供'),
-      department: String(reservation.department || '未提供'),
-      studentId: String(reservation.studentId || ''),
-      phone: String(reservation.phone || '未提供'),
-      fromStop: String(reservation.fromStop || '未提供'),
-      toStop: String(reservation.toStop || '未提供'),
-      checkinStatus: String(reservation.checkinStatus || 'N')
-    }));
+    // 過濾掉已取消的預約
+    reservations = reservations.filter(r => r.status !== '已取消');
+    
+    // 轉換資料結構，處理不同的欄位名稱
+    allReservations = reservations.map(reservation => {
+      // 調試用：顯示每個預約的完整結構
+      console.log('單個預約資料:', reservation);
+      
+      // 處理不同的欄位名稱
+      const fromStop = reservation.fromStop || reservation.上車站點 || reservation.上車 || reservation.pickupLocation || '未提供';
+      const toStop = reservation.toStop || reservation.下車站點 || reservation.下車 || reservation.dropoffLocation || '未提供';
+      const checkinStatus = reservation.checkinStatus || reservation.checkin || reservation.核銷狀態 || 'N';
+      
+      return {
+        id: String(reservation.id || reservation._id || ''),
+        date: String(reservation.date || reservation.日期 || ''),
+        route: String(reservation.route || reservation.shift || reservation.班次 || ''),
+        name: String(reservation.name || reservation.姓名 || '未提供'),
+        department: String(reservation.department || reservation.科系 || '未提供'),
+        studentId: String(reservation.studentId || reservation.學號 || ''),
+        phone: String(reservation.phone || reservation.電話 || '未提供'),
+        fromStop: fromStop,
+        toStop: toStop,
+        checkinStatus: checkinStatus === 'Y' || checkinStatus === true ? 'Y' : 'N'
+      };
+    });
+    
+    console.log('處理後的預約資料:', allReservations); // 調試用
     
   } catch (e) {
     console.error('載入失敗:', e);
     // 如果API失敗，使用示例數據
-    allReservations = sampleReservations;
+    allReservations = getSampleReservations();
   }
+}
+
+// 示例數據函數
+function getSampleReservations() {
+  return [
+    {
+      id: "1",
+      date: "2025-10-17",
+      route: "A1",
+      name: "王子齊",
+      department: "資訊工程學系",
+      studentId: "D1234567",
+      phone: "0912345678",
+      fromStop: "行政大樓",
+      toStop: "埔里總站",
+      checkinStatus: "Y"
+    },
+    {
+      id: "2",
+      date: "2025-10-17",
+      route: "A1",
+      name: "方萬隆",
+      department: "企業管理學系",
+      studentId: "D7654321",
+      phone: "0987654321",
+      fromStop: "科技學院",
+      toStop: "埔里酒廠",
+      checkinStatus: "Y"
+    },
+    {
+      id: "3",
+      date: "2025-10-20",
+      route: "A1",
+      name: "蔡志昇",
+      department: "電機工程學系",
+      studentId: "D1122334",
+      phone: "0922334455",
+      fromStop: "學人會館",
+      toStop: "榮民診所",
+      checkinStatus: "N"
+    }
+  ];
 }
 
 function renderCalendar() {
@@ -314,39 +328,6 @@ function showAllReservations(){
   renderReservationRows(sorted,`全部預約列表 (共 ${sorted.length} 筆)`);
 }
 
-// 完全重寫的安全處理函數
-function renderReservationRows(filtered, title) {
-  const tbody = document.getElementById('reservation-list');
-  tbody.innerHTML = '';
-  
-  filtered.forEach(r => {
-    const tr = document.createElement('tr');
-    tr.className = 'table-row';
-    const isCheckedIn = r.checkinStatus === 'Y';
-    
-    // 使用安全的字串處理函數
-    const safeName = escapeString(r.name || '未提供');
-    const safeDepartment = escapeString(r.department || '未提供');
-    const safePhone = escapeString(r.phone || '未提供');
-    const safeDate = r.date ? r.date.split('T')[0] : '';
-    const safeFromStop = r.fromStop || '未提供';
-    const safeToStop = r.toStop || '未提供';
-    const safeRoute = r.route || '';
-    const safeId = r.id || '';
-    
-    tr.innerHTML = `
-      <td>${safeDate}</td>
-      <td><strong>${safeRoute}</strong></td>
-      <td><span class="passenger-name" onclick="showModal('${safeName}', '${safeDepartment}', '${safePhone}')">${r.name || '未提供'}</span></td>
-      <td class="stop-cell">${safeFromStop}</td>
-      <td class="stop-cell">${safeToStop}</td>
-      <td>${isCheckedIn ? '<button class="checkin-btn" disabled>✅</button>' : `<button class="checkin-btn" onclick="confirmCheckin('${safeId}')">核銷</button>`}</td>`;
-    tbody.appendChild(tr);
-  });
-  
-  document.getElementById('checkin-title').textContent = title;
-}
-
 // 安全字串處理函數
 function escapeString(str) {
   if (typeof str !== 'string') {
@@ -358,6 +339,38 @@ function escapeString(str) {
     .replace(/`/g, '\\`')
     .replace(/\n/g, '\\n')
     .replace(/\r/g, '\\r');
+}
+
+function renderReservationRows(filtered, title) {
+  const tbody = document.getElementById('reservation-list');
+  tbody.innerHTML = '';
+  
+  filtered.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.className = 'table-row';
+    const isCheckedIn = r.checkinStatus === 'Y';
+    
+    // 使用安全的字串處理
+    const safeName = escapeString(r.name);
+    const safeDepartment = escapeString(r.department);
+    const safePhone = escapeString(r.phone);
+    const safeDate = r.date ? r.date.split('T')[0] : '';
+    const safeFromStop = r.fromStop || '未提供';
+    const safeToStop = r.toStop || '未提供';
+    const safeRoute = r.route || '';
+    const safeId = r.id || '';
+    
+    tr.innerHTML = `
+      <td>${safeDate}</td>
+      <td><strong>${safeRoute}</strong></td>
+      <td><span class="passenger-name" onclick="showModal('${safeName}', '${safeDepartment}', '${safePhone}')">${r.name}</span></td>
+      <td class="stop-cell">${safeFromStop}</td>
+      <td class="stop-cell">${safeToStop}</td>
+      <td>${isCheckedIn ? '<button class="checkin-btn" disabled>✅</button>' : `<button class="checkin-btn" onclick="confirmCheckin('${safeId}')">核銷</button>`}</td>`;
+    tbody.appendChild(tr);
+  });
+  
+  document.getElementById('checkin-title').textContent = title;
 }
 
 function showModal(name, department, phone) {
@@ -383,7 +396,12 @@ async function confirmCheckin(id){
   try{
     const res=await fetch(`${GAS_URL}?mode=confirmCheckin&id=${encodeURIComponent(id)}`);
     const result=await res.json();
-    if(result.status==='success'){alert('✅ 核銷成功');const t=allReservations.find(r=>r.id===id);if(t)t.checkinStatus='Y';selectedDate?showCheckinList():showAllReservations();}
+    if(result.status==='success'){
+      alert('✅ 核銷成功');
+      const reservation = allReservations.find(r=>r.id===id);
+      if(reservation) reservation.checkinStatus='Y';
+      selectedDate?showCheckinList():showAllReservations();
+    }
     else alert('❌ 核銷失敗：'+(result.message||'請稍後再試'));
   }catch(e){alert('❌ 錯誤：'+e.message);}
 }
