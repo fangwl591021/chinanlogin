@@ -207,15 +207,31 @@ function getRouteDisplay(item){
   return (!route||route==='undefined')?'-':route;
 }
 
-function validateData(list){
-  return list.map(i=>{
-    let status=STATUS.RESERVED;
-    if(i.checkin==='Y'||i.checkedIn===true) status=STATUS.COMPLETED;
-    else if(i.status?.includes('取消')) status=STATUS.CANCELLED;
-    else if(i.status?.includes('搭乘')) status=STATUS.COMPLETED;
-    return {...i, route:getRouteDisplay(i), status};
-  }).filter(i=>i.date);
+function validateData(list) {
+  return list.map(i => {
+    let status = STATUS.RESERVED;
+
+    // 1️⃣ 若 J 欄 (checkin 或 checkedIn) 為 Y → 已搭乘
+    if (i.checkin === 'Y' || i.checkedIn === true || i.checkinStatus === 'Y') {
+      status = STATUS.COMPLETED;
+    }
+    // 2️⃣ 若 H 欄 (status) 含「取消」 → 已取消
+    else if (i.status?.includes('取消')) {
+      status = STATUS.CANCELLED;
+    }
+    // 3️⃣ 若 H 欄 (status) 含「預約」 → 已預約
+    else if (i.status?.includes('預約')) {
+      status = STATUS.RESERVED;
+    }
+
+    return {
+      ...i,
+      route: getRouteDisplay(i),
+      status
+    };
+  }).filter(i => i.date);
 }
+
 
 function sortReservations(list){
   const order={A1:1,A2:2,B1:3,B2:4};
