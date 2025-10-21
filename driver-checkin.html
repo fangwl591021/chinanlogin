@@ -203,31 +203,17 @@ async function loadAllReservations() {
     reservations = reservations.filter(r => r.status !== '已取消');
     
     // 轉換資料結構，處理不同的欄位名稱
-    allReservations = reservations.map(reservation => {
+    allReservations = reservations.map((reservation, index) => {
       // 調試用：顯示每個預約的完整結構
-      console.log('單個預約完整資料:', JSON.stringify(reservation, null, 2));
+      console.log(`預約 ${index + 1} 完整資料:`, JSON.stringify(reservation, null, 2));
       
       // 檢查所有可能的欄位名稱
       const allKeys = Object.keys(reservation);
-      console.log('所有欄位名稱:', allKeys);
+      console.log(`預約 ${index + 1} 所有欄位名稱:`, allKeys);
       
-      // 尋找上車站點相關欄位
-      const fromStopKey = allKeys.find(key => 
-        key.includes('上車') || 
-        key.includes('from') || 
-        key.includes('pickup') || 
-        key.includes('start') ||
-        key.toLowerCase().includes('departure')
-      );
-      
-      // 尋找下車站點相關欄位
-      const toStopKey = allKeys.find(key => 
-        key.includes('下車') || 
-        key.includes('to') || 
-        key.includes('dropoff') || 
-        key.includes('end') ||
-        key.toLowerCase().includes('destination')
-      );
+      // 直接使用 E 和 F 欄位作為上車和下車站點
+      const fromStop = reservation.E || reservation.上車站 || reservation.fromStop || '未提供';
+      const toStop = reservation.F || reservation.下車站 || reservation.toStop || '未提供';
       
       // 尋找科系相關欄位
       const departmentKey = allKeys.find(key => 
@@ -250,20 +236,26 @@ async function loadAllReservations() {
         key.includes('核銷') || 
         key.includes('checkin') || 
         key.includes('checked') ||
-        key.includes('status')
+        key.includes('status') ||
+        key === 'J' // J 欄位可能是核銷狀態
       );
       
-      const fromStop = fromStopKey ? reservation[fromStopKey] : '未提供';
-      const toStop = toStopKey ? reservation[toStopKey] : '未提供';
       const department = departmentKey ? reservation[departmentKey] : '未提供';
       const route = routeKey ? reservation[routeKey] : (reservation.shift || '');
-      const checkinStatus = checkinKey ? reservation[checkinKey] : 'N';
+      const checkinStatus = checkinKey ? reservation[checkinKey] : (reservation.J || 'N');
       
-      console.log('找到的欄位:', { fromStopKey, toStopKey, departmentKey, routeKey, checkinKey });
-      console.log('對應的值:', { fromStop, toStop, department, route, checkinStatus });
+      console.log(`預約 ${index + 1} 找到的欄位:`, { 
+        E: reservation.E, 
+        F: reservation.F,
+        fromStop, 
+        toStop, 
+        department, 
+        route, 
+        checkinStatus 
+      });
       
       return {
-        id: String(reservation.id || reservation._id || ''),
+        id: String(reservation.id || reservation._id || index),
         date: String(reservation.date || reservation.日期 || ''),
         route: String(route),
         name: String(reservation.name || reservation.姓名 || '未提供'),
