@@ -5,16 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>穿山甲專車 - 司機核銷系統</title>
 <style>
+/* 保持相同的 CSS 樣式 */
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Microsoft JhengHei',sans-serif;}
 body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden;}
 .container{width:100%;margin:0;padding:12px;box-sizing:border-box;}
-
-/* === 頂部資訊 === */
 .header{background:#3c8050;color:white;padding:15px;border-radius:12px;margin-bottom:15px;text-align:center;}
 .header h1{font-size:22px;margin-bottom:5px;}
 .header p{font-size:13px;opacity:0.9;}
-
-/* === 月曆 === */
 .calendar-section{background:white;border-radius:12px;padding:15px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
 .calendar-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;gap:8px;}
 .calendar-nav button{background:#3c8050;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;flex:0 0 auto;}
@@ -28,75 +25,19 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
 .day-cell.past{background:#f5f5f5;color:#ccc;cursor:not-allowed;}
 .day-cell.selected{background:#3c8050;color:white;font-weight:bold;}
 .day-cell.other-month{color:#ccc;background:#f8f9fa;}
-
-/* === 行車路線圖 === */
-.route-map-section {
-  background: white;
-  border-radius: 12px;
-  padding: 15px;
-  margin-bottom: 15px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-.route-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-.route-header h2 {
-  color: #2e7d32;
-  margin: 0;
-  font-size: 16px;
-}
-.route-header button {
-  background: #3c8050;
-  color: white;
-  border: none;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-}
-.route-header button:hover {
-  background: #2f6842;
-}
-.route-line {
-  margin-bottom: 20px;
-}
-.route-line h3 {
-  font-size: 15px;
-  color: #333;
-  margin-bottom: 8px;
-}
-.stops {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-  line-height: 1.8;
-}
-.stops span,
-.stops strong {
-  font-size: 13px;
-}
-.stops strong {
-  color: #2e7d32;
-  font-weight: bold;
-}
-.stops .arrow {
-  color: #888;
-  font-size: 12px;
-}
-.a-line {
-  border-left: 4px solid #2e7d32;
-  padding-left: 8px;
-}
-.b-line {
-  border-left: 4px solid #1565c0;
-  padding-left: 8px;
-}
-
-/* === 核銷列表 === */
+.route-map-section {background: white;border-radius: 12px;padding: 15px;margin-bottom: 15px;box-shadow: 0 2px 8px rgba(0,0,0,0.1);}
+.route-header {display: flex;justify-content: space-between;align-items: center;margin-bottom: 15px;}
+.route-header h2 {color: #2e7d32;margin: 0;font-size: 16px;}
+.route-header button {background: #3c8050;color: white;border: none;padding: 6px 10px;border-radius: 6px;cursor: pointer;font-size: 12px;}
+.route-header button:hover {background: #2f6842;}
+.route-line {margin-bottom: 20px;}
+.route-line h3 {font-size: 15px;color: #333;margin-bottom: 8px;}
+.stops {display: flex;flex-wrap: wrap;align-items: center;gap: 4px;line-height: 1.8;}
+.stops span,.stops strong {font-size: 13px;}
+.stops strong {color: #2e7d32;font-weight: bold;}
+.stops .arrow {color: #888;font-size: 12px;}
+.a-line {border-left: 4px solid #2e7d32;padding-left: 8px;}
+.b-line {border-left: 4px solid #1565c0;padding-left: 8px;}
 .checkin-section{background:white;border-radius:12px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
 .checkin-section h2{margin-bottom:12px;color:#333;border-bottom:2px solid #3c8050;padding-bottom:8px;font-size:16px;}
 .reservation-table{width:100%;border-collapse:collapse;}
@@ -112,8 +53,6 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
 .checkin-btn:hover{background:#2f6842;}
 .checkin-btn:disabled{background:#ccc;cursor:not-allowed;}
 .no-data{text-align:center;color:#999;padding:30px 12px;}
-
-/* === 彈出窗口 === */
 .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;}
 .modal.active{display:flex;}
 .modal-content{background:white;border-radius:12px;padding:24px;max-width:90%;width:100%;max-width:380px;box-shadow:0 4px 20px rgba(0,0,0,0.3);}
@@ -148,53 +87,52 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
   </div>
 
   <!-- 行車路線圖 -->
-<div class="route-map-section">
-  <div class="route-header">
-    <h2>🚏 行車路線示意圖</h2>
-    <button id="toggle-route">展開</button>
-  </div>
-
-  <div id="route-content" style="display:none;">
-    <div class="route-line a-line">
-      <h3>🅰️ A線（暨大 → 埔里總站）</h3>
-      <div class="stops">
-        <span>行政大樓</span><span class="arrow">➔</span>
-        <span>中餐廳</span><span class="arrow">➔</span>
-        <span>科技學院</span><span class="arrow">➔</span>
-        <span>學人會館</span><span class="arrow">➔</span>
-        <span>中城</span><span class="arrow">➔</span>
-        <span>下城</span><span class="arrow">➔</span>
-        <span>坪頂</span><span class="arrow">➔</span>
-        <span>愛蘭橋</span><span class="arrow">➔</span>
-        <span>大成國小</span><span class="arrow">➔</span>
-        <span>中山安七街口</span><span class="arrow">➔</span>
-        <span>榮民診所</span><span class="arrow">➔</span>
-        <strong>埔里酒廠</strong><span class="arrow">➔</span>
-        <strong>埔里總站</strong>
-      </div>
+  <div class="route-map-section">
+    <div class="route-header">
+      <h2>🚏 行車路線示意圖</h2>
+      <button id="toggle-route">展開</button>
     </div>
 
-    <div class="route-line b-line">
-      <h3>🅱️ B線（埔里總站 → 暨大）</h3>
-      <div class="stops">
-        <strong>埔里總站</strong><span class="arrow">➔</span>
-        <strong>埔里酒廠</strong><span class="arrow">➔</span>
-        <span>榮民診所</span><span class="arrow">➔</span>
-        <span>中山安七街口</span><span class="arrow">➔</span>
-        <span>大成國小</span><span class="arrow">➔</span>
-        <span>愛蘭橋</span><span class="arrow">➔</span>
-        <span>坪頂</span><span class="arrow">➔</span>
-        <span>下城</span><span class="arrow">➔</span>
-        <span>中城</span><span class="arrow">➔</span>
-        <span>學人會館</span><span class="arrow">➔</span>
-        <span>科技學院</span><span class="arrow">➔</span>
-        <span>中餐廳</span><span class="arrow">➔</span>
-        <strong>行政大樓</strong>
+    <div id="route-content" style="display:none;">
+      <div class="route-line a-line">
+        <h3>🅰️ A線（暨大 → 埔里總站）</h3>
+        <div class="stops">
+          <span>行政大樓</span><span class="arrow">➔</span>
+          <span>中餐廳</span><span class="arrow">➔</span>
+          <span>科技學院</span><span class="arrow">➔</span>
+          <span>學人會館</span><span class="arrow">➔</span>
+          <span>中城</span><span class="arrow">➔</span>
+          <span>下城</span><span class="arrow">➔</span>
+          <span>坪頂</span><span class="arrow">➔</span>
+          <span>愛蘭橋</span><span class="arrow">➔</span>
+          <span>大成國小</span><span class="arrow">➔</span>
+          <span>中山安七街口</span><span class="arrow">➔</span>
+          <span>榮民診所</span><span class="arrow">➔</span>
+          <strong>埔里酒廠</strong><span class="arrow">➔</span>
+          <strong>埔里總站</strong>
+        </div>
+      </div>
+
+      <div class="route-line b-line">
+        <h3>🅱️ B線（埔里總站 → 暨大）</h3>
+        <div class="stops">
+          <strong>埔里總站</strong><span class="arrow">➔</span>
+          <strong>埔里酒廠</strong><span class="arrow">➔</span>
+          <span>榮民診所</span><span class="arrow">➔</span>
+          <span>中山安七街口</span><span class="arrow">➔</span>
+          <span>大成國小</span><span class="arrow">➔</span>
+          <span>愛蘭橋</span><span class="arrow">➔</span>
+          <span>坪頂</span><span class="arrow">➔</span>
+          <span>下城</span><span class="arrow">➔</span>
+          <span>中城</span><span class="arrow">➔</span>
+          <span>學人會館</span><span class="arrow">➔</span>
+          <span>科技學院</span><span class="arrow">➔</span>
+          <span>中餐廳</span><span class="arrow">➔</span>
+          <strong>行政大樓</strong>
+        </div>
       </div>
     </div>
   </div>
-</div>
-
 
   <!-- 核銷列表 -->
   <div id="checkin-section" class="checkin-section">
@@ -303,6 +241,21 @@ async function loadAllReservations() {
     if (allReservations.length === 0) {
       allReservations = sampleReservations;
     }
+    
+    // 確保所有資料都有正確的格式
+    allReservations = allReservations.map(reservation => ({
+      id: String(reservation.id || ''),
+      date: String(reservation.date || ''),
+      route: String(reservation.route || ''),
+      name: String(reservation.name || '未提供'),
+      department: String(reservation.department || '未提供'),
+      studentId: String(reservation.studentId || ''),
+      phone: String(reservation.phone || '未提供'),
+      fromStop: String(reservation.fromStop || '未提供'),
+      toStop: String(reservation.toStop || '未提供'),
+      checkinStatus: String(reservation.checkinStatus || 'N')
+    }));
+    
   } catch (e) {
     console.error('載入失敗:', e);
     // 如果API失敗，使用示例數據
@@ -361,7 +314,7 @@ function showAllReservations(){
   renderReservationRows(sorted,`全部預約列表 (共 ${sorted.length} 筆)`);
 }
 
-// 修復的函數 - 安全處理所有字串值
+// 完全重寫的安全處理函數
 function renderReservationRows(filtered, title) {
   const tbody = document.getElementById('reservation-list');
   tbody.innerHTML = '';
@@ -371,10 +324,10 @@ function renderReservationRows(filtered, title) {
     tr.className = 'table-row';
     const isCheckedIn = r.checkinStatus === 'Y';
     
-    // 安全處理所有值，確保它們是字串
-    const safeName = String(r.name || '未提供').replace(/'/g, "\\'");
-    const safeDepartment = String(r.department || '未提供').replace(/'/g, "\\'");
-    const safePhone = String(r.phone || '未提供').replace(/'/g, "\\'");
+    // 使用安全的字串處理函數
+    const safeName = escapeString(r.name || '未提供');
+    const safeDepartment = escapeString(r.department || '未提供');
+    const safePhone = escapeString(r.phone || '未提供');
     const safeDate = r.date ? r.date.split('T')[0] : '';
     const safeFromStop = r.fromStop || '未提供';
     const safeToStop = r.toStop || '未提供';
@@ -384,7 +337,7 @@ function renderReservationRows(filtered, title) {
     tr.innerHTML = `
       <td>${safeDate}</td>
       <td><strong>${safeRoute}</strong></td>
-      <td><span class="passenger-name" onclick="showModal('${safeName}', '${safeDepartment}', '${safePhone}')">${safeName}</span></td>
+      <td><span class="passenger-name" onclick="showModal('${safeName}', '${safeDepartment}', '${safePhone}')">${r.name || '未提供'}</span></td>
       <td class="stop-cell">${safeFromStop}</td>
       <td class="stop-cell">${safeToStop}</td>
       <td>${isCheckedIn ? '<button class="checkin-btn" disabled>✅</button>' : `<button class="checkin-btn" onclick="confirmCheckin('${safeId}')">核銷</button>`}</td>`;
@@ -392,6 +345,19 @@ function renderReservationRows(filtered, title) {
   });
   
   document.getElementById('checkin-title').textContent = title;
+}
+
+// 安全字串處理函數
+function escapeString(str) {
+  if (typeof str !== 'string') {
+    str = String(str || '');
+  }
+  return str
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"')
+    .replace(/`/g, '\\`')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r');
 }
 
 function showModal(name, department, phone) {
