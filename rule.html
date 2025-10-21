@@ -227,6 +227,31 @@ function showToast(msg){
   toast.style.display = 'block';
   setTimeout(()=>toast.style.display='none', 2800);
 }
+// 在 rule.html 的 script 中添加除錯功能
+async function debugRules() {
+  try {
+    const res = await fetch(`${CONFIG.WORKER_URL}?mode=getRules`);
+    const data = await res.json();
+    console.log('🔍 當前規則狀態:', data);
+    
+    // 顯示詳細資訊
+    const rules = data.current || {};
+    alert(`當前規則：
+座位上限: ${rules.seatLimit}
+未核銷封鎖: ${rules.maxNoShow}
+封鎖週數: ${rules.banWeeks}
+預約模式: ${rules.tripMode}
+最後更新: ${rules.lastUpdate}
+KV 狀態: ${data.fallback ? '使用預設值' : '從 KV 讀取'}
+    `);
+  } catch (e) {
+    console.error('除錯失敗:', e);
+    alert('讀取規則失敗: ' + e.message);
+  }
+}
+
+// 在表單區域添加除錯按鈕
+document.getElementById('debugBtn').addEventListener('click', debugRules);
 </script>
 </body>
 </html>
