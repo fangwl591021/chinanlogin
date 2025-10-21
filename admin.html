@@ -209,11 +209,22 @@ function getRouteDisplay(item){
 
 function validateData(list){
   return list.map(i=>{
-    let status=STATUS.RESERVED;
-    if(i.checkin==='Y'||i.checkedIn===true) status=STATUS.COMPLETED;
-    else if(i.status?.includes('取消')) status=STATUS.CANCELLED;
-    else if(i.status?.includes('搭乘')) status=STATUS.COMPLETED;
-    return {...i, route:getRouteDisplay(i), status};
+    let status = STATUS.RESERVED;
+    
+    // 優先檢查 J 欄的搭乘狀態（checkin 欄位）
+    if(i.checkin === 'Y' || i.checkedIn === true) {
+      status = STATUS.COMPLETED;
+    }
+    // 然後檢查取消狀態
+    else if(i.status?.includes('取消') || i.status === STATUS.CANCELLED) {
+      status = STATUS.CANCELLED;
+    }
+    // 如果已經是"已搭乘"狀態也保持
+    else if(i.status?.includes('搭乘') || i.status === STATUS.COMPLETED) {
+      status = STATUS.COMPLETED;
+    }
+    
+    return {...i, route: getRouteDisplay(i), status};
   }).filter(i=>i.date);
 }
 
