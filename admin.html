@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台系統 v6.5.0</title>
+<title>穿山甲專車後台系統 v6.5.1</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -55,6 +55,16 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
   .reservation-table { font-size: 13px; min-width: 320px; }
   .reservation-table th, .reservation-table td { padding: 8px 4px; }
 }
+
+.error-message {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 16px;
+  border-radius: 8px;
+  margin: 16px;
+  text-align: center;
+}
 </style>
 </head>
 
@@ -63,6 +73,23 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
   <div id="loading" class="flex flex-col items-center justify-center h-screen text-center text-gray-600">
     <div class="text-3xl mb-3">🚌 穿山甲後台載入中…</div>
     <p>請稍候驗證您的身分</p>
+    <div id="loadingDetails" class="mt-4 text-sm text-gray-500"></div>
+  </div>
+
+  <!-- 錯誤畫面 -->
+  <div id="error" class="hidden flex-col items-center justify-center h-screen text-center p-6">
+    <div class="text-4xl mb-4">❌</div>
+    <h2 class="text-2xl font-bold text-red-600 mb-2">系統初始化失敗</h2>
+    <p id="errorMessage" class="text-gray-700 mb-4"></p>
+    <div class="space-x-4">
+      <button onclick="location.reload()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg">
+        重新載入頁面
+      </button>
+      <button onclick="showDebugInfo()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg">
+        顯示除錯資訊
+      </button>
+    </div>
+    <div id="debugInfo" class="hidden mt-6 p-4 bg-gray-100 rounded-lg text-left text-sm"></div>
   </div>
 
   <!-- 主畫面 -->
@@ -72,6 +99,9 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
       <div class="flex items-center space-x-2">
         <img id="userPicture" class="w-10 h-10 rounded-full" alt="用戶頭像" />
         <span id="userName"></span>
+        <button onclick="location.reload()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm ml-4">
+          🔄 重新載入
+        </button>
       </div>
     </header>
 
@@ -97,7 +127,9 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
     <!-- 查詢紀錄 -->
     <section id="records" class="card hidden">
       <h2 class="font-bold text-xl mb-4 text-green-900">📅 預約紀錄查詢</h2>
-      <div id="recordsArea" class="reservation-table-container"></div>
+      <div id="recordsArea" class="reservation-table-container">
+        <p class="text-center text-gray-500 py-8">載入中...</p>
+      </div>
     </section>
 
     <!-- ✅ 核銷功能 -->
@@ -145,6 +177,40 @@ const STATUS = {
 };
 
 let allReservations = [];
+let currentUserProfile = null;
+
+// 更新載入狀態
+function updateLoadingStatus(message) {
+  const loadingDetails = document.getElementById('loadingDetails');
+  if (loadingDetails) {
+    loadingDetails.textContent = message;
+  }
+  console.log('🔍 ' + message);
+}
+
+// 顯示錯誤
+function showError(message, details = '') {
+  console.error('❌ ' + message, details);
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('main').classList.add('hidden');
+  document.getElementById('error').classList.remove('hidden');
+  document.getElementById('errorMessage').textContent = message;
+}
+
+// 顯示除錯資訊
+function showDebugInfo() {
+  const debugInfo = document.getElementById('debugInfo');
+  const info = {
+    timestamp: new Date().toISOString(),
+    userAgent: navigator.userAgent,
+    liffId: LIFF_ID,
+    workerUrl: WORKER_URL,
+    currentUser: currentUserProfile,
+    url: window.location.href
+  };
+  debugInfo.innerHTML = `<pre>${JSON.stringify(info, null, 2)}</pre>`;
+  debugInfo.classList.remove('hidden');
+}
 
 document.addEventListener('click', e => {
   const tab = e.target.closest('[data-tab]');
@@ -153,15 +219,39 @@ document.addEventListener('click', e => {
 
 async function init() {
   try {
-    await liff.init({ liffId: LIFF_ID });
-    const p = await liff.getProfile();
-    document.getElementById('userPicture').src = p.pictureUrl;
-    document.getElementById('userName').textContent = p.displayName;
-
-    // 使用新的角色驗證邏輯
-    const roleResponse = await fetch(`${WORKER_URL}?mode=getRole&userId=${p.userId}`);
-    const roleData = await roleResponse.json();
+    updateLoadingStatus('初始化 LIFF...');
     
+    // 檢查 LIFF SDK 是否載入
+    if (typeof liff === 'undefined') {
+      throw new Error('LIFF SDK 未正確載入，請在 LINE 環境中開啟');
+    }
+
+    // 初始化 LIFF
+    await liff.init({ liffId: LIFF_ID });
+    updateLoadingStatus('LIFF 初始化成功');
+
+    // 檢查登入狀態
+    if (!liff.isLoggedIn()) {
+      updateLoadingStatus('用戶未登入，執行登入...');
+      liff.login();
+      return;
+    }
+
+    updateLoadingStatus('獲取用戶資訊...');
+    const profile = await liff.getProfile();
+    currentUserProfile = profile;
+    document.getElementById('userPicture').src = profile.pictureUrl;
+    document.getElementById('userName').textContent = profile.displayName;
+
+    updateLoadingStatus('驗證用戶權限...');
+    // 驗證用戶角色
+    const roleResponse = await fetch(`${WORKER_URL}?mode=getRole&userId=${profile.userId}`);
+    
+    if (!roleResponse.ok) {
+      throw new Error(`角色驗證請求失敗: ${roleResponse.status}`);
+    }
+
+    const roleData = await roleResponse.json();
     console.log('🔐 角色驗證結果:', roleData);
     
     // 檢查是否為管理員（支援多種角色名稱）
@@ -169,19 +259,33 @@ async function init() {
     const isAdmin = ADMIN_ROLES.includes(userRole);
     
     if (roleData.status !== 'success' || !isAdmin) {
-      alert('❌ 您沒有權限使用此頁面\n所需角色: admin/amin/管理員\n您的角色: ' + userRole); 
-      liff.closeWindow(); 
+      showError(
+        '您沒有權限使用此頁面', 
+        `所需角色: admin/amin/管理員\n您的角色: ${userRole}\n用戶ID: ${profile.userId}`
+      );
       return;
     }
 
+    updateLoadingStatus('載入系統資料...');
+    // 顯示主畫面
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('main').classList.remove('hidden');
-    loadDashboard(); 
-    loadReservations();
+    
+    // 載入資料
+    await loadDashboard(); 
+    await loadReservations();
+    
+    // 設定定時更新
     setInterval(loadDashboard, 30000);
-  } catch (e) { 
-    console.error('初始化錯誤:', e);
-    alert('❌ 系統初始化失敗，請重新載入');
+    
+    console.log('✅ 系統初始化完成');
+
+  } catch (error) { 
+    console.error('💥 初始化錯誤:', error);
+    showError(
+      `系統初始化失敗: ${error.message}`,
+      `請檢查:\n1. 是否在 LINE App 中開啟\n2. 網路連線是否正常\n3. Worker 服務是否可用`
+    );
   }
 }
 
@@ -204,12 +308,16 @@ function showTab(tabId) {
 async function loadDashboard() {
   try {
     const response = await fetch(`${WORKER_URL}?mode=dashboard`);
+    if (!response.ok) throw new Error(`Dashboard 請求失敗: ${response.status}`);
+    
     const data = await response.json();
     
     if (data.status === 'success') {
       document.getElementById('todayCount').textContent = data.dashboard.todayCount;
       document.getElementById('cancelCount').textContent = data.dashboard.cancelCount;
       document.getElementById('checkinCount').textContent = data.dashboard.checkinCount;
+    } else {
+      console.error('Dashboard 資料錯誤:', data);
     }
   } catch (e) { 
     console.error('Dashboard 載入失敗:', e); 
@@ -219,7 +327,6 @@ async function loadDashboard() {
 function formatDateToMonthDay(dateStr) {
   if (!dateStr) return '-';
   try {
-    // 處理各種日期格式
     if (dateStr.startsWith('Date(')) {
       const m = dateStr.match(/Date\((\d+),(\d+),(\d+)\)/);
       if (m) { 
@@ -227,15 +334,11 @@ function formatDateToMonthDay(dateStr) {
       }
     }
     
-    // 處理標準日期格式 (YYYY-MM-DD)
     const parts = dateStr.split(/[-\/]/);
     if (parts.length >= 3) {
-      // 如果是 YYYY-MM-DD 格式
       if (parts[0].length === 4) {
         return `${parts[1].padStart(2, '0')}/${parts[2].padStart(2, '0')}`;
-      }
-      // 如果是 MM/DD/YYYY 格式
-      else {
+      } else {
         return `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}`;
       }
     }
@@ -253,24 +356,25 @@ function formatDateToMonthDay(dateStr) {
 }
 
 function getRouteDisplay(item) {
-  // 支援多種路線欄位名稱
   const route = item.route_id || item.route || item.shift || item.routeName || item.班次 || '-';
   return (!route || route === 'undefined') ? '-' : route;
 }
 
 function validateData(list) {
+  if (!Array.isArray(list)) {
+    console.warn('validateData: 輸入不是陣列', list);
+    return [];
+  }
+  
   return list.map(i => {
     let status = STATUS.RESERVED;
     
-    // 優先檢查核銷狀態（支援多種欄位名稱）
     if (i.checkin_status === 'Y' || i.checkin === 'Y' || i.checkedIn === true) {
       status = STATUS.COMPLETED;
     }
-    // 檢查取消狀態（支援多種狀態名稱）
     else if (i.status === 'cancelled' || i.status?.includes('取消') || i.status === STATUS.CANCELLED) {
       status = STATUS.CANCELLED;
     }
-    // 檢查已完成狀態
     else if (i.status === 'completed' || i.status?.includes('搭乘') || i.status === STATUS.COMPLETED) {
       status = STATUS.COMPLETED;
     }
@@ -279,24 +383,22 @@ function validateData(list) {
       ...i, 
       route: getRouteDisplay(i), 
       status: status,
-      // 確保姓名欄位存在
-      name: i.name || '-'
+      name: i.name || '-',
+      student_id: i.student_id || '-'
     };
-  }).filter(i => i.date); // 過濾掉沒有日期的資料
+  }).filter(i => i.date);
 }
 
 function sortReservations(list) {
   const order = { A1: 1, A2: 2, B1: 3, B2: 4 };
   return list.sort((a, b) => {
-    // 統一日期格式處理
     const dateA = a.date ? new Date(a.date.replace(/\//g, '-')) : new Date(0);
     const dateB = b.date ? new Date(b.date.replace(/\//g, '-')) : new Date(0);
     
     if (dateA.getTime() !== dateB.getTime()) {
-      return dateB - dateA; // 日期降序
+      return dateB - dateA;
     }
     
-    // 班次排序
     const routeA = order[a.route] || 99;
     const routeB = order[b.route] || 99;
     return routeA - routeB;
@@ -305,27 +407,31 @@ function sortReservations(list) {
 
 async function loadReservations() {
   try {
-    const response = await fetch(`${WORKER_URL}?mode=reservations`);
-    const data = await response.json();
+    document.getElementById('recordsArea').innerHTML = '<p class="text-center text-gray-500 py-8">載入中...</p>';
     
+    const response = await fetch(`${WORKER_URL}?mode=reservations`);
+    if (!response.ok) throw new Error(`預約資料請求失敗: ${response.status}`);
+    
+    const data = await response.json();
     console.log('📊 預約資料回應:', data);
     
     if (data.status === 'success') {
-      // 使用標準化後的資料
       const reservations = data.reservations || [];
       const clean = validateData(reservations);
       const sorted = sortReservations(clean);
       allReservations = sorted;
       renderReservations(sorted);
     } else {
-      console.error('預約資料載入失敗:', data);
-      document.getElementById('recordsArea').innerHTML = 
-        '<p class="text-center text-red-500 py-8">❌ 預約資料載入失敗</p>';
+      throw new Error('預約資料狀態錯誤: ' + (data.message || '未知錯誤'));
     }
   } catch (e) { 
-    console.error('查詢錯誤:', e); 
+    console.error('預約資料載入錯誤:', e); 
     document.getElementById('recordsArea').innerHTML = 
-      '<p class="text-center text-red-500 py-8">❌ 網路連線錯誤，請重新載入</p>';
+      `<div class="error-message">
+        <p>❌ 預約資料載入失敗</p>
+        <p class="text-sm mt-2">${e.message}</p>
+        <button onclick="loadReservations()" class="mt-2 bg-green-600 text-white px-4 py-1 rounded text-sm">重新載入</button>
+      </div>`;
   }
 }
 
@@ -356,8 +462,8 @@ function renderReservations(list) {
         <tr>
           <td>${formatDateToMonthDay(r.date)}</td>
           <td>${r.route}</td>
-          <td>${r.name || '-'}</td>
-          <td>${r.student_id || '-'}</td>
+          <td>${r.name}</td>
+          <td>${r.student_id}</td>
           <td class="${cls}">${r.status}</td>
         </tr>`;
       }).join('')}
@@ -365,25 +471,6 @@ function renderReservations(list) {
   </table>`;
   
   document.getElementById('recordsArea').innerHTML = html;
-}
-
-// 添加重新載入功能
-function addReloadButton() {
-  const header = document.querySelector('header');
-  const reloadBtn = document.createElement('button');
-  reloadBtn.className = 'bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm';
-  reloadBtn.innerHTML = '🔄 重新載入';
-  reloadBtn.onclick = () => {
-    loadDashboard();
-    loadReservations();
-    showToast('資料已重新載入');
-  };
-  
-  const existingReload = header.querySelector('.reload-btn');
-  if (!existingReload) {
-    reloadBtn.classList.add('reload-btn');
-    header.querySelector('h1').after(reloadBtn);
-  }
 }
 
 function showToast(message) {
@@ -395,8 +482,6 @@ function showToast(message) {
 
 // 初始化
 init();
-// 添加重新載入按鈕
-setTimeout(addReloadButton, 1000);
 </script>
 </body>
 </html>
