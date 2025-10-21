@@ -103,9 +103,10 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
     <h2 class="text-2xl font-bold text-red-600 mb-2">系統初始化失敗</h2>
     <p id="errorMessage" class="text-gray-700 mb-4"></p>
     <div class="space-x-4">
-      <button onclick="location.reload()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg">
-        重新載入頁面
-      </button>
+      <button onclick="refreshDashboard()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm ml-4">
+  🔄 重新載入
+</button>
+
       <button onclick="showDebugInfo()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg">
         顯示除錯資訊
       </button>
@@ -485,7 +486,7 @@ async function loadReservations() {
   try {
     document.getElementById('recordsArea').innerHTML = '<p class="text-center text-gray-500 py-8">載入中...</p>';
     
-    const response = await fetch(`${WORKER_URL}?mode=reservations`);
+    const response = await fetch(`${WORKER_URL}?mode=reservations&userId=${currentUserProfile.userId}`);
     if (!response.ok) throw new Error(`預約資料請求失敗: ${response.status}`);
     
     const data = await response.json();
@@ -510,6 +511,7 @@ async function loadReservations() {
       </div>`;
   }
 }
+
 
 function renderReservations(list) {
   if (!list || list.length === 0) {
@@ -554,6 +556,11 @@ function showToast(message) {
   toast.textContent = message;
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 3000);
+}
+async function refreshDashboard() {
+  showToast("重新載入中...");
+  await Promise.all([loadDashboard(), loadReservations()]);
+  showToast("✅ 已重新整理資料");
 }
 
 // 初始化
