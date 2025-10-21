@@ -189,6 +189,7 @@ async function saveRules(){
   };
 
   console.log('📤 準備送出更新請求:', body);
+  console.log("🧩 傳送的 updatedBy:", currentUserId);
   console.log('🔗 目標 URL:', CONFIG.WORKER_URL + '?mode=updateRules');
 
   try{
