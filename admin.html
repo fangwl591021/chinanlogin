@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台系統 v6.5.2</title>
+<title>穿山甲專車後台系統 v6.6</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -16,554 +16,178 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
 .card { background:white; border-radius:16px; padding:24px; box-shadow:0 2px 10px rgba(0,0,0,0.08); margin:16px auto; max-width:900px; margin-bottom: 100px; }
 .toast { position: fixed; bottom: 80px; right: 20px; background: #16a34a; color: white; padding: 10px 20px; border-radius: 8px; opacity: 0; transition: opacity .3s ease-in-out; }
 .toast.show { opacity: 1; }
-
-.reservation-table-container {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-}
-
-.reservation-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-  min-width: 360px;
-}
-
-.reservation-table th,
-.reservation-table td {
-  padding: 10px 8px;
-  text-align: center;
-  border-bottom: 1px solid #e5e7eb;
-  white-space: nowrap;
-}
-
-.reservation-table thead {
-  background: #14532d;
-  color: white;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.reservation-table th { font-weight: 600; }
-
-.reservation-table tbody tr:hover { background-color: #f8fafc; }
-
-@media (max-width: 768px) {
-  .reservation-table { font-size: 13px; min-width: 320px; }
-  .reservation-table th, .reservation-table td { padding: 8px 4px; }
-}
-
-.error-message {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
-  padding: 16px;
-  border-radius: 8px;
-  margin: 16px;
-  text-align: center;
-}
-
-.login-prompt {
-  background: #fffbeb;
-  border: 1px solid #fef3c7;
-  color: #92400e;
-  padding: 20px;
-  border-radius: 8px;
-  margin: 16px;
-  text-align: center;
-}
 </style>
 </head>
 
 <body>
-  <!-- 載入畫面 -->
-  <div id="loading" class="flex flex-col items-center justify-center h-screen text-center text-gray-600">
-    <div class="text-3xl mb-3">🚌 穿山甲後台載入中…</div>
-    <p>請稍候驗證您的身分</p>
-    <div id="loadingDetails" class="mt-4 text-sm text-gray-500"></div>
-  </div>
+<!-- 載入畫面 -->
+<div id="loading" class="flex flex-col items-center justify-center h-screen text-center text-gray-600">
+  <div class="text-3xl mb-3">🚌 穿山甲後台載入中…</div>
+  <p>請稍候驗證您的身分</p>
+  <div id="loadingDetails" class="mt-4 text-sm text-gray-500"></div>
+</div>
 
-  <!-- 登入提示畫面 -->
-  <div id="loginPrompt" class="hidden flex-col items-center justify-center h-screen text-center p-6">
-    <div class="text-4xl mb-4">🔐</div>
-    <h2 class="text-2xl font-bold text-amber-600 mb-2">需要登入</h2>
-    <p class="text-gray-700 mb-4">請先登入 LINE 帳號以使用後台系統</p>
-    <button id="loginButton" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg text-lg font-bold">
-      📱 點此登入 LINE
-    </button>
-    <p class="text-sm text-gray-500 mt-4">請在 LINE App 中開啟此頁面</p>
-  </div>
-
-  <!-- 錯誤畫面 -->
-  <div id="error" class="hidden flex-col items-center justify-center h-screen text-center p-6">
-    <div class="text-4xl mb-4">❌</div>
-    <h2 class="text-2xl font-bold text-red-600 mb-2">系統初始化失敗</h2>
-    <p id="errorMessage" class="text-gray-700 mb-4"></p>
-    <div class="space-x-4">
+<!-- 主畫面 -->
+<div id="main" class="hidden">
+  <header class="bg-green-800 text-white flex justify-between items-center px-6 py-4 sticky top-0 z-10">
+    <h1 class="text-xl font-bold">🚌 穿山甲後台系統</h1>
+    <div class="flex items-center space-x-2">
+      <img id="userPicture" class="w-10 h-10 rounded-full" alt="用戶頭像" />
+      <span id="userName"></span>
       <button onclick="refreshDashboard()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm ml-4">
-  🔄 重新載入
-</button>
-
-      <button onclick="showDebugInfo()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg">
-        顯示除錯資訊
+        🔄 重新載入
       </button>
     </div>
-    <div id="debugInfo" class="hidden mt-6 p-4 bg-gray-100 rounded-lg text-left text-sm max-w-md overflow-auto"></div>
-  </div>
+  </header>
 
-  <!-- 主畫面 -->
-  <div id="main" class="hidden">
-    <header class="bg-green-800 text-white flex justify-between items-center px-6 py-4 sticky top-0 z-10">
-      <h1 class="text-xl font-bold">🚌 穿山甲後台系統</h1>
-      <div class="flex items-center space-x-2">
-        <img id="userPicture" class="w-10 h-10 rounded-full" alt="用戶頭像" />
-        <span id="userName"></span>
-        <button onclick="location.reload()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm ml-4">
-          🔄 重新載入
-        </button>
+  <section id="dashboard" class="card">
+    <h2 class="font-bold text-xl mb-4 text-green-900">📊 即時儀表板</h2>
+    <div id="statsArea" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-green-100 p-4 rounded-xl text-center">
+        <p class="text-gray-700 font-semibold">今日預約</p>
+        <p id="todayCount" class="text-3xl font-bold text-green-700">-</p>
       </div>
-    </header>
-
-    <!-- 儀表板 -->
-    <section id="dashboard" class="card">
-      <h2 class="font-bold text-xl mb-4 text-green-900">📊 即時儀表板</h2>
-      <div id="statsArea" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-green-100 p-4 rounded-xl text-center">
-          <p class="text-gray-700 font-semibold">今日預約</p>
-          <p id="todayCount" class="text-3xl font-bold text-green-700">-</p>
-        </div>
-        <div class="bg-red-100 p-4 rounded-xl text-center">
-          <p class="text-gray-700 font-semibold">已取消</p>
-          <p id="cancelCount" class="text-3xl font-bold text-red-700">-</p>
-        </div>
-        <div class="bg-blue-100 p-4 rounded-xl text-center">
-          <p class="text-gray-700 font-semibold">已搭乘</p>
-          <p id="checkinCount" class="text-3xl font-bold text-blue-700">-</p>
-        </div>
+      <div class="bg-red-100 p-4 rounded-xl text-center">
+        <p class="text-gray-700 font-semibold">已取消</p>
+        <p id="cancelCount" class="text-3xl font-bold text-red-700">-</p>
       </div>
-    </section>
-
-    <!-- 查詢紀錄 -->
-    <section id="records" class="card hidden">
-      <h2 class="font-bold text-xl mb-4 text-green-900">📅 預約紀錄查詢</h2>
-      <div id="recordsArea" class="reservation-table-container">
-        <p class="text-center text-gray-500 py-8">載入中...</p>
+      <div class="bg-blue-100 p-4 rounded-xl text-center">
+        <p class="text-gray-700 font-semibold">已搭乘</p>
+        <p id="checkinCount" class="text-3xl font-bold text-blue-700">-</p>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- ✅ 核銷功能 -->
-    <section id="checkin" class="card hidden">
-      <h2 class="font-bold text-xl mb-4 text-green-900">✅ 乘客核銷</h2>
-      <div class="text-center mb-4">
-        <button onclick="openCheckinPage()" class="bg-green-700 hover:bg-green-800 text-white font-bold px-6 py-3 rounded-lg shadow">
-          🧾 開啟核銷頁面
-        </button>
-      </div>
-      <p class="text-gray-500 text-center text-sm">按下後將開啟核銷頁面</p>
-    </section>
+  <section id="records" class="card">
+    <h2 class="font-bold text-xl mb-4 text-green-900">📅 預約紀錄查詢</h2>
+    <div id="recordsArea" class="text-center text-gray-500 py-8">載入中...</div>
+  </section>
 
-    <!-- 系統設定 -->
-    <section id="settings" class="card hidden">
-      <h2 class="font-bold text-xl mb-4 text-green-900">⚙️ 系統設定</h2>
-      <div class="text-center text-gray-600 p-8">
-        <p>📄 設定頁面載入中...</p>
-        <p class="text-sm mt-2">若要編輯規則，請訪問：<a href="rule.html" target="_blank" class="text-green-600 underline">rule.html</a></p>
-      </div>
-    </section>
+  <footer class="fixed bottom-0 left-0 w-full bg-white shadow-lg flex border-t border-gray-200">
+    <button class="nav-btn active-tab" data-tab="dashboard">📊 儀表板</button>
+    <button class="nav-btn" data-tab="records">📋 查詢</button>
+  </footer>
+</div>
 
-    <!-- 導覽列 -->
-    <footer class="fixed bottom-0 left-0 w-full bg-white shadow-lg flex border-t border-gray-200">
-      <button class="nav-btn active-tab" data-tab="dashboard">📊 儀表板</button>
-      <button class="nav-btn" data-tab="records">📋 查詢</button>
-      <button class="nav-btn" data-tab="checkin">✅ 核銷</button>
-      <button class="nav-btn" data-tab="settings">⚙️ 設定</button>
-    </footer>
-  </div>
-
-  <div id="toast" class="toast">✅ 已成功更新</div>
+<div id="toast" class="toast">✅ 已更新資料</div>
 
 <script>
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 const LIFF_ID = '2006590746-wgL4l54z';
-const CHECKIN_LIFF = 'https://fangwl591021.github.io/chinanlogin/driver-checkin.html';
-
-// 支援多種管理員角色
-const ADMIN_ROLES = ['admin', 'amin', '管理員'];
-const STATUS = { 
-  RESERVED: '已預約', 
-  CANCELLED: '已取消', 
-  COMPLETED: '已搭乘' 
-};
-
-let allReservations = [];
+const ADMIN_ROLES = ['admin', '管理員', 'amin'];
 let currentUserProfile = null;
 
-// 更新載入狀態
-function updateLoadingStatus(message) {
-  const loadingDetails = document.getElementById('loadingDetails');
-  if (loadingDetails) {
-    loadingDetails.textContent = message;
-  }
-  console.log('🔍 ' + message);
-}
-
-// 顯示登入提示
-function showLoginPrompt() {
-  console.log('🔐 顯示登入提示');
-  document.getElementById('loading').classList.add('hidden');
-  document.getElementById('main').classList.add('hidden');
-  document.getElementById('error').classList.add('hidden');
-  document.getElementById('loginPrompt').classList.remove('hidden');
-}
-
-// 顯示錯誤
-function showError(message, details = '') {
-  console.error('❌ ' + message, details);
-  document.getElementById('loading').classList.add('hidden');
-  document.getElementById('main').classList.add('hidden');
-  document.getElementById('loginPrompt').classList.add('hidden');
-  document.getElementById('error').classList.remove('hidden');
-  document.getElementById('errorMessage').textContent = message;
-  
-  if (details) {
-    document.getElementById('errorMessage').innerHTML += `<br><small class="text-gray-600">${details}</small>`;
-  }
-}
-
-// 顯示除錯資訊
-function showDebugInfo() {
-  const debugInfo = document.getElementById('debugInfo');
-  const info = {
-    timestamp: new Date().toISOString(),
-    userAgent: navigator.userAgent,
-    liffId: LIFF_ID,
-    workerUrl: WORKER_URL,
-    currentUser: currentUserProfile,
-    url: window.location.href,
-    liffInitialized: typeof liff !== 'undefined',
-    liffLoggedIn: typeof liff !== 'undefined' ? liff.isLoggedIn() : 'N/A'
-  };
-  debugInfo.innerHTML = `<pre>${JSON.stringify(info, null, 2)}</pre>`;
-  debugInfo.classList.remove('hidden');
-}
-
-document.addEventListener('click', e => {
-  const tab = e.target.closest('[data-tab]');
-  if (tab) showTab(tab.dataset.tab);
-});
-
-// 登入按鈕事件
-document.getElementById('loginButton').addEventListener('click', function() {
-  console.log('🔐 執行登入');
-  if (typeof liff !== 'undefined') {
-    liff.login();
-  } else {
-    showError('LIFF SDK 未載入', '請在 LINE App 中開啟此頁面');
-  }
-});
-
+// 初始化 LIFF
 async function init() {
   try {
-    updateLoadingStatus('初始化 LIFF SDK...');
-    
-    // 檢查 LIFF SDK 是否載入
-    if (typeof liff === 'undefined') {
-      throw new Error('LIFF SDK 未正確載入，請在 LINE App 中開啟此頁面');
-    }
+    updateLoading('初始化 LIFF SDK...');
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) return liff.login();
 
-    updateLoadingStatus('正在初始化 LIFF...');
-    
-    // 初始化 LIFF - 使用更穩定的方式
-    await liff.init({ 
-      liffId: LIFF_ID 
-    }).catch(error => {
-      throw new Error(`LIFF 初始化失敗: ${error.message}`);
-    });
-    
-    updateLoadingStatus('LIFF 初始化成功');
-
-    // 檢查登入狀態
-    if (!liff.isLoggedIn()) {
-      console.log('🔐 用戶未登入，顯示登入提示');
-      showLoginPrompt();
-      return;
-    }
-
-    updateLoadingStatus('獲取用戶資訊...');
-    
-    // 獲取用戶資料 - 使用更穩定的方式
-    const profile = await liff.getProfile().catch(error => {
-      throw new Error(`獲取用戶資料失敗: ${error.message}`);
-    });
-    
+    updateLoading('取得用戶資料...');
+    const profile = await liff.getProfile();
     currentUserProfile = profile;
     document.getElementById('userPicture').src = profile.pictureUrl;
     document.getElementById('userName').textContent = profile.displayName;
 
-    updateLoadingStatus('驗證用戶權限...');
-    
-    // 驗證用戶角色
-    const roleResponse = await fetch(`${WORKER_URL}?mode=getRole&userId=${profile.userId}`);
-    
-    if (!roleResponse.ok) {
-      throw new Error(`角色驗證請求失敗: ${roleResponse.status} ${roleResponse.statusText}`);
-    }
+    updateLoading('驗證角色...');
+    const res = await fetch(`${WORKER_URL}?mode=getRole&userId=${profile.userId}`);
+    const data = await res.json();
+    console.log('🔐 角色驗證:', data);
 
-    const roleData = await roleResponse.json();
-    console.log('🔐 角色驗證結果:', roleData);
-    
-    // 檢查是否為管理員
-    const userRole = roleData.role || 'user';
-    const isAdmin = ADMIN_ROLES.includes(userRole);
-    
-    if (roleData.status !== 'success' || !isAdmin) {
-      showError(
-        '您沒有權限使用此頁面', 
-        `所需角色: ${ADMIN_ROLES.join('/')}<br>您的角色: ${userRole}<br>用戶ID: ${profile.userId}`
-      );
+    if (!ADMIN_ROLES.includes(data.role)) {
+      alert('您沒有權限進入後台');
       return;
     }
 
-    updateLoadingStatus('載入系統資料...');
-    
-    // 顯示主畫面
     document.getElementById('loading').classList.add('hidden');
-    document.getElementById('loginPrompt').classList.add('hidden');
-    document.getElementById('error').classList.add('hidden');
     document.getElementById('main').classList.remove('hidden');
-    
-    // 載入資料
-    await Promise.all([
-      loadDashboard(), 
-      loadReservations()
-    ]);
-    
-    // 設定定時更新
-    setInterval(loadDashboard, 30000);
-    
-    console.log('✅ 系統初始化完成');
 
-  } catch (error) { 
-    console.error('💥 初始化錯誤:', error);
-    
-    // 特殊處理登入相關錯誤
-    if (error.message.includes('access_token') || error.message.includes('login')) {
-      showLoginPrompt();
-    } else {
-      showError(
-        `系統初始化失敗: ${error.message}`,
-        `請檢查:<br>1. 是否在 LINE App 中開啟<br>2. 網路連線是否正常<br>3. Worker 服務是否可用`
-      );
-    }
+    await Promise.all([loadDashboard(), loadReservations()]);
+  } catch (err) {
+    console.error('初始化錯誤:', err);
+    alert('初始化失敗，請在 LINE App 中重新開啟');
   }
 }
 
-function openCheckinPage() {
-  try { 
-    if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
-      liff.openWindow({ url: CHECKIN_LIFF, external: false }); 
-    } else {
-      window.open(CHECKIN_LIFF, '_blank'); 
-    }
-  } catch (e) { 
-    window.open(CHECKIN_LIFF, '_blank'); 
-  }
-}
-
-function showTab(tabId) {
-  ['dashboard', 'records', 'checkin', 'settings'].forEach(id => {
-    document.getElementById(id).classList.toggle('hidden', id !== tabId);
-  });
-  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active-tab'));
-  document.querySelector(`[data-tab="${tabId}"]`).classList.add('active-tab');
+function updateLoading(msg) {
+  document.getElementById('loadingDetails').textContent = msg;
+  console.log(msg);
 }
 
 async function loadDashboard() {
   try {
-    const response = await fetch(`${WORKER_URL}?mode=dashboard&userId=${currentUserProfile.userId}`);
-
-    if (!response.ok) throw new Error(`Dashboard 請求失敗: ${response.status}`);
-    
-    const data = await response.json();
-    
+    const res = await fetch(`${WORKER_URL}?mode=dashboard&userId=${currentUserProfile.userId}`);
+    const data = await res.json();
     if (data.status === 'success') {
       document.getElementById('todayCount').textContent = data.dashboard.todayCount;
       document.getElementById('cancelCount').textContent = data.dashboard.cancelCount;
       document.getElementById('checkinCount').textContent = data.dashboard.checkinCount;
-    } else {
-      console.error('Dashboard 資料錯誤:', data);
     }
-  } catch (e) { 
-    console.error('Dashboard 載入失敗:', e); 
+  } catch (err) {
+    console.error('Dashboard 載入失敗:', err);
   }
-}
-
-function formatDateToMonthDay(dateStr) {
-  if (!dateStr) return '-';
-  try {
-    if (dateStr.startsWith('Date(')) {
-      const m = dateStr.match(/Date\((\d+),(\d+),(\d+)\)/);
-      if (m) { 
-        return `${(parseInt(m[2]) + 1).toString().padStart(2, '0')}/${m[3].padStart(2, '0')}`; 
-      }
-    }
-    
-    const parts = dateStr.split(/[-\/]/);
-    if (parts.length >= 3) {
-      if (parts[0].length === 4) {
-        return `${parts[1].padStart(2, '0')}/${parts[2].padStart(2, '0')}`;
-      } else {
-        return `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}`;
-      }
-    }
-    
-    const d = new Date(dateStr);
-    if (!isNaN(d)) {
-      return `${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')}`;
-    }
-    
-    return dateStr;
-  } catch (e) { 
-    console.error('日期解析錯誤:', e, dateStr); 
-    return dateStr; 
-  }
-}
-
-function getRouteDisplay(item) {
-  const route = item.route_id || item.route || item.shift || item.routeName || item.班次 || '-';
-  return (!route || route === 'undefined') ? '-' : route;
-}
-
-function validateData(list) {
-  if (!Array.isArray(list)) {
-    console.warn('validateData: 輸入不是陣列', list);
-    return [];
-  }
-  
-  return list.map(i => {
-    let status = STATUS.RESERVED;
-    
-    if (i.checkin_status === 'Y' || i.checkin === 'Y' || i.checkedIn === true) {
-      status = STATUS.COMPLETED;
-    }
-    else if (i.status === 'cancelled' || i.status?.includes('取消') || i.status === STATUS.CANCELLED) {
-      status = STATUS.CANCELLED;
-    }
-    else if (i.status === 'completed' || i.status?.includes('搭乘') || i.status === STATUS.COMPLETED) {
-      status = STATUS.COMPLETED;
-    }
-    
-    return {
-      ...i, 
-      route: getRouteDisplay(i), 
-      status: status,
-      name: i.name || '-',
-      student_id: i.student_id || '-'
-    };
-  }).filter(i => i.date);
-}
-
-function sortReservations(list) {
-  const order = { A1: 1, A2: 2, B1: 3, B2: 4 };
-  return list.sort((a, b) => {
-    const dateA = a.date ? new Date(a.date.replace(/\//g, '-')) : new Date(0);
-    const dateB = b.date ? new Date(b.date.replace(/\//g, '-')) : new Date(0);
-    
-    if (dateA.getTime() !== dateB.getTime()) {
-      return dateB - dateA;
-    }
-    
-    const routeA = order[a.route] || 99;
-    const routeB = order[b.route] || 99;
-    return routeA - routeB;
-  });
 }
 
 async function loadReservations() {
   try {
-    document.getElementById('recordsArea').innerHTML = '<p class="text-center text-gray-500 py-8">載入中...</p>';
-    
-    const response = await fetch(`${WORKER_URL}?mode=reservations&userId=${currentUserProfile.userId}`);
-    if (!response.ok) throw new Error(`預約資料請求失敗: ${response.status}`);
-    
-    const data = await response.json();
-    console.log('📊 預約資料回應:', data);
-    
-    if (data.status === 'success') {
-      const reservations = data.reservations || [];
-      const clean = validateData(reservations);
-      const sorted = sortReservations(clean);
-      allReservations = sorted;
-      renderReservations(sorted);
-    } else {
-      throw new Error('預約資料狀態錯誤: ' + (data.message || '未知錯誤'));
-    }
-  } catch (e) { 
-    console.error('預約資料載入錯誤:', e); 
-    document.getElementById('recordsArea').innerHTML = 
-      `<div class="error-message">
-        <p>❌ 預約資料載入失敗</p>
-        <p class="text-sm mt-2">${e.message}</p>
-        <button onclick="loadReservations()" class="mt-2 bg-green-600 text-white px-4 py-1 rounded text-sm">重新載入</button>
-      </div>`;
-  }
-}
+    const area = document.getElementById('recordsArea');
+    area.innerHTML = '載入中...';
+    const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${currentUserProfile.userId}`);
+    const data = await res.json();
 
-
-function renderReservations(list) {
-  if (!list || list.length === 0) {
-    document.getElementById('recordsArea').innerHTML = 
-      '<p class="text-center text-gray-500 py-8">暫無預約紀錄</p>';
-    return;
-  }
-  
-  const html = `
-  <table class="reservation-table">
-    <thead>
-      <tr>
-        <th>日期</th>
-        <th>班次</th>
-        <th>姓名</th>
-        <th>學號</th>
-        <th>狀態</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${list.map(r => {
-        const cls = r.status === STATUS.CANCELLED ? 'status-cancelled' :
-                   r.status === STATUS.COMPLETED ? 'status-completed' : 'status-reserved';
-        
-        return `
+    if (data.status === 'success' && Array.isArray(data.reservations)) {
+      const rows = data.reservations.map(r => `
         <tr>
-          <td>${formatDateToMonthDay(r.date)}</td>
+          <td>${formatDate(r.date)}</td>
           <td>${r.route}</td>
-          <td>${r.name}</td>
-          <td>${r.student_id}</td>
-          <td class="${cls}">${r.status}</td>
-        </tr>`;
-      }).join('')}
-    </tbody>
-  </table>`;
-  
-  document.getElementById('recordsArea').innerHTML = html;
+          <td>${r.name || '-'}</td>
+          <td>${r.studentId || '-'}</td>
+          <td class="${statusClass(r.status)}">${r.status}</td>
+        </tr>`).join('');
+      area.innerHTML = `
+        <table class="w-full text-sm border-collapse">
+          <thead class="bg-green-800 text-white">
+            <tr><th>日期</th><th>班次</th><th>姓名</th><th>學號</th><th>狀態</th></tr>
+          </thead><tbody>${rows}</tbody></table>`;
+    } else {
+      area.innerHTML = `<p class="text-gray-500">暫無預約資料</p>`;
+    }
+  } catch (err) {
+    console.error('預約資料載入錯誤:', err);
+    document.getElementById('recordsArea').innerHTML =
+      `<div class="text-red-600">❌ 無法載入資料 (${err.message})</div>`;
+  }
 }
 
-function showToast(message) {
-  const toast = document.getElementById('toast');
-  toast.textContent = message;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 3000);
+function statusClass(status) {
+  if (!status) return '';
+  if (status.includes('預約')) return 'text-green-600 font-bold';
+  if (status.includes('取消')) return 'text-red-600 font-bold';
+  if (status.includes('搭乘')) return 'text-blue-600 font-bold';
+  return '';
 }
+
+function formatDate(str) {
+  try {
+    const d = new Date(str);
+    return `${d.getMonth()+1}/${d.getDate()}`;
+  } catch { return str; }
+}
+
 async function refreshDashboard() {
-  showToast("重新載入中...");
+  showToast('🔄 重新載入中...');
   await Promise.all([loadDashboard(), loadReservations()]);
-  showToast("✅ 已重新整理資料");
+  showToast('✅ 已更新資料');
 }
 
-// 初始化
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
 init();
 </script>
 </body>
