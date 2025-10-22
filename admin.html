@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>穿山甲專車後台系統 v6.4.6</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<!-- 🔧 移除 LIFF SDK，因為後台不需要 LINE 登入 -->
 <style>
 /* 保持原有樣式不變 */
 body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334155; }
@@ -29,7 +28,7 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
-  min-width: 360px;
+  min-width: 800px; /* 增加最小寬度以容納更多欄位 */
 }
 
 .reservation-table th,
@@ -61,7 +60,7 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
 .passenger-info { background: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 12px; padding: 20px; margin: 20px 0; }
 
 @media (max-width: 768px) {
-  .reservation-table { font-size: 13px; min-width: 320px; }
+  .reservation-table { font-size: 13px; min-width: 700px; }
   .reservation-table th, .reservation-table td { padding: 8px 4px; }
 }
 </style>
@@ -330,7 +329,7 @@ function showToast(message, type = 'info') {
   }, 3000);
 }
 
-// 保持其他現有函數不變
+// 頁面切換
 function showTab(tabId){
   ['dashboard','records','checkin','settings'].forEach(id=>{
     document.getElementById(id).classList.toggle('hidden', id!==tabId);
@@ -344,6 +343,7 @@ function showTab(tabId){
   }
 }
 
+// 儀表板載入
 async function loadDashboard(){
   try{
     const data = await fetch(`${WORKER_URL}?mode=dashboard`).then(r=>r.json());
@@ -355,6 +355,7 @@ async function loadDashboard(){
   }catch(e){ console.error('Dashboard 載入失敗:', e); }
 }
 
+// 工具函數
 function formatDateToMonthDay(dateStr){
   if(!dateStr) return '-';
   try{
@@ -375,6 +376,7 @@ function getRouteDisplay(item){
   return (!route||route==='undefined')?'-':route;
 }
 
+// 預約相關功能
 const STATUS = { RESERVED:'已預約', CANCELLED:'已取消', COMPLETED:'已搭乘' };
 let allReservations = [];
 
@@ -421,7 +423,7 @@ function validateData(list) {
   }).filter(i => i.date);
 }
 
-// 修改顯示函數
+// 單一的 renderReservations 函數 - 顯示完整欄位
 function renderReservations(list){
   if(!list || list.length === 0){
     document.getElementById('recordsArea').innerHTML='<p class="text-center text-gray-500 py-8">暫無預約紀錄</p>';
@@ -469,7 +471,7 @@ function renderReservations(list){
   document.getElementById('recordsArea').innerHTML = html;
 }
 
-// 新增核銷函數
+// 核銷函數
 async function checkinReservation(reservationId) {
   if (!reservationId) {
     showToast('錯誤：缺少預約編號', 'error');
@@ -500,7 +502,7 @@ async function checkinReservation(reservationId) {
   }
 }
 
-// 載入預約資料函數保持不變
+// 載入預約資料
 async function loadReservations(){
   try{
     const data = await fetch(`${WORKER_URL}?mode=reservations`).then(r=>r.json());
@@ -510,30 +512,6 @@ async function loadReservations(){
       renderReservations(sorted);
     }
   }catch(e){ console.error('查詢錯誤:',e); }
-}
-
-function renderReservations(list){
-  if(!list||list.length===0){
-    document.getElementById('recordsArea').innerHTML='<p class="text-center text-gray-500 py-8">暫無預約紀錄</p>';
-    return;
-  }
-  const html=`
-  <table class="reservation-table">
-    <thead><tr><th>日期</th><th>班次</th><th>姓名</th><th>狀態</th></tr></thead>
-    <tbody>
-      ${list.map(r=>{
-        const cls=r.status===STATUS.CANCELLED?'status-cancelled':
-                 r.status===STATUS.COMPLETED?'status-completed':'status-reserved';
-        return `<tr>
-          <td>${formatDateToMonthDay(r.date)}</td>
-          <td>${r.route}</td>
-          <td>${r.name||'-'}</td>
-          <td class="${cls}">${r.status}</td>
-        </tr>`;
-      }).join('')}
-    </tbody>
-  </table>`;
-  document.getElementById('recordsArea').innerHTML=html;
 }
 
 init();
