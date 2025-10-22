@@ -176,15 +176,21 @@
                 await liff.init({ liffId: LIFF_ID });
                 logDebug('LIFF 初始化完成');
                 
-                // 檢查是否在 LINE 環境中
-                if (!liff.isInClient()) {
-                    updateStatus('請在 LINE App 中開啟此頁面', 'error');
-                    logDebug('不在 LINE 環境中');
-                    return;
+                // 放寬檢查條件，允許在瀏覽器中測試
+                const isInLINE = liff.isInClient();
+                const isLoggedIn = liff.isLoggedIn();
+                
+                logDebug(`環境檢測: LINE App內=${isInLINE}, 已登入=${isLoggedIn}`);
+                
+                if (isLoggedIn) {
+                    // 如果已經登入，直接獲取用戶資料
+                    updateStatus('檢測到已登入狀態', 'success');
+                    await handleLogin();
+                } else {
+                    // 顯示登入按鈕
+                    updateStatus('請點擊下方按鈕登入', 'info');
+                    document.getElementById('actionSection').style.display = 'block';
                 }
-
-                updateStatus('LINE 環境檢測成功', 'success');
-                document.getElementById('actionSection').style.display = 'block';
                 
             } catch (error) {
                 console.error('LIFF 初始化錯誤:', error);
@@ -261,6 +267,7 @@
                     // 儲存用戶資訊到 localStorage
                     localStorage.setItem('adminUserId', userId);
                     localStorage.setItem('adminAuthTime', Date.now().toString());
+                    localStorage.setItem('adminUserName', data.userName || '管理員');
                     
                     // 跳轉到後台主頁面
                     setTimeout(() => {
@@ -268,16 +275,19 @@
                     }, 1500);
                     
                 } else {
-                    updateStatus(`❌ 權限不足<br>角色: ${data.role}<br>來源: ${data.source}`, 'error');
+                    updateStatus(`❌ 權限不足<br>角色: ${data.role || '未知'}<br>來源: ${data.source || '未知'}`, 'error');
                     logDebug(`權限不足: ${data.role} (${data.source})`);
                     
                     // 顯示用戶 ID 供管理員添加
-                    document.getElementById('userDetails').innerHTML += `
-                        <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 5px;">
-                            <strong>請將此 ID 提供給系統管理員：</strong>
-                            <div style="font-family: monospace; background: white; padding: 5px; margin-top: 5px;">${userId}</div>
-                        </div>
-                    `;
+                    const userDetails = document.getElementById('userDetails');
+                    if (userDetails) {
+                        userDetails.innerHTML += `
+                            <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 5px;">
+                                <strong>請將此 ID 提供給系統管理員：</strong>
+                                <div style="font-family: monospace; background: white; padding: 5px; margin-top: 5px; word-break: break-all;">${userId}</div>
+                            </div>
+                        `;
+                    }
                 }
                 
             } catch (error) {
@@ -290,7 +300,21 @@
         // 頁面載入後初始化
         document.addEventListener('DOMContentLoaded', function() {
             logDebug('頁面載入完成');
-            initializeLiff();
+            
+            // 檢查是否已經有登入狀態
+            const savedUserId = localStorage.getItem('adminUserId');
+            const authTime = localStorage.getItem('adminAuthTime');
+            
+            if (savedUserId && authTime && (Date.now() - parseInt(authTime)) < 3600000) {
+                // 1小時內的有效登入，直接跳轉
+                updateStatus('檢測到有效登入狀態，直接跳轉...', 'success');
+                setTimeout(() => {
+                    window.location.href = 'admin.html';
+                }, 1000);
+            } else {
+                // 需要重新登入
+                initializeLiff();
+            }
         });
     </script>
 </body>
