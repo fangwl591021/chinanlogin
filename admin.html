@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台系統 v6.4.6</title>
+<title>穿山甲專車後台系統 v6.4.7</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -55,14 +55,50 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
   .reservation-table { font-size: 13px; min-width: 320px; }
   .reservation-table th, .reservation-table td { padding: 8px 4px; }
 }
+
+/* 調試面板 */
+.debug-panel {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  z-index: 1000;
+  max-width: 300px;
+}
+.debug-toggle {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 1000;
+}
 </style>
 </head>
 
 <body>
+  <!-- 調試按鈕 -->
+  <button class="debug-toggle" onclick="toggleDebug()">🐛 調試</button>
+
+  <!-- 調試面板 -->
+  <div id="debugPanel" class="debug-panel hidden">
+    <div class="font-bold mb-2">調試資訊</div>
+    <div id="debugInfo"></div>
+  </div>
+
   <!-- 載入畫面 -->
   <div id="loading" class="flex flex-col items-center justify-center h-screen text-center text-gray-600">
     <div class="text-3xl mb-3">🚌 穿山甲後台載入中…</div>
     <p>請稍候驗證您的身分</p>
+    <div id="loadingDetails" class="mt-4 text-sm text-gray-500"></div>
   </div>
 
   <!-- 主畫面 -->
@@ -72,6 +108,9 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
       <div class="flex items-center space-x-2">
         <img id="userPicture" class="w-10 h-10 rounded-full" alt="用戶頭像" />
         <span id="userName"></span>
+        <button onclick="showUserInfo()" class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+          🔍 ID
+        </button>
       </div>
     </header>
 
@@ -138,10 +177,21 @@ const CHECKIN_LIFF = 'https://fangwl591021.github.io/chinanlogin/driver-checkin.
 
 const STATUS = { RESERVED:'已預約', CANCELLED:'已取消', COMPLETED:'已搭乘' };
 let allReservations = [];
+let currentUserId = '';
+
+// 更新加載信息
+function updateLoadingText(message) {
+  const loadingDetails = document.getElementById('loadingDetails');
+  if (loadingDetails) {
+    loadingDetails.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+  }
+  console.log('🔍', message);
+}
 
 // 安全的 fetch 函數
 async function safeFetch(url, options = {}) {
   try {
+    updateLoadingText(`請求: ${url}`);
     const response = await fetch(url, options);
     const text = await response.text();
     
@@ -151,14 +201,54 @@ async function safeFetch(url, options = {}) {
     }
     
     try {
-      return JSON.parse(text);
+      const data = JSON.parse(text);
+      updateLoadingText(`響應: ${data.status || 'unknown'}`);
+      return data;
     } catch (parseError) {
       console.error('JSON 解析錯誤:', parseError, '響應內容:', text.substring(0, 200));
       throw new Error('伺服器返回了無效的 JSON 格式');
     }
   } catch (error) {
     console.error('Fetch 錯誤:', error);
+    updateLoadingText(`錯誤: ${error.message}`);
     throw error;
+  }
+}
+
+// 調試面板控制
+function toggleDebug() {
+  const panel = document.getElementById('debugPanel');
+  panel.classList.toggle('hidden');
+}
+
+// 顯示用戶信息
+async function showUserInfo() {
+  try {
+    const profile = await liff.getProfile();
+    const debugInfo = `
+用戶 ID: ${profile.userId}
+顯示名稱: ${profile.displayName}
+LIFF ID: ${LIFF_ID}
+
+請將此用戶 ID 複製並添加到 GAS 代碼的 MASTER_ADMINS 陣列中:
+
+'${profile.userId}'
+
+然後重新部署 GAS 項目。
+    `;
+    
+    alert(debugInfo);
+  } catch (error) {
+    alert('獲取用戶信息失敗: ' + error.message);
+  }
+}
+
+// 更新調試信息
+function updateDebugInfo(message) {
+  const debugInfo = document.getElementById('debugInfo');
+  if (debugInfo) {
+    debugInfo.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+    debugInfo.scrollTop = debugInfo.scrollHeight;
   }
 }
 
@@ -169,31 +259,69 @@ document.addEventListener('click', e=>{
 
 async function init(){
   try{
+    updateLoadingText('正在初始化 LIFF...');
     await liff.init({ liffId: LIFF_ID });
-    const p = await liff.getProfile();
-    document.getElementById('userPicture').src = p.pictureUrl;
-    document.getElementById('userName').textContent = p.displayName;
+    
+    updateLoadingText('正在獲取用戶資料...');
+    const profile = await liff.getProfile();
+    currentUserId = profile.userId;
+    
+    document.getElementById('userPicture').src = profile.pictureUrl;
+    document.getElementById('userName').textContent = profile.displayName;
 
-    // 使用安全的 fetch
-    const role = await safeFetch(`${WORKER_URL}?mode=getRole&userId=${p.userId}`);
-    if(role.status!=='success'||role.role!=='admin'){
-      alert('❌ 您沒有權限使用此頁面'); liff.closeWindow(); return;
+    updateLoadingText(`用戶 ID: ${currentUserId.substring(0, 10)}...`);
+    updateDebugInfo(`用戶: ${profile.displayName}`);
+    updateDebugInfo(`ID: ${currentUserId}`);
+
+    // 檢查權限
+    updateLoadingText('正在檢查管理員權限...');
+    const roleUrl = `${WORKER_URL}?mode=getRole&userId=${currentUserId}`;
+    updateDebugInfo(`請求: ${roleUrl}`);
+    
+    const role = await safeFetch(roleUrl);
+    updateDebugInfo(`權限回應: ${JSON.stringify(role)}`);
+
+    if(role.status !== 'success' || role.role !== 'admin'){
+      const errorMsg = `❌ 權限不足
+當前角色: ${role.role || '未知'}
+來源: ${role.source || '未知'}
+訊息: ${role.message || '無'}
+
+請確認:
+1. 您的用戶 ID 已添加到 GAS 的 MASTER_ADMINS 陣列
+2. GAS 項目已重新部署
+3. 點擊右上角 "🔍 ID" 按鈕獲取您的用戶 ID`;
+      
+      alert(errorMsg);
+      updateLoadingText('權限驗證失敗');
+      liff.closeWindow(); 
+      return;
     }
+
+    updateLoadingText('權限驗證通過，載入主界面...');
+    updateDebugInfo('✅ 權限驗證通過');
 
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('main').classList.remove('hidden');
+    
     loadDashboard(); 
     loadReservations();
     setInterval(loadDashboard, 30000);
+    
   }catch(e){ 
     console.error('初始化錯誤:', e);
+    updateLoadingText(`初始化失敗: ${e.message}`);
     alert('❌ 系統初始化失敗: ' + e.message);
   }
 }
 
 function openCheckinPage(){
-  try{ liff.openWindow({ url: CHECKIN_LIFF, external: false }); }
-  catch(e){ window.open(CHECKIN_LIFF,'_blank'); }
+  try{ 
+    liff.openWindow({ url: CHECKIN_LIFF, external: false }); 
+  }
+  catch(e){ 
+    window.open(CHECKIN_LIFF,'_blank'); 
+  }
 }
 
 function showTab(tabId){
@@ -206,14 +334,17 @@ function showTab(tabId){
 
 async function loadDashboard(){
   try{
+    updateDebugInfo('載入儀表板數據...');
     const data = await safeFetch(`${WORKER_URL}?mode=dashboard`);
     if(data.status==='success'){
       document.getElementById('todayCount').textContent = data.dashboard.todayCount;
       document.getElementById('cancelCount').textContent = data.dashboard.cancelCount;
       document.getElementById('checkinCount').textContent = data.dashboard.checkinCount;
+      updateDebugInfo('儀表板數據更新完成');
     }
   }catch(e){ 
     console.error('Dashboard 載入失敗:', e);
+    updateDebugInfo(`儀表板錯誤: ${e.message}`);
     document.getElementById('todayCount').textContent = '錯誤';
     document.getElementById('cancelCount').textContent = '錯誤';
     document.getElementById('checkinCount').textContent = '錯誤';
@@ -276,14 +407,17 @@ function sortReservations(list){
 
 async function loadReservations(){
   try{
+    updateDebugInfo('載入預約記錄...');
     const data = await safeFetch(`${WORKER_URL}?mode=reservations`);
     if(data.status==='success'){
       const clean=validateData(data.reservations);
       const sorted=sortReservations(clean);
       renderReservations(sorted);
+      updateDebugInfo(`載入 ${sorted.length} 筆預約記錄`);
     }
   }catch(e){ 
     console.error('查詢錯誤:',e);
+    updateDebugInfo(`預約記錄錯誤: ${e.message}`);
     document.getElementById('recordsArea').innerHTML='<p class="text-center text-red-500 py-8">❌ 載入失敗: ' + e.message + '</p>';
   }
 }
@@ -320,6 +454,7 @@ function showToast(message) {
   setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
+// 初始化
 init();
 </script>
 </body>
