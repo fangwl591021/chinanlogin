@@ -504,9 +504,11 @@ async function checkinReservation(reservationId) {
 
 // 載入預約資料
 // 載入預約資料
+// 載入預約資料
 async function loadReservations(){
   try{
-    const response = await fetch(`${WORKER_URL}?mode=reservations`);
+    const userId = localStorage.getItem('adminUserId');
+    const response = await fetch(`${WORKER_URL}?mode=reservations&userId=${userId}`);
     const contentType = response.headers.get('content-type');
     
     // 檢查是否為 JSON 回應
