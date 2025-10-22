@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>穿山甲專車 - 管理員登入</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #14532d 0%, #16a34a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #14532d;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1rem;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+        .loading { background: #e3f2fd; color: #1565c0; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        .error { background: #ffebee; color: #c62828; }
+        .info { background: #fff3e0; color: #ef6c00; }
+        .user-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: left;
+        }
+        .btn {
+            background: #14532d;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        .btn:hover { background: #0f4225; transform: translateY(-2px); }
+        .btn-secondary { background: #6b7280; }
+        .btn-secondary:hover { background: #4b5563; }
+        .manual-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .manual-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .debug-info {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">🚌</div>
+        <h1>穿山甲專車後台系統</h1>
+        <p class="subtitle">管理員登入</p>
+        
+        <div id="status" class="status loading">正在初始化系統...</div>
+        
+        <div id="userInfo" class="user-info" style="display: none;">
+            <strong>用戶資訊：</strong>
+            <div id="userDetails"></div>
+        </div>
+        
+        <div id="actionSection" style="display: none;">
+            <button id="loginBtn" class="btn" onclick="handleLogin()">🔐 登入系統</button>
+            <button class="btn btn-secondary" onclick="showManualSection()">🆔 手動輸入 ID</button>
+        </div>
+        
+        <div id="manualSection" class="manual-section" style="display: none;">
+            <h3>手動輸入 User ID</h3>
+            <input type="text" id="manualUserId" class="manual-input" placeholder="輸入 LINE User ID">
+            <button class="btn" onclick="checkManualPermission()">檢查權限</button>
+            <button class="btn btn-secondary" onclick="hideManualSection()">取消</button>
+        </div>
+        
+        <div id="debugSection" class="debug-info" style="display: none;">
+            <strong>調試資訊：</strong>
+            <div id="debugContent"></div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <button class="btn btn-secondary" onclick="toggleDebug()">🐛 顯示調試資訊</button>
+        </div>
+    </div>
+
+    <script>
+        const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+        const LIFF_ID = '2006590746-wgL4l54z';
+        let currentUserId = '';
+
+        function updateStatus(message, type = 'loading') {
+            const status = document.getElementById('status');
+            status.className = `status ${type}`;
+            status.innerHTML = message;
+            logDebug(`STATUS: ${message}`);
+        }
+
+        function logDebug(message) {
+            const debugContent = document.getElementById('debugContent');
+            if (debugContent) {
+                debugContent.innerHTML += `[${new Date().toLocaleTimeString()}] ${message}\n`;
+                debugContent.scrollTop = debugContent.scrollHeight;
+            }
+            console.log(`[DEBUG] ${message}`);
+        }
+
+        function toggleDebug() {
+            const debugSection = document.getElementById('debugSection');
+            debugSection.style.display = debugSection.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function showManualSection() {
+            document.getElementById('manualSection').style.display = 'block';
+            document.getElementById('actionSection').style.display = 'none';
+        }
+
+        function hideManualSection() {
+            document.getElementById('manualSection').style.display = 'none';
+            document.getElementById('actionSection').style.display = 'block';
+        }
+
+        async function initializeLiff() {
+            try {
+                updateStatus('正在初始化 LINE 整合...', 'loading');
+                logDebug('開始初始化 LIFF');
+                
+                await liff.init({ liffId: LIFF_ID });
+                logDebug('LIFF 初始化完成');
+                
+                // 檢查是否在 LINE 環境中
+                if (!liff.isInClient()) {
+                    updateStatus('請在 LINE App 中開啟此頁面', 'error');
+                    logDebug('不在 LINE 環境中');
+                    return;
+                }
+
+                updateStatus('LINE 環境檢測成功', 'success');
+                document.getElementById('actionSection').style.display = 'block';
+                
+            } catch (error) {
+                console.error('LIFF 初始化錯誤:', error);
+                updateStatus(`初始化失敗: ${error.message}`, 'error');
+                logDebug(`初始化錯誤: ${error.message}`);
+                
+                // 顯示手動輸入選項
+                document.getElementById('actionSection').style.display = 'block';
+            }
+        }
+
+        async function handleLogin() {
+            try {
+                updateStatus('正在進行 LINE 登入...', 'loading');
+                
+                if (!liff.isLoggedIn()) {
+                    logDebug('用戶未登入，觸發登入');
+                    liff.login();
+                    return;
+                }
+
+                updateStatus('正在獲取用戶資料...', 'loading');
+                const profile = await liff.getProfile();
+                currentUserId = profile.userId;
+                
+                logDebug(`獲取用戶資料成功: ${profile.displayName}`);
+                logDebug(`User ID: ${currentUserId}`);
+                
+                // 顯示用戶資訊
+                document.getElementById('userInfo').style.display = 'block';
+                document.getElementById('userDetails').innerHTML = `
+                    <div>姓名: ${profile.displayName}</div>
+                    <div>ID: ${currentUserId}</div>
+                    <div><img src="${profile.pictureUrl}" style="width: 50px; height: 50px; border-radius: 50%; margin-top: 10px;"></div>
+                `;
+                
+                updateStatus('登入成功！正在檢查權限...', 'success');
+                
+                // 檢查權限
+                await checkPermission(currentUserId);
+                
+            } catch (error) {
+                console.error('登入過程錯誤:', error);
+                updateStatus(`登入失敗: ${error.message}`, 'error');
+                logDebug(`登入錯誤: ${error.message}`);
+            }
+        }
+
+        async function checkManualPermission() {
+            const manualUserId = document.getElementById('manualUserId').value.trim();
+            if (!manualUserId) {
+                alert('請輸入 User ID');
+                return;
+            }
+            
+            currentUserId = manualUserId;
+            await checkPermission(currentUserId);
+        }
+
+        async function checkPermission(userId) {
+            try {
+                updateStatus('正在驗證管理員權限...', 'loading');
+                logDebug(`開始權限檢查: ${userId}`);
+                
+                const response = await fetch(`${WORKER_URL}?mode=getRole&userId=${userId}`);
+                const data = await response.json();
+                
+                logDebug(`權限檢查回應: ${JSON.stringify(data)}`);
+                
+                if (data.status === 'success' && data.role === 'admin') {
+                    updateStatus('🎉 權限驗證成功！正在進入後台...', 'success');
+                    logDebug('管理員權限確認，準備跳轉');
+                    
+                    // 儲存用戶資訊到 localStorage
+                    localStorage.setItem('adminUserId', userId);
+                    localStorage.setItem('adminAuthTime', Date.now().toString());
+                    
+                    // 跳轉到後台主頁面
+                    setTimeout(() => {
+                        window.location.href = 'admin.html';
+                    }, 1500);
+                    
+                } else {
+                    updateStatus(`❌ 權限不足<br>角色: ${data.role}<br>來源: ${data.source}`, 'error');
+                    logDebug(`權限不足: ${data.role} (${data.source})`);
+                    
+                    // 顯示用戶 ID 供管理員添加
+                    document.getElementById('userDetails').innerHTML += `
+                        <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 5px;">
+                            <strong>請將此 ID 提供給系統管理員：</strong>
+                            <div style="font-family: monospace; background: white; padding: 5px; margin-top: 5px;">${userId}</div>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('權限檢查錯誤:', error);
+                updateStatus(`權限檢查失敗: ${error.message}`, 'error');
+                logDebug(`權限檢查錯誤: ${error.message}`);
+            }
+        }
+
+        // 頁面載入後初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            logDebug('頁面載入完成');
+            initializeLiff();
+        });
+    </script>
+</body>
+</html>
