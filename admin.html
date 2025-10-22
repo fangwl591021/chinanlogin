@@ -375,28 +375,8 @@ function getRouteDisplay(item){
   return (!route||route==='undefined')?'-':route;
 }
 
-// 保持其他現有函數...
 const STATUS = { RESERVED:'已預約', CANCELLED:'已取消', COMPLETED:'已搭乘' };
-
-function validateData(list) {
-  return list.map(i => {
-    let status = STATUS.RESERVED;
-    if (i.checkin === 'Y' || i.checkedIn === true || i.checkinStatus === 'Y') {
-      status = STATUS.COMPLETED;
-    }
-    else if (i.status?.includes('取消')) {
-      status = STATUS.CANCELLED;
-    }
-    else if (i.status?.includes('預約')) {
-      status = STATUS.RESERVED;
-    }
-    return {
-      ...i,
-      route: getRouteDisplay(i),
-      status
-    };
-  }).filter(i => i.date);
-}
+let allReservations = [];
 
 // 修改排序函數 - 從最早排到最晚
 function sortReservations(list){
@@ -415,7 +395,33 @@ function sortReservations(list){
   });
 }
 
-// 修改顯示函數 - 添加更多欄位
+// 修改資料驗證函數
+function validateData(list) {
+  return list.map(i => {
+    let status = STATUS.RESERVED;
+
+    if (i.checkin === 'Y' || i.checkedIn === true || i.checkinStatus === 'Y') {
+      status = STATUS.COMPLETED;
+    }
+    else if (i.status?.includes('取消')) {
+      status = STATUS.CANCELLED;
+    }
+    else if (i.status?.includes('預約')) {
+      status = STATUS.RESERVED;
+    }
+
+    return {
+      ...i,
+      route: getRouteDisplay(i),
+      status,
+      reservationId: i.reservationId || i.id || `temp_${Math.random().toString(36).substr(2, 9)}`,
+      pickupLocation: i.pickupLocation || i.上車點 || i.pickup || '-',
+      dropoffLocation: i.dropoffLocation || i.下車點 || i.dropoff || '-'
+    };
+  }).filter(i => i.date);
+}
+
+// 修改顯示函數
 function renderReservations(list){
   if(!list || list.length === 0){
     document.getElementById('recordsArea').innerHTML='<p class="text-center text-gray-500 py-8">暫無預約紀錄</p>';
@@ -440,9 +446,8 @@ function renderReservations(list){
         const cls = r.status === STATUS.CANCELLED ? 'status-cancelled' :
                    r.status === STATUS.COMPLETED ? 'status-completed' : 'status-reserved';
         
-        // 核銷按鈕 - 只有已預約狀態顯示
         const actionButton = r.status === STATUS.RESERVED ? 
-          `<button onclick="checkinReservation('${r.reservationId || r.id || ''}')" 
+          `<button onclick="checkinReservation('${r.reservationId}')" 
                    class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">
             ✅ 核銷
           </button>` :
@@ -452,8 +457,8 @@ function renderReservations(list){
           <td>${formatDateToMonthDay(r.date)}</td>
           <td>${r.route}</td>
           <td>${r.name || '-'}</td>
-          <td>${r.pickupLocation || r.上車點 || '-'}</td>
-          <td>${r.dropoffLocation || r.下車點 || '-'}</td>
+          <td>${r.pickupLocation}</td>
+          <td>${r.dropoffLocation}</td>
           <td class="${cls}">${r.status}</td>
           <td>${actionButton}</td>
         </tr>`;
@@ -495,40 +500,13 @@ async function checkinReservation(reservationId) {
   }
 }
 
-// 修改資料驗證函數，確保有必要的欄位
-function validateData(list) {
-  return list.map(i => {
-    let status = STATUS.RESERVED;
-
-    if (i.checkin === 'Y' || i.checkedIn === true || i.checkinStatus === 'Y') {
-      status = STATUS.COMPLETED;
-    }
-    else if (i.status?.includes('取消')) {
-      status = STATUS.CANCELLED;
-    }
-    else if (i.status?.includes('預約')) {
-      status = STATUS.RESERVED;
-    }
-
-    return {
-      ...i,
-      route: getRouteDisplay(i),
-      status,
-      // 確保有預約編號
-      reservationId: i.reservationId || i.id || `temp_${Math.random().toString(36).substr(2, 9)}`,
-      // 上車點和下車點
-      pickupLocation: i.pickupLocation || i.上車點 || i.pickup || '-',
-      dropoffLocation: i.dropoffLocation || i.下車點 || i.dropoff || '-'
-    };
-  }).filter(i => i.date);
-}
-
+// 載入預約資料函數保持不變
 async function loadReservations(){
   try{
     const data = await fetch(`${WORKER_URL}?mode=reservations`).then(r=>r.json());
     if(data.status==='success'){
-      const clean=validateData(data.reservations);
-      const sorted=sortReservations(clean);
+      const clean = validateData(data.reservations);
+      const sorted = sortReservations(clean);
       renderReservations(sorted);
     }
   }catch(e){ console.error('查詢錯誤:',e); }
