@@ -19,37 +19,36 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
 
 .reservation-table-container {
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
+  max-width: 100%;
 }
 
 .reservation-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
-  min-width: 800px; /* 增加最小寬度以容納更多欄位 */
+  font-size: 13px;
+  min-width: 100%; /* ✅ 不需橫向滑動 */
+  table-layout: fixed;
 }
 
 .reservation-table th,
 .reservation-table td {
-  padding: 10px 8px;
+  padding: 6px 4px;
   text-align: center;
   border-bottom: 1px solid #e5e7eb;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.reservation-table thead {
-  background: #14532d;
-  color: white;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
+.reservation-table th:nth-child(1) { width: 60px; }   /* 日期 */
+.reservation-table th:nth-child(2) { width: 50px; }   /* 班次 */
+.reservation-table th:nth-child(3) { width: 80px; }   /* 姓名 */
+.reservation-table th:nth-child(4) { width: 100px; }  /* 上車點 */
+.reservation-table th:nth-child(5) { width: 100px; }  /* 下車點 */
+.reservation-table th:nth-child(6) { width: 70px; }   /* 狀態 */
 
-.reservation-table th { font-weight: 600; }
-
-.reservation-table tbody tr:hover { background-color: #f8fafc; }
 
 /* 核銷頁面專用樣式 */
 .checkin-container { max-width: 400px; margin: 0 auto; }
