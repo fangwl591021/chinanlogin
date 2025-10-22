@@ -398,13 +398,129 @@ function validateData(list) {
   }).filter(i => i.date);
 }
 
+// 修改排序函數 - 從最早排到最晚
 function sortReservations(list){
-  const order={A1:1,A2:2,B1:3,B2:4};
+  const order = {A1:1, A2:2, B1:3, B2:4};
   return list.sort((a,b)=>{
-    const da=new Date(a.date.replace(/\//g,'-')), db=new Date(b.date.replace(/\//g,'-'));
-    if(da.getTime()!==db.getTime()) return db-da;
-    return (order[a.route]||99)-(order[b.route]||99);
+    // 日期排序：從最早到最晚
+    const dateA = new Date(a.date.replace(/\//g, '-'));
+    const dateB = new Date(b.date.replace(/\//g, '-'));
+    
+    if (dateA.getTime() !== dateB.getTime()) {
+      return dateA - dateB; // 最早的在前面
+    }
+    
+    // 日期相同時按班次排序
+    return (order[a.route] || 99) - (order[b.route] || 99);
   });
+}
+
+// 修改顯示函數 - 添加更多欄位
+function renderReservations(list){
+  if(!list || list.length === 0){
+    document.getElementById('recordsArea').innerHTML='<p class="text-center text-gray-500 py-8">暫無預約紀錄</p>';
+    return;
+  }
+  
+  const html = `
+  <table class="reservation-table">
+    <thead>
+      <tr>
+        <th>日期</th>
+        <th>班次</th>
+        <th>姓名</th>
+        <th>上車點</th>
+        <th>下車點</th>
+        <th>狀態</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${list.map(r => {
+        const cls = r.status === STATUS.CANCELLED ? 'status-cancelled' :
+                   r.status === STATUS.COMPLETED ? 'status-completed' : 'status-reserved';
+        
+        // 核銷按鈕 - 只有已預約狀態顯示
+        const actionButton = r.status === STATUS.RESERVED ? 
+          `<button onclick="checkinReservation('${r.reservationId || r.id || ''}')" 
+                   class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">
+            ✅ 核銷
+          </button>` :
+          `<span class="text-gray-400">-</span>`;
+        
+        return `<tr>
+          <td>${formatDateToMonthDay(r.date)}</td>
+          <td>${r.route}</td>
+          <td>${r.name || '-'}</td>
+          <td>${r.pickupLocation || r.上車點 || '-'}</td>
+          <td>${r.dropoffLocation || r.下車點 || '-'}</td>
+          <td class="${cls}">${r.status}</td>
+          <td>${actionButton}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+  
+  document.getElementById('recordsArea').innerHTML = html;
+}
+
+// 新增核銷函數
+async function checkinReservation(reservationId) {
+  if (!reservationId) {
+    showToast('錯誤：缺少預約編號', 'error');
+    return;
+  }
+  
+  try {
+    showToast('正在核銷...', 'info');
+    
+    const response = await fetch(`${WORKER_URL}?mode=checkin&reservationId=${reservationId}`, {
+      method: 'POST'
+    });
+    
+    const data = await response.json();
+    
+    if (data.status === 'success') {
+      showToast('✅ 核銷成功！', 'success');
+      // 重新載入資料
+      loadReservations();
+      loadDashboard();
+    } else {
+      showToast(data.message || '核銷失敗', 'error');
+    }
+    
+  } catch (error) {
+    console.error('核銷錯誤:', error);
+    showToast('核銷失敗，請稍後再試', 'error');
+  }
+}
+
+// 修改資料驗證函數，確保有必要的欄位
+function validateData(list) {
+  return list.map(i => {
+    let status = STATUS.RESERVED;
+
+    if (i.checkin === 'Y' || i.checkedIn === true || i.checkinStatus === 'Y') {
+      status = STATUS.COMPLETED;
+    }
+    else if (i.status?.includes('取消')) {
+      status = STATUS.CANCELLED;
+    }
+    else if (i.status?.includes('預約')) {
+      status = STATUS.RESERVED;
+    }
+
+    return {
+      ...i,
+      route: getRouteDisplay(i),
+      status,
+      // 確保有預約編號
+      reservationId: i.reservationId || i.id || `temp_${Math.random().toString(36).substr(2, 9)}`,
+      // 上車點和下車點
+      pickupLocation: i.pickupLocation || i.上車點 || i.pickup || '-',
+      dropoffLocation: i.dropoffLocation || i.下車點 || i.dropoff || '-'
+    };
+  }).filter(i => i.date);
 }
 
 async function loadReservations(){
