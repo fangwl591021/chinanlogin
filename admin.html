@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>穿山甲專車後台系統 v6.4.6</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<!-- 🔧 移除 LIFF SDK，因為後台不需要 LINE 登入 -->
 <style>
+/* 保持原有樣式不變 */
 body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334155; }
 .nav-btn { flex: 1; text-align: center; padding: 10px 0; font-weight: 600; cursor: pointer; transition: all 0.2s; }
 .active-tab { background: #14532d; color: white; border-radius: 12px; }
@@ -50,6 +51,14 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
 .reservation-table th { font-weight: 600; }
 
 .reservation-table tbody tr:hover { background-color: #f8fafc; }
+
+/* 核銷頁面專用樣式 */
+.checkin-container { max-width: 400px; margin: 0 auto; }
+.qr-scanner { width: 100%; max-width: 300px; margin: 20px auto; border: 3px solid #14532d; border-radius: 12px; }
+.manual-input { width: 100%; padding: 12px; border: 2px solid #d1d5db; border-radius: 8px; margin: 10px 0; font-size: 16px; }
+.checkin-btn { background: #16a34a; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; margin: 10px 0; }
+.checkin-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+.passenger-info { background: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 12px; padding: 20px; margin: 20px 0; }
 
 @media (max-width: 768px) {
   .reservation-table { font-size: 13px; min-width: 320px; }
@@ -103,15 +112,35 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
       <div id="recordsArea" class="reservation-table-container"></div>
     </section>
 
-    <!-- ✅ 核銷功能 -->
+    <!-- ✅ 核銷功能 - 直接整合 -->
     <section id="checkin" class="card hidden">
       <h2 class="font-bold text-xl mb-4 text-green-900">✅ 乘客核銷</h2>
-      <div class="text-center mb-4">
-        <button onclick="openCheckinPage()" class="bg-green-700 hover:bg-green-800 text-white font-bold px-6 py-3 rounded-lg shadow">
-          🧾 開啟核銷頁面
-        </button>
+      
+      <div class="checkin-container">
+        <!-- QR Code 掃描區域 -->
+        <div class="text-center mb-6">
+          <h3 class="text-lg font-semibold mb-4">📷 QR Code 掃描</h3>
+          <div id="qrReader" class="qr-scanner"></div>
+          <p class="text-sm text-gray-500 mt-2">或使用手動輸入方式</p>
+        </div>
+
+        <!-- 手動輸入區域 -->
+        <div class="manual-section mb-6">
+          <h3 class="text-lg font-semibold mb-3">⌨️ 手動輸入預約編號</h3>
+          <input type="text" id="manualReservationId" class="manual-input" placeholder="輸入預約編號" maxlength="20">
+          <button onclick="manualCheckin()" class="checkin-btn">確認核銷</button>
+        </div>
+
+        <!-- 乘客資訊顯示 -->
+        <div id="passengerInfo" class="passenger-info hidden">
+          <h3 class="text-lg font-semibold mb-3">👤 乘客資訊</h3>
+          <div id="passengerDetails"></div>
+          <button onclick="confirmCheckin()" class="checkin-btn" id="confirmCheckinBtn">確認核銷</button>
+        </div>
+
+        <!-- 核銷結果 -->
+        <div id="checkinResult" class="hidden"></div>
       </div>
-      <p class="text-gray-500 text-center text-sm">按下後將開啟核銷頁面</p>
     </section>
 
     <!-- 系統設定 -->
@@ -136,20 +165,14 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
 
 <script>
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
-const LIFF_ID = '2006590746-wgL4l54z';
-const CHECKIN_LIFF = 'https://fangwl591021.github.io/chinanlogin/driver-checkin.html';
+let currentReservationId = '';
+let currentPassengerData = null;
 
-const STATUS = { RESERVED:'已預約', CANCELLED:'已取消', COMPLETED:'已搭乘' };
-let allReservations = [];
-
-// 🔧 新增：登出功能
+// 登出功能
 function logout() {
-  // 清除登入狀態
   localStorage.removeItem('adminUserId');
   localStorage.removeItem('adminAuthTime');
   localStorage.removeItem('adminUserName');
-  
-  // 跳回登入頁面
   window.location.href = 'login.html';
 }
 
@@ -158,43 +181,20 @@ document.addEventListener('click', e=>{
   if(tab) showTab(tab.dataset.tab);
 });
 
-// 🔧 修復後的 init 函數
+// 初始化
 async function init(){
   try{
-    // 🔧 新增：檢查有效的登入狀態
     const authTime = localStorage.getItem('adminAuthTime');
     const userId = localStorage.getItem('adminUserId');
+    const userName = localStorage.getItem('adminUserName');
     
     if (!authTime || !userId || (Date.now() - parseInt(authTime)) > 3600000) {
-      console.log('無效的登入狀態，跳轉到登入頁面');
       window.location.href = 'login.html';
       return;
     }
 
-    await liff.init({ liffId: LIFF_ID });
-    const p = await liff.getProfile();
-    
-    // 🔧 新增：驗證用戶一致性
-    if (p.userId !== userId) {
-      console.warn('用戶不匹配，重新登入');
-      window.location.href = 'login.html';
-      return;
-    }
-
-    document.getElementById('userPicture').src = p.pictureUrl;
-    document.getElementById('userName').textContent = p.displayName;
-
-    // 🔧 修改：權限檢查改為可選，不強制跳轉
-    try {
-      const role = await fetch(`${WORKER_URL}?mode=getRole&userId=${p.userId}`).then(r=>r.json());
-      if(role.status!=='success'||role.role!=='admin'){
-        console.warn('權限檢查失敗，但繼續顯示頁面');
-        // 可以在這裡顯示警告訊息，但不跳轉
-        document.getElementById('userName').textContent += ' (權限待確認)';
-      }
-    } catch (roleError) {
-      console.warn('權限檢查失敗:', roleError);
-    }
+    document.getElementById('userName').textContent = userName || '管理員';
+    document.getElementById('userPicture').src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiMxNDUzMmQiLz4KPHBhdGggZD0iTTIwIDIyQzIzLjMxMzcgMjIgMjYgMTkuMzEzNyAyNiAxNkMyNiAxMi42ODYzIDIzLjMxMzcgMTAgMjAgMTBDMTYuNjg2MyAxMCAxNCAxMi42ODYzIDE0IDE2QzE0IDE5LjMxMzcgMTYuNjg2MyAyMiAyMCAyMloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0yMCAyNkMxNC40NzcyIDI2IDEwIDMwLjQ3NzIgMTAgMzZIMzBDMzAgMzAuNDc3MiAyNS41MjI4IDI2IDIwIDI2WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+';
 
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('main').classList.remove('hidden');
@@ -204,22 +204,144 @@ async function init(){
     
   }catch(e){ 
     console.error('初始化錯誤:', e);
-    // 發生錯誤時跳回登入頁面
     window.location.href = 'login.html';
   }
 }
 
-function openCheckinPage(){
-  try{ liff.openWindow({ url: CHECKIN_LIFF, external: false }); }
-  catch(e){ window.open(CHECKIN_LIFF,'_blank'); }
+// 手動核銷
+async function manualCheckin() {
+  const reservationId = document.getElementById('manualReservationId').value.trim();
+  if (!reservationId) {
+    showToast('請輸入預約編號', 'error');
+    return;
+  }
+  
+  await verifyReservation(reservationId);
 }
 
+// 驗證預約資訊
+async function verifyReservation(reservationId) {
+  try {
+    showToast('正在查詢預約資訊...', 'info');
+    
+    const response = await fetch(`${WORKER_URL}?mode=verifyReservation&reservationId=${reservationId}`);
+    const data = await response.json();
+    
+    if (data.status === 'success' && data.reservation) {
+      currentReservationId = reservationId;
+      currentPassengerData = data.reservation;
+      
+      // 顯示乘客資訊
+      document.getElementById('passengerDetails').innerHTML = `
+        <div class="space-y-2">
+          <div><strong>姓名:</strong> ${data.reservation.name || '未提供'}</div>
+          <div><strong>日期:</strong> ${formatDateToMonthDay(data.reservation.date)}</div>
+          <div><strong>班次:</strong> ${getRouteDisplay(data.reservation)}</div>
+          <div><strong>狀態:</strong> ${data.reservation.status || '已預約'}</div>
+          <div><strong>電話:</strong> ${data.reservation.phone || '未提供'}</div>
+        </div>
+      `;
+      
+      document.getElementById('passengerInfo').classList.remove('hidden');
+      showToast('找到預約資訊，請確認核銷', 'success');
+      
+    } else {
+      showToast(data.message || '找不到預約資訊', 'error');
+    }
+    
+  } catch (error) {
+    console.error('驗證預約錯誤:', error);
+    showToast('查詢失敗，請稍後再試', 'error');
+  }
+}
+
+// 確認核銷
+async function confirmCheckin() {
+  if (!currentReservationId || !currentPassengerData) {
+    showToast('請先查詢預約資訊', 'error');
+    return;
+  }
+  
+  try {
+    document.getElementById('confirmCheckinBtn').disabled = true;
+    document.getElementById('confirmCheckinBtn').textContent = '核銷中...';
+    
+    const response = await fetch(`${WORKER_URL}?mode=checkin&reservationId=${currentReservationId}`, {
+      method: 'POST'
+    });
+    
+    const data = await response.json();
+    
+    if (data.status === 'success') {
+      showToast('✅ 核銷成功！', 'success');
+      document.getElementById('checkinResult').innerHTML = `
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+          <strong>核銷成功！</strong>
+          <div>乘客: ${currentPassengerData.name}</div>
+          <div>時間: ${new Date().toLocaleString()}</div>
+        </div>
+      `;
+      document.getElementById('checkinResult').classList.remove('hidden');
+      
+      // 重置表單
+      resetCheckinForm();
+      // 刷新儀表板
+      loadDashboard();
+      
+    } else {
+      showToast(data.message || '核銷失敗', 'error');
+    }
+    
+  } catch (error) {
+    console.error('核銷錯誤:', error);
+    showToast('核銷失敗，請稍後再試', 'error');
+  } finally {
+    document.getElementById('confirmCheckinBtn').disabled = false;
+    document.getElementById('confirmCheckinBtn').textContent = '確認核銷';
+  }
+}
+
+// 重置核銷表單
+function resetCheckinForm() {
+  document.getElementById('manualReservationId').value = '';
+  document.getElementById('passengerInfo').classList.add('hidden');
+  document.getElementById('checkinResult').classList.add('hidden');
+  currentReservationId = '';
+  currentPassengerData = null;
+}
+
+// 顯示提示訊息
+function showToast(message, type = 'info') {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  
+  // 根據類型設定顏色
+  if (type === 'error') {
+    toast.style.background = '#dc2626';
+  } else if (type === 'success') {
+    toast.style.background = '#16a34a';
+  } else {
+    toast.style.background = '#3b82f6';
+  }
+  
+  toast.classList.add('show');
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
+}
+
+// 保持其他現有函數不變
 function showTab(tabId){
   ['dashboard','records','checkin','settings'].forEach(id=>{
     document.getElementById(id).classList.toggle('hidden', id!==tabId);
   });
   document.querySelectorAll('.nav-btn').forEach(btn=>btn.classList.remove('active-tab'));
   document.querySelector(`[data-tab="${tabId}"]`).classList.add('active-tab');
+  
+  // 切換到核銷頁面時重置表單
+  if (tabId === 'checkin') {
+    resetCheckinForm();
+  }
 }
 
 async function loadDashboard(){
@@ -253,23 +375,21 @@ function getRouteDisplay(item){
   return (!route||route==='undefined')?'-':route;
 }
 
+// 保持其他現有函數...
+const STATUS = { RESERVED:'已預約', CANCELLED:'已取消', COMPLETED:'已搭乘' };
+
 function validateData(list) {
   return list.map(i => {
     let status = STATUS.RESERVED;
-
-    // 1️⃣ 若 J 欄 (checkin 或 checkedIn) 為 Y → 已搭乘
     if (i.checkin === 'Y' || i.checkedIn === true || i.checkinStatus === 'Y') {
       status = STATUS.COMPLETED;
     }
-    // 2️⃣ 若 H 欄 (status) 含「取消」 → 已取消
     else if (i.status?.includes('取消')) {
       status = STATUS.CANCELLED;
     }
-    // 3️⃣ 若 H 欄 (status) 含「預約」 → 已預約
     else if (i.status?.includes('預約')) {
       status = STATUS.RESERVED;
     }
-
     return {
       ...i,
       route: getRouteDisplay(i),
