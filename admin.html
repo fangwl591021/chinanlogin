@@ -359,72 +359,121 @@
         }
 
         async function checkPermission(userId) {
-            try {
-                updateStatus('正在驗證管理員權限...', 'loading');
-                logDebug(`開始權限檢查: ${userId}`, 'info');
-                
-                const response = await fetch(`${WORKER_URL}?mode=getRole&userId=${userId}`);
-                const data = await response.json();
-                
-                logDebug(`權限檢查回應: ${JSON.stringify(data)}`, 'info');
-                
-                if (data.status === 'success' && data.role === 'admin') {
-                    updateStatus('🎉 權限驗證成功！正在進入後台...', 'success');
-                    logDebug('管理員權限確認，準備跳轉', 'success');
-                    
-                    // 儲存用戶資訊到 localStorage
-                    localStorage.setItem('adminUserId', userId);
-                    localStorage.setItem('adminAuthTime', Date.now().toString());
-                    localStorage.setItem('adminUserName', data.userName || '管理員');
-                    
-                    // 跳轉到後台主頁面
-                    setTimeout(() => {
-                        window.location.href = 'admin.html';
-                    }, 1500);
-                    
-                } else {
-                    updateStatus(`❌ 權限不足<br>角色: ${data.role || '未知'}<br>來源: ${data.source || '未知'}`, 'error');
-                    logDebug(`權限不足: ${data.role} (${data.source})`, 'error');
-                    
-                    // 顯示用戶 ID 供管理員添加
-                    const userDetails = document.getElementById('userDetails');
-                    if (userDetails) {
-                        userDetails.innerHTML += `
-                            <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 5px;">
-                                <strong>請將此 ID 提供給系統管理員：</strong>
-                                <div style="font-family: monospace; background: white; padding: 5px; margin-top: 5px; word-break: break-all;">${userId}</div>
-                            </div>
-                        `;
-                    }
-                }
-                
-            } catch (error) {
-                console.error('權限檢查錯誤:', error);
-                updateStatus(`權限檢查失敗: ${error.message}`, 'error');
-                logDebug(`權限檢查錯誤: ${error.message}`, 'error');
+    try {
+        updateStatus('正在驗證管理員權限...', 'loading');
+        logDebug(`開始權限檢查: ${userId}`, 'info');
+        
+        // 添加超時處理
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
+        const response = await fetch(`${WORKER_URL}?mode=getRole&userId=${userId}`, {
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
+        logDebug(`HTTP 狀態碼: ${response.status}`, 'info');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const responseText = await response.text();
+        logDebug(`原始回應: ${responseText}`, 'info');
+        
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (parseError) {
+            throw new Error(`JSON 解析失敗: ${parseError.message}`);
+        }
+        
+        logDebug(`權限檢查回應: ${JSON.stringify(data, null, 2)}`, 'info');
+        
+        if (data.status === 'success' && data.role === 'admin') {
+            updateStatus('🎉 權限驗證成功！正在進入後台...', 'success');
+            logDebug('管理員權限確認，準備跳轉', 'success');
+            
+            // 儲存用戶資訊
+            localStorage.setItem('adminUserId', userId);
+            localStorage.setItem('adminAuthTime', Date.now().toString());
+            localStorage.setItem('adminUserName', data.userName || '管理員');
+            
+            // 立即跳轉，不要延遲
+            window.location.href = 'admin.html';
+            
+        } else {
+            updateStatus(`❌ 權限不足<br>角色: ${data.role || '未知'}<br>來源: ${data.source || '未知'}`, 'error');
+            logDebug(`權限不足: ${data.role} (${data.source})`, 'error');
+            
+            // 顯示詳細的權限資訊
+            const userDetails = document.getElementById('userDetails');
+            if (userDetails) {
+                userDetails.innerHTML += `
+                    <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 5px;">
+                        <strong>權限檢查結果：</strong>
+                        <div>狀態: ${data.status}</div>
+                        <div>角色: ${data.role}</div>
+                        <div>來源: ${data.source}</div>
+                        <div>訊息: ${data.message || '無'}</div>
+                        <strong>請將此 ID 提供給系統管理員：</strong>
+                        <div style="font-family: monospace; background: white; padding: 5px; margin-top: 5px; word-break: break-all;">${userId}</div>
+                    </div>
+                `;
             }
         }
+        
+    } catch (error) {
+        console.error('權限檢查錯誤:', error);
+        updateStatus(`權限檢查失敗: ${error.message}`, 'error');
+        logDebug(`權限檢查錯誤: ${error.message}`, 'error');
+        logDebug(`錯誤詳情: ${error.stack}`, 'error');
+        
+        // 顯示網路錯誤的解決方案
+        if (error.name === 'AbortError' || error.message.includes('Failed to fetch')) {
+            logDebug('💡 網路連接問題解決方案:', 'warning');
+            logDebug('   1. 檢查 Cloudflare Worker URL 是否正確', 'warning');
+            logDebug('   2. 檢查網路連接', 'warning');
+            logDebug('   3. 檢查 CORS 設定', 'warning');
+        }
+    }
+}
 
         // 頁面載入後初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            logDebug('頁面載入完成', 'info');
-            
-            // 檢查是否已經有登入狀態
-            const savedUserId = localStorage.getItem('adminUserId');
-            const authTime = localStorage.getItem('adminAuthTime');
-            
-            if (savedUserId && authTime && (Date.now() - parseInt(authTime)) < 3600000) {
-                // 1小時內的有效登入，直接跳轉
-                updateStatus('檢測到有效登入狀態，直接跳轉...', 'success');
-                logDebug('檢測到有效登入狀態，跳轉到後台', 'success');
-                setTimeout(() => {
-                    window.location.href = 'admin.html';
-                }, 1000);
-            } else {
-                // 需要重新登入
-                initializeLiff();
-            }
-        });
+document.addEventListener('DOMContentLoaded', function() {
+    logDebug('頁面載入完成', 'info');
+    
+    // 暫時禁用自動跳轉，改為手動檢查
+    // 先顯示調試資訊
+    document.getElementById('debugSection').style.display = 'block';
+    
+    logDebug('🔍 開始診斷自動跳轉問題...', 'info');
+    
+    // 檢查 localStorage 中的登入狀態
+    const savedUserId = localStorage.getItem('adminUserId');
+    const authTime = localStorage.getItem('adminAuthTime');
+    
+    logDebug(`儲存的 UserID: ${savedUserId || '無'}`, 'info');
+    logDebug(`認證時間: ${authTime ? new Date(parseInt(authTime)).toLocaleString() : '無'}`, 'info');
+    
+    if (savedUserId && authTime) {
+        const timeDiff = Date.now() - parseInt(authTime);
+        const hoursDiff = timeDiff / (1000 * 60 * 60);
+        logDebug(`距離上次登入: ${hoursDiff.toFixed(2)} 小時`, 'info');
+        
+        if (timeDiff < 3600000) { // 1小時
+            logDebug('檢測到有效登入狀態，驗證權限...', 'info');
+            // 重新驗證權限，而不是直接跳轉
+            checkPermission(savedUserId);
+        } else {
+            logDebug('登入狀態已過期，需要重新登入', 'warning');
+            initializeLiff();
+        }
+    } else {
+        logDebug('無有效登入狀態，需要登入', 'info');
+        initializeLiff();
+    }
+});
     </script>
 </body>
 </html>
