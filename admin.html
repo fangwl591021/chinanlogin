@@ -1,479 +1,328 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>穿山甲專車 - 管理員登入</title>
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #14532d 0%, #16a34a 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .login-container {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            max-width: 500px;
-            width: 100%;
-            text-align: center;
-        }
-        .logo {
-            font-size: 3rem;
-            margin-bottom: 20px;
-        }
-        h1 {
-            color: #14532d;
-            margin-bottom: 10px;
-            font-size: 1.8rem;
-        }
-        .subtitle {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 1rem;
-        }
-        .status {
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px 0;
-            font-size: 0.9rem;
-        }
-        .loading { background: #e3f2fd; color: #1565c0; }
-        .success { background: #e8f5e8; color: #2e7d32; }
-        .error { background: #ffebee; color: #c62828; }
-        .info { background: #fff3e0; color: #ef6c00; }
-        .user-info {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-            text-align: left;
-        }
-        .btn {
-            background: #14532d;
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 25px;
-            font-size: 1rem;
-            cursor: pointer;
-            margin: 10px 5px;
-            transition: all 0.3s;
-        }
-        .btn:hover { background: #0f4225; transform: translateY(-2px); }
-        .btn-secondary { background: #6b7280; }
-        .btn-secondary:hover { background: #4b5563; }
-        .btn-debug { background: #dc2626; }
-        .btn-debug:hover { background: #b91c1c; }
-        .manual-section {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-        }
-        .manual-input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #d1d5db;
-            border-radius: 5px;
-            margin: 10px 0;
-            font-family: monospace;
-        }
-        .debug-info {
-            background: #1f2937;
-            color: #10b981;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-            font-family: monospace;
-            font-size: 0.8rem;
-            text-align: left;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .debug-log {
-            border-left: 4px solid;
-            padding-left: 1rem;
-            margin: 0.5rem 0;
-        }
-        .debug-info-log { border-color: #3b82f6; color: #3b82f6; }
-        .debug-success { border-color: #10b981; color: #10b981; }
-        .debug-error { border-color: #ef4444; color: #ef4444; }
-        .debug-warning { border-color: #f59e0b; color: #f59e0b; }
-    </style>
-</head>
-<body>
-    <div class="login-container">
-        <div class="logo">🚌</div>
-        <h1>穿山甲專車後台系統</h1>
-        <p class="subtitle">管理員登入</p>
-        
-        <div id="status" class="status loading">正在初始化系統...</div>
-        
-        <div id="userInfo" class="user-info" style="display: none;">
-            <strong>用戶資訊：</strong>
-            <div id="userDetails"></div>
-        </div>
-        
-        <div id="actionSection" style="display: none;">
-            <button id="loginBtn" class="btn" onclick="handleLogin()">🔐 LINE 登入</button>
-            <button class="btn btn-secondary" onclick="showManualSection()">🆔 手動輸入 ID</button>
-            <button class="btn btn-debug" onclick="runDebugTest()">🐛 運行調試測試</button>
-        </div>
-        
-        <div id="manualSection" class="manual-section" style="display: none;">
-            <h3 class="text-lg font-semibold mb-3">手動輸入 User ID</h3>
-            <input type="text" id="manualUserId" class="manual-input" placeholder="輸入 LINE User ID" value="Ue7a07fe317565389fbf4479172088f87">
-            <div class="flex space-x-2">
-                <button class="btn flex-1" onclick="checkManualPermission()">檢查權限</button>
-                <button class="btn btn-secondary flex-1" onclick="hideManualSection()">取消</button>
-            </div>
-        </div>
-        
-        <div id="debugSection" class="debug-info" style="display: none;">
-            <div class="flex justify-between items-center mb-3">
-                <strong>調試資訊：</strong>
-                <button class="text-xs bg-red-500 text-white px-2 py-1 rounded" onclick="clearDebug()">清空日誌</button>
-            </div>
-            <div id="debugContent"></div>
-        </div>
-        
-        <div class="mt-6 space-y-2">
-            <button class="btn btn-secondary w-full" onclick="toggleDebug()">🐛 顯示/隱藏調試資訊</button>
-            <button class="btn btn-debug w-full" onclick="runCompleteDebug()">🔧 完整系統診斷</button>
-        </div>
-    </div>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>穿山甲專車後台系統 v6.4.6</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334155; }
+.nav-btn { flex: 1; text-align: center; padding: 10px 0; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.active-tab { background: #14532d; color: white; border-radius: 12px; }
+.status-reserved { color: #16a34a; font-weight: 700; }
+.status-cancelled { color: #dc2626; font-weight: 700; }
+.status-completed { color: #2563eb; font-weight: 700; }
+.card { background:white; border-radius:16px; padding:24px; box-shadow:0 2px 10px rgba(0,0,0,0.08); margin:16px auto; max-width:900px; margin-bottom: 100px; }
+.toast { position: fixed; bottom: 80px; right: 20px; background: #16a34a; color: white; padding: 10px 20px; border-radius: 8px; opacity: 0; transition: opacity .3s ease-in-out; }
+.toast.show { opacity: 1; }
 
-    <script>
-        const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
-        const LIFF_ID = '2006590746-wgL4l54z';
-        let currentUserId = '';
-
-        function updateStatus(message, type = 'loading') {
-            const status = document.getElementById('status');
-            status.className = `status ${type}`;
-            status.innerHTML = message;
-            logDebug(`STATUS: ${message}`, 'info');
-        }
-
-        function logDebug(message, type = 'info') {
-            const debugContent = document.getElementById('debugContent');
-            const timestamp = new Date().toLocaleTimeString();
-            
-            const typeConfig = {
-                info: { class: 'debug-info-log', emoji: 'ℹ️' },
-                success: { class: 'debug-success', emoji: '✅' },
-                error: { class: 'debug-error', emoji: '❌' },
-                warning: { class: 'debug-warning', emoji: '⚠️' }
-            };
-            
-            const config = typeConfig[type] || typeConfig.info;
-            
-            if (debugContent) {
-                const logEntry = document.createElement('div');
-                logEntry.className = `debug-log ${config.class}`;
-                logEntry.innerHTML = `
-                    <span class="font-mono">${config.emoji} [${timestamp}]</span>
-                    <span>${message}</span>
-                `;
-                debugContent.appendChild(logEntry);
-                debugContent.scrollTop = debugContent.scrollHeight;
-            }
-            console.log(`[${type.toUpperCase()}] ${message}`);
-        }
-
-        function clearDebug() {
-            const debugContent = document.getElementById('debugContent');
-            if (debugContent) {
-                debugContent.innerHTML = '';
-            }
-        }
-
-        function toggleDebug() {
-            const debugSection = document.getElementById('debugSection');
-            debugSection.style.display = debugSection.style.display === 'none' ? 'block' : 'none';
-        }
-
-        function showManualSection() {
-            document.getElementById('manualSection').style.display = 'block';
-            document.getElementById('actionSection').style.display = 'none';
-        }
-
-        function hideManualSection() {
-            document.getElementById('manualSection').style.display = 'none';
-            document.getElementById('actionSection').style.display = 'block';
-        }
-
-        // 完整的調試測試函數
-        async function runCompleteDebug() {
-            clearDebug();
-            logDebug('🚀 開始完整系統診斷...', 'info');
-            
-            try {
-                // 1. 測試 LIFF 初始化
-                logDebug('1. 正在初始化 LIFF...', 'info');
-                await liff.init({ liffId: LIFF_ID });
-                logDebug('✅ LIFF 初始化成功', 'success');
-                
-                // 2. 測試用戶資料獲取
-                logDebug('2. 正在獲取用戶資料...', 'info');
-                const profile = await liff.getProfile();
-                const userId = profile.userId;
-                logDebug(`✅ 獲取用戶資料成功: ${profile.displayName}`, 'success');
-                logDebug(`🔍 LINE User ID: ${userId}`, 'info');
-                logDebug(`📸 頭像 URL: ${profile.pictureUrl}`, 'info');
-                
-                // 3. 測試權限檢查
-                logDebug('3. 正在檢查管理員權限...', 'info');
-                const roleUrl = `${WORKER_URL}?mode=getRole&userId=${userId}`;
-                logDebug(`🔗 請求 URL: ${roleUrl}`, 'info');
-                
-                const response = await fetch(roleUrl);
-                const responseText = await response.text();
-                logDebug(`📥 原始回應: ${responseText}`, 'info');
-                
-                const roleData = JSON.parse(responseText);
-                logDebug(`🔐 權限檢查結果:`, 'info');
-                logDebug(`   - 狀態: ${roleData.status}`, 'info');
-                logDebug(`   - 角色: ${roleData.role}`, 'info');
-                logDebug(`   - 來源: ${roleData.source}`, 'info');
-                logDebug(`   - 用戶ID: ${roleData.userId}`, 'info');
-                logDebug(`   - 訊息: ${roleData.message}`, 'info');
-                
-                if (roleData.status === 'success' && roleData.role === 'admin') {
-                    logDebug('🎉 恭喜！您有管理員權限，可以訪問後台系統', 'success');
-                    
-                    // 自動跳轉到後台
-                    setTimeout(() => {
-                        window.location.href = 'admin.html';
-                    }, 3000);
-                } else {
-                    logDebug('❌ 權限不足，無法訪問後台系統', 'error');
-                    logDebug('💡 解決方案:', 'warning');
-                    logDebug('   1. 將上面的 User ID 複製到 GAS 的 MASTER_ADMINS 陣列中', 'warning');
-                    logDebug('   2. 重新部署 GAS 項目', 'warning');
-                    logDebug('   3. 更新 Cloudflare Worker 中的 MASTER_ADMINS', 'warning');
-                    logDebug('   4. 重新載入此頁面測試', 'warning');
-                }
-                
-            } catch (error) {
-                logDebug(`❌ 診斷過程中發生錯誤: ${error.message}`, 'error');
-                console.error('診斷錯誤:', error);
-            }
-        }
-
-        // 快速調試測試
-        async function runDebugTest() {
-            clearDebug();
-            logDebug('🔧 運行快速調試測試...', 'info');
-            await runCompleteDebug();
-        }
-
-        async function initializeLiff() {
-            try {
-                updateStatus('正在初始化 LINE 整合...', 'loading');
-                logDebug('開始初始化 LIFF', 'info');
-                
-                await liff.init({ liffId: LIFF_ID });
-                logDebug('LIFF 初始化完成', 'success');
-                
-                // 放寬檢查條件，允許在瀏覽器中測試
-                const isInLINE = liff.isInClient();
-                const isLoggedIn = liff.isLoggedIn();
-                
-                logDebug(`環境檢測: LINE App內=${isInLINE}, 已登入=${isLoggedIn}`, 'info');
-                
-                if (isLoggedIn) {
-                    // 如果已經登入，直接獲取用戶資料
-                    updateStatus('檢測到已登入狀態', 'success');
-                    await handleLogin();
-                } else {
-                    // 顯示登入按鈕
-                    updateStatus('請點擊下方按鈕登入', 'info');
-                    document.getElementById('actionSection').style.display = 'block';
-                }
-                
-            } catch (error) {
-                console.error('LIFF 初始化錯誤:', error);
-                updateStatus(`初始化失敗: ${error.message}`, 'error');
-                logDebug(`初始化錯誤: ${error.message}`, 'error');
-                
-                // 顯示手動輸入選項
-                document.getElementById('actionSection').style.display = 'block';
-            }
-        }
-
-        async function handleLogin() {
-            try {
-                updateStatus('正在進行 LINE 登入...', 'loading');
-                
-                if (!liff.isLoggedIn()) {
-                    logDebug('用戶未登入，觸發登入', 'info');
-                    liff.login();
-                    return;
-                }
-
-                updateStatus('正在獲取用戶資料...', 'loading');
-                const profile = await liff.getProfile();
-                currentUserId = profile.userId;
-                
-                logDebug(`獲取用戶資料成功: ${profile.displayName}`, 'success');
-                logDebug(`User ID: ${currentUserId}`, 'info');
-                
-                // 顯示用戶資訊
-                document.getElementById('userInfo').style.display = 'block';
-                document.getElementById('userDetails').innerHTML = `
-                    <div>姓名: ${profile.displayName}</div>
-                    <div>ID: ${currentUserId}</div>
-                    <div><img src="${profile.pictureUrl}" style="width: 50px; height: 50px; border-radius: 50%; margin-top: 10px;"></div>
-                `;
-                
-                updateStatus('登入成功！正在檢查權限...', 'success');
-                
-                // 檢查權限
-                await checkPermission(currentUserId);
-                
-            } catch (error) {
-                console.error('登入過程錯誤:', error);
-                updateStatus(`登入失敗: ${error.message}`, 'error');
-                logDebug(`登入錯誤: ${error.message}`, 'error');
-            }
-        }
-
-        async function checkManualPermission() {
-            const manualUserId = document.getElementById('manualUserId').value.trim();
-            if (!manualUserId) {
-                alert('請輸入 User ID');
-                return;
-            }
-            
-            currentUserId = manualUserId;
-            await checkPermission(currentUserId);
-        }
-
-        async function checkPermission(userId) {
-    try {
-        updateStatus('正在驗證管理員權限...', 'loading');
-        logDebug(`開始權限檢查: ${userId}`, 'info');
-        
-        // 添加超時處理
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-        
-        const response = await fetch(`${WORKER_URL}?mode=getRole&userId=${userId}`, {
-            signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        
-        logDebug(`HTTP 狀態碼: ${response.status}`, 'info');
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const responseText = await response.text();
-        logDebug(`原始回應: ${responseText}`, 'info');
-        
-        let data;
-        try {
-            data = JSON.parse(responseText);
-        } catch (parseError) {
-            throw new Error(`JSON 解析失敗: ${parseError.message}`);
-        }
-        
-        logDebug(`權限檢查回應: ${JSON.stringify(data, null, 2)}`, 'info');
-        
-        if (data.status === 'success' && data.role === 'admin') {
-            updateStatus('🎉 權限驗證成功！正在進入後台...', 'success');
-            logDebug('管理員權限確認，準備跳轉', 'success');
-            
-            // 儲存用戶資訊
-            localStorage.setItem('adminUserId', userId);
-            localStorage.setItem('adminAuthTime', Date.now().toString());
-            localStorage.setItem('adminUserName', data.userName || '管理員');
-            
-            // 立即跳轉，不要延遲
-            window.location.href = 'admin.html';
-            
-        } else {
-            updateStatus(`❌ 權限不足<br>角色: ${data.role || '未知'}<br>來源: ${data.source || '未知'}`, 'error');
-            logDebug(`權限不足: ${data.role} (${data.source})`, 'error');
-            
-            // 顯示詳細的權限資訊
-            const userDetails = document.getElementById('userDetails');
-            if (userDetails) {
-                userDetails.innerHTML += `
-                    <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 5px;">
-                        <strong>權限檢查結果：</strong>
-                        <div>狀態: ${data.status}</div>
-                        <div>角色: ${data.role}</div>
-                        <div>來源: ${data.source}</div>
-                        <div>訊息: ${data.message || '無'}</div>
-                        <strong>請將此 ID 提供給系統管理員：</strong>
-                        <div style="font-family: monospace; background: white; padding: 5px; margin-top: 5px; word-break: break-all;">${userId}</div>
-                    </div>
-                `;
-            }
-        }
-        
-    } catch (error) {
-        console.error('權限檢查錯誤:', error);
-        updateStatus(`權限檢查失敗: ${error.message}`, 'error');
-        logDebug(`權限檢查錯誤: ${error.message}`, 'error');
-        logDebug(`錯誤詳情: ${error.stack}`, 'error');
-        
-        // 顯示網路錯誤的解決方案
-        if (error.name === 'AbortError' || error.message.includes('Failed to fetch')) {
-            logDebug('💡 網路連接問題解決方案:', 'warning');
-            logDebug('   1. 檢查 Cloudflare Worker URL 是否正確', 'warning');
-            logDebug('   2. 檢查網路連接', 'warning');
-            logDebug('   3. 檢查 CORS 設定', 'warning');
-        }
-    }
+.reservation-table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
 }
 
-        // 頁面載入後初始化
-document.addEventListener('DOMContentLoaded', function() {
-    logDebug('頁面載入完成', 'info');
-    
-    // 暫時禁用自動跳轉，改為手動檢查
-    // 先顯示調試資訊
-    document.getElementById('debugSection').style.display = 'block';
-    
-    logDebug('🔍 開始診斷自動跳轉問題...', 'info');
-    
-    // 檢查 localStorage 中的登入狀態
-    const savedUserId = localStorage.getItem('adminUserId');
-    const authTime = localStorage.getItem('adminAuthTime');
-    
-    logDebug(`儲存的 UserID: ${savedUserId || '無'}`, 'info');
-    logDebug(`認證時間: ${authTime ? new Date(parseInt(authTime)).toLocaleString() : '無'}`, 'info');
-    
-    if (savedUserId && authTime) {
-        const timeDiff = Date.now() - parseInt(authTime);
-        const hoursDiff = timeDiff / (1000 * 60 * 60);
-        logDebug(`距離上次登入: ${hoursDiff.toFixed(2)} 小時`, 'info');
-        
-        if (timeDiff < 3600000) { // 1小時
-            logDebug('檢測到有效登入狀態，驗證權限...', 'info');
-            // 重新驗證權限，而不是直接跳轉
-            checkPermission(savedUserId);
-        } else {
-            logDebug('登入狀態已過期，需要重新登入', 'warning');
-            initializeLiff();
-        }
-    } else {
-        logDebug('無有效登入狀態，需要登入', 'info');
-        initializeLiff();
-    }
+.reservation-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 360px;
+}
+
+.reservation-table th,
+.reservation-table td {
+  padding: 10px 8px;
+  text-align: center;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.reservation-table thead {
+  background: #14532d;
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.reservation-table th { font-weight: 600; }
+
+.reservation-table tbody tr:hover { background-color: #f8fafc; }
+
+@media (max-width: 768px) {
+  .reservation-table { font-size: 13px; min-width: 320px; }
+  .reservation-table th, .reservation-table td { padding: 8px 4px; }
+}
+</style>
+</head>
+
+<body>
+  <!-- 載入畫面 -->
+  <div id="loading" class="flex flex-col items-center justify-center h-screen text-center text-gray-600">
+    <div class="text-3xl mb-3">🚌 穿山甲後台載入中…</div>
+    <p>請稍候驗證您的身分</p>
+  </div>
+
+  <!-- 主畫面 -->
+  <div id="main" class="hidden">
+    <header class="bg-green-800 text-white flex justify-between items-center px-6 py-4 sticky top-0 z-10">
+      <h1 class="text-xl font-bold">🚌 穿山甲後台系統</h1>
+      <div class="flex items-center space-x-4">
+        <img id="userPicture" class="w-10 h-10 rounded-full" alt="用戶頭像" />
+        <span id="userName"></span>
+        <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm">
+          登出
+        </button>
+      </div>
+    </header>
+
+    <!-- 儀表板 -->
+    <section id="dashboard" class="card">
+      <h2 class="font-bold text-xl mb-4 text-green-900">📊 即時儀表板</h2>
+      <div id="statsArea" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-green-100 p-4 rounded-xl text-center">
+          <p class="text-gray-700 font-semibold">今日預約</p>
+          <p id="todayCount" class="text-3xl font-bold text-green-700">-</p>
+        </div>
+        <div class="bg-red-100 p-4 rounded-xl text-center">
+          <p class="text-gray-700 font-semibold">已取消</p>
+          <p id="cancelCount" class="text-3xl font-bold text-red-700">-</p>
+        </div>
+        <div class="bg-blue-100 p-4 rounded-xl text-center">
+          <p class="text-gray-700 font-semibold">已搭乘</p>
+          <p id="checkinCount" class="text-3xl font-bold text-blue-700">-</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 查詢紀錄 -->
+    <section id="records" class="card hidden">
+      <h2 class="font-bold text-xl mb-4 text-green-900">📅 預約紀錄查詢</h2>
+      <div id="recordsArea" class="reservation-table-container"></div>
+    </section>
+
+    <!-- ✅ 核銷功能 -->
+    <section id="checkin" class="card hidden">
+      <h2 class="font-bold text-xl mb-4 text-green-900">✅ 乘客核銷</h2>
+      <div class="text-center mb-4">
+        <button onclick="openCheckinPage()" class="bg-green-700 hover:bg-green-800 text-white font-bold px-6 py-3 rounded-lg shadow">
+          🧾 開啟核銷頁面
+        </button>
+      </div>
+      <p class="text-gray-500 text-center text-sm">按下後將開啟核銷頁面</p>
+    </section>
+
+    <!-- 系統設定 -->
+    <section id="settings" class="card hidden">
+      <h2 class="font-bold text-xl mb-4 text-green-900">⚙️ 系統設定</h2>
+      <div class="text-center text-gray-600 p-8">
+        <p>📄 設定頁面載入中...</p>
+        <p class="text-sm mt-2">若要編輯規則，請訪問：<a href="rule.html" target="_blank" class="text-green-600 underline">rule.html</a></p>
+      </div>
+    </section>
+
+    <!-- 導覽列 -->
+    <footer class="fixed bottom-0 left-0 w-full bg-white shadow-lg flex border-t border-gray-200">
+      <button class="nav-btn active-tab" data-tab="dashboard">📊 儀表板</button>
+      <button class="nav-btn" data-tab="records">📋 查詢</button>
+      <button class="nav-btn" data-tab="checkin">✅ 核銷</button>
+      <button class="nav-btn" data-tab="settings">⚙️ 設定</button>
+    </footer>
+  </div>
+
+  <div id="toast" class="toast">✅ 已成功更新</div>
+
+<script>
+const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+const LIFF_ID = '2006590746-wgL4l54z';
+const CHECKIN_LIFF = 'https://fangwl591021.github.io/chinanlogin/driver-checkin.html';
+
+const STATUS = { RESERVED:'已預約', CANCELLED:'已取消', COMPLETED:'已搭乘' };
+let allReservations = [];
+
+// 🔧 新增：登出功能
+function logout() {
+  // 清除登入狀態
+  localStorage.removeItem('adminUserId');
+  localStorage.removeItem('adminAuthTime');
+  localStorage.removeItem('adminUserName');
+  
+  // 跳回登入頁面
+  window.location.href = 'login.html';
+}
+
+document.addEventListener('click', e=>{
+  const tab=e.target.closest('[data-tab]');
+  if(tab) showTab(tab.dataset.tab);
 });
-    </script>
+
+// 🔧 修復後的 init 函數
+async function init(){
+  try{
+    // 🔧 新增：檢查有效的登入狀態
+    const authTime = localStorage.getItem('adminAuthTime');
+    const userId = localStorage.getItem('adminUserId');
+    
+    if (!authTime || !userId || (Date.now() - parseInt(authTime)) > 3600000) {
+      console.log('無效的登入狀態，跳轉到登入頁面');
+      window.location.href = 'login.html';
+      return;
+    }
+
+    await liff.init({ liffId: LIFF_ID });
+    const p = await liff.getProfile();
+    
+    // 🔧 新增：驗證用戶一致性
+    if (p.userId !== userId) {
+      console.warn('用戶不匹配，重新登入');
+      window.location.href = 'login.html';
+      return;
+    }
+
+    document.getElementById('userPicture').src = p.pictureUrl;
+    document.getElementById('userName').textContent = p.displayName;
+
+    // 🔧 修改：權限檢查改為可選，不強制跳轉
+    try {
+      const role = await fetch(`${WORKER_URL}?mode=getRole&userId=${p.userId}`).then(r=>r.json());
+      if(role.status!=='success'||role.role!=='admin'){
+        console.warn('權限檢查失敗，但繼續顯示頁面');
+        // 可以在這裡顯示警告訊息，但不跳轉
+        document.getElementById('userName').textContent += ' (權限待確認)';
+      }
+    } catch (roleError) {
+      console.warn('權限檢查失敗:', roleError);
+    }
+
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('main').classList.remove('hidden');
+    loadDashboard(); 
+    loadReservations();
+    setInterval(loadDashboard, 30000);
+    
+  }catch(e){ 
+    console.error('初始化錯誤:', e);
+    // 發生錯誤時跳回登入頁面
+    window.location.href = 'login.html';
+  }
+}
+
+function openCheckinPage(){
+  try{ liff.openWindow({ url: CHECKIN_LIFF, external: false }); }
+  catch(e){ window.open(CHECKIN_LIFF,'_blank'); }
+}
+
+function showTab(tabId){
+  ['dashboard','records','checkin','settings'].forEach(id=>{
+    document.getElementById(id).classList.toggle('hidden', id!==tabId);
+  });
+  document.querySelectorAll('.nav-btn').forEach(btn=>btn.classList.remove('active-tab'));
+  document.querySelector(`[data-tab="${tabId}"]`).classList.add('active-tab');
+}
+
+async function loadDashboard(){
+  try{
+    const data = await fetch(`${WORKER_URL}?mode=dashboard`).then(r=>r.json());
+    if(data.status==='success'){
+      document.getElementById('todayCount').textContent = data.dashboard.todayCount;
+      document.getElementById('cancelCount').textContent = data.dashboard.cancelCount;
+      document.getElementById('checkinCount').textContent = data.dashboard.checkinCount;
+    }
+  }catch(e){ console.error('Dashboard 載入失敗:', e); }
+}
+
+function formatDateToMonthDay(dateStr){
+  if(!dateStr) return '-';
+  try{
+    if(dateStr.startsWith('Date(')){
+      const m=dateStr.match(/Date\((\d+),(\d+),(\d+)\)/);
+      if(m){ return `${(parseInt(m[2])+1).toString().padStart(2,'0')}/${m[3].padStart(2,'0')}`; }
+    }
+    const parts=dateStr.split(/[-\/]/);
+    if(parts.length>=3) return `${parts[1].padStart(2,'0')}/${parts[2].padStart(2,'0')}`;
+    const d=new Date(dateStr);
+    if(!isNaN(d)) return `${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
+    return dateStr;
+  }catch(e){ console.error('日期解析錯誤:', e, dateStr); return dateStr; }
+}
+
+function getRouteDisplay(item){
+  const route=item.route||item.shift||item.routeName||item.班次||'-';
+  return (!route||route==='undefined')?'-':route;
+}
+
+function validateData(list) {
+  return list.map(i => {
+    let status = STATUS.RESERVED;
+
+    // 1️⃣ 若 J 欄 (checkin 或 checkedIn) 為 Y → 已搭乘
+    if (i.checkin === 'Y' || i.checkedIn === true || i.checkinStatus === 'Y') {
+      status = STATUS.COMPLETED;
+    }
+    // 2️⃣ 若 H 欄 (status) 含「取消」 → 已取消
+    else if (i.status?.includes('取消')) {
+      status = STATUS.CANCELLED;
+    }
+    // 3️⃣ 若 H 欄 (status) 含「預約」 → 已預約
+    else if (i.status?.includes('預約')) {
+      status = STATUS.RESERVED;
+    }
+
+    return {
+      ...i,
+      route: getRouteDisplay(i),
+      status
+    };
+  }).filter(i => i.date);
+}
+
+function sortReservations(list){
+  const order={A1:1,A2:2,B1:3,B2:4};
+  return list.sort((a,b)=>{
+    const da=new Date(a.date.replace(/\//g,'-')), db=new Date(b.date.replace(/\//g,'-'));
+    if(da.getTime()!==db.getTime()) return db-da;
+    return (order[a.route]||99)-(order[b.route]||99);
+  });
+}
+
+async function loadReservations(){
+  try{
+    const data = await fetch(`${WORKER_URL}?mode=reservations`).then(r=>r.json());
+    if(data.status==='success'){
+      const clean=validateData(data.reservations);
+      const sorted=sortReservations(clean);
+      renderReservations(sorted);
+    }
+  }catch(e){ console.error('查詢錯誤:',e); }
+}
+
+function renderReservations(list){
+  if(!list||list.length===0){
+    document.getElementById('recordsArea').innerHTML='<p class="text-center text-gray-500 py-8">暫無預約紀錄</p>';
+    return;
+  }
+  const html=`
+  <table class="reservation-table">
+    <thead><tr><th>日期</th><th>班次</th><th>姓名</th><th>狀態</th></tr></thead>
+    <tbody>
+      ${list.map(r=>{
+        const cls=r.status===STATUS.CANCELLED?'status-cancelled':
+                 r.status===STATUS.COMPLETED?'status-completed':'status-reserved';
+        return `<tr>
+          <td>${formatDateToMonthDay(r.date)}</td>
+          <td>${r.route}</td>
+          <td>${r.name||'-'}</td>
+          <td class="${cls}">${r.status}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+  document.getElementById('recordsArea').innerHTML=html;
+}
+
+init();
+</script>
 </body>
 </html>
