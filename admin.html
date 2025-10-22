@@ -134,10 +134,33 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
 <script>
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 const LIFF_ID = '2006590746-wgL4l54z';
-const CHECKIN_LIFF = 'https://fangwl591021.github.io/chinanlogin/driver-checkin.html';  // ✅ 新連結
+const CHECKIN_LIFF = 'https://fangwl591021.github.io/chinanlogin/driver-checkin.html';
 
 const STATUS = { RESERVED:'已預約', CANCELLED:'已取消', COMPLETED:'已搭乘' };
 let allReservations = [];
+
+// 安全的 fetch 函數
+async function safeFetch(url, options = {}) {
+  try {
+    const response = await fetch(url, options);
+    const text = await response.text();
+    
+    // 檢查是否是 HTML
+    if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+      throw new Error('伺服器返回了 HTML 頁面而不是 JSON 數據');
+    }
+    
+    try {
+      return JSON.parse(text);
+    } catch (parseError) {
+      console.error('JSON 解析錯誤:', parseError, '響應內容:', text.substring(0, 200));
+      throw new Error('伺服器返回了無效的 JSON 格式');
+    }
+  } catch (error) {
+    console.error('Fetch 錯誤:', error);
+    throw error;
+  }
+}
 
 document.addEventListener('click', e=>{
   const tab=e.target.closest('[data-tab]');
@@ -151,16 +174,21 @@ async function init(){
     document.getElementById('userPicture').src = p.pictureUrl;
     document.getElementById('userName').textContent = p.displayName;
 
-    const role = await fetch(`${WORKER_URL}?mode=getRole&userId=${p.userId}`).then(r=>r.json());
+    // 使用安全的 fetch
+    const role = await safeFetch(`${WORKER_URL}?mode=getRole&userId=${p.userId}`);
     if(role.status!=='success'||role.role!=='admin'){
       alert('❌ 您沒有權限使用此頁面'); liff.closeWindow(); return;
     }
 
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('main').classList.remove('hidden');
-    loadDashboard(); loadReservations();
+    loadDashboard(); 
+    loadReservations();
     setInterval(loadDashboard, 30000);
-  }catch(e){ console.error(e); }
+  }catch(e){ 
+    console.error('初始化錯誤:', e);
+    alert('❌ 系統初始化失敗: ' + e.message);
+  }
 }
 
 function openCheckinPage(){
@@ -178,13 +206,18 @@ function showTab(tabId){
 
 async function loadDashboard(){
   try{
-    const data = await fetch(`${WORKER_URL}?mode=dashboard`).then(r=>r.json());
+    const data = await safeFetch(`${WORKER_URL}?mode=dashboard`);
     if(data.status==='success'){
       document.getElementById('todayCount').textContent = data.dashboard.todayCount;
       document.getElementById('cancelCount').textContent = data.dashboard.cancelCount;
       document.getElementById('checkinCount').textContent = data.dashboard.checkinCount;
     }
-  }catch(e){ console.error('Dashboard 載入失敗:', e); }
+  }catch(e){ 
+    console.error('Dashboard 載入失敗:', e);
+    document.getElementById('todayCount').textContent = '錯誤';
+    document.getElementById('cancelCount').textContent = '錯誤';
+    document.getElementById('checkinCount').textContent = '錯誤';
+  }
 }
 
 function formatDateToMonthDay(dateStr){
@@ -232,7 +265,6 @@ function validateData(list) {
   }).filter(i => i.date);
 }
 
-
 function sortReservations(list){
   const order={A1:1,A2:2,B1:3,B2:4};
   return list.sort((a,b)=>{
@@ -244,13 +276,16 @@ function sortReservations(list){
 
 async function loadReservations(){
   try{
-    const data = await fetch(`${WORKER_URL}?mode=reservations`).then(r=>r.json());
+    const data = await safeFetch(`${WORKER_URL}?mode=reservations`);
     if(data.status==='success'){
       const clean=validateData(data.reservations);
       const sorted=sortReservations(clean);
       renderReservations(sorted);
     }
-  }catch(e){ console.error('查詢錯誤:',e); }
+  }catch(e){ 
+    console.error('查詢錯誤:',e);
+    document.getElementById('recordsArea').innerHTML='<p class="text-center text-red-500 py-8">❌ 載入失敗: ' + e.message + '</p>';
+  }
 }
 
 function renderReservations(list){
@@ -275,6 +310,14 @@ function renderReservations(list){
     </tbody>
   </table>`;
   document.getElementById('recordsArea').innerHTML=html;
+}
+
+// 顯示 toast 訊息
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
 init();
