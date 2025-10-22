@@ -503,15 +503,32 @@ async function checkinReservation(reservationId) {
 }
 
 // 載入預約資料
+// 載入預約資料
 async function loadReservations(){
   try{
-    const data = await fetch(`${WORKER_URL}?mode=reservations`).then(r=>r.json());
+    const response = await fetch(`${WORKER_URL}?mode=reservations`);
+    const contentType = response.headers.get('content-type');
+    
+    // 檢查是否為 JSON 回應
+    if (!contentType || !contentType.includes('application/json')) {
+      console.error('API 返回非 JSON 格式:', await response.text());
+      document.getElementById('recordsArea').innerHTML='<p class="text-center text-red-500 py-8">⚠️ 無法連接到資料庫，請檢查 Worker API 設定</p>';
+      return;
+    }
+    
+    const data = await response.json();
+    
     if(data.status==='success'){
       const clean = validateData(data.reservations);
       const sorted = sortReservations(clean);
       renderReservations(sorted);
+    } else {
+      document.getElementById('recordsArea').innerHTML=`<p class="text-center text-orange-500 py-8">⚠️ ${data.message || '載入失敗'}</p>`;
     }
-  }catch(e){ console.error('查詢錯誤:',e); }
+  }catch(e){ 
+    console.error('查詢錯誤:',e); 
+    document.getElementById('recordsArea').innerHTML='<p class="text-center text-red-500 py-8">⚠️ 載入錯誤，請重新整理頁面</p>';
+  }
 }
 
 init();
