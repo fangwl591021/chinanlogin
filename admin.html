@@ -1,106 +1,430 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台系統 - 調試版</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>穿山甲專車 - 管理員登入</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #14532d 0%, #16a34a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #14532d;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1rem;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+        .loading { background: #e3f2fd; color: #1565c0; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        .error { background: #ffebee; color: #c62828; }
+        .info { background: #fff3e0; color: #ef6c00; }
+        .user-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: left;
+        }
+        .btn {
+            background: #14532d;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        .btn:hover { background: #0f4225; transform: translateY(-2px); }
+        .btn-secondary { background: #6b7280; }
+        .btn-secondary:hover { background: #4b5563; }
+        .btn-debug { background: #dc2626; }
+        .btn-debug:hover { background: #b91c1c; }
+        .manual-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .manual-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .debug-info {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            text-align: left;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .debug-log {
+            border-left: 4px solid;
+            padding-left: 1rem;
+            margin: 0.5rem 0;
+        }
+        .debug-info-log { border-color: #3b82f6; color: #3b82f6; }
+        .debug-success { border-color: #10b981; color: #10b981; }
+        .debug-error { border-color: #ef4444; color: #ef4444; }
+        .debug-warning { border-color: #f59e0b; color: #f59e0b; }
+    </style>
 </head>
-<body class="bg-gray-100 p-8">
-  <div class="max-w-4xl mx-auto">
-    <h1 class="text-3xl font-bold text-green-800 mb-6">🔧 穿山甲後台系統 - 權限調試</h1>
-    
-    <div id="debugInfo" class="bg-white p-6 rounded-lg shadow-md space-y-4"></div>
-    
-    <div class="mt-6">
-      <button onclick="runDebug()" class="bg-blue-500 text-white px-6 py-3 rounded-lg font-bold">
-        🚀 開始調試
-      </button>
+<body>
+    <div class="login-container">
+        <div class="logo">🚌</div>
+        <h1>穿山甲專車後台系統</h1>
+        <p class="subtitle">管理員登入</p>
+        
+        <div id="status" class="status loading">正在初始化系統...</div>
+        
+        <div id="userInfo" class="user-info" style="display: none;">
+            <strong>用戶資訊：</strong>
+            <div id="userDetails"></div>
+        </div>
+        
+        <div id="actionSection" style="display: none;">
+            <button id="loginBtn" class="btn" onclick="handleLogin()">🔐 LINE 登入</button>
+            <button class="btn btn-secondary" onclick="showManualSection()">🆔 手動輸入 ID</button>
+            <button class="btn btn-debug" onclick="runDebugTest()">🐛 運行調試測試</button>
+        </div>
+        
+        <div id="manualSection" class="manual-section" style="display: none;">
+            <h3 class="text-lg font-semibold mb-3">手動輸入 User ID</h3>
+            <input type="text" id="manualUserId" class="manual-input" placeholder="輸入 LINE User ID" value="Ue7a07fe317565389fbf4479172088f87">
+            <div class="flex space-x-2">
+                <button class="btn flex-1" onclick="checkManualPermission()">檢查權限</button>
+                <button class="btn btn-secondary flex-1" onclick="hideManualSection()">取消</button>
+            </div>
+        </div>
+        
+        <div id="debugSection" class="debug-info" style="display: none;">
+            <div class="flex justify-between items-center mb-3">
+                <strong>調試資訊：</strong>
+                <button class="text-xs bg-red-500 text-white px-2 py-1 rounded" onclick="clearDebug()">清空日誌</button>
+            </div>
+            <div id="debugContent"></div>
+        </div>
+        
+        <div class="mt-6 space-y-2">
+            <button class="btn btn-secondary w-full" onclick="toggleDebug()">🐛 顯示/隱藏調試資訊</button>
+            <button class="btn btn-debug w-full" onclick="runCompleteDebug()">🔧 完整系統診斷</button>
+        </div>
     </div>
-  </div>
 
-<script>
-const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+    <script>
+        const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+        const LIFF_ID = '2006590746-wgL4l54z';
+        let currentUserId = '';
 
-function log(message, type = 'info') {
-  const debugInfo = document.getElementById('debugInfo');
-  const color = {
-    info: 'text-blue-600',
-    success: 'text-green-600', 
-    error: 'text-red-600',
-    warning: 'text-yellow-600'
-  }[type];
-  
-  const emoji = {
-    info: 'ℹ️',
-    success: '✅',
-    error: '❌',
-    warning: '⚠️'
-  }[type];
-  
-  debugInfo.innerHTML += `
-    <div class="border-l-4 ${color.replace('text', 'border')} pl-4 py-1">
-      <span class="font-mono">${emoji} ${new Date().toLocaleTimeString()}</span>
-      <span class="${color}">${message}</span>
-    </div>
-  `;
-}
+        function updateStatus(message, type = 'loading') {
+            const status = document.getElementById('status');
+            status.className = `status ${type}`;
+            status.innerHTML = message;
+            logDebug(`STATUS: ${message}`, 'info');
+        }
 
-async function runDebug() {
-  try {
-    log('1. 正在初始化 LIFF...');
-    await liff.init({ liffId: '2006590746-wgL4l54z' });
-    log('✅ LIFF 初始化成功');
-    
-    log('2. 正在獲取用戶資料...');
-    const profile = await liff.getProfile();
-    const userId = profile.userId;
-    log(`✅ 獲取用戶資料成功: ${profile.displayName}`);
-    log(`🔍 LINE User ID: ${userId}`);
-    log(`📸 頭像 URL: ${profile.pictureUrl}`);
-    
-    log('3. 正在檢查管理員權限...');
-    const roleUrl = `${WORKER_URL}?mode=getRole&userId=${userId}`;
-    log(`🔗 請求 URL: ${roleUrl}`);
-    
-    const response = await fetch(roleUrl);
-    const responseText = await response.text();
-    log(`📥 原始回應: ${responseText}`);
-    
-    const roleData = JSON.parse(responseText);
-    log(`🔐 權限檢查結果:`, 'info');
-    log(`   - 狀態: ${roleData.status}`);
-    log(`   - 角色: ${roleData.role}`);
-    log(`   - 來源: ${roleData.source}`);
-    log(`   - 用戶ID: ${roleData.userId}`);
-    log(`   - 訊息: ${roleData.message}`);
-    
-    if (roleData.status === 'success' && roleData.role === 'admin') {
-      log('🎉 恭喜！您有管理員權限，可以訪問後台系統', 'success');
-      log('📍 後台網址: https://fangwl591021.github.io/chinanlogin/admin.html', 'success');
-      
-      // 自動跳轉到後台
-      setTimeout(() => {
-        window.location.href = 'https://fangwl591021.github.io/chinanlogin/admin.html';
-      }, 3000);
-    } else {
-      log('❌ 權限不足，無法訪問後台系統', 'error');
-      log('💡 解決方案:', 'warning');
-      log('   1. 將上面的 User ID 複製到 GAS 的 MASTER_ADMINS 陣列中');
-      log('   2. 重新部署 GAS 項目');
-      log('   3. 更新 Cloudflare Worker 中的 MASTER_ADMINS');
-      log('   4. 重新載入此頁面測試');
-    }
-    
-  } catch (error) {
-    log(`❌ 調試過程中發生錯誤: ${error.message}`, 'error');
-    console.error('調試錯誤:', error);
-  }
-}
+        function logDebug(message, type = 'info') {
+            const debugContent = document.getElementById('debugContent');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const typeConfig = {
+                info: { class: 'debug-info-log', emoji: 'ℹ️' },
+                success: { class: 'debug-success', emoji: '✅' },
+                error: { class: 'debug-error', emoji: '❌' },
+                warning: { class: 'debug-warning', emoji: '⚠️' }
+            };
+            
+            const config = typeConfig[type] || typeConfig.info;
+            
+            if (debugContent) {
+                const logEntry = document.createElement('div');
+                logEntry.className = `debug-log ${config.class}`;
+                logEntry.innerHTML = `
+                    <span class="font-mono">${config.emoji} [${timestamp}]</span>
+                    <span>${message}</span>
+                `;
+                debugContent.appendChild(logEntry);
+                debugContent.scrollTop = debugContent.scrollHeight;
+            }
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
 
-// 頁面載入後自動開始調試
-document.addEventListener('DOMContentLoaded', runDebug);
-</script>
+        function clearDebug() {
+            const debugContent = document.getElementById('debugContent');
+            if (debugContent) {
+                debugContent.innerHTML = '';
+            }
+        }
+
+        function toggleDebug() {
+            const debugSection = document.getElementById('debugSection');
+            debugSection.style.display = debugSection.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function showManualSection() {
+            document.getElementById('manualSection').style.display = 'block';
+            document.getElementById('actionSection').style.display = 'none';
+        }
+
+        function hideManualSection() {
+            document.getElementById('manualSection').style.display = 'none';
+            document.getElementById('actionSection').style.display = 'block';
+        }
+
+        // 完整的調試測試函數
+        async function runCompleteDebug() {
+            clearDebug();
+            logDebug('🚀 開始完整系統診斷...', 'info');
+            
+            try {
+                // 1. 測試 LIFF 初始化
+                logDebug('1. 正在初始化 LIFF...', 'info');
+                await liff.init({ liffId: LIFF_ID });
+                logDebug('✅ LIFF 初始化成功', 'success');
+                
+                // 2. 測試用戶資料獲取
+                logDebug('2. 正在獲取用戶資料...', 'info');
+                const profile = await liff.getProfile();
+                const userId = profile.userId;
+                logDebug(`✅ 獲取用戶資料成功: ${profile.displayName}`, 'success');
+                logDebug(`🔍 LINE User ID: ${userId}`, 'info');
+                logDebug(`📸 頭像 URL: ${profile.pictureUrl}`, 'info');
+                
+                // 3. 測試權限檢查
+                logDebug('3. 正在檢查管理員權限...', 'info');
+                const roleUrl = `${WORKER_URL}?mode=getRole&userId=${userId}`;
+                logDebug(`🔗 請求 URL: ${roleUrl}`, 'info');
+                
+                const response = await fetch(roleUrl);
+                const responseText = await response.text();
+                logDebug(`📥 原始回應: ${responseText}`, 'info');
+                
+                const roleData = JSON.parse(responseText);
+                logDebug(`🔐 權限檢查結果:`, 'info');
+                logDebug(`   - 狀態: ${roleData.status}`, 'info');
+                logDebug(`   - 角色: ${roleData.role}`, 'info');
+                logDebug(`   - 來源: ${roleData.source}`, 'info');
+                logDebug(`   - 用戶ID: ${roleData.userId}`, 'info');
+                logDebug(`   - 訊息: ${roleData.message}`, 'info');
+                
+                if (roleData.status === 'success' && roleData.role === 'admin') {
+                    logDebug('🎉 恭喜！您有管理員權限，可以訪問後台系統', 'success');
+                    
+                    // 自動跳轉到後台
+                    setTimeout(() => {
+                        window.location.href = 'admin.html';
+                    }, 3000);
+                } else {
+                    logDebug('❌ 權限不足，無法訪問後台系統', 'error');
+                    logDebug('💡 解決方案:', 'warning');
+                    logDebug('   1. 將上面的 User ID 複製到 GAS 的 MASTER_ADMINS 陣列中', 'warning');
+                    logDebug('   2. 重新部署 GAS 項目', 'warning');
+                    logDebug('   3. 更新 Cloudflare Worker 中的 MASTER_ADMINS', 'warning');
+                    logDebug('   4. 重新載入此頁面測試', 'warning');
+                }
+                
+            } catch (error) {
+                logDebug(`❌ 診斷過程中發生錯誤: ${error.message}`, 'error');
+                console.error('診斷錯誤:', error);
+            }
+        }
+
+        // 快速調試測試
+        async function runDebugTest() {
+            clearDebug();
+            logDebug('🔧 運行快速調試測試...', 'info');
+            await runCompleteDebug();
+        }
+
+        async function initializeLiff() {
+            try {
+                updateStatus('正在初始化 LINE 整合...', 'loading');
+                logDebug('開始初始化 LIFF', 'info');
+                
+                await liff.init({ liffId: LIFF_ID });
+                logDebug('LIFF 初始化完成', 'success');
+                
+                // 放寬檢查條件，允許在瀏覽器中測試
+                const isInLINE = liff.isInClient();
+                const isLoggedIn = liff.isLoggedIn();
+                
+                logDebug(`環境檢測: LINE App內=${isInLINE}, 已登入=${isLoggedIn}`, 'info');
+                
+                if (isLoggedIn) {
+                    // 如果已經登入，直接獲取用戶資料
+                    updateStatus('檢測到已登入狀態', 'success');
+                    await handleLogin();
+                } else {
+                    // 顯示登入按鈕
+                    updateStatus('請點擊下方按鈕登入', 'info');
+                    document.getElementById('actionSection').style.display = 'block';
+                }
+                
+            } catch (error) {
+                console.error('LIFF 初始化錯誤:', error);
+                updateStatus(`初始化失敗: ${error.message}`, 'error');
+                logDebug(`初始化錯誤: ${error.message}`, 'error');
+                
+                // 顯示手動輸入選項
+                document.getElementById('actionSection').style.display = 'block';
+            }
+        }
+
+        async function handleLogin() {
+            try {
+                updateStatus('正在進行 LINE 登入...', 'loading');
+                
+                if (!liff.isLoggedIn()) {
+                    logDebug('用戶未登入，觸發登入', 'info');
+                    liff.login();
+                    return;
+                }
+
+                updateStatus('正在獲取用戶資料...', 'loading');
+                const profile = await liff.getProfile();
+                currentUserId = profile.userId;
+                
+                logDebug(`獲取用戶資料成功: ${profile.displayName}`, 'success');
+                logDebug(`User ID: ${currentUserId}`, 'info');
+                
+                // 顯示用戶資訊
+                document.getElementById('userInfo').style.display = 'block';
+                document.getElementById('userDetails').innerHTML = `
+                    <div>姓名: ${profile.displayName}</div>
+                    <div>ID: ${currentUserId}</div>
+                    <div><img src="${profile.pictureUrl}" style="width: 50px; height: 50px; border-radius: 50%; margin-top: 10px;"></div>
+                `;
+                
+                updateStatus('登入成功！正在檢查權限...', 'success');
+                
+                // 檢查權限
+                await checkPermission(currentUserId);
+                
+            } catch (error) {
+                console.error('登入過程錯誤:', error);
+                updateStatus(`登入失敗: ${error.message}`, 'error');
+                logDebug(`登入錯誤: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkManualPermission() {
+            const manualUserId = document.getElementById('manualUserId').value.trim();
+            if (!manualUserId) {
+                alert('請輸入 User ID');
+                return;
+            }
+            
+            currentUserId = manualUserId;
+            await checkPermission(currentUserId);
+        }
+
+        async function checkPermission(userId) {
+            try {
+                updateStatus('正在驗證管理員權限...', 'loading');
+                logDebug(`開始權限檢查: ${userId}`, 'info');
+                
+                const response = await fetch(`${WORKER_URL}?mode=getRole&userId=${userId}`);
+                const data = await response.json();
+                
+                logDebug(`權限檢查回應: ${JSON.stringify(data)}`, 'info');
+                
+                if (data.status === 'success' && data.role === 'admin') {
+                    updateStatus('🎉 權限驗證成功！正在進入後台...', 'success');
+                    logDebug('管理員權限確認，準備跳轉', 'success');
+                    
+                    // 儲存用戶資訊到 localStorage
+                    localStorage.setItem('adminUserId', userId);
+                    localStorage.setItem('adminAuthTime', Date.now().toString());
+                    localStorage.setItem('adminUserName', data.userName || '管理員');
+                    
+                    // 跳轉到後台主頁面
+                    setTimeout(() => {
+                        window.location.href = 'admin.html';
+                    }, 1500);
+                    
+                } else {
+                    updateStatus(`❌ 權限不足<br>角色: ${data.role || '未知'}<br>來源: ${data.source || '未知'}`, 'error');
+                    logDebug(`權限不足: ${data.role} (${data.source})`, 'error');
+                    
+                    // 顯示用戶 ID 供管理員添加
+                    const userDetails = document.getElementById('userDetails');
+                    if (userDetails) {
+                        userDetails.innerHTML += `
+                            <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 5px;">
+                                <strong>請將此 ID 提供給系統管理員：</strong>
+                                <div style="font-family: monospace; background: white; padding: 5px; margin-top: 5px; word-break: break-all;">${userId}</div>
+                            </div>
+                        `;
+                    }
+                }
+                
+            } catch (error) {
+                console.error('權限檢查錯誤:', error);
+                updateStatus(`權限檢查失敗: ${error.message}`, 'error');
+                logDebug(`權限檢查錯誤: ${error.message}`, 'error');
+            }
+        }
+
+        // 頁面載入後初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            logDebug('頁面載入完成', 'info');
+            
+            // 檢查是否已經有登入狀態
+            const savedUserId = localStorage.getItem('adminUserId');
+            const authTime = localStorage.getItem('adminAuthTime');
+            
+            if (savedUserId && authTime && (Date.now() - parseInt(authTime)) < 3600000) {
+                // 1小時內的有效登入，直接跳轉
+                updateStatus('檢測到有效登入狀態，直接跳轉...', 'success');
+                logDebug('檢測到有效登入狀態，跳轉到後台', 'success');
+                setTimeout(() => {
+                    window.location.href = 'admin.html';
+                }, 1000);
+            } else {
+                // 需要重新登入
+                initializeLiff();
+            }
+        });
+    </script>
 </body>
 </html>
