@@ -107,6 +107,17 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
     <!-- 查詢紀錄 -->
     <section id="records" class="card hidden">
       <h2 class="font-bold text-xl mb-4 text-green-900">📅 預約紀錄查詢</h2>
+      <div id="loadingSpinner" class="text-center py-6 hidden">
+  <div class="flex justify-center items-center space-x-2 text-green-700">
+    <svg class="animate-spin h-5 w-5 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor"
+        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+    </svg>
+    <span class="text-sm">查詢中，請稍候...</span>
+  </div>
+</div>
+
       <div id="recordsArea" class="reservation-table-container"></div>
     </section>
 
