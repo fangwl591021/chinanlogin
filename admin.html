@@ -3,21 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台系統 v6.6 (Iframe整合版)</title>
+<title>穿山甲專車後台系統 v6.7（外開核銷版）</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
 body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334155; }
 .nav-btn { flex: 1; text-align: center; padding: 10px 0; font-weight: 600; cursor: pointer; transition: all 0.2s; }
 .active-tab { background: #14532d; color: white; border-radius: 12px; }
 .card { background:white; border-radius:16px; padding:24px; box-shadow:0 2px 10px rgba(0,0,0,0.08); margin:16px auto; max-width:900px; margin-bottom: 100px; }
-
-.status-reserved { color: #16a34a; font-weight: 700; }
-.status-cancelled { color: #dc2626; font-weight: 700; }
-.status-completed { color: #2563eb; font-weight: 700; }
-
-.toast { position: fixed; bottom: 80px; right: 20px; background: #16a34a; color: white; padding: 10px 20px; border-radius: 8px; opacity: 0; transition: opacity .3s ease-in-out; }
-.toast.show { opacity: 1; }
-
 .reservation-table-container { overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px; }
 .reservation-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
 .reservation-table th, .reservation-table td {
@@ -96,19 +88,6 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
       <div id="recordsArea" class="reservation-table-container"></div>
     </section>
 
-    <!-- ✅ 核銷功能 (Iframe 內嵌整合版) -->
-    <section id="checkin" class="card hidden">
-      <h2 class="font-bold text-xl mb-4 text-green-900">✅ 乘客核銷作業</h2>
-      <div id="checkinFrameBox" class="w-full" style="height: calc(100vh - 260px);">
-        <iframe 
-          id="checkinFrame" 
-          src="" 
-          style="width: 100%; height: 100%; border: none; border-radius: 12px; box-shadow: 0 0 5px rgba(0,0,0,0.1);" 
-          loading="lazy">
-        </iframe>
-      </div>
-    </section>
-
     <!-- 系統設定 -->
     <section id="settings" class="card hidden">
       <h2 class="font-bold text-xl mb-4 text-green-900">⚙️ 系統設定</h2>
@@ -122,12 +101,10 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
     <footer class="fixed bottom-0 left-0 w-full bg-white shadow-lg flex border-t border-gray-200">
       <button class="nav-btn active-tab" data-tab="dashboard">📊 儀表板</button>
       <button class="nav-btn" data-tab="records">📋 查詢</button>
-      <button class="nav-btn" data-tab="checkin">✅ 核銷</button>
+      <button class="nav-btn" id="openCheckin">✅ 核銷</button>
       <button class="nav-btn" data-tab="settings">⚙️ 設定</button>
     </footer>
   </div>
-
-  <div id="toast" class="toast">✅ 已成功更新</div>
 
 <script>
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
@@ -164,17 +141,12 @@ async function init(){
 }
 
 function showTab(tabId){
-  ['dashboard','records','checkin','settings'].forEach(id=>{
+  ['dashboard','records','settings'].forEach(id=>{
     document.getElementById(id).classList.toggle('hidden',id!==tabId);
   });
   document.querySelectorAll('.nav-btn').forEach(btn=>btn.classList.remove('active-tab'));
-  document.querySelector(`[data-tab="${tabId}"]`).classList.add('active-tab');
-
-  // 🚀 若切換到核銷分頁，載入 driver-checkin.html
-  if(tabId==='checkin'){
-    const userId=localStorage.getItem('adminUserId')||'';
-    document.getElementById('checkinFrame').src=`driver-checkin.html?admin=${encodeURIComponent(userId)}`;
-  }
+  const targetBtn=document.querySelector(`[data-tab="${tabId}"]`);
+  if(targetBtn) targetBtn.classList.add('active-tab');
 }
 
 async function loadDashboard(){
@@ -188,7 +160,7 @@ async function loadDashboard(){
   }catch(e){console.error('Dashboard 載入失敗:',e);}
 }
 
-// 📋 預約查詢模組（原樣保留）
+// 📋 預約查詢模組
 async function loadReservations(){
   try{
     const userId=localStorage.getItem('adminUserId');
@@ -229,6 +201,11 @@ function renderReservations(list){
   </table>`;
   document.getElementById('recordsArea').innerHTML=html;
 }
+
+// 🔗 點「核銷」直接開新頁
+document.getElementById('openCheckin').addEventListener('click',()=>{
+  window.open('https://fangwl591021.github.io/chinanlogin/driver-checkin.html','_blank');
+});
 
 init();
 </script>
