@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車 - 司機核銷系統 v3.8.1</title>
+<title>穿山甲專車 - 司機核銷系統 v3.9.0</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Microsoft JhengHei',sans-serif;}
 body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden;}
@@ -44,7 +44,7 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
 <div class="container">
   <div class="header">
     <h1>🚌 穿山甲專車核銷系統</h1>
-    <p>司機簽到核銷作業 v3.8.1</p>
+    <p>司機簽到核銷作業 v3.9.0</p>
   </div>
 
   <div class="calendar-section">
@@ -53,6 +53,7 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
       <h2 id="current-month" class="calendar-title"></h2>
       <button id="next-month">▶</button>
       <button id="toggle-calendar">展開</button>
+      <button id="show-all">全部</button>
     </div>
     <div class="calendar-grid" id="calendar-grid" style="display:none;"></div>
   </div>
@@ -70,7 +71,6 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
           行政大樓 ➔ 中餐廳 ➔ 科技學院 ➔ 學人會館 ➔ 中城 ➔ 下城 ➔ 坪頂 ➔ 愛蘭橋 ➔ 大成國小 ➔ 中山安七街口 ➔ 榮民診所 ➔ 埔里酒廠 ➔ 埔里總站
         </div>
       </div>
-
       <div class="route-line b-line">
         <h3>🅱️ B線（埔里總站 → 暨大）</h3>
         <div class="stops">
@@ -114,6 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('next-month').onclick = () => changeMonth(1);
   document.getElementById('toggle-calendar').onclick = toggleCalendar;
   document.getElementById('toggle-route').onclick = toggleRoute;
+  document.getElementById('show-all').onclick = showAllReservations;
   initializeSystem();
 });
 
@@ -122,7 +123,7 @@ async function initializeSystem() {
   await loadAllReservations();
   showLoading(false);
   renderCalendar();
-  showTodayReservations();
+  showAllReservations();
 }
 
 function showLoading(show) {
@@ -143,8 +144,6 @@ async function loadAllReservations() {
     const urlParams = new URLSearchParams(window.location.search);
     const adminId = urlParams.get('admin') || 'all';
     const fetchUrl = `${WORKER_URL}?mode=reservations&userId=${adminId}`;
-    console.log('📤 請求 URL:', fetchUrl);
-
     const response = await fetch(fetchUrl);
     const contentType = response.headers.get('content-type') || '';
 
@@ -223,8 +222,6 @@ function renderCalendar() {
 }
 
 function selectDate(date){selectedDate=date;renderCalendar();showReservationsByDate(date);}
-function showTodayReservations(){const today=formatDate(new Date());showReservationsByDate(today);}
-
 function showReservationsByDate(date){
   const tbody=document.getElementById('reservation-list');
   tbody.innerHTML='';
@@ -234,9 +231,26 @@ function showReservationsByDate(date){
     document.getElementById('checkin-title').textContent=`${date} 無預約`;
     return;
   }
+  renderReservationRows(filtered, `${date} 預約 (${filtered.length} 筆)`);
+}
+
+function showAllReservations(){
+  const tbody=document.getElementById('reservation-list');
+  tbody.innerHTML='';
+  if(allReservations.length===0){renderEmptyList();return;}
   const routes=['A1','B1','A2','B2'];
-  filtered.sort((a,b)=>routes.indexOf(a.route)-routes.indexOf(b.route));
-  filtered.forEach(r=>{
+  const sorted=[...allReservations].sort((a,b)=>{
+    const dateCompare=(a.date||'').localeCompare(b.date||'');
+    if(dateCompare!==0)return dateCompare;
+    return routes.indexOf(a.route)-routes.indexOf(b.route);
+  });
+  renderReservationRows(sorted,`全部預約列表 (${sorted.length} 筆)`);
+}
+
+function renderReservationRows(list,title){
+  const tbody=document.getElementById('reservation-list');
+  tbody.innerHTML='';
+  list.forEach(r=>{
     const checked=r.checkin==='Y'||r.status==='已搭乘';
     const status=checked?'已搭乘':r.status==='已取消'?'已取消':'已預約';
     const tr=document.createElement('tr');
@@ -251,7 +265,7 @@ function showReservationsByDate(date){
       <td>${checked?'<button class="checkin-btn" disabled>✅</button>':`<button class="checkin-btn" onclick="confirmCheckin('${r.id}')">核銷</button>`}</td>`;
     tbody.appendChild(tr);
   });
-  document.getElementById('checkin-title').textContent=`${date} 預約 (${filtered.length} 筆)`;
+  document.getElementById('checkin-title').textContent=title;
 }
 
 async function confirmCheckin(id){
@@ -261,8 +275,6 @@ async function confirmCheckin(id){
     const response=await fetch(url,{method:'POST'});
     const contentType=response.headers.get('content-type')||'';
     if(!contentType.includes('application/json')){
-      const text=await response.text();
-      console.error('非 JSON:',text);
       throw new Error('API 格式錯誤');
     }
     const data=await response.json();
@@ -270,8 +282,7 @@ async function confirmCheckin(id){
       alert('✅ 核銷成功');
       const target=allReservations.find(r=>r.id===id);
       if(target){target.checkin='Y';target.status='已搭乘';}
-      if(selectedDate)showReservationsByDate(selectedDate);
-      else showTodayReservations();
+      showAllReservations();
     }else alert('❌ 核銷失敗: '+(data.message||'未知錯誤'));
   }catch(e){alert('❌ 錯誤: '+e.message);}
 }
