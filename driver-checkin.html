@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車 - 司機核銷系統 v3.7.2</title>
+<title>穿山甲專車 - 司機核銷系統 v3.8.0</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Microsoft JhengHei',sans-serif;}
 body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden;}
@@ -32,13 +32,16 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
 .checkin-btn:disabled{background:#ccc;cursor:not-allowed;}
 .no-data{text-align:center;color:#999;padding:20px;}
 .loading{text-align:center;color:#3c8050;padding:20px;}
+.hidden{display:none;}
+.error-msg{background:#fee;border:1px solid #fcc;color:#c33;padding:10px;border-radius:6px;margin:10px 0;}
+.debug-info{background:#f0f0f0;border:1px solid #ddd;padding:10px;border-radius:6px;margin:10px 0;font-size:11px;max-height:200px;overflow-y:auto;}
 </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
     <h1>🚌 穿山甲專車核銷系統</h1>
-    <p>司機簽到核銷作業</p>
+    <p>司機簽到核銷作業 v3.8.0</p>
   </div>
 
   <div class="calendar-section">
@@ -46,14 +49,16 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
       <button id="prev-month">◀</button>
       <h2 id="current-month" class="calendar-title"></h2>
       <button id="next-month">▶</button>
-      <button id="toggle-calendar">收合</button>
+      <button id="toggle-calendar">展開</button>
     </div>
     <div class="calendar-grid" id="calendar-grid" style="display:none;"></div>
   </div>
 
   <div id="checkin-section" class="checkin-section">
     <h2 id="checkin-title">全部預約列表</h2>
-    <div id="loadingMsg" class="loading hidden">🚍 資料載入中，請稍候...</div>
+    <div id="loadingMsg" class="loading">🚍 資料載入中，請稍候...</div>
+    <div id="errorMsg" class="error-msg hidden"></div>
+    <div id="debugInfo" class="debug-info hidden"></div>
     <table class="reservation-table">
       <thead class="table-header">
         <tr>
@@ -66,156 +71,286 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
 </div>
 
 <script>
-const WORKER_URL='https://delicate-math-7e61.fangwl591021.workers.dev/';
-const GAS_URL='https://script.google.com/macros/s/AKfycbza2qFcrQt1PS6Y4p4u2gSXovvFxWecEjjIh5ov1cIk_65zgdFJA0xjVuS3qr7WvlgAzA/exec';
+const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 
-let allReservations=[];
-let currentDate=new Date();
-let currentMonth=currentDate.getMonth();
-let currentYear=currentDate.getFullYear();
-let selectedDate=null;
+let allReservations = [];
+let currentDate = new Date();
+let currentMonth = currentDate.getMonth();
+let currentYear = currentDate.getFullYear();
+let selectedDate = null;
 
-document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('prev-month').onclick=()=>changeMonth(-1);
-  document.getElementById('next-month').onclick=()=>changeMonth(1);
-  document.getElementById('toggle-calendar').onclick=toggleCalendar;
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('prev-month').onclick = () => changeMonth(-1);
+  document.getElementById('next-month').onclick = () => changeMonth(1);
+  document.getElementById('toggle-calendar').onclick = toggleCalendar;
   initializeSystem();
 });
 
-async function initializeSystem(){
-  document.getElementById('loadingMsg').classList.remove('hidden');
+async function initializeSystem() {
+  showLoading(true);
   await loadAllReservations();
-  document.getElementById('loadingMsg').classList.add('hidden');
+  showLoading(false);
   renderCalendar();
   showTodayReservations();
 }
 
-async function loadAllReservations(){
-  try{
-    const urlParams=new URLSearchParams(window.location.search);
-    const adminId=urlParams.get('admin')||'';
-    const res=await fetch(`${WORKER_URL}?mode=reservations&userId=${adminId||'all'}`);
-    const data=await res.json();
-    if(data.status==='success' && Array.isArray(data.reservations)){
-      allReservations=data.reservations.map((r,i)=>({
-        id:String(r.id||i+1),
-        date:r.date||r.日期||'',
-        route:r.route||r.班次||'-',
-        name:r.name||r.姓名||'-',
-        fromStop:r.fromStop||r.E||'未提供',
-        toStop:r.toStop||r.F||'未提供',
-        checkin:r.checkinStatus||r.J||'',
-        status:r.status||'已預約'
-      }));
-    }else{
-      allReservations=[];
-    }
-  }catch(e){
-    console.error('資料載入失敗:',e);
-    allReservations=[];
+function showLoading(show) {
+  document.getElementById('loadingMsg').classList.toggle('hidden', !show);
+}
+
+function showError(message, debugData = null) {
+  const errorDiv = document.getElementById('errorMsg');
+  errorDiv.textContent = '❌ ' + message;
+  errorDiv.classList.remove('hidden');
+  
+  if (debugData) {
+    const debugDiv = document.getElementById('debugInfo');
+    debugDiv.textContent = JSON.stringify(debugData, null, 2);
+    debugDiv.classList.remove('hidden');
   }
 }
 
-function renderCalendar(){
-  const grid=document.getElementById('calendar-grid');
-  grid.innerHTML='';
-  ['日','一','二','三','四','五','六'].forEach(d=>{
-    const h=document.createElement('div');
-    h.className='day-header';
-    h.textContent=d;
+function hideError() {
+  document.getElementById('errorMsg').classList.add('hidden');
+  document.getElementById('debugInfo').classList.add('hidden');
+}
+
+async function loadAllReservations() {
+  try {
+    hideError();
+    
+    // 取得 URL 參數中的 admin ID（如果有的話）
+    const urlParams = new URLSearchParams(window.location.search);
+    const adminId = urlParams.get('admin') || 'all';
+    
+    console.log('🔍 開始查詢預約資料, userId:', adminId);
+    
+    const fetchUrl = `${WORKER_URL}?mode=reservations&userId=${adminId}`;
+    console.log('📤 請求 URL:', fetchUrl);
+    
+    const response = await fetch(fetchUrl);
+    console.log('📥 收到回應, status:', response.status);
+    
+    // 檢查內容類型
+    const contentType = response.headers.get('content-type');
+    console.log('📋 Content-Type:', contentType);
+    
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      console.error('❌ 收到非 JSON 格式:', text.substring(0, 200));
+      showError('API 返回格式錯誤', { contentType, preview: text.substring(0, 200) });
+      allReservations = [];
+      return;
+    }
+    
+    const data = await response.json();
+    console.log('✅ 成功解析 JSON:', data);
+    
+    if (data.status === 'success' && Array.isArray(data.reservations)) {
+      console.log('📊 收到預約數據:', data.reservations.length, '筆');
+      
+      // 映射數據到統一格式
+      allReservations = data.reservations.map((r, i) => {
+        const mapped = {
+          id: String(r.id || r.reservationId || i + 1),
+          date: r.date || r.日期 || '',
+          route: r.route || r.班次 || r.shift || '-',
+          name: r.name || r.姓名 || '-',
+          fromStop: r.fromStop || r.pickupLocation || r.上車點 || r.E || '未提供',
+          toStop: r.toStop || r.dropoffLocation || r.下車點 || r.F || '未提供',
+          checkin: r.checkin || r.checkinStatus || r.J || '',
+          status: r.status || '已預約'
+        };
+        console.log('映射預約:', mapped);
+        return mapped;
+      });
+      
+      console.log('✅ 成功載入', allReservations.length, '筆預約');
+      
+    } else {
+      console.warn('⚠️ API 返回異常:', data);
+      showError(data.message || '無法取得預約資料', data);
+      allReservations = [];
+    }
+    
+  } catch (error) {
+    console.error('❌ 資料載入失敗:', error);
+    showError('載入失敗: ' + error.message, { error: error.toString() });
+    allReservations = [];
+  }
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calendar-grid');
+  grid.innerHTML = '';
+  
+  ['日', '一', '二', '三', '四', '五', '六'].forEach(d => {
+    const h = document.createElement('div');
+    h.className = 'day-header';
+    h.textContent = d;
     grid.appendChild(h);
   });
-  const first=new Date(currentYear,currentMonth,1);
-  const last=new Date(currentYear,currentMonth+1,0);
-  const offset=first.getDay();
-  const today=formatDate(new Date());
-  for(let i=0;i<offset;i++){const d=document.createElement('div');d.className='day-cell other-month';grid.appendChild(d);}
-  for(let i=1;i<=last.getDate();i++){
-    const d=document.createElement('div');
-    const dateStr=`${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-    d.className='day-cell';
-    if(dateStr===selectedDate)d.classList.add('selected');
-    if(dateStr<today)d.classList.add('past');else d.onclick=()=>selectDate(dateStr);
-    d.textContent=i;
+  
+  const first = new Date(currentYear, currentMonth, 1);
+  const last = new Date(currentYear, currentMonth + 1, 0);
+  const offset = first.getDay();
+  const today = formatDate(new Date());
+  
+  for (let i = 0; i < offset; i++) {
+    const d = document.createElement('div');
+    d.className = 'day-cell other-month';
     grid.appendChild(d);
   }
-  document.getElementById('current-month').textContent=`${currentYear}年${currentMonth+1}月`;
+  
+  for (let i = 1; i <= last.getDate(); i++) {
+    const d = document.createElement('div');
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+    d.className = 'day-cell';
+    if (dateStr === selectedDate) d.classList.add('selected');
+    if (dateStr < today) d.classList.add('past');
+    else d.onclick = () => selectDate(dateStr);
+    d.textContent = i;
+    grid.appendChild(d);
+  }
+  
+  document.getElementById('current-month').textContent = `${currentYear}年${currentMonth + 1}月`;
 }
 
-function selectDate(date){
-  selectedDate=date;
+function selectDate(date) {
+  selectedDate = date;
   renderCalendar();
   showReservationsByDate(date);
 }
 
-function showTodayReservations(){
-  const today=formatDate(new Date());
+function showTodayReservations() {
+  const today = formatDate(new Date());
   showReservationsByDate(today);
 }
 
-function showReservationsByDate(date){
-  const tbody=document.getElementById('reservation-list');
-  tbody.innerHTML='';
-  const filtered=allReservations.filter(r=>r.date.startsWith(date));
-  if(filtered.length===0){
-    tbody.innerHTML=`<tr><td colspan="7" class="no-data">此日期無預約</td></tr>`;
-    document.getElementById('checkin-title').textContent=`${date} 無預約`;
+function showReservationsByDate(date) {
+  const tbody = document.getElementById('reservation-list');
+  tbody.innerHTML = '';
+  
+  console.log('🔍 篩選日期:', date);
+  console.log('📋 總預約數:', allReservations.length);
+  
+  const filtered = allReservations.filter(r => {
+    const match = r.date.startsWith(date);
+    if (match) console.log('✅ 符合:', r);
+    return match;
+  });
+  
+  console.log('📊 篩選結果:', filtered.length, '筆');
+  
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="no-data">此日期無預約</td></tr>`;
+    document.getElementById('checkin-title').textContent = `${date} 無預約`;
     return;
   }
-  const routes=['A1','B1','A2','B2'];
-  filtered.sort((a,b)=>routes.indexOf(a.route)-routes.indexOf(b.route));
-  filtered.forEach(r=>{
-    const checked=r.checkin==='Y';
-    const status=checked?'已搭乘':r.status==='已取消'?'已取消':'已預約';
-    const tr=document.createElement('tr');
-    tr.className='table-row';
-    tr.innerHTML=`
-      <td>${r.date}</td>
+  
+  const routes = ['A1', 'B1', 'A2', 'B2'];
+  filtered.sort((a, b) => routes.indexOf(a.route) - routes.indexOf(b.route));
+  
+  filtered.forEach(r => {
+    const checked = r.checkin === 'Y' || r.status === '已搭乘';
+    const status = checked ? '已搭乘' : r.status === '已取消' ? '已取消' : '已預約';
+    const tr = document.createElement('tr');
+    tr.className = 'table-row';
+    tr.innerHTML = `
+      <td>${formatDateDisplay(r.date)}</td>
       <td>${r.route}</td>
       <td>${r.name}</td>
       <td>${r.fromStop}</td>
       <td>${r.toStop}</td>
       <td>${status}</td>
-      <td>${checked?'<button class="checkin-btn" disabled>✅</button>':`<button class="checkin-btn" onclick="confirmCheckin('${r.id}')">核銷</button>`}</td>
+      <td>${checked ? '<button class="checkin-btn" disabled>✅</button>' : `<button class="checkin-btn" onclick="confirmCheckin('${r.id}')">核銷</button>`}</td>
     `;
     tbody.appendChild(tr);
   });
-  document.getElementById('checkin-title').textContent=`${date} 預約 (${filtered.length} 筆)`;
+  
+  document.getElementById('checkin-title').textContent = `${date} 預約 (${filtered.length} 筆)`;
 }
 
-async function confirmCheckin(id){
-  if(!confirm('確認此乘客已核銷？'))return;
-  try{
-    const res=await fetch(`${GAS_URL}?mode=confirmCheckin&id=${encodeURIComponent(id)}`);
-    const data=await res.json();
-    if(data.status==='success'){
-      alert('✅ 核銷成功');
-      const target=allReservations.find(r=>r.id===id);
-      if(target)target.checkin='Y';
-      selectedDate?showReservationsByDate(selectedDate):showTodayReservations();
-    }else{
-      alert('❌ 核銷失敗: '+data.message);
+function formatDateDisplay(dateStr) {
+  if (!dateStr) return '-';
+  try {
+    // 處理 YYYY-MM-DD 格式
+    const parts = dateStr.split(/[-\/]/);
+    if (parts.length >= 3) {
+      return `${parts[1].padStart(2, '0')}/${parts[2].padStart(2, '0')}`;
     }
-  }catch(e){alert('❌ 錯誤:'+e.message);}
+    return dateStr;
+  } catch (e) {
+    return dateStr;
+  }
 }
 
-function changeMonth(d){
-  currentMonth+=d;
-  if(currentMonth<0){currentMonth=11;currentYear--;}
-  else if(currentMonth>11){currentMonth=0;currentYear++;}
+async function confirmCheckin(id) {
+  if (!confirm('確認此乘客已核銷？')) return;
+  
+  try {
+    console.log('✅ 開始核銷, id:', id);
+    
+    // 統一走 Worker，使用 confirmCheckin mode
+    const url = `${WORKER_URL}?mode=confirmCheckin&id=${encodeURIComponent(id)}`;
+    console.log('📤 核銷請求:', url);
+    
+    const response = await fetch(url, { method: 'POST' });
+    const contentType = response.headers.get('content-type');
+    
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      console.error('❌ 核銷返回非 JSON:', text);
+      throw new Error('核銷 API 格式錯誤');
+    }
+    
+    const data = await response.json();
+    console.log('📥 核銷結果:', data);
+    
+    if (data.status === 'success') {
+      alert('✅ 核銷成功');
+      
+      // 更新本地數據
+      const target = allReservations.find(r => r.id === id);
+      if (target) {
+        target.checkin = 'Y';
+        target.status = '已搭乘';
+      }
+      
+      // 重新顯示列表
+      selectedDate ? showReservationsByDate(selectedDate) : showTodayReservations();
+    } else {
+      alert('❌ 核銷失敗: ' + (data.message || '未知錯誤'));
+    }
+    
+  } catch (error) {
+    console.error('❌ 核銷錯誤:', error);
+    alert('❌ 核銷失敗: ' + error.message);
+  }
+}
+
+function changeMonth(d) {
+  currentMonth += d;
+  if (currentMonth < 0) {
+    currentMonth = 11;
+    currentYear--;
+  } else if (currentMonth > 11) {
+    currentMonth = 0;
+    currentYear++;
+  }
   renderCalendar();
 }
 
-function toggleCalendar(){
-  const grid=document.getElementById('calendar-grid');
-  const btn=document.getElementById('toggle-calendar');
-  const isHidden=grid.style.display==='none';
-  grid.style.display=isHidden?'grid':'none';
-  btn.textContent=isHidden?'收合':'展開';
+function toggleCalendar() {
+  const grid = document.getElementById('calendar-grid');
+  const btn = document.getElementById('toggle-calendar');
+  const isHidden = grid.style.display === 'none';
+  grid.style.display = isHidden ? 'grid' : 'none';
+  btn.textContent = isHidden ? '收合' : '展開';
 }
 
-function formatDate(date){
-  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+function formatDate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 </script>
 </body>
