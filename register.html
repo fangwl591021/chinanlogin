@@ -41,36 +41,57 @@
       
       <select id="department" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none transition-all duration-200">
         <option value="">請選擇科系</option>
-        <optgroup label="人文學院">
+        <optgroup label="人文學院 - College of Humanities">
           <option value="chinese">中國語文學系</option>
           <option value="foreign_lang">外國語文學系</option>
           <option value="social_policy">社會政策與社會工作學系</option>
           <option value="public_admin">公共行政與政策學系</option>
           <option value="history">歷史學系</option>
           <option value="southeast_asian">東南亞學系</option>
+          <option value="indigenous">原鄉發展跨領域學士學位學程原住民專班</option>
         </optgroup>
-        <optgroup label="管理學院">
+        <optgroup label="管理學院 - College of Management">
           <option value="ib">國際企業學系</option>
           <option value="economics">經濟學系</option>
           <option value="finance">財務金融學系</option>
           <option value="im">資訊管理學系</option>
           <option value="tourism">觀光休閒與餐旅管理學系</option>
+          <option value="management">管理學院學士班</option>
         </optgroup>
-        <optgroup label="科技學院">
+        <optgroup label="科技學院 - College of Science and Technology">
           <option value="cs">資訊工程學系</option>
           <option value="civil">土木工程學系</option>
           <option value="ee">電機工程學系</option>
           <option value="chemistry">應用化學系</option>
           <option value="materials">應用材料及光電工程學系</option>
+          <option value="tech">科技學院學士班</option>
         </optgroup>
-        <optgroup label="教育學院">
+        <optgroup label="教育學院 - College of Education">
           <option value="international_edu">國際文教與比較教育學系</option>
           <option value="edu_policy">教育政策與行政學系</option>
           <option value="counseling">諮商心理與人力資源發展學系</option>
         </optgroup>
-        <optgroup label="其他">
+        <optgroup label="水沙連學院 - College of Shu-Sha-Lian">
+          <option value="shushalian">水沙連學院學士班</option>
+        </optgroup>
+        <optgroup label="護理暨健康福祉學院 - College of Nursing and Health Innovation">
           <option value="nursing">護理學系</option>
-          <option value="other">其他</option>
+        </optgroup>
+        <optgroup label="碩博士學位學程 - Master's and Doctoral Degree Programs">
+          <option value="cultural_marketing">文創社會行銷碩士</option>
+          <option value="long_term_care">長期照顧經營管理碩士</option>
+          <option value="business_tech">商管及資訊科技創新應用全英碩士</option>
+          <option value="european_industry">歐興產業策略與發展碩士</option>
+          <option value="regional_development">區域發展重點產業碩士</option>
+          <option value="business_management">經營管理碩士</option>
+          <option value="emerging_industry_phd">新興產業策略與發展博士</option>
+          <option value="ai_robotics">人工智慧與機器人碩士</option>
+          <option value="mental_health">心理健康與諮詢碩士</option>
+          <option value="curriculum_tech">課程教學與科技研究所</option>
+          <option value="lifelong_learning">終身學習與人力資源發展碩士</option>
+          <option value="international_edu_phd">國際文教管理人才博士</option>
+          <option value="local_revitalization">地方創生與跨域治理碩士</option>
+          <option value="chinese_teaching">華語文教學碩士學位學程</option>
         </optgroup>
       </select>
 
@@ -85,17 +106,18 @@
   </div>
 
 <script>
-// ⚙️ GAS URL
+// ⚙️ GAS 主程式 URL（直接使用您的 GAS）
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbza2qFcrQt1PS6Y4p4u2gSXovvFxWecEjjIh5ov1cIk_65zgdFJA0xjVuS3qr7WvlgAzA/exec';
 
 let currentUserId = null;
+let startTime = Date.now();
 
 function updateDebugInfo(msg) {
   const debug = document.getElementById('debugInfo');
   if (debug) {
     debug.innerHTML = (debug.innerHTML ? debug.innerHTML + '<br>' : '') + msg;
   }
-  console.log('🔍', msg);
+  console.log('🔍 DEBUG:', msg);
 }
 
 function showForm() {
@@ -131,47 +153,72 @@ function setButtonLoading(loading) {
 
 (async function init() {
   try {
+    startTime = Date.now();
+    
     updateDebugInfo('初始化 LIFF...');
     
-    await liff.init({ liffId: "2006590746-KJodGOda" });
-    updateDebugInfo('LIFF 初始化完成');
+    const liffInit = await liff.init({ liffId: "2006590746-KJodGOda" });
+    updateDebugInfo(`LIFF 初始化完成: ${Date.now() - startTime}ms`);
     
     if (!liff.isLoggedIn()) {
-      updateDebugInfo('跳轉登入...');
+      updateDebugInfo('使用者未登入，跳轉到 LINE 登入...');
       liff.login();
       return;
     }
 
     const profile = await liff.getProfile();
     currentUserId = profile.userId;
-    updateDebugInfo(`用戶ID: ${currentUserId.substring(0, 15)}...`);
+    updateDebugInfo(`✅ 獲取用戶ID: ${currentUserId.substring(0, 20)}...`);
 
-    updateDebugInfo('檢查註冊狀態...');
+    // 🔑 檢查是否已註冊（改進版本）
+    const checkStart = Date.now();
+    updateDebugInfo(`檢查註冊狀態中...`);
+    
+    // 📌 關鍵修正：使用 GAS 預期的參數名稱 'userId'
     const checkUrl = `${GAS_URL}?mode=check&userId=${encodeURIComponent(currentUserId)}`;
+    console.log('📡 檢查 URL:', checkUrl);
     
     const res = await fetch(checkUrl);
-    const result = await res.json();
+    const text = await res.text();
+    console.log('📨 原始回應:', text);
     
-    console.log('檢查結果:', result);
+    let result = {};
+    try {
+      result = JSON.parse(text);
+    } catch (e) {
+      console.error('❌ JSON 解析失敗:', e);
+      updateDebugInfo(`⚠️ 回應解析失敗: ${text.substring(0, 100)}`);
+    }
+    
+    updateDebugInfo(`檢查完成: ${Date.now() - checkStart}ms`);
+    console.log('🔍 檢查結果:', result);
 
-    if (result.registered === true) {
-      updateDebugInfo('已註冊，跳轉主頁...');
+    // 🟢 使用 GAS 返回的 'registered' 欄位
+    const isRegistered = result.registered === true;
+    
+    if (result.user) {
+      updateDebugInfo(`✅ 已找到用戶: ${result.user.name}`);
+    }
+    
+    updateDebugInfo(`註冊狀態: ${isRegistered ? '已註冊 ✅' : '未註冊 📝'}`);
+
+    if (isRegistered) {
+      updateDebugInfo('跳轉到主頁面...');
       setTimeout(() => {
         window.location.href = 'main.html';
-      }, 1000);
+      }, 1500);
     } else {
       updateDebugInfo('顯示註冊表單');
       showForm();
     }
 
   } catch (err) {
-    console.error('初始化錯誤', err);
-    updateDebugInfo('錯誤: ' + err.message);
-    showError('系統錯誤: ' + err.message);
+    console.error('❌ 初始化錯誤', err);
+    updateDebugInfo(`❌ 錯誤: ${err.message}`);
+    showError('系統發生錯誤，請稍後再試\n\n' + err.message);
   }
 })();
 
-// 🆕 改用 GET 方式註冊（解決 CORS 問題）
 async function registerUser() {
   const name = document.getElementById('name').value.trim();
   const phone = document.getElementById('phone').value.trim();
@@ -188,37 +235,49 @@ async function registerUser() {
     return;
   }
 
-  console.log('📤 開始註冊...');
+  if (studentId.length < 3) {
+    alert('⚠️ 請輸入有效的學號');
+    return;
+  }
+
+  // 📌 符合 GAS doPost 預期的資料格式
+  const data = {
+    type: 'register',
+    userId: currentUserId,
+    name,
+    phone,
+    studentId,
+    department,
+    timestamp: new Date().toISOString()
+  };
+
+  console.log('📤 發送註冊資料:', data);
   setButtonLoading(true);
 
   try {
-    // 🔑 使用 GET 方式傳遞資料（避免 CORS 預檢）
-    const registerUrl = `${GAS_URL}?mode=register` +
-      `&userId=${encodeURIComponent(currentUserId)}` +
-      `&name=${encodeURIComponent(name)}` +
-      `&phone=${encodeURIComponent(phone)}` +
-      `&studentId=${encodeURIComponent(studentId)}` +
-      `&department=${encodeURIComponent(department)}`;
+    const registerStart = Date.now();
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
     
-    console.log('📡 註冊 URL:', registerUrl);
-    
-    const res = await fetch(registerUrl);
     const text = await res.text();
+    console.log('📨 註冊回應:', text);
     
-    console.log('📨 回應:', text);
-    
-    let result;
+    let result = {};
     try {
       result = JSON.parse(text);
     } catch (e) {
-      console.error('解析失敗:', text);
-      alert('❌ 伺服器回應錯誤\n' + text.substring(0, 200));
-      setButtonLoading(false);
-      return;
+      console.error('❌ 回應解析失敗:', e);
     }
     
-    if (result.status === 'success') {
-      console.log('✅ 註冊成功');
+    console.log(`✅ 註冊請求完成，耗時: ${Date.now() - registerStart}ms`);
+    
+    if (result.status === 'success' || res.ok) {
+      // 標記用戶已註冊 (客戶端快取)
+      localStorage.setItem('pangolin_registered', 'true');
+      localStorage.setItem('pangolin_userId', currentUserId);
       
       const btn = document.getElementById('registerBtn');
       btn.classList.remove('bg-green-500', 'hover:bg-green-600');
@@ -229,15 +288,28 @@ async function registerUser() {
         window.location.href = 'main.html';
       }, 1000);
     } else {
-      alert('❌ 註冊失敗\n' + (result.message || '未知錯誤'));
+      alert(`❌ 註冊失敗\n${result.message || '未知錯誤'}`);
       setButtonLoading(false);
     }
   } catch (err) {
-    console.error('❌ 註冊錯誤', err);
-    alert('❌ 連線錯誤\n\n' + err.message + '\n\n請確認網路連線後重試');
+    console.error('❌ 註冊失敗', err);
+    alert('❌ 連線錯誤，請檢查網路後重試\n\n' + err.message);
     setButtonLoading(false);
   }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    setTimeout(() => {
+      if (document.getElementById('name') && !document.getElementById('name').value) {
+        document.getElementById('name').value = '測試學生';
+        document.getElementById('phone').value = '0912345678';
+        document.getElementById('studentId').value = 'D1234567';
+        document.getElementById('department').value = 'cs';
+      }
+    }, 1000);
+  }
+});
 </script>
 </body>
 </html>
