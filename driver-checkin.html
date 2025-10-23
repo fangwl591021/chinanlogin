@@ -227,6 +227,46 @@ function showTodayReservations() {
   showReservationsByDate(today);
 }
 
+function showAllReservations() {
+  const tbody = document.getElementById('reservation-list');
+  tbody.innerHTML = '';
+  
+  if (allReservations.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="no-data">暫無預約紀錄</td></tr>`;
+    document.getElementById('checkin-title').textContent = '全部預約列表 (0 筆)';
+    return;
+  }
+  
+  console.log('📋 顯示全部預約:', allReservations.length, '筆');
+  
+  const routes = ['A1', 'B1', 'A2', 'B2'];
+  const sorted = [...allReservations].sort((a, b) => {
+    // 先按日期排序
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    // 日期相同按班次排序
+    return routes.indexOf(a.route) - routes.indexOf(b.route);
+  });
+  
+  sorted.forEach(r => {
+    const checked = r.checkin === 'Y' || r.status === '已搭乘';
+    const status = checked ? '已搭乘' : r.status === '已取消' ? '已取消' : '已預約';
+    const tr = document.createElement('tr');
+    tr.className = 'table-row';
+    tr.innerHTML = `
+      <td>${formatDateDisplay(r.date)}</td>
+      <td>${r.route}</td>
+      <td>${r.name}</td>
+      <td>${r.fromStop}</td>
+      <td>${r.toStop}</td>
+      <td>${status}</td>
+      <td>${checked ? '<button class="checkin-btn" disabled>✅</button>' : `<button class="checkin-btn" onclick="confirmCheckin('${r.id}')">核銷</button>`}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  
+  document.getElementById('checkin-title').textContent = `全部預約列表 (${sorted.length} 筆)`;
+}
+
 function showReservationsByDate(date) {
   const tbody = document.getElementById('reservation-list');
   tbody.innerHTML = '';
@@ -244,7 +284,7 @@ function showReservationsByDate(date) {
   
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7" class="no-data">此日期無預約</td></tr>`;
-    document.getElementById('checkin-title').textContent = `${date} 無預約`;
+    document.getElementById('checkin-title').textContent = `${formatDateDisplay(date)} 無預約`;
     return;
   }
   
@@ -268,7 +308,7 @@ function showReservationsByDate(date) {
     tbody.appendChild(tr);
   });
   
-  document.getElementById('checkin-title').textContent = `${date} 預約 (${filtered.length} 筆)`;
+  document.getElementById('checkin-title').textContent = `${formatDateDisplay(date)} 預約 (${filtered.length} 筆)`;
 }
 
 function formatDateDisplay(dateStr) {
