@@ -106,8 +106,8 @@
   </div>
 
 <script>
-// ⚙️ GAS 主程式 URL（直接使用您的 GAS）
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbza2qFcrQt1PS6Y4p4u2gSXovvFxWecEjjIh5ov1cIk_65zgdFJA0xjVuS3qr7WvlgAzA/exec';
+// ⚙️ 使用 Cloudflare Worker 作為代理（解決 CORS 問題）
+const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 
 let currentUserId = null;
 let startTime = Date.now();
@@ -151,6 +151,22 @@ function setButtonLoading(loading) {
   }
 }
 
+// 測試 Worker 連接
+async function testWorkerConnection() {
+  try {
+    updateDebugInfo('測試 Worker 連接...');
+    const testResponse = await fetch(WORKER_URL);
+    const result = await testResponse.json();
+    updateDebugInfo('✅ Worker 連接成功');
+    console.log('Worker 測試回應:', result);
+    return true;
+  } catch (error) {
+    updateDebugInfo('❌ Worker 連接失敗');
+    console.error('Worker 連接測試失敗:', error);
+    return false;
+  }
+}
+
 (async function init() {
   try {
     startTime = Date.now();
@@ -170,12 +186,15 @@ function setButtonLoading(loading) {
     currentUserId = profile.userId;
     updateDebugInfo(`✅ 獲取用戶ID: ${currentUserId.substring(0, 20)}...`);
 
-    // 🔑 檢查是否已註冊（改進版本）
+    // 測試 Worker 連接
+    await testWorkerConnection();
+
+    // 🔑 檢查是否已註冊
     const checkStart = Date.now();
     updateDebugInfo(`檢查註冊狀態中...`);
     
-    // 📌 關鍵修正：使用 GAS 預期的參數名稱 'userId'
-    const checkUrl = `${GAS_URL}?mode=check&userId=${encodeURIComponent(currentUserId)}`;
+    // 使用 Worker 檢查註冊狀態
+    const checkUrl = `${WORKER_URL}?mode=check&userId=${encodeURIComponent(currentUserId)}`;
     console.log('📡 檢查 URL:', checkUrl);
     
     const res = await fetch(checkUrl);
@@ -256,11 +275,17 @@ async function registerUser() {
 
   try {
     const registerStart = Date.now();
-    const res = await fetch(GAS_URL, {
+    
+    // 使用 Worker 發送註冊請求（解決 CORS 問題）
+    const res = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
+    
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
     
     const text = await res.text();
     console.log('📨 註冊回應:', text);
@@ -270,11 +295,12 @@ async function registerUser() {
       result = JSON.parse(text);
     } catch (e) {
       console.error('❌ 回應解析失敗:', e);
+      throw new Error('伺服器回應格式錯誤');
     }
     
     console.log(`✅ 註冊請求完成，耗時: ${Date.now() - registerStart}ms`);
     
-    if (result.status === 'success' || res.ok) {
+    if (result.status === 'success') {
       // 標記用戶已註冊 (客戶端快取)
       localStorage.setItem('pangolin_registered', 'true');
       localStorage.setItem('pangolin_userId', currentUserId);
@@ -284,20 +310,23 @@ async function registerUser() {
       btn.classList.add('bg-green-600');
       document.getElementById('btnText').textContent = '✅ 註冊成功！';
       
+      updateDebugInfo('✅ 註冊成功，跳轉中...');
+      
       setTimeout(() => {
         window.location.href = 'main.html';
       }, 1000);
     } else {
-      alert(`❌ 註冊失敗\n${result.message || '未知錯誤'}`);
-      setButtonLoading(false);
+      throw new Error(result.message || '註冊失敗');
     }
   } catch (err) {
     console.error('❌ 註冊失敗', err);
-    alert('❌ 連線錯誤，請檢查網路後重試\n\n' + err.message);
+    updateDebugInfo(`❌ 註冊錯誤: ${err.message}`);
+    alert('❌ 註冊失敗: ' + err.message + '\n\n請檢查網路連接或稍後重試');
     setButtonLoading(false);
   }
 }
 
+// 開發環境測試資料
 document.addEventListener('DOMContentLoaded', function() {
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     setTimeout(() => {
@@ -306,6 +335,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('phone').value = '0912345678';
         document.getElementById('studentId').value = 'D1234567';
         document.getElementById('department').value = 'cs';
+        updateDebugInfo('🧪 開發模式：已填入測試資料');
       }
     }, 1000);
   }
