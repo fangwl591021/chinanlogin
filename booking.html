@@ -2,7 +2,8 @@
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>預約/取消</title>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<style>body{font-family:system-ui,"Noto Sans TC",sans-serif;background:#f6f7f9;margin:0}
+<style>
+body{font-family:system-ui,"Noto Sans TC",sans-serif;background:#f6f7f9;margin:0}
 main{max-width:620px;margin:24px auto;background:#fff;border-radius:12px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
 h1{font-size:22px;margin:0 0 12px}label{display:block;margin:6px 0 4px}
 input,select,button{font-size:16px;padding:10px;border-radius:10px;border:1px solid #d3d7de;width:100%;box-sizing:border-box}
@@ -13,7 +14,7 @@ input,select,button{font-size:16px;padding:10px;border-radius:10px;border:1px so
 .ok{color:#0a7f2e}.err{color:#b8062e}
 </style></head><body>
 <main>
-  <h1>預約 / 取消</h1>
+  <h1>預約 / 取消 <span id="role" class="badge"></span></h1>
   <p id="status">初始化中…</p>
   <div class="grid">
     <div class="card">
@@ -47,53 +48,87 @@ input,select,button{font-size:16px;padding:10px;border-radius:10px;border:1px so
   <p><a href="./login.html">← 回登入/註冊</a> | <a href="./admin.html">Admin</a></p>
 </main>
 <script>
-const LIFF_ID  = 'YOUR_LIFF_ID';
-const API_BASE = 'https://YOUR_WORKER_SUBDOMAIN.workers.dev/api';
+/* === 你的設定 === */
+const LIFF_ID  = '2006590746-gA7QALQX';
+const API_BASE = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+
 const $=id=>document.getElementById(id);
+let user=null;
 
-let user = null;
+/* 共用 fetch */
+function mustJson(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
+async function callGet(q){ return fetch(API_BASE + '?' + new URLSearchParams(q)).then(mustJson); }
+async function callPost(p){ return fetch(API_BASE, {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(p)}).then(mustJson); }
 
-async function callGet(q){ return fetch(API_BASE + '?' + new URLSearchParams(q)).then(r=>r.json()); }
-async function callPost(p){ return fetch(API_BASE, {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(p)}).then(r=>r.json()); }
+/* 首頁守門：未登入→導回；未註冊→導回 */
+async function guardAndBoot(){
+  await liff.init({ liffId: LIFF_ID });
+  if (!liff.isLoggedIn()) { location.href='./login.html'; return; }
 
+  user = await liff.getProfile();
+
+  // 顯示角色（admin/user）
+  try {
+    const roleRes = await callGet({ mode:'getRole', userId: user.userId });
+    if (roleRes.ok && roleRes.data && roleRes.data.role) $('role').textContent = roleRes.data.role;
+  } catch(_) {}
+
+  // 未註冊就導回 login
+  const chk = await callGet({ mode:'check', userId: user.userId });
+  if (!chk.ok || !chk.data || !chk.data.registered) { location.href='./login.html'; return; }
+
+  $('status').innerHTML = '已登入：<b>'+user.displayName+'</b>';
+  const today = new Date().toISOString().slice(0,10);
+  $('date').value = today; $('cdate').value = today;
+  await refreshCap(); await loadMine();
+}
+
+/* UI functions */
 async function refreshCap(){
   const d = $('date').value || new Date().toISOString().slice(0,10);
-  const r = await callGet({ mode:'capacity', date:d });
-  if (!r.ok) { $('cap').innerHTML = '<span class="err">讀取名額失敗：'+r.error+'</span>'; return; }
-  const s = r.data.slots;
-  $('cap').innerHTML = `A1 ${s.A1.used}/${s.A1.cap}、A2 ${s.A2.used}/${s.A2.cap}、B1 ${s.B1.used}/${s.B1.cap}、B2 ${s.B2.used}/${s.B2.cap}`;
+  try{
+    const r = await callGet({ mode:'capacity', date:d });
+    if (!r.ok) throw new Error(r.error);
+    const s = r.data.slots;
+    $('cap').innerHTML = `A1 ${s.A1.used}/${s.A1.cap}、A2 ${s.A2.used}/${s.A2.cap}、B1 ${s.B1.used}/${s.B1.cap}、B2 ${s.B2.used}/${s.B2.cap}`;
+  }catch(e){
+    $('cap').innerHTML = '<span class="err">讀取名額失敗：'+(e.message||e)+'</span>';
+  }
 }
 
 async function loadMine(){
-  const r = await callGet({ mode:'listMy', userId: user.userId });
-  if (!r.ok) { $('mine').textContent = '❌ '+r.error; return; }
-  if (r.data.length===0) { $('mine').textContent = '（無預約）'; return; }
-  $('mine').innerHTML = '<ul>'+ r.data.map(x=>`<li>${x.date} - ${x.slot} ${x.driverChecked?'✅':''}</li>`).join('') + '</ul>';
+  try{
+    const r = await callGet({ mode:'listMy', userId: user.userId });
+    if (!r.ok) throw new Error(r.error);
+    if (!r.data || r.data.length===0) { $('mine').textContent = '（無預約）'; return; }
+    $('mine').innerHTML = '<ul>'+ r.data.map(x=>`<li>${x.date} - ${x.slot} ${x.driverChecked?'✅':''}</li>`).join('') + '</ul>';
+  }catch(e){
+    $('mine').textContent = '❌ '+(e.message||e);
+  }
 }
 
-async function init(){
-  await liff.init({ liffId: LIFF_ID });
-  if (!liff.isLoggedIn()) { $('status').textContent='未登入'; return; }
-  user = await liff.getProfile();
-  $('status').innerHTML = '已登入：<b>'+user.displayName+'</b>';
-  const t = new Date(); $('date').value = t.toISOString().slice(0,10); $('cdate').value = $('date').value;
-  await refreshCap(); await loadMine();
-}
-
+/* 事件綁定 */
 $('date').addEventListener('change', refreshCap);
 $('btnReserve').onclick = async ()=>{
   const d = $('date').value, s = $('slot').value;
-  const r = await callPost({ mode:'reserve', userId:user.userId, date:d, slot:s, name:user.displayName });
-  alert(r.ok ? `✅ 已預約 ${d} ${s}，剩餘 ${r.data.left}` : '❌ '+r.error);
-  await refreshCap(); await loadMine();
+  try{
+    const r = await callPost({ mode:'reserve', userId:user.userId, date:d, slot:s, name:user.displayName });
+    if (!r.ok) throw new Error(r.error);
+    alert(`✅ 已預約 ${d} ${s}，剩餘 ${r.data.left}`);
+    await refreshCap(); await loadMine();
+  }catch(e){ alert('❌ '+(e.message||e)); }
 };
 $('btnCancel').onclick = async ()=>{
   const d = $('cdate').value, s = $('cslot').value;
-  const r = await callPost({ mode:'cancel', userId:user.userId, date:d, slot:s });
-  alert(r.ok ? '✅ 已取消' : '❌ '+r.error);
-  await refreshCap(); await loadMine();
+  try{
+    const r = await callPost({ mode:'cancel', userId:user.userId, date:d, slot:s });
+    if (!r.ok) throw new Error(r.error);
+    alert('✅ 已取消');
+    await refreshCap(); await loadMine();
+  }catch(e){ alert('❌ '+(e.message||e)); }
 };
 
-init();
+/* 啟動 */
+guardAndBoot();
 </script>
 </body></html>
