@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車 - 司機核銷系統 v3.8.0</title>
+<title>穿山甲專車 - 司機核銷系統 v3.8.1</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Microsoft JhengHei',sans-serif;}
 body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden;}
@@ -33,15 +33,18 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
 .no-data{text-align:center;color:#999;padding:20px;}
 .loading{text-align:center;color:#3c8050;padding:20px;}
 .hidden{display:none;}
-.error-msg{background:#fee;border:1px solid #fcc;color:#c33;padding:10px;border-radius:6px;margin:10px 0;}
-.debug-info{background:#f0f0f0;border:1px solid #ddd;padding:10px;border-radius:6px;margin:10px 0;font-size:11px;max-height:200px;overflow-y:auto;}
+.error-msg{background:#fee;border:1px solid #fcc;color:#c33;padding:10px;border-radius:6px;margin:10px 0;text-align:center;}
+.route-map-section{position:relative;}
+#route-content{display:none;animation:fadeIn .25s ease-in-out;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-5px);}to{opacity:1;transform:translateY(0);}}
 </style>
 </head>
+
 <body>
 <div class="container">
   <div class="header">
     <h1>🚌 穿山甲專車核銷系統</h1>
-    <p>司機簽到核銷作業 v3.8.0</p>
+    <p>司機簽到核銷作業 v3.8.1</p>
   </div>
 
   <div class="calendar-section">
@@ -54,49 +57,24 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
     <div class="calendar-grid" id="calendar-grid" style="display:none;"></div>
   </div>
 
-  <!-- 行車路線圖 -->
   <div class="route-map-section">
     <div class="route-header">
       <h2>🚏 行車路線示意圖</h2>
       <button id="toggle-route">展開</button>
     </div>
 
-    <div id="route-content" style="display:none;">
+    <div id="route-content">
       <div class="route-line a-line">
         <h3>🅰️ A線（暨大 → 埔里總站）</h3>
         <div class="stops">
-          <span>行政大樓</span><span class="arrow">➔</span>
-          <span>中餐廳</span><span class="arrow">➔</span>
-          <span>科技學院</span><span class="arrow">➔</span>
-          <span>學人會館</span><span class="arrow">➔</span>
-          <span>中城</span><span class="arrow">➔</span>
-          <span>下城</span><span class="arrow">➔</span>
-          <span>坪頂</span><span class="arrow">➔</span>
-          <span>愛蘭橋</span><span class="arrow">➔</span>
-          <span>大成國小</span><span class="arrow">➔</span>
-          <span>中山安七街口</span><span class="arrow">➔</span>
-          <span>榮民診所</span><span class="arrow">➔</span>
-          <strong>埔里酒廠</strong><span class="arrow">➔</span>
-          <strong>埔里總站</strong>
+          行政大樓 ➔ 中餐廳 ➔ 科技學院 ➔ 學人會館 ➔ 中城 ➔ 下城 ➔ 坪頂 ➔ 愛蘭橋 ➔ 大成國小 ➔ 中山安七街口 ➔ 榮民診所 ➔ 埔里酒廠 ➔ 埔里總站
         </div>
       </div>
 
       <div class="route-line b-line">
         <h3>🅱️ B線（埔里總站 → 暨大）</h3>
         <div class="stops">
-          <strong>埔里總站</strong><span class="arrow">➔</span>
-          <strong>埔里酒廠</strong><span class="arrow">➔</span>
-          <span>榮民診所</span><span class="arrow">➔</span>
-          <span>中山安七街口</span><span class="arrow">➔</span>
-          <span>大成國小</span><span class="arrow">➔</span>
-          <span>愛蘭橋</span><span class="arrow">➔</span>
-          <span>坪頂</span><span class="arrow">➔</span>
-          <span>下城</span><span class="arrow">➔</span>
-          <span>中城</span><span class="arrow">➔</span>
-          <span>學人會館</span><span class="arrow">➔</span>
-          <span>科技學院</span><span class="arrow">➔</span>
-          <span>中餐廳</span><span class="arrow">➔</span>
-          <strong>行政大樓</strong>
+          埔里總站 ➔ 埔里酒廠 ➔ 榮民診所 ➔ 中山安七街口 ➔ 大成國小 ➔ 愛蘭橋 ➔ 坪頂 ➔ 下城 ➔ 中城 ➔ 學人會館 ➔ 科技學院 ➔ 中餐廳 ➔ 行政大樓
         </div>
       </div>
     </div>
@@ -125,7 +103,6 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
 
 <script>
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
-
 let allReservations = [];
 let currentDate = new Date();
 let currentMonth = currentDate.getMonth();
@@ -151,14 +128,11 @@ async function initializeSystem() {
 function showLoading(show) {
   document.getElementById('loadingMsg').classList.toggle('hidden', !show);
 }
-
-function showError(message) {
-  const errorDiv = document.getElementById('errorMsg');
-  errorDiv.textContent = '❌ ' + message;
-  errorDiv.classList.remove('hidden');
-  console.error('顯示錯誤:', message);
+function showError(msg) {
+  const e = document.getElementById('errorMsg');
+  e.textContent = '❌ ' + msg;
+  e.classList.remove('hidden');
 }
-
 function hideError() {
   document.getElementById('errorMsg').classList.add('hidden');
 }
@@ -166,68 +140,50 @@ function hideError() {
 async function loadAllReservations() {
   try {
     hideError();
-    
-    // 取得 URL 參數中的 admin ID（如果有的話）
     const urlParams = new URLSearchParams(window.location.search);
     const adminId = urlParams.get('admin') || 'all';
-    
-    console.log('🔍 開始查詢預約資料, userId:', adminId);
-    
     const fetchUrl = `${WORKER_URL}?mode=reservations&userId=${adminId}`;
     console.log('📤 請求 URL:', fetchUrl);
-    
+
     const response = await fetch(fetchUrl);
-    console.log('📥 收到回應, status:', response.status);
-    
-    // 檢查內容類型
-    const contentType = response.headers.get('content-type');
-    console.log('📋 Content-Type:', contentType);
-    
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      console.error('❌ 收到非 JSON 格式:', text.substring(0, 200));
-      showError('API 返回格式錯誤');
-      allReservations = [];
+    const contentType = response.headers.get('content-type') || '';
+
+    if (!response.ok) {
+      showError('伺服器錯誤: ' + response.status);
       renderEmptyList();
       return;
     }
-    
+
+    if (!contentType.includes('application/json')) {
+      const text = await response.text();
+      console.warn('⚠️ 非 JSON 格式:', text.slice(0,150));
+      showError('GAS 連接異常，請稍後再試');
+      renderEmptyList();
+      return;
+    }
+
     const data = await response.json();
-    console.log('✅ 成功解析 JSON:', data);
-    
     if (data.status === 'success' && Array.isArray(data.reservations)) {
-      console.log('📊 收到預約數據:', data.reservations.length, '筆');
-      
-      // 映射數據到統一格式
-      allReservations = data.reservations.map((r, i) => {
-        const mapped = {
-          id: String(r.id || r.reservationId || i + 1),
-          date: r.date || r.日期 || '',
-          route: r.route || r.班次 || r.shift || '-',
-          name: r.name || r.姓名 || '-',
-          fromStop: r.fromStop || r.pickupLocation || r.上車點 || r.E || '未提供',
-          toStop: r.toStop || r.dropoffLocation || r.下車點 || r.F || '未提供',
-          checkin: r.checkin || r.checkinStatus || r.J || '',
-          status: r.status || '已預約'
-        };
-        console.log('映射預約:', mapped);
-        return mapped;
-      });
-      
-      console.log('✅ 成功載入', allReservations.length, '筆預約');
-      
+      allReservations = data.reservations.map((r,i)=>({
+        id:String(r.id||r.reservationId||i+1),
+        date:r.date||r.日期||'',
+        route:r.route||r.班次||r.shift||'-',
+        name:r.name||r.姓名||'-',
+        fromStop:r.fromStop||r.上車點||r.E||'未提供',
+        toStop:r.toStop||r.下車點||r.F||'未提供',
+        checkin:r.checkin||r.J||'',
+        status:r.status||'已預約'
+      }));
     } else {
-      console.warn('⚠️ API 返回異常:', data);
       showError(data.message || '無法取得預約資料');
-      allReservations = [];
       renderEmptyList();
     }
-    
-  } catch (error) {
-    console.error('❌ 資料載入失敗:', error);
-    showError('載入失敗: ' + error.message);
-    allReservations = [];
+  } catch (e) {
+    console.error('❌ 錯誤:', e);
+    showError('載入失敗: ' + e.message);
     renderEmptyList();
+  } finally {
+    showLoading(false);
   }
 }
 
@@ -240,227 +196,107 @@ function renderEmptyList() {
 function renderCalendar() {
   const grid = document.getElementById('calendar-grid');
   grid.innerHTML = '';
-  
-  ['日', '一', '二', '三', '四', '五', '六'].forEach(d => {
-    const h = document.createElement('div');
-    h.className = 'day-header';
-    h.textContent = d;
+  ['日','一','二','三','四','五','六'].forEach(d=>{
+    const h=document.createElement('div');
+    h.className='day-header';
+    h.textContent=d;
     grid.appendChild(h);
   });
-  
-  const first = new Date(currentYear, currentMonth, 1);
-  const last = new Date(currentYear, currentMonth + 1, 0);
-  const offset = first.getDay();
-  const today = formatDate(new Date());
-  
-  for (let i = 0; i < offset; i++) {
-    const d = document.createElement('div');
-    d.className = 'day-cell other-month';
+  const first=new Date(currentYear,currentMonth,1);
+  const last=new Date(currentYear,currentMonth+1,0);
+  const offset=first.getDay();
+  const today=formatDate(new Date());
+  for(let i=0;i<offset;i++){
+    const d=document.createElement('div');d.className='day-cell other-month';grid.appendChild(d);
+  }
+  for(let i=1;i<=last.getDate();i++){
+    const d=document.createElement('div');
+    const dateStr=`${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+    d.className='day-cell';
+    if(dateStr===selectedDate)d.classList.add('selected');
+    if(dateStr<today)d.classList.add('past');
+    else d.onclick=()=>selectDate(dateStr);
+    d.textContent=i;
     grid.appendChild(d);
   }
-  
-  for (let i = 1; i <= last.getDate(); i++) {
-    const d = document.createElement('div');
-    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-    d.className = 'day-cell';
-    if (dateStr === selectedDate) d.classList.add('selected');
-    if (dateStr < today) d.classList.add('past');
-    else d.onclick = () => selectDate(dateStr);
-    d.textContent = i;
-    grid.appendChild(d);
-  }
-  
-  document.getElementById('current-month').textContent = `${currentYear}年${currentMonth + 1}月`;
+  document.getElementById('current-month').textContent=`${currentYear}年${currentMonth+1}月`;
 }
 
-function selectDate(date) {
-  selectedDate = date;
-  renderCalendar();
-  showReservationsByDate(date);
-}
+function selectDate(date){selectedDate=date;renderCalendar();showReservationsByDate(date);}
+function showTodayReservations(){const today=formatDate(new Date());showReservationsByDate(today);}
 
-function showTodayReservations() {
-  const today = formatDate(new Date());
-  showReservationsByDate(today);
-}
-
-function showAllReservations() {
-  const tbody = document.getElementById('reservation-list');
-  tbody.innerHTML = '';
-  
-  if (allReservations.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="no-data">暫無預約紀錄</td></tr>`;
-    document.getElementById('checkin-title').textContent = '全部預約列表 (0 筆)';
+function showReservationsByDate(date){
+  const tbody=document.getElementById('reservation-list');
+  tbody.innerHTML='';
+  const filtered=allReservations.filter(r=>r.date.startsWith(date));
+  if(filtered.length===0){
+    tbody.innerHTML='<tr><td colspan="7" class="no-data">此日期無預約</td></tr>';
+    document.getElementById('checkin-title').textContent=`${date} 無預約`;
     return;
   }
-  
-  console.log('📋 顯示全部預約:', allReservations.length, '筆');
-  
-  const routes = ['A1', 'B1', 'A2', 'B2'];
-  const sorted = [...allReservations].sort((a, b) => {
-    // 先按日期排序
-    if (a.date !== b.date) return a.date.localeCompare(b.date);
-    // 日期相同按班次排序
-    return routes.indexOf(a.route) - routes.indexOf(b.route);
-  });
-  
-  sorted.forEach(r => {
-    const checked = r.checkin === 'Y' || r.status === '已搭乘';
-    const status = checked ? '已搭乘' : r.status === '已取消' ? '已取消' : '已預約';
-    const tr = document.createElement('tr');
-    tr.className = 'table-row';
-    tr.innerHTML = `
-      <td>${formatDateDisplay(r.date)}</td>
+  const routes=['A1','B1','A2','B2'];
+  filtered.sort((a,b)=>routes.indexOf(a.route)-routes.indexOf(b.route));
+  filtered.forEach(r=>{
+    const checked=r.checkin==='Y'||r.status==='已搭乘';
+    const status=checked?'已搭乘':r.status==='已取消'?'已取消':'已預約';
+    const tr=document.createElement('tr');
+    tr.className='table-row';
+    tr.innerHTML=`
+      <td>${r.date}</td>
       <td>${r.route}</td>
       <td>${r.name}</td>
       <td>${r.fromStop}</td>
       <td>${r.toStop}</td>
       <td>${status}</td>
-      <td>${checked ? '<button class="checkin-btn" disabled>✅</button>' : `<button class="checkin-btn" onclick="confirmCheckin('${r.id}')">核銷</button>`}</td>
-    `;
+      <td>${checked?'<button class="checkin-btn" disabled>✅</button>':`<button class="checkin-btn" onclick="confirmCheckin('${r.id}')">核銷</button>`}</td>`;
     tbody.appendChild(tr);
   });
-  
-  document.getElementById('checkin-title').textContent = `全部預約列表 (${sorted.length} 筆)`;
+  document.getElementById('checkin-title').textContent=`${date} 預約 (${filtered.length} 筆)`;
 }
 
-function showReservationsByDate(date) {
-  const tbody = document.getElementById('reservation-list');
-  tbody.innerHTML = '';
-  
-  console.log('🔍 篩選日期:', date);
-  console.log('📋 總預約數:', allReservations.length);
-  
-  const filtered = allReservations.filter(r => {
-    const match = r.date.startsWith(date);
-    if (match) console.log('✅ 符合:', r);
-    return match;
-  });
-  
-  console.log('📊 篩選結果:', filtered.length, '筆');
-  
-  if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="no-data">此日期無預約</td></tr>`;
-    document.getElementById('checkin-title').textContent = `${formatDateDisplay(date)} 無預約`;
-    return;
-  }
-  
-  const routes = ['A1', 'B1', 'A2', 'B2'];
-  filtered.sort((a, b) => routes.indexOf(a.route) - routes.indexOf(b.route));
-  
-  filtered.forEach(r => {
-    const checked = r.checkin === 'Y' || r.status === '已搭乘';
-    const status = checked ? '已搭乘' : r.status === '已取消' ? '已取消' : '已預約';
-    const tr = document.createElement('tr');
-    tr.className = 'table-row';
-    tr.innerHTML = `
-      <td>${formatDateDisplay(r.date)}</td>
-      <td>${r.route}</td>
-      <td>${r.name}</td>
-      <td>${r.fromStop}</td>
-      <td>${r.toStop}</td>
-      <td>${status}</td>
-      <td>${checked ? '<button class="checkin-btn" disabled>✅</button>' : `<button class="checkin-btn" onclick="confirmCheckin('${r.id}')">核銷</button>`}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-  
-  document.getElementById('checkin-title').textContent = `${formatDateDisplay(date)} 預約 (${filtered.length} 筆)`;
-}
-
-function formatDateDisplay(dateStr) {
-  if (!dateStr) return '-';
-  try {
-    // 處理 YYYY-MM-DD 格式
-    const parts = dateStr.split(/[-\/]/);
-    if (parts.length >= 3) {
-      return `${parts[1].padStart(2, '0')}/${parts[2].padStart(2, '0')}`;
+async function confirmCheckin(id){
+  if(!confirm('確認此乘客已核銷？'))return;
+  try{
+    const url=`${WORKER_URL}?mode=confirmCheckin&id=${encodeURIComponent(id)}`;
+    const response=await fetch(url,{method:'POST'});
+    const contentType=response.headers.get('content-type')||'';
+    if(!contentType.includes('application/json')){
+      const text=await response.text();
+      console.error('非 JSON:',text);
+      throw new Error('API 格式錯誤');
     }
-    return dateStr;
-  } catch (e) {
-    return dateStr;
-  }
-}
-
-async function confirmCheckin(id) {
-  if (!confirm('確認此乘客已核銷？')) return;
-  
-  try {
-    console.log('✅ 開始核銷, id:', id);
-    
-    // 統一走 Worker，使用 confirmCheckin mode
-    const url = `${WORKER_URL}?mode=confirmCheckin&id=${encodeURIComponent(id)}`;
-    console.log('📤 核銷請求:', url);
-    
-    const response = await fetch(url, { method: 'POST' });
-    const contentType = response.headers.get('content-type');
-    
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      console.error('❌ 核銷返回非 JSON:', text);
-      throw new Error('核銷 API 格式錯誤');
-    }
-    
-    const data = await response.json();
-    console.log('📥 核銷結果:', data);
-    
-    if (data.status === 'success') {
+    const data=await response.json();
+    if(data.status==='success'){
       alert('✅ 核銷成功');
-      
-      // 更新本地數據
-      const target = allReservations.find(r => r.id === id);
-      if (target) {
-        target.checkin = 'Y';
-        target.status = '已搭乘';
-      }
-      
-      // 重新顯示列表
-      if (selectedDate) {
-        showReservationsByDate(selectedDate);
-      } else {
-        showUpcomingReservations();
-      }
-    } else {
-      alert('❌ 核銷失敗: ' + (data.message || '未知錯誤'));
-    }
-    
-  } catch (error) {
-    console.error('❌ 核銷錯誤:', error);
-    alert('❌ 核銷失敗: ' + error.message);
-  }
+      const target=allReservations.find(r=>r.id===id);
+      if(target){target.checkin='Y';target.status='已搭乘';}
+      if(selectedDate)showReservationsByDate(selectedDate);
+      else showTodayReservations();
+    }else alert('❌ 核銷失敗: '+(data.message||'未知錯誤'));
+  }catch(e){alert('❌ 錯誤: '+e.message);}
 }
 
-function changeMonth(d) {
-  currentMonth += d;
-  if (currentMonth < 0) {
-    currentMonth = 11;
-    currentYear--;
-  } else if (currentMonth > 11) {
-    currentMonth = 0;
-    currentYear++;
-  }
+function changeMonth(d){
+  currentMonth+=d;
+  if(currentMonth<0){currentMonth=11;currentYear--;}
+  else if(currentMonth>11){currentMonth=0;currentYear++;}
   renderCalendar();
 }
-
-function toggleCalendar() {
-  const grid = document.getElementById('calendar-grid');
-  const btn = document.getElementById('toggle-calendar');
-  const isHidden = grid.style.display === 'none';
-  grid.style.display = isHidden ? 'grid' : 'none';
-  btn.textContent = isHidden ? '收合' : '展開';
+function toggleCalendar(){
+  const grid=document.getElementById('calendar-grid');
+  const btn=document.getElementById('toggle-calendar');
+  const isHidden=grid.style.display==='none'||grid.style.display==='';
+  grid.style.display=isHidden?'grid':'none';
+  btn.textContent=isHidden?'收合':'展開';
 }
-
-function toggleRoute() {
-  const content = document.getElementById('route-content');
-  const btn = document.getElementById('toggle-route');
-  const isHidden = content.style.display === 'none';
-  content.style.display = isHidden ? 'block' : 'none';
-  btn.textContent = isHidden ? '收合' : '展開';
+function toggleRoute(){
+  const content=document.getElementById('route-content');
+  const btn=document.getElementById('toggle-route');
+  const isHidden=content.style.display==='none'||content.style.display==='';
+  content.style.display=isHidden?'block':'none';
+  btn.textContent=isHidden?'收合':'展開';
 }
-
-function formatDate(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
+function formatDate(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;}
 </script>
 </body>
 </html>
