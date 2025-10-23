@@ -1,0 +1,99 @@
+<!DOCTYPE html><html lang="zh-Hant"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>預約/取消</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>body{font-family:system-ui,"Noto Sans TC",sans-serif;background:#f6f7f9;margin:0}
+main{max-width:620px;margin:24px auto;background:#fff;border-radius:12px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
+h1{font-size:22px;margin:0 0 12px}label{display:block;margin:6px 0 4px}
+input,select,button{font-size:16px;padding:10px;border-radius:10px;border:1px solid #d3d7de;width:100%;box-sizing:border-box}
+.btn{background:#3c8050;color:#fff;border:none;margin-top:10px;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.card{border:1px solid #e5e8ee;border-radius:12px;padding:10px}
+.badge{display:inline-block;padding:4px 8px;border-radius:8px;background:#eef2f7;font-size:12px;margin-left:8px}
+.ok{color:#0a7f2e}.err{color:#b8062e}
+</style></head><body>
+<main>
+  <h1>預約 / 取消</h1>
+  <p id="status">初始化中…</p>
+  <div class="grid">
+    <div class="card">
+      <h3>建立預約</h3>
+      <label>日期</label><input id="date" type="date"/>
+      <label>班次</label>
+      <select id="slot">
+        <option value="A1">A1</option><option value="A2">A2</option>
+        <option value="B1">B1</option><option value="B2">B2</option>
+      </select>
+      <button id="btnReserve" class="btn">預約</button>
+      <p id="cap"></p>
+    </div>
+    <div class="card">
+      <h3>取消預約</h3>
+      <label>日期</label><input id="cdate" type="date"/>
+      <label>班次</label>
+      <select id="cslot">
+        <option value="A1">A1</option><option value="A2">A2</option>
+        <option value="B1">B1</option><option value="B2">B2</option>
+      </select>
+      <button id="btnCancel" class="btn" style="background:#8a1f2c">取消</button>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <h3>我的預約</h3>
+    <div id="mine"></div>
+  </div>
+
+  <p><a href="./login.html">← 回登入/註冊</a> | <a href="./admin.html">Admin</a></p>
+</main>
+<script>
+const LIFF_ID  = 'YOUR_LIFF_ID';
+const API_BASE = 'https://YOUR_WORKER_SUBDOMAIN.workers.dev/api';
+const $=id=>document.getElementById(id);
+
+let user = null;
+
+async function callGet(q){ return fetch(API_BASE + '?' + new URLSearchParams(q)).then(r=>r.json()); }
+async function callPost(p){ return fetch(API_BASE, {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(p)}).then(r=>r.json()); }
+
+async function refreshCap(){
+  const d = $('date').value || new Date().toISOString().slice(0,10);
+  const r = await callGet({ mode:'capacity', date:d });
+  if (!r.ok) { $('cap').innerHTML = '<span class="err">讀取名額失敗：'+r.error+'</span>'; return; }
+  const s = r.data.slots;
+  $('cap').innerHTML = `A1 ${s.A1.used}/${s.A1.cap}、A2 ${s.A2.used}/${s.A2.cap}、B1 ${s.B1.used}/${s.B1.cap}、B2 ${s.B2.used}/${s.B2.cap}`;
+}
+
+async function loadMine(){
+  const r = await callGet({ mode:'listMy', userId: user.userId });
+  if (!r.ok) { $('mine').textContent = '❌ '+r.error; return; }
+  if (r.data.length===0) { $('mine').textContent = '（無預約）'; return; }
+  $('mine').innerHTML = '<ul>'+ r.data.map(x=>`<li>${x.date} - ${x.slot} ${x.driverChecked?'✅':''}</li>`).join('') + '</ul>';
+}
+
+async function init(){
+  await liff.init({ liffId: LIFF_ID });
+  if (!liff.isLoggedIn()) { $('status').textContent='未登入'; return; }
+  user = await liff.getProfile();
+  $('status').innerHTML = '已登入：<b>'+user.displayName+'</b>';
+  const t = new Date(); $('date').value = t.toISOString().slice(0,10); $('cdate').value = $('date').value;
+  await refreshCap(); await loadMine();
+}
+
+$('date').addEventListener('change', refreshCap);
+$('btnReserve').onclick = async ()=>{
+  const d = $('date').value, s = $('slot').value;
+  const r = await callPost({ mode:'reserve', userId:user.userId, date:d, slot:s, name:user.displayName });
+  alert(r.ok ? `✅ 已預約 ${d} ${s}，剩餘 ${r.data.left}` : '❌ '+r.error);
+  await refreshCap(); await loadMine();
+};
+$('btnCancel').onclick = async ()=>{
+  const d = $('cdate').value, s = $('cslot').value;
+  const r = await callPost({ mode:'cancel', userId:user.userId, date:d, slot:s });
+  alert(r.ok ? '✅ 已取消' : '❌ '+r.error);
+  await refreshCap(); await loadMine();
+};
+
+init();
+</script>
+</body></html>
