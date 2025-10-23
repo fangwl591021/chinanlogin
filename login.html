@@ -1,204 +1,157 @@
 <!DOCTYPE html><html lang="zh-Hant"><head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>登入健檢 ＆ 註冊</title>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>學生接駁車註冊</title>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
 :root{
-  --bg:#f6f7f9; --card:#fff; --border:#e5e8ee; --text:#111827;
-  --primary:#2f855a; --danger:#8a1f2c; --muted:#6b7280;
+  --bg:#f3f7f5; --card:#ffffff; --border:#e8eef0; --shadow:0 10px 30px rgba(0,0,0,.08);
+  --title:#0f172a; --muted:#64748b; --ok:#2e7d32; --btn:#35a853; --btnH:#2e9448;
 }
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);font-family:system-ui,"Noto Sans TC",sans-serif;color:var(--text)}
-.hero{
-  position:relative; width:100%; min-height:40vh; display:flex; align-items:flex-end;
-  background:url('https://aiwe.cc/wp-content/uploads/2025/10/6446d860dbbfe540e9e2cbab5f98f1e3-1.png') center/cover no-repeat;
-}
-.hero::after{ /* 暗角，讓白字可讀 */
-  content:""; position:absolute; inset:0; background:linear-gradient(180deg,rgba(0,0,0,.0) 50%,rgba(0,0,0,.35) 100%);
-}
-.hero-inner{position:relative; z-index:1; width:100%; max-width:880px; margin:0 auto; padding:16px 16px 24px}
-.hero-title{color:#fff; margin:0; font-size:28px; letter-spacing:.5px}
-.container{max-width:880px;margin:-28px auto 28px;padding:0 16px}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:system-ui,"Noto Sans TC",sans-serif;color:var(--title)}
+.wrap{min-height:100dvh;display:grid;place-items:center;padding:18px}
 .card{
-  background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px;
-  box-shadow:0 6px 18px rgba(0,0,0,.06);
+  width: 380px; max-width:92vw; background:var(--card); border:1px solid var(--border);
+  border-radius:18px; box-shadow:var(--shadow); padding:22px 22px 18px;
 }
-.row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.h1{margin:0 0 6px; text-align:center; font-size:22px; font-weight:700}
+.p{margin:0; text-align:center; color:var(--muted); font-size:14px}
+.uid{margin:6px 0 10px; text-align:center; color:#94a3b8; font-size:12px}
+label{display:block; font-size:14px; color:#111827; margin:12px 0 6px}
+input,select{
+  width:100%; font-size:16px; padding:12px 12px; border:1px solid #dbe3e7; border-radius:12px; outline:none;
+  background:#fbfdff;
+}
+input:focus,select:focus{border-color:#9cc5b3; box-shadow:0 0 0 3px rgba(53,168,83,.12)}
 .btn{
-  border:1px solid var(--border); background:#fff; color:#111; padding:10px 14px; border-radius:10px;
-  cursor:pointer; font-size:15px;
+  width:100%; margin-top:16px; padding:12px 14px; font-size:16px; font-weight:700;
+  color:#fff; background:var(--btn); border:none; border-radius:12px; cursor:pointer;
 }
-.btn-primary{background:var(--primary); color:#fff; border-color:transparent}
-.btn-danger{background:var(--danger); color:#fff; border-color:transparent}
-.btn[disabled]{opacity:.6; cursor:not-allowed}
-label{display:block;margin:10px 0 6px;font-size:14px;color:#111}
-input{width:100%;padding:10px;border:1px solid #d3d7de;border-radius:10px;font-size:16px}
-.helper{color:var(--muted); font-size:13px}
-.status{margin:10px 0 0; font-size:14px}
-.badge{display:inline-block;padding:4px 8px;border-radius:8px;background:#eef2f7;font-size:12px;margin-left:8px}
-.err{color:#b8062e}
-.success{color:#0a7f2e}
-.grid{display:grid; grid-template-columns:repeat(12,1fr); gap:12px}
-.col-6{grid-column:span 6} .col-12{grid-column:span 12}
-@media (max-width:720px){ .col-6{grid-column:span 12} .hero{min-height:36vh} .hero-title{font-size:22px}}
-.hidden{display:none}
-code{background:#f3f4f6;border:1px solid var(--border);padding:2px 6px;border-radius:6px}
+.btn:hover{background:var(--btnH)} .btn[disabled]{opacity:.6; cursor:not-allowed}
+.status{text-align:center; font-size:14px; color:var(--muted); margin-top:8px}
+.err{color:#b8062e} .ok{color:var(--ok)}
+.footer{margin-top:10px; text-align:center; font-size:12px; color:#94a3b8}
+.linkbar{margin-top:8px; text-align:center}
+.linkbar a{color:#2563eb; text-decoration:none}
 </style>
 </head>
 <body>
-  <!-- Hero 圖＋標題 -->
-  <section class="hero">
-    <div class="hero-inner">
-      <h1 class="hero-title">校園巴士預約系統｜登入健檢 & 註冊 <span id="role" class="badge"></span></h1>
+<div class="wrap">
+  <div class="card">
+    <h1 class="h1">學生接駁車註冊</h1>
+    <p class="p">請填寫資訊完成註冊</p>
+    <div id="uid" class="uid">(ID: …)</div>
+
+    <div id="formBox" style="display:none">
+      <label>姓名</label>
+      <input id="name" placeholder="請輸入姓名"/>
+      <label>電話</label>
+      <input id="phone" placeholder="09xx-xxx-xxx" inputmode="tel"/>
+      <label>學號</label>
+      <input id="studentId" placeholder="S1234567"/>
+      <label>科系</label>
+      <select id="department">
+        <option value="">請選擇科系</option>
+        <option>資工系</option>
+        <option>電機系</option>
+        <option>企管系</option>
+        <option>新興產業策略與發展</option>
+        <option>商管學院</option>
+        <option>其他</option>
+      </select>
+      <button id="btnSubmit" class="btn">立即註冊</button>
     </div>
-  </section>
 
-  <div class="container">
-    <div class="card">
-      <!-- 操作列 -->
-      <div class="row" style="justify-content:space-between; gap:12px">
-        <div class="row">
-          <button id="btnLogin" class="btn btn-primary">登入 / 重新授權</button>
-          <button id="btnLogout" class="btn">登出</button>
-        </div>
-        <div class="helper">若已註冊將自動導向預約頁</div>
-      </div>
-
-      <!-- 狀態 -->
-      <p id="status" class="status">初始化中…</p>
-
-      <!-- 註冊表單（未註冊才顯示） -->
-      <div id="registerBox" class="hidden" style="margin-top:10px">
-        <div class="grid">
-          <div class="col-6">
-            <label>手機</label>
-            <input id="phone" placeholder="09xx-xxx-xxx"/>
-          </div>
-          <div class="col-6">
-            <label>學號（可留空）</label>
-            <input id="studentId" placeholder="S1234567"/>
-          </div>
-          <div class="col-12">
-            <label>科系（可留空）</label>
-            <input id="department" placeholder="資工系"/>
-          </div>
-        </div>
-        <div class="row" style="margin-top:8px">
-          <button id="btnRegister" class="btn btn-primary">送出註冊</button>
-          <button id="btnQuick" class="btn">以目前帳號快速註冊</button>
-        </div>
-        <div class="helper">＊快速註冊：只寫入姓名（LINE 暱稱）與角色 <code>user</code>，其他欄位可日後補登。</div>
-      </div>
-
-      <div style="margin-top:12px">
-        <a href="./booking.html">→ 直接前往預約</a> ｜
-        <a href="./admin.html">Admin</a>
-      </div>
-    </div>
+    <div id="status" class="status">初始化中…</div>
+    <div class="linkbar"><a href="./booking.html">→ 直接前往預約</a></div>
+    <div class="footer">本系統僅用於接駁車服務，不對外公開個資。</div>
   </div>
+</div>
 
 <script>
-/* ===== 你的連線設定 ===== */
-const LIFF_ID  = '2006590746-gA7QALQX'; // ← 你的 LIFF App 的 liffId
-const API_BASE = 'https://delicate-math-7e61.fangwl591021.workers.dev/'; // ← 你的 Worker 根路徑
+/* === 連線設定（如需更換只改這兩行） === */
+const LIFF_ID  = '2006590746-gA7QALQX';
+const API_BASE = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 
-/* ===== 小工具 ===== */
-const $ = (id)=>document.getElementById(id);
-const show = (el)=>el.classList.remove('hidden');
-const hide = (el)=>el.classList.add('hidden');
-const setBusy = (b)=>{ $('btnLogin').disabled=b; $('btnRegister').disabled=b; $('btnQuick').disabled=b; };
+/* === 小工具 === */
+const $=id=>document.getElementById(id);
+const maskUid = (u)=> u ? (u.slice(0,8)+'…'+u.slice(-3)) : '';
 function mustJson(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
-function looksLikeChannelId(id){ return /^\d{8,14}$/.test(id||''); }
+function setBusy(b){ $('btnSubmit') && ($('btnSubmit').disabled=b); }
 
-/* ===== 入口流程 ===== */
-(async function boot(){
+/* === 開始流程 === */
+let current = { userId:'', displayName:'' };
+
+(async function init(){
   try{
-    // 1) 簡易 sanity check：防止把 Channel ID 當 LIFF ID
-    if (looksLikeChannelId(LIFF_ID)) {
-      $('status').innerHTML = '<span class="err">失敗：</span> 目前 LIFF_ID 看起來像「Channel ID」（純數字）。請改為 liffId（例：1657xxxx-xxxx）。';
-      return;
-    }
-
-    // 2) LIFF init & login
     await liff.init({ liffId: LIFF_ID });
-    if (!liff.isLoggedIn()) { $('status').textContent='未登入'; return; }
+    if (!liff.isLoggedIn()) { $('status').innerHTML = '尚未登入，請於 LINE 中開啟或按 <b>登入</b> 後再試。'; return; }
 
-    setBusy(true);
-    $('status').textContent = '已登入，檢查註冊中…';
+    const prof = await liff.getProfile();
+    current.userId = prof.userId;
+    current.displayName = prof.displayName;
 
-    // 3) 取得個資
-    const prof   = await liff.getProfile();
-    const userId = prof.userId;
+    $('uid').textContent = `(ID: ${maskUid(current.userId)})`;
+    $('status').textContent = '檢查註冊資料…';
 
-    // 4) 顯示角色（本地：Worker 以白名單判定）
-    try {
-      const roleRes = await fetch(API_BASE + '?mode=getRole&userId=' + encodeURIComponent(userId)).then(mustJson);
-      if (roleRes.ok && roleRes.data && roleRes.data.role) $('role').textContent = roleRes.data.role;
-    } catch(_) {}
-
-    // 5) 檢查是否已註冊
-    const chk = await fetch(API_BASE + '?mode=check&userId=' + encodeURIComponent(userId)).then(mustJson);
+    // 1) 檢查是否已註冊（只看 UID 是否存在於〈註冊人資料〉）
+    const chk = await fetch(API_BASE + '?mode=check&userId=' + encodeURIComponent(current.userId)).then(mustJson);
 
     if (chk.ok && chk.data && chk.data.registered) {
-      $('status').innerHTML = '已註冊，為你導向到預約頁…';
+      // 有 UID 就視為已註冊，直接前往預約
+      $('status').innerHTML = '<span class="ok">已註冊，導向預約頁…</span>';
       location.href = './booking.html';
       return;
     }
 
-    // 6) 未註冊 → 顯示表單（支援快速註冊）
-    $('status').innerHTML = `尚未註冊。<br>目前帳號 userId：<code>${userId}</code>`;
-    show($('registerBox'));
-
-    // 預置欄位（可省）
-    $('phone').value      = '';
-    $('studentId').value  = '';
+    // 2) 未註冊 → 顯示表單，姓名預填為 LINE 暱稱
+    $('name').value = current.displayName || '';
+    $('phone').value = '';
+    $('studentId').value = '';
     $('department').value = '';
+    $('status').textContent = '請完成下列表單後送出。';
+    $('formBox').style.display = 'block';
 
-    // 7) 綁定註冊事件
-    $('btnRegister').onclick = async ()=>{
-      try{
-        setBusy(true);
-        const payload = {
-          mode: 'registerUser',
-          userId,
-          displayName: prof.displayName,
-          phone: $('phone').value.trim(),
-          studentId: $('studentId').value.trim(),
-          department: $('department').value.trim()
-        };
-        const r = await fetch(API_BASE, { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) }).then(mustJson);
-        if (!r.ok) throw new Error(r.error || '註冊失敗');
-        alert('✅ 註冊完成'); location.href='./booking.html';
-      } catch(e){
-        alert('❌ '+(e.message||e));
-      } finally { setBusy(false); }
-    };
-
-    $('btnQuick').onclick = async ()=>{
-      try{
-        setBusy(true);
-        const payload = { mode:'registerUser', userId, displayName: prof.displayName };
-        const r = await fetch(API_BASE, { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) }).then(mustJson);
-        if (!r.ok) throw new Error(r.error || '快速註冊失敗');
-        alert('✅ 已快速註冊（角色 user）'); location.href='./booking.html';
-      } catch(e){
-        alert('❌ '+(e.message||e));
-      } finally { setBusy(false); }
-    };
-
-  } catch(e){
-    $('status').innerHTML = '<span class="err">失敗：</span>' + (e.message || e);
-  } finally {
-    setBusy(false);
+  } catch (e) {
+    $('status').innerHTML = '<span class="err">失敗：</span>' + (e.message||e);
   }
 })();
 
-/* ===== Login/Logout ===== */
-$('btnLogin').onclick  = ()=> liff.login({ redirectUri: location.href });
-$('btnLogout').onclick = ()=>{
-  try{ if(liff.isLoggedIn()) liff.logout(); }catch(_){}
-  localStorage.clear(); sessionStorage.clear(); location.reload();
+/* === 送出註冊 === */
+$('btnSubmit').onclick = async ()=>{
+  try{
+    // 簡單驗證
+    const name = $('name').value.trim();
+    const phone = $('phone').value.trim();
+    const sid = $('studentId').value.trim();
+    const dept = $('department').value.trim();
+
+    if (!name) { alert('請輸入姓名'); return; }
+    if (!phone) { alert('請輸入電話'); return; }
+    if (!dept)  { alert('請選擇科系'); return; }
+
+    setBusy(true);
+    $('status').textContent = '送出中…';
+
+    const payload = {
+      mode:'registerUser',
+      userId: current.userId,
+      displayName: name,        // 寫入姓名（可不同於 LINE 暱稱）
+      phone, studentId: sid, department: dept
+    };
+
+    const res = await fetch(API_BASE, {
+      method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify(payload)
+    }).then(mustJson);
+
+    if (!res.ok) throw new Error(res.error || '註冊失敗');
+    $('status').innerHTML = '<span class="ok">註冊成功，前往預約頁…</span>';
+    location.href = './booking.html';
+
+  } catch(e){
+    $('status').innerHTML = '<span class="err">註冊失敗：</span>' + (e.message||e);
+    setBusy(false);
+  }
 };
 </script>
 </body></html>
