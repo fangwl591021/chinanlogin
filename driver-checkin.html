@@ -106,11 +106,16 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
     <h2 id="checkin-title">全部預約列表</h2>
     <div id="loadingMsg" class="loading">🚍 資料載入中，請稍候...</div>
     <div id="errorMsg" class="error-msg hidden"></div>
-    <div id="debugInfo" class="debug-info hidden"></div>
     <table class="reservation-table">
       <thead class="table-header">
         <tr>
-          <th>日期</th><th>班次</th><th>姓名</th><th>上車</th><th>下車</th><th>狀態</th><th>操作</th>
+          <th>日期</th>
+          <th>班次</th>
+          <th>姓名</th>
+          <th>上車</th>
+          <th>下車</th>
+          <th>狀態</th>
+          <th>操作</th>
         </tr>
       </thead>
       <tbody id="reservation-list"></tbody>
@@ -147,21 +152,15 @@ function showLoading(show) {
   document.getElementById('loadingMsg').classList.toggle('hidden', !show);
 }
 
-function showError(message, debugData = null) {
+function showError(message) {
   const errorDiv = document.getElementById('errorMsg');
   errorDiv.textContent = '❌ ' + message;
   errorDiv.classList.remove('hidden');
-  
-  if (debugData) {
-    const debugDiv = document.getElementById('debugInfo');
-    debugDiv.textContent = JSON.stringify(debugData, null, 2);
-    debugDiv.classList.remove('hidden');
-  }
+  console.error('顯示錯誤:', message);
 }
 
 function hideError() {
   document.getElementById('errorMsg').classList.add('hidden');
-  document.getElementById('debugInfo').classList.add('hidden');
 }
 
 async function loadAllReservations() {
@@ -187,8 +186,9 @@ async function loadAllReservations() {
     if (!contentType || !contentType.includes('application/json')) {
       const text = await response.text();
       console.error('❌ 收到非 JSON 格式:', text.substring(0, 200));
-      showError('API 返回格式錯誤', { contentType, preview: text.substring(0, 200) });
+      showError('API 返回格式錯誤');
       allReservations = [];
+      renderEmptyList();
       return;
     }
     
@@ -218,15 +218,23 @@ async function loadAllReservations() {
       
     } else {
       console.warn('⚠️ API 返回異常:', data);
-      showError(data.message || '無法取得預約資料', data);
+      showError(data.message || '無法取得預約資料');
       allReservations = [];
+      renderEmptyList();
     }
     
   } catch (error) {
     console.error('❌ 資料載入失敗:', error);
-    showError('載入失敗: ' + error.message, { error: error.toString() });
+    showError('載入失敗: ' + error.message);
     allReservations = [];
+    renderEmptyList();
   }
+}
+
+function renderEmptyList() {
+  const tbody = document.getElementById('reservation-list');
+  tbody.innerHTML = '<tr><td colspan="7" class="no-data">暫無預約紀錄</td></tr>';
+  document.getElementById('checkin-title').textContent = '全部預約列表 (0 筆)';
 }
 
 function renderCalendar() {
@@ -439,6 +447,14 @@ function toggleCalendar() {
   const btn = document.getElementById('toggle-calendar');
   const isHidden = grid.style.display === 'none';
   grid.style.display = isHidden ? 'grid' : 'none';
+  btn.textContent = isHidden ? '收合' : '展開';
+}
+
+function toggleRoute() {
+  const content = document.getElementById('route-content');
+  const btn = document.getElementById('toggle-route');
+  const isHidden = content.style.display === 'none';
+  content.style.display = isHidden ? 'block' : 'none';
   btn.textContent = isHidden ? '收合' : '展開';
 }
 
