@@ -149,6 +149,7 @@ function showTab(tabId){
   if(targetBtn) targetBtn.classList.add('active-tab');
 }
 
+// 📊 儀表板數據
 async function loadDashboard(){
   try{
     const data=await fetch(`${WORKER_URL}?mode=dashboard`).then(r=>r.json());
@@ -162,11 +163,13 @@ async function loadDashboard(){
 
 // 📋 預約查詢模組
 async function loadReservations(){
+  const spinner=document.getElementById('loadingSpinner');
+  spinner.classList.remove('hidden');
   try{
     const userId=localStorage.getItem('adminUserId');
-    const response=await fetch(`${WORKER_URL}?mode=reservations&userId=${userId}`);
+    const response=await fetch(`${WORKER_URL}?mode=reservations&userId=${userId||'all'}`);
     const data=await response.json();
-    if(data.status==='success'){
+    if(data.status==='success' && Array.isArray(data.reservations)){
       renderReservations(data.reservations);
     }else{
       document.getElementById('recordsArea').innerHTML='<p class="text-center text-gray-500 py-8">暫無資料</p>';
@@ -174,9 +177,12 @@ async function loadReservations(){
   }catch(e){
     console.error('查詢錯誤:',e);
     document.getElementById('recordsArea').innerHTML='<p class="text-center text-red-500 py-8">⚠️ 查詢失敗</p>';
+  }finally{
+    spinner.classList.add('hidden');
   }
 }
 
+// 🧾 資料表渲染
 function renderReservations(list){
   if(!list||list.length===0){
     document.getElementById('recordsArea').innerHTML='<p class="text-center text-gray-500 py-8">暫無資料</p>';
@@ -188,23 +194,27 @@ function renderReservations(list){
       <th>日期</th><th>班次</th><th>姓名</th><th>上車點</th><th>下車點</th><th>狀態</th>
     </tr></thead>
     <tbody>
-      ${list.map(r=>`
+      ${list.map(r=>{
+        const status=r.status==='已取消'?'❌ 已取消':
+                     r.J==='Y'||r.checkin==='Y'?'🚍 已搭乘':'✅ 已預約';
+        return `
         <tr>
           <td>${r.date||'-'}</td>
           <td>${r.route||'-'}</td>
           <td>${r.name||'-'}</td>
-          <td>${r.fromStop||'-'}</td>
-          <td>${r.toStop||'-'}</td>
-          <td>${r.status||'已預約'}</td>
-        </tr>`).join('')}
+          <td>${r.fromStop||r.E||'-'}</td>
+          <td>${r.toStop||r.F||'-'}</td>
+          <td>${status}</td>
+        </tr>`}).join('')}
     </tbody>
   </table>`;
   document.getElementById('recordsArea').innerHTML=html;
 }
 
-// 🔗 點「核銷」直接開新頁
+// ✅ 核銷連結（帶入管理員 ID）
 document.getElementById('openCheckin').addEventListener('click',()=>{
-  window.open('https://fangwl591021.github.io/chinanlogin/driver-checkin.html','_blank');
+  const adminId=localStorage.getItem('adminUserId')||'';
+  window.open(`https://fangwl591021.github.io/chinanlogin/driver-checkin.html?admin=${adminId}`,'_blank');
 });
 
 init();
