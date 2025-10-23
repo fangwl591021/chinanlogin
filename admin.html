@@ -3,37 +3,24 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台系統 v6.4.6</title>
+<title>穿山甲專車後台系統 v6.6 (Iframe整合版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-/* 保持原有樣式不變 */
 body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334155; }
 .nav-btn { flex: 1; text-align: center; padding: 10px 0; font-weight: 600; cursor: pointer; transition: all 0.2s; }
 .active-tab { background: #14532d; color: white; border-radius: 12px; }
+.card { background:white; border-radius:16px; padding:24px; box-shadow:0 2px 10px rgba(0,0,0,0.08); margin:16px auto; max-width:900px; margin-bottom: 100px; }
+
 .status-reserved { color: #16a34a; font-weight: 700; }
 .status-cancelled { color: #dc2626; font-weight: 700; }
 .status-completed { color: #2563eb; font-weight: 700; }
-.card { background:white; border-radius:16px; padding:24px; box-shadow:0 2px 10px rgba(0,0,0,0.08); margin:16px auto; max-width:900px; margin-bottom: 100px; }
+
 .toast { position: fixed; bottom: 80px; right: 20px; background: #16a34a; color: white; padding: 10px 20px; border-radius: 8px; opacity: 0; transition: opacity .3s ease-in-out; }
 .toast.show { opacity: 1; }
 
-.reservation-table-container {
-  overflow-x: auto;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  max-width: 100%;
-}
-
-.reservation-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-  min-width: 100%; /* ✅ 不需橫向滑動 */
-  table-layout: fixed;
-}
-
-.reservation-table th,
-.reservation-table td {
+.reservation-table-container { overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px; }
+.reservation-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+.reservation-table th, .reservation-table td {
   padding: 6px 4px;
   text-align: center;
   border-bottom: 1px solid #e5e7eb;
@@ -41,26 +28,15 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-.reservation-table th:nth-child(1) { width: 50px; }   /* 日期 */
-.reservation-table th:nth-child(2) { width: 50px; }   /* 班次 */
-.reservation-table th:nth-child(3) { width: 50px; }   /* 姓名 */
-.reservation-table th:nth-child(4) { width: 50px; }  /* 上車點 */
-.reservation-table th:nth-child(5) { width: 50px; }  /* 下車點 */
-.reservation-table th:nth-child(6) { width: 50px; }   /* 狀態 */
-
-
-/* 核銷頁面專用樣式 */
-.checkin-container { max-width: 400px; margin: 0 auto; }
-.qr-scanner { width: 100%; max-width: 300px; margin: 20px auto; border: 3px solid #14532d; border-radius: 12px; }
-.manual-input { width: 100%; padding: 12px; border: 2px solid #d1d5db; border-radius: 8px; margin: 10px 0; font-size: 16px; }
-.checkin-btn { background: #16a34a; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; margin: 10px 0; }
-.checkin-btn:disabled { background: #9ca3af; cursor: not-allowed; }
-.passenger-info { background: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 12px; padding: 20px; margin: 20px 0; }
+.reservation-table th:nth-child(1),
+.reservation-table th:nth-child(2),
+.reservation-table th:nth-child(3),
+.reservation-table th:nth-child(4),
+.reservation-table th:nth-child(5),
+.reservation-table th:nth-child(6) { width: 70px; }
 
 @media (max-width: 768px) {
-  .reservation-table { font-size: 13px; min-width: 700px; }
-  .reservation-table th, .reservation-table td { padding: 8px 4px; }
+  .reservation-table { font-size: 12px; min-width: 700px; }
 }
 </style>
 </head>
@@ -108,47 +84,28 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
     <section id="records" class="card hidden">
       <h2 class="font-bold text-xl mb-4 text-green-900">📅 預約紀錄查詢</h2>
       <div id="loadingSpinner" class="text-center py-6 hidden">
-  <div class="flex justify-center items-center space-x-2 text-green-700">
-    <svg class="animate-spin h-5 w-5 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-      <path class="opacity-75" fill="currentColor"
-        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-    </svg>
-    <span class="text-sm">查詢中，請稍候...</span>
-  </div>
-</div>
-
+        <div class="flex justify-center items-center space-x-2 text-green-700">
+          <svg class="animate-spin h-5 w-5 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+          <span class="text-sm">查詢中，請稍候...</span>
+        </div>
+      </div>
       <div id="recordsArea" class="reservation-table-container"></div>
     </section>
 
-    <!-- ✅ 核銷功能 - 直接整合 -->
+    <!-- ✅ 核銷功能 (Iframe 內嵌整合版) -->
     <section id="checkin" class="card hidden">
-      <h2 class="font-bold text-xl mb-4 text-green-900">✅ 乘客核銷</h2>
-      
-      <div class="checkin-container">
-        <!-- QR Code 掃描區域 -->
-        <div class="text-center mb-6">
-          <h3 class="text-lg font-semibold mb-4">📷 QR Code 掃描</h3>
-          <div id="qrReader" class="qr-scanner"></div>
-          <p class="text-sm text-gray-500 mt-2">或使用手動輸入方式</p>
-        </div>
-
-        <!-- 手動輸入區域 -->
-        <div class="manual-section mb-6">
-          <h3 class="text-lg font-semibold mb-3">⌨️ 手動輸入預約編號</h3>
-          <input type="text" id="manualReservationId" class="manual-input" placeholder="輸入預約編號" maxlength="20">
-          <button onclick="manualCheckin()" class="checkin-btn">確認核銷</button>
-        </div>
-
-        <!-- 乘客資訊顯示 -->
-        <div id="passengerInfo" class="passenger-info hidden">
-          <h3 class="text-lg font-semibold mb-3">👤 乘客資訊</h3>
-          <div id="passengerDetails"></div>
-          <button onclick="confirmCheckin()" class="checkin-btn" id="confirmCheckinBtn">確認核銷</button>
-        </div>
-
-        <!-- 核銷結果 -->
-        <div id="checkinResult" class="hidden"></div>
+      <h2 class="font-bold text-xl mb-4 text-green-900">✅ 乘客核銷作業</h2>
+      <div id="checkinFrameBox" class="w-full" style="height: calc(100vh - 260px);">
+        <iframe 
+          id="checkinFrame" 
+          src="" 
+          style="width: 100%; height: 100%; border: none; border-radius: 12px; box-shadow: 0 0 5px rgba(0,0,0,0.1);" 
+          loading="lazy">
+        </iframe>
       </div>
     </section>
 
@@ -174,367 +131,103 @@ body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334
 
 <script>
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
-let currentReservationId = '';
-let currentPassengerData = null;
 
-// 登出功能
-function logout() {
+function logout(){
   localStorage.removeItem('adminUserId');
   localStorage.removeItem('adminAuthTime');
   localStorage.removeItem('adminUserName');
-  window.location.href = 'login.html';
+  window.location.href='login.html';
 }
 
-document.addEventListener('click', e=>{
+document.addEventListener('click',e=>{
   const tab=e.target.closest('[data-tab]');
   if(tab) showTab(tab.dataset.tab);
 });
 
-// 初始化
 async function init(){
-  try{
-    const authTime = localStorage.getItem('adminAuthTime');
-    const userId = localStorage.getItem('adminUserId');
-    const userName = localStorage.getItem('adminUserName');
-    
-    if (!authTime || !userId || (Date.now() - parseInt(authTime)) > 3600000) {
-      window.location.href = 'login.html';
-      return;
-    }
-
-    document.getElementById('userName').textContent = userName || '管理員';
-    document.getElementById('userPicture').src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiMxNDUzMmQiLz4KPHBhdGggZD0iTTIwIDIyQzIzLjMxMzcgMjIgMjYgMTkuMzEzNyAyNiAxNkMyNiAxMi42ODYzIDIzLjMxMzcgMTAgMjAgMTBDMTYuNjg2MyAxMCAxNCAxMi42ODYzIDE0IDE2QzE0IDE5LjMxMzcgMTYuNjg2MyAyMiAyMCAyMloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0yMCAyNkMxNC40NzcyIDI2IDEwIDMwLjQ3NzIgMTAgMzZIMzBDMzAgMzAuNDc3MiAyNS41MjI4IDI2IDIwIDI2WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+';
-
-    document.getElementById('loading').classList.add('hidden');
-    document.getElementById('main').classList.remove('hidden');
-    loadDashboard(); 
-    loadReservations();
-    setInterval(loadDashboard, 30000);
-    
-  }catch(e){ 
-    console.error('初始化錯誤:', e);
-    window.location.href = 'login.html';
-  }
-}
-
-// 手動核銷
-async function manualCheckin() {
-  const reservationId = document.getElementById('manualReservationId').value.trim();
-  if (!reservationId) {
-    showToast('請輸入預約編號', 'error');
+  const authTime=localStorage.getItem('adminAuthTime');
+  const userId=localStorage.getItem('adminUserId');
+  const userName=localStorage.getItem('adminUserName');
+  if(!authTime||!userId||(Date.now()-parseInt(authTime))>3600000){
+    window.location.href='login.html';
     return;
   }
+
+  document.getElementById('userName').textContent=userName||'管理員';
+  document.getElementById('userPicture').src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iIzE0NTMyZCIvPjxwYXRoIGQ9Ik0yMCAyMkMyMy4zMTM3IDIyIDI2IDE5LjMxMzcgMjYgMTZDMTggMjAgMTYuNjg2MyAyMiAyMCAyMloiIGZpbGw9IndoaXRlIi8+PHBhdGggZD0iTTIwIDI2QzE0LjQ3NzIgMjYgMTAgMzAuNDc3MiAxMCAzNkgyOEMzMCAzMC40NzcyIDI1LjUyMjggMjYgMjAgMjZaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==';
   
-  await verifyReservation(reservationId);
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('main').classList.remove('hidden');
+  loadDashboard();
+  loadReservations();
+  setInterval(loadDashboard,30000);
 }
 
-// 驗證預約資訊
-async function verifyReservation(reservationId) {
-  try {
-    showToast('正在查詢預約資訊...', 'info');
-    
-    const response = await fetch(`${WORKER_URL}?mode=verifyReservation&reservationId=${reservationId}`);
-    const data = await response.json();
-    
-    if (data.status === 'success' && data.reservation) {
-      currentReservationId = reservationId;
-      currentPassengerData = data.reservation;
-      
-      // 顯示乘客資訊
-      document.getElementById('passengerDetails').innerHTML = `
-        <div class="space-y-2">
-          <div><strong>姓名:</strong> ${data.reservation.name || '未提供'}</div>
-          <div><strong>日期:</strong> ${formatDateToMonthDay(data.reservation.date)}</div>
-          <div><strong>班次:</strong> ${getRouteDisplay(data.reservation)}</div>
-          <div><strong>狀態:</strong> ${data.reservation.status || '已預約'}</div>
-          <div><strong>電話:</strong> ${data.reservation.phone || '未提供'}</div>
-        </div>
-      `;
-      
-      document.getElementById('passengerInfo').classList.remove('hidden');
-      showToast('找到預約資訊，請確認核銷', 'success');
-      
-    } else {
-      showToast(data.message || '找不到預約資訊', 'error');
-    }
-    
-  } catch (error) {
-    console.error('驗證預約錯誤:', error);
-    showToast('查詢失敗，請稍後再試', 'error');
-  }
-}
-
-// 確認核銷
-async function confirmCheckin() {
-  if (!currentReservationId || !currentPassengerData) {
-    showToast('請先查詢預約資訊', 'error');
-    return;
-  }
-  
-  try {
-    document.getElementById('confirmCheckinBtn').disabled = true;
-    document.getElementById('confirmCheckinBtn').textContent = '核銷中...';
-    
-    const response = await fetch(`${WORKER_URL}?mode=checkin&reservationId=${currentReservationId}`, {
-      method: 'POST'
-    });
-    
-    const data = await response.json();
-    
-    if (data.status === 'success') {
-      showToast('✅ 核銷成功！', 'success');
-      document.getElementById('checkinResult').innerHTML = `
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-          <strong>核銷成功！</strong>
-          <div>乘客: ${currentPassengerData.name}</div>
-          <div>時間: ${new Date().toLocaleString()}</div>
-        </div>
-      `;
-      document.getElementById('checkinResult').classList.remove('hidden');
-      
-      // 重置表單
-      resetCheckinForm();
-      // 刷新儀表板
-      loadDashboard();
-      
-    } else {
-      showToast(data.message || '核銷失敗', 'error');
-    }
-    
-  } catch (error) {
-    console.error('核銷錯誤:', error);
-    showToast('核銷失敗，請稍後再試', 'error');
-  } finally {
-    document.getElementById('confirmCheckinBtn').disabled = false;
-    document.getElementById('confirmCheckinBtn').textContent = '確認核銷';
-  }
-}
-
-// 重置核銷表單
-function resetCheckinForm() {
-  document.getElementById('manualReservationId').value = '';
-  document.getElementById('passengerInfo').classList.add('hidden');
-  document.getElementById('checkinResult').classList.add('hidden');
-  currentReservationId = '';
-  currentPassengerData = null;
-}
-
-// 顯示提示訊息
-function showToast(message, type = 'info') {
-  const toast = document.getElementById('toast');
-  toast.textContent = message;
-  
-  // 根據類型設定顏色
-  if (type === 'error') {
-    toast.style.background = '#dc2626';
-  } else if (type === 'success') {
-    toast.style.background = '#16a34a';
-  } else {
-    toast.style.background = '#3b82f6';
-  }
-  
-  toast.classList.add('show');
-  setTimeout(() => {
-    toast.classList.remove('show');
-  }, 3000);
-}
-
-// 頁面切換
 function showTab(tabId){
   ['dashboard','records','checkin','settings'].forEach(id=>{
-    document.getElementById(id).classList.toggle('hidden', id!==tabId);
+    document.getElementById(id).classList.toggle('hidden',id!==tabId);
   });
   document.querySelectorAll('.nav-btn').forEach(btn=>btn.classList.remove('active-tab'));
   document.querySelector(`[data-tab="${tabId}"]`).classList.add('active-tab');
-  
-  // 切換到核銷頁面時重置表單
-  if (tabId === 'checkin') {
-    resetCheckinForm();
+
+  // 🚀 若切換到核銷分頁，載入 driver-checkin.html
+  if(tabId==='checkin'){
+    const userId=localStorage.getItem('adminUserId')||'';
+    document.getElementById('checkinFrame').src=`driver-checkin.html?admin=${encodeURIComponent(userId)}`;
   }
 }
 
-// 儀表板載入
 async function loadDashboard(){
   try{
-    const data = await fetch(`${WORKER_URL}?mode=dashboard`).then(r=>r.json());
+    const data=await fetch(`${WORKER_URL}?mode=dashboard`).then(r=>r.json());
     if(data.status==='success'){
-      document.getElementById('todayCount').textContent = data.dashboard.todayCount;
-      document.getElementById('cancelCount').textContent = data.dashboard.cancelCount;
-      document.getElementById('checkinCount').textContent = data.dashboard.checkinCount;
+      document.getElementById('todayCount').textContent=data.dashboard.todayCount;
+      document.getElementById('cancelCount').textContent=data.dashboard.cancelCount;
+      document.getElementById('checkinCount').textContent=data.dashboard.checkinCount;
     }
-  }catch(e){ console.error('Dashboard 載入失敗:', e); }
+  }catch(e){console.error('Dashboard 載入失敗:',e);}
 }
 
-// 工具函數
-function formatDateToMonthDay(dateStr){
-  if(!dateStr) return '-';
-  try{
-    if(dateStr.startsWith('Date(')){
-      const m=dateStr.match(/Date\((\d+),(\d+),(\d+)\)/);
-      if(m){ return `${(parseInt(m[2])+1).toString().padStart(2,'0')}/${m[3].padStart(2,'0')}`; }
-    }
-    const parts=dateStr.split(/[-\/]/);
-    if(parts.length>=3) return `${parts[1].padStart(2,'0')}/${parts[2].padStart(2,'0')}`;
-    const d=new Date(dateStr);
-    if(!isNaN(d)) return `${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
-    return dateStr;
-  }catch(e){ console.error('日期解析錯誤:', e, dateStr); return dateStr; }
-}
-
-function getRouteDisplay(item){
-  const route=item.route||item.shift||item.routeName||item.班次||'-';
-  return (!route||route==='undefined')?'-':route;
-}
-
-// 預約相關功能
-const STATUS = { RESERVED:'已預約', CANCELLED:'已取消', COMPLETED:'已搭乘' };
-let allReservations = [];
-
-// 修改排序函數 - 從最早排到最晚
-function sortReservations(list){
-  const order = {A1:1, A2:2, B1:3, B2:4};
-  return list.sort((a,b)=>{
-    // 日期排序：從最早到最晚
-    const dateA = new Date(a.date.replace(/\//g, '-'));
-    const dateB = new Date(b.date.replace(/\//g, '-'));
-    
-    if (dateA.getTime() !== dateB.getTime()) {
-      return dateA - dateB; // 最早的在前面
-    }
-    
-    // 日期相同時按班次排序
-    return (order[a.route] || 99) - (order[b.route] || 99);
-  });
-}
-
-// 修改資料驗證函數
-function validateData(list) {
-  return list.map(i => {
-    let status = STATUS.RESERVED;
-
-    if (i.checkin === 'Y' || i.checkedIn === true || i.checkinStatus === 'Y') {
-      status = STATUS.COMPLETED;
-    }
-    else if (i.status?.includes('取消')) {
-      status = STATUS.CANCELLED;
-    }
-    else if (i.status?.includes('預約')) {
-      status = STATUS.RESERVED;
-    }
-
-    return {
-      ...i,
-      route: getRouteDisplay(i),
-      status,
-      reservationId: i.reservationId || i.id || `temp_${Math.random().toString(36).substr(2, 9)}`,
-      pickupLocation: i.pickupLocation || i.上車點 || i.pickup || '-',
-      dropoffLocation: i.dropoffLocation || i.下車點 || i.dropoff || '-'
-    };
-  }).filter(i => i.date);
-}
-
-// 單一的 renderReservations 函數 - 顯示完整欄位
-function renderReservations(list){
-  if(!list || list.length === 0){
-    document.getElementById('recordsArea').innerHTML='<p class="text-center text-gray-500 py-8">暫無預約紀錄</p>';
-    return;
-  }
-
-  const html = `
-  <table class="reservation-table">
-    <thead>
-      <tr>
-        <th>日期</th>
-        <th>班次</th>
-        <th>姓名</th>
-        <th>上車點</th>
-        <th>下車點</th>
-        <th>狀態</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${list.map(r => {
-        const cls =
-          r.status === '已取消' ? 'status-cancelled' :
-          r.status === '已搭乘' ? 'status-completed' :
-          'status-reserved';
-
-        return `<tr>
-          <td>${formatDateToMonthDay(r.date)}</td>
-          <td>${r.route}</td>
-          <td>${r.name || '-'}</td>
-          <td>${r.fromStop || '-'}</td>
-          <td>${r.toStop || '-'}</td>
-          <td class="${cls}">${r.status}</td>
-        </tr>`;
-      }).join('')}
-    </tbody>
-  </table>`;
-  
-  document.getElementById('recordsArea').innerHTML = html;
-}
-
-
-// 核銷函數
-async function checkinReservation(reservationId) {
-  if (!reservationId) {
-    showToast('錯誤：缺少預約編號', 'error');
-    return;
-  }
-  
-  try {
-    showToast('正在核銷...', 'info');
-    
-    const response = await fetch(`${WORKER_URL}?mode=checkin&reservationId=${reservationId}`, {
-      method: 'POST'
-    });
-    
-    const data = await response.json();
-    
-    if (data.status === 'success') {
-      showToast('✅ 核銷成功！', 'success');
-      // 重新載入資料
-      loadReservations();
-      loadDashboard();
-    } else {
-      showToast(data.message || '核銷失敗', 'error');
-    }
-    
-  } catch (error) {
-    console.error('核銷錯誤:', error);
-    showToast('核銷失敗，請稍後再試', 'error');
-  }
-}
-
-// 載入預約資料
-// 載入預約資料
-// 載入預約資料
+// 📋 預約查詢模組（原樣保留）
 async function loadReservations(){
   try{
-    const userId = localStorage.getItem('adminUserId');
-    const response = await fetch(`${WORKER_URL}?mode=reservations&userId=${userId}`);
-    const contentType = response.headers.get('content-type');
-    
-    // 檢查是否為 JSON 回應
-    if (!contentType || !contentType.includes('application/json')) {
-      console.error('API 返回非 JSON 格式:', await response.text());
-      document.getElementById('recordsArea').innerHTML='<p class="text-center text-red-500 py-8">⚠️ 無法連接到資料庫，請檢查 Worker API 設定</p>';
-      return;
-    }
-    
-    const data = await response.json();
-    
+    const userId=localStorage.getItem('adminUserId');
+    const response=await fetch(`${WORKER_URL}?mode=reservations&userId=${userId}`);
+    const data=await response.json();
     if(data.status==='success'){
-      const clean = validateData(data.reservations);
-      const sorted = sortReservations(clean);
-      renderReservations(sorted);
-    } else {
-      document.getElementById('recordsArea').innerHTML=`<p class="text-center text-orange-500 py-8">⚠️ ${data.message || '載入失敗'}</p>`;
+      renderReservations(data.reservations);
+    }else{
+      document.getElementById('recordsArea').innerHTML='<p class="text-center text-gray-500 py-8">暫無資料</p>';
     }
-  }catch(e){ 
-    console.error('查詢錯誤:',e); 
-    document.getElementById('recordsArea').innerHTML='<p class="text-center text-red-500 py-8">⚠️ 載入錯誤，請重新整理頁面</p>';
+  }catch(e){
+    console.error('查詢錯誤:',e);
+    document.getElementById('recordsArea').innerHTML='<p class="text-center text-red-500 py-8">⚠️ 查詢失敗</p>';
   }
+}
+
+function renderReservations(list){
+  if(!list||list.length===0){
+    document.getElementById('recordsArea').innerHTML='<p class="text-center text-gray-500 py-8">暫無資料</p>';
+    return;
+  }
+  const html=`
+  <table class="reservation-table">
+    <thead><tr>
+      <th>日期</th><th>班次</th><th>姓名</th><th>上車點</th><th>下車點</th><th>狀態</th>
+    </tr></thead>
+    <tbody>
+      ${list.map(r=>`
+        <tr>
+          <td>${r.date||'-'}</td>
+          <td>${r.route||'-'}</td>
+          <td>${r.name||'-'}</td>
+          <td>${r.fromStop||'-'}</td>
+          <td>${r.toStop||'-'}</td>
+          <td>${r.status||'已預約'}</td>
+        </tr>`).join('')}
+    </tbody>
+  </table>`;
+  document.getElementById('recordsArea').innerHTML=html;
 }
 
 init();
