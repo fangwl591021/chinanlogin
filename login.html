@@ -33,85 +33,32 @@ input,button{font-size:16px;padding:10px;border-radius:10px;border:1px solid #d3
   <p style="margin-top:14px;"><a href="./booking.html">→ 直接前往預約</a></p>
 </main>
 <script>
-/* === 只改這兩個 === */
-const LIFF_ID  = '2006590746-gA7QALQX'; // 你的 liffId（非 channelId 純數字）
+const LIFF_ID  = '2006590746-gA7QALQX';
 const API_BASE = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
-
-/* === 小工具 === */
 const $=id=>document.getElementById(id);
-const go=(p)=>location.href=p;
-const q=(o)=>new URLSearchParams(o).toString();
-
-function looksLikeChannelId(id){ return /^\d{8,14}$/.test(id||''); }
 function mustJson(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
 
-/* === 入口 === */
 (async function init(){
   try{
-    if (looksLikeChannelId(LIFF_ID)) {
-      $('status').innerHTML = '失敗：目前 LIFF_ID 像是「Channel ID」（純數字），請改成 liffId（例：1657xxxx-xxxx）。';
-      return;
-    }
     await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) { $('status').textContent='未登入'; return; }
 
-    if (!liff.isLoggedIn()) {
-      $('status').textContent = '未登入';
+    $('status').textContent='已登入，檢查註冊…';
+    const prof = await liff.getProfile();
+    const chk  = await fetch(API_BASE + '?mode=check&userId=' + encodeURIComponent(prof.userId)).then(mustJson);
+
+    if (chk.ok && chk.data && chk.data.registered) {
+      // ✅ 已註冊 → 直接去預約
+      location.href = './booking.html';
       return;
     }
-
-    $('status').textContent = '已登入，讀取資料中…';
-    const prof   = await liff.getProfile();
-    const userId = prof.userId;
-
-    // 1) 先判斷角色（本地判定）
-    try {
-      const role = await fetch(API_BASE + '?mode=getRole&userId=' + encodeURIComponent(userId)).then(mustJson);
-      if (role.ok && role.data && role.data.role) $('role').textContent = role.data.role;
-    } catch(_) {}
-
-    // 2) 檢查是否已註冊
-    const chk = await fetch(API_BASE + '?mode=check&userId=' + encodeURIComponent(userId)).then(mustJson);
-    if (!chk.ok) throw new Error(chk.error || 'check 失敗');
-
-    if (chk.data && chk.data.registered) {
-      // 已註冊 → 直接跳預約
-      $('status').textContent = '已註冊，為你導向到預約頁…';
-      return go('./booking.html');
-    }
-
-    // 未註冊 → 顯示表單
-    $('status').innerHTML = '尚未註冊，請補充資料後送出。';
-    $('registerBox').style.display = 'block';
-
-  } catch (e) {
-    $('status').innerHTML = '<span class="err">失敗：</span>' + (e.message || e);
+    // 未註冊 → 顯示表單（送出後即會寫入 A=ID，I=role='user'）
+    document.getElementById('registerBox').style.display = 'block';
+    $('status').textContent='尚未註冊，請補資料後送出';
+  } catch(e){
+    $('status').textContent='失敗：'+(e.message||e);
   }
 })();
-
-/* === 事件 === */
-$('btnLogin').onclick  = ()=> liff.login({ redirectUri: location.href });
-$('btnLogout').onclick = ()=>{ try{ if(liff.isLoggedIn()) liff.logout(); }catch(_){} localStorage.clear();sessionStorage.clear(); location.reload(); };
-
-$('btnRegister').onclick = async ()=>{
-  try{
-    const prof = await liff.getProfile();
-    const res  = await fetch(API_BASE, {
-      method:'POST',
-      headers:{'content-type':'application/json'},
-      body: JSON.stringify({
-        mode:'registerUser',
-        userId: prof.userId,
-        displayName: prof.displayName,
-        phone: $('phone').value.trim(),
-        studentId: $('studentId').value.trim(),
-        department: $('department').value.trim()
-      })
-    }).then(mustJson);
-
-    if (!res.ok) throw new Error(res.error || '註冊失敗');
-    alert('✅ 註冊成功');
-    go('./booking.html');
-  }catch(e){ alert('❌ '+(e.message||e)); }
-};
 </script>
+
 </body></html>
