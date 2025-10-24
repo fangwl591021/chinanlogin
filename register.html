@@ -167,6 +167,60 @@ async function testWorkerConnection() {
   }
 }
 
+// 🔧 修正的檢查註冊狀態函數
+async function checkRegistrationStatus(userId) {
+  try {
+    const checkUrl = `${WORKER_URL}?mode=check&userId=${encodeURIComponent(userId)}`;
+    console.log('📡 檢查 URL:', checkUrl);
+    
+    const res = await fetch(checkUrl);
+    const text = await res.text();
+    console.log('📨 原始回應:', text);
+    
+    let result = {};
+    try {
+      result = JSON.parse(text);
+    } catch (e) {
+      console.error('❌ JSON 解析失敗:', e);
+      throw new Error('回應解析失敗');
+    }
+    
+    console.log('🔍 檢查結果:', result);
+    
+    // 🟢 修正的檢查邏輯 - 多種可能的成功條件
+    if (result.ok === true && result.data) {
+      // 新格式: { ok: true, data: { registered: true, user: {...} } }
+      if (result.data.registered === true) {
+        return { registered: true, user: result.data.user };
+      }
+      // 或者 data 直接包含用戶資訊
+      if (result.data.userId || result.data.name) {
+        return { registered: true, user: result.data };
+      }
+    }
+    
+    // 舊格式或其他可能的格式
+    if (result.registered === true) {
+      return { registered: true, user: result.user || result.data };
+    }
+    
+    // 如果沒有明確的 registered 欄位，但有用戶資料也視為已註冊
+    if (result.user && result.user.userId) {
+      return { registered: true, user: result.user };
+    }
+    
+    if (result.data && result.data.userId) {
+      return { registered: true, user: result.data };
+    }
+    
+    return { registered: false };
+    
+  } catch (error) {
+    console.error('❌ 檢查註冊狀態失敗:', error);
+    throw error;
+  }
+}
+
 (async function init() {
   try {
     startTime = Date.now();
@@ -189,40 +243,25 @@ async function testWorkerConnection() {
     // 測試 Worker 連接
     await testWorkerConnection();
 
-    // 🔑 檢查是否已註冊
+    // 🔑 檢查是否已註冊 - 使用修正後的函數
     const checkStart = Date.now();
     updateDebugInfo(`檢查註冊狀態中...`);
     
-    // 使用 Worker 檢查註冊狀態
-    const checkUrl = `${WORKER_URL}?mode=check&userId=${encodeURIComponent(currentUserId)}`;
-    console.log('📡 檢查 URL:', checkUrl);
-    
-    const res = await fetch(checkUrl);
-    const text = await res.text();
-    console.log('📨 原始回應:', text);
-    
-    let result = {};
-    try {
-      result = JSON.parse(text);
-    } catch (e) {
-      console.error('❌ JSON 解析失敗:', e);
-      updateDebugInfo(`⚠️ 回應解析失敗: ${text.substring(0, 100)}`);
-    }
+    const checkResult = await checkRegistrationStatus(currentUserId);
     
     updateDebugInfo(`檢查完成: ${Date.now() - checkStart}ms`);
-    console.log('🔍 檢查結果:', result);
 
-    // 🟢 使用 GAS 返回的 'registered' 欄位
-    const isRegistered = result.registered === true;
-    
-    if (result.user) {
-      updateDebugInfo(`✅ 已找到用戶: ${result.user.name}`);
-    }
-    
-    updateDebugInfo(`註冊狀態: ${isRegistered ? '已註冊 ✅' : '未註冊 📝'}`);
-
-    if (isRegistered) {
+    if (checkResult.registered) {
+      updateDebugInfo(`✅ 已註冊用戶: ${checkResult.user?.name || '未知'}`);
       updateDebugInfo('跳轉到主頁面...');
+      
+      // 儲存用戶資訊到 localStorage
+      if (checkResult.user) {
+        localStorage.setItem('pangolin_user', JSON.stringify(checkResult.user));
+      }
+      localStorage.setItem('pangolin_registered', 'true');
+      localStorage.setItem('pangolin_userId', currentUserId);
+      
       setTimeout(() => {
         window.location.href = 'main.html';
       }, 1500);
@@ -288,13 +327,11 @@ async function registerUser() {
     console.log('📊 HTTP 狀態:', res.status);
     
     if (!res.ok) {
-      // 嘗試解析錯誤訊息
       let errorMsg = `HTTP ${res.status}: ${res.statusText}`;
       try {
         const errorData = JSON.parse(text);
         if (errorData.error) errorMsg = errorData.error;
         if (errorData.message) errorMsg += ' - ' + errorData.message;
-        console.error('❌ 伺服器錯誤詳情:', errorData);
       } catch (e) {
         console.error('❌ 無法解析錯誤回應:', text);
       }
@@ -305,46 +342,13 @@ async function registerUser() {
     try {
       result = JSON.parse(text);
     } catch (e) {
-      console.error('❌ 回應解析失敗:', e);
-      throw new Error('伺服器回應格式錯誤: ' + text.substring(0, 100));
+      throw new Error('伺服器回應格式錯誤');
     }
     
     console.log(`✅ 註冊請求完成,耗時: ${Date.now() - registerStart}ms`);
-    console.log('🔍 完整回應結構:', JSON.stringify(result, null, 2));
     
     // 🟢 處理成功回應
-    if (result.ok === true) {
-      // 新格式: { ok: true, data: { status: 'success', ... } }
-      if (result.data) {
-        const gasResult = result.data;
-        console.log('🔍 GAS 回應數據:', gasResult);
-        
-        if (gasResult.status === 'success' || 
-            gasResult.success === true || 
-            gasResult.registered === true ||
-            (gasResult.message && gasResult.message.includes('成功'))) {
-          
-          localStorage.setItem('pangolin_registered', 'true');
-          localStorage.setItem('pangolin_userId', currentUserId);
-          
-          const btn = document.getElementById('registerBtn');
-          btn.classList.remove('bg-green-500', 'hover:bg-green-600');
-          btn.classList.add('bg-green-600');
-          document.getElementById('btnText').textContent = '✅ 註冊成功!';
-          
-          updateDebugInfo('✅ 註冊成功,跳轉中...');
-          
-          setTimeout(() => {
-            window.location.href = 'main.html';
-          }, 1000);
-          return;
-        }
-      }
-    }
-    
-    // 處理舊格式或直接返回的成功回應
-    // 舊格式: { status: 'success', message: '註冊成功', ... }
-    if (result.status === 'success' || result.success === true) {
+    if (result.ok === true || result.status === 'success' || result.success === true) {
       localStorage.setItem('pangolin_registered', 'true');
       localStorage.setItem('pangolin_userId', currentUserId);
       
@@ -361,68 +365,21 @@ async function registerUser() {
       return;
     }
     
-    // 如果以上條件都不符合,顯示詳細錯誤
-    console.error('❌ 註冊失敗,完整回應:', result);
-    const errorMsg = result.error || result.data?.message || result.message || '註冊失敗,請稍後重試';
-    throw new Error(errorMsg);
+    throw new Error(result.error || result.message || '註冊失敗');
     
   } catch (err) {
     console.error('❌ 註冊失敗', err);
-    updateDebugInfo(`❌ 註冊錯誤: ${err.message}`);
     
-    // 更友好的錯誤訊息
     let userMessage = err.message;
     if (err.message.includes('已註冊') || err.message.includes('已存在')) {
       userMessage = '此帳號已註冊過,請直接使用主功能';
-      // 自動跳轉
       setTimeout(() => {
         window.location.href = 'main.html';
       }, 2000);
-    } else if (err.message.includes('timeout') || err.message.includes('逾時')) {
-      userMessage = '連線逾時,請檢查網路後重試';
-    } else if (err.message.includes('HTML') || err.message.includes('DOCTYPE')) {
-      userMessage = '伺服器錯誤,請稍後再試';
     }
     
     alert('❌ ' + userMessage);
     setButtonLoading(false);
-  }
-}
-
-// ✅ 修正後的測試函數 - 通過 Worker 測試
-async function testGASThroughWorker() {
-  const testData = {
-    type: 'register',
-    userId: 'test-user-' + Date.now(),
-    name: '測試用戶',
-    phone: '0912345678',
-    studentId: 'T' + Date.now().toString().slice(-6),
-    department: 'cs',
-    timestamp: new Date().toISOString()
-  };
-  
-  console.log('🧪 通過 Worker 測試 GAS...');
-  
-  try {
-    const res = await fetch(WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(testData)
-    });
-    
-    const text = await res.text();
-    console.log('📨 Worker 回應:', text);
-    
-    let result = {};
-    try {
-      result = JSON.parse(text);
-      console.log('🔍 解析結果:', result);
-    } catch (e) {
-      console.error('❌ 回應解析失敗');
-    }
-    
-  } catch (error) {
-    console.error('❌ Worker 測試失敗:', error);
   }
 }
 
