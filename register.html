@@ -361,7 +361,49 @@ async function registerUser() {
     setButtonLoading(false);
   }
 }
+// 在瀏覽器開發者工具中執行這個來測試 GAS
+async function testGASDirectly() {
+  const testData = {
+    type: 'register',
+    userId: 'test-user-' + Date.now(),
+    name: '測試用戶',
+    phone: '0912345678',
+    studentId: 'T' + Date.now().toString().slice(-6),
+    department: 'cs',
+    timestamp: new Date().toISOString()
+  };
+  
+  console.log('🧪 直接測試 GAS...');
+  
+  try {
+    // 直接呼叫 GAS（繞過 Worker）
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwlCfnN-73Pr7TQuI2tKV7QwSDlBRcmLaCXjeMcYlyrh96--LeRJunJ2bkShoYQ4SwMKg/exec';
+    
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(testData)
+    });
+    
+    const text = await res.text();
+    console.log('📨 GAS 直接回應:', text);
+    
+    let result = {};
+    try {
+      result = JSON.parse(text);
+    } catch (e) {
+      console.error('❌ GAS 回應解析失敗');
+    }
+    
+    console.log('🔍 GAS 解析結果:', result);
+    
+  } catch (error) {
+    console.error('❌ GAS 直接測試失敗:', error);
+  }
+}
 
+// 執行測試
+testGASDirectly();
 // 開發環境測試資料
 document.addEventListener('DOMContentLoaded', function() {
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
