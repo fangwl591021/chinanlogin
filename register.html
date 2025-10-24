@@ -283,12 +283,23 @@ async function registerUser() {
       body: JSON.stringify(data)
     });
     
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    }
-    
     const text = await res.text();
     console.log('📨 註冊回應原始文字:', text);
+    console.log('📊 HTTP 狀態:', res.status);
+    
+    if (!res.ok) {
+      // 嘗試解析錯誤訊息
+      let errorMsg = `HTTP ${res.status}: ${res.statusText}`;
+      try {
+        const errorData = JSON.parse(text);
+        if (errorData.error) errorMsg = errorData.error;
+        if (errorData.message) errorMsg += ' - ' + errorData.message;
+        console.error('❌ 伺服器錯誤詳情:', errorData);
+      } catch (e) {
+        console.error('❌ 無法解析錯誤回應:', text);
+      }
+      throw new Error(errorMsg);
+    }
     
     let result = {};
     try {
@@ -301,43 +312,59 @@ async function registerUser() {
     console.log(`✅ 註冊請求完成,耗時: ${Date.now() - registerStart}ms`);
     console.log('🔍 完整回應結構:', JSON.stringify(result, null, 2));
     
-    // 🟢 更寬鬆的成功判斷邏輯
-    if (result.ok === true && result.data) {
-      const gasResult = result.data;
-      
-      console.log('🔍 GAS 回應數據:', gasResult);
-      
-      // 多種成功情況判斷
-      if (gasResult.status === 'success' || 
-          gasResult.success === true || 
-          gasResult.registered === true ||
-          (gasResult.message && gasResult.message.includes('成功')) ||
-          (gasResult.message && gasResult.message.includes('註冊'))) {
+    // 🟢 處理成功回應
+    if (result.ok === true) {
+      // 新格式: { ok: true, data: { status: 'success', ... } }
+      if (result.data) {
+        const gasResult = result.data;
+        console.log('🔍 GAS 回應數據:', gasResult);
         
-        // 標記用戶已註冊 (客戶端快取)
-        localStorage.setItem('pangolin_registered', 'true');
-        localStorage.setItem('pangolin_userId', currentUserId);
-        
-        const btn = document.getElementById('registerBtn');
-        btn.classList.remove('bg-green-500', 'hover:bg-green-600');
-        btn.classList.add('bg-green-600');
-        document.getElementById('btnText').textContent = '✅ 註冊成功!';
-        
-        updateDebugInfo('✅ 註冊成功,跳轉中...');
-        
-        setTimeout(() => {
-          window.location.href = 'main.html';
-        }, 1000);
-        return;
-      } else if (gasResult.message) {
-        // 如果有錯誤訊息,顯示給用戶
-        throw new Error(gasResult.message);
+        if (gasResult.status === 'success' || 
+            gasResult.success === true || 
+            gasResult.registered === true ||
+            (gasResult.message && gasResult.message.includes('成功'))) {
+          
+          localStorage.setItem('pangolin_registered', 'true');
+          localStorage.setItem('pangolin_userId', currentUserId);
+          
+          const btn = document.getElementById('registerBtn');
+          btn.classList.remove('bg-green-500', 'hover:bg-green-600');
+          btn.classList.add('bg-green-600');
+          document.getElementById('btnText').textContent = '✅ 註冊成功!';
+          
+          updateDebugInfo('✅ 註冊成功,跳轉中...');
+          
+          setTimeout(() => {
+            window.location.href = 'main.html';
+          }, 1000);
+          return;
+        }
       }
+    }
+    
+    // 處理舊格式或直接返回的成功回應
+    // 舊格式: { status: 'success', message: '註冊成功', ... }
+    if (result.status === 'success' || result.success === true) {
+      localStorage.setItem('pangolin_registered', 'true');
+      localStorage.setItem('pangolin_userId', currentUserId);
+      
+      const btn = document.getElementById('registerBtn');
+      btn.classList.remove('bg-green-500', 'hover:bg-green-600');
+      btn.classList.add('bg-green-600');
+      document.getElementById('btnText').textContent = '✅ 註冊成功!';
+      
+      updateDebugInfo('✅ 註冊成功,跳轉中...');
+      
+      setTimeout(() => {
+        window.location.href = 'main.html';
+      }, 1000);
+      return;
     }
     
     // 如果以上條件都不符合,顯示詳細錯誤
     console.error('❌ 註冊失敗,完整回應:', result);
-    throw new Error(result.data?.message || result.error || '註冊失敗,請稍後重試');
+    const errorMsg = result.error || result.data?.message || result.message || '註冊失敗,請稍後重試';
+    throw new Error(errorMsg);
     
   } catch (err) {
     console.error('❌ 註冊失敗', err);
