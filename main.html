@@ -370,6 +370,179 @@ async function cancelReservation(identifier, idType) {
   }
 }
 
+/* === 路線與站點資料 === */
+const ROUTES = {
+  'A1': { name: 'A1 晚間22:00', time: '22:00-22:30', direction: '暨大→埔里總站' },
+  'B1': { name: 'B1 晚間22:30', time: '22:30-23:00', direction: '埔里總站→暨大' },
+  'A2': { name: 'A2 晚間23:00', time: '23:00-23:30', direction: '暨大→埔里總站' },
+  'B2': { name: 'B2 晚間23:30', time: '23:30-24:00', direction: '埔里總站→暨大' }
+};
+
+const STOPS = {
+  'A1': ['暨大總站', '暨大郵局', '管院大樓', '人社院', '埔里總站'],
+  'B1': ['埔里總站', '7-11門市', '暨大郵局', '人社院', '科技學院', '暨大總站'],
+  'A2': ['暨大總站', '暨大郵局', '管院大樓', '人社院', '埔里總站'],
+  'B2': ['埔里總站', '7-11門市', '暨大郵局', '人社院', '科技學院', '暨大總站']
+};
+
+/* === 選擇日期後顯示路線 === */
+function selectDate(dateStr){
+  selectedDate = dateStr;
+  selectedRoute = null;  // 重置選擇
+  
+  document.getElementById('selectedDate').style.display = 'block';
+  document.getElementById('selectedDate').textContent = `✅ 已選擇：${dateStr}`;
+  
+  // 顯示路線選擇區
+  showRoutes();
+  
+  // 隱藏站點選擇
+  document.getElementById('fromStopSection').style.display = 'none';
+  document.getElementById('toStopSection').style.display = 'none';
+  document.getElementById('submitBtn').style.display = 'none';
+}
+
+/* === 顯示路線選擇 === */
+function showRoutes(){
+  const section = document.getElementById('routeSection');
+  const container = document.getElementById('routeButtons');
+  
+  section.style.display = 'block';
+  
+  container.innerHTML = Object.keys(ROUTES).map(code => `
+    <div class="route-btn" onclick="selectRoute('${code}')">
+      <div style="font-weight:bold;font-size:16px">${ROUTES[code].name}</div>
+      <div style="font-size:13px;color:#666;margin-top:4px">${ROUTES[code].direction}</div>
+    </div>
+  `).join('');
+}
+
+/* === 選擇路線 === */
+function selectRoute(routeCode){
+  selectedRoute = routeCode;
+  
+  // 更新視覺效果
+  document.querySelectorAll('.route-btn').forEach(btn => btn.classList.remove('selected'));
+  event.target.closest('.route-btn').classList.add('selected');
+  
+  // 載入上車站選項
+  loadStops(routeCode);
+  
+  // 顯示站點選擇區
+  document.getElementById('fromStopSection').style.display = 'block';
+  document.getElementById('toStopSection').style.display = 'none';
+  document.getElementById('submitBtn').style.display = 'none';
+}
+
+/* === 載入站點選項 === */
+function loadStops(routeCode){
+  const fromSelect = document.getElementById('fromStop');
+  const stops = STOPS[routeCode] || [];
+  
+  fromSelect.innerHTML = '<option value="">請選擇上車站</option>' +
+    stops.map(stop => `<option value="${stop}">${stop}</option>`).join('');
+  
+  fromSelect.onchange = function(){
+    if(this.value){
+      loadToStops(routeCode, this.value);
+    }
+  };
+}
+
+/* === 載入下車站選項 === */
+function loadToStops(routeCode, fromStop){
+  const toSelect = document.getElementById('toStop');
+  const stops = STOPS[routeCode] || [];
+  const fromIndex = stops.indexOf(fromStop);
+  
+  // 只顯示上車站之後的站點
+  const availableStops = stops.slice(fromIndex + 1);
+  
+  if(availableStops.length === 0){
+    toSelect.innerHTML = '<option value="">此站為終點站</option>';
+    document.getElementById('toStopSection').style.display = 'block';
+    return;
+  }
+  
+  toSelect.innerHTML = '<option value="">請選擇下車站</option>' +
+    availableStops.map(stop => `<option value="${stop}">${stop}</option>`).join('');
+  
+  document.getElementById('toStopSection').style.display = 'block';
+  
+  toSelect.onchange = function(){
+    if(this.value){
+      document.getElementById('submitBtn').style.display = 'block';
+    }
+  };
+}
+
+/* === 送出預約 === */
+async function submitReservation(){
+  const fromStop = document.getElementById('fromStop').value;
+  const toStop = document.getElementById('toStop').value;
+  
+  if(!selectedDate || !selectedRoute || !fromStop || !toStop){
+    alert('請完成所有選擇');
+    return;
+  }
+  
+  if(!confirm(`確定預約嗎？\n\n日期：${selectedDate}\n班次：${ROUTES[selectedRoute].name}\n上車：${fromStop}\n下車：${toStop}`)){
+    return;
+  }
+  
+  const payload = {
+    type: 'reserve',
+    userId: userData.userId,
+    name: userData.name,
+    phone: userData.phone,
+    date: selectedDate,
+    route: selectedRoute,
+    fromStop: fromStop,
+    toStop: toStop
+  };
+  
+  console.log('📤 送出預約:', payload);
+  
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    const result = await res.json();
+    console.log('📥 預約結果:', result);
+    
+    if(result.status === 'success'){
+      alert('✅ 預約成功！');
+      
+      // 重新載入預約列表
+      const reservations = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`).then(r=>r.json());
+      existingReservations = reservations.reservations || [];
+      renderReservationInfo();
+      
+      // 重置表單
+      document.getElementById('routeSection').style.display = 'none';
+      document.getElementById('fromStopSection').style.display = 'none';
+      document.getElementById('toStopSection').style.display = 'none';
+      document.getElementById('submitBtn').style.display = 'none';
+      document.getElementById('selectedDate').style.display = 'none';
+      selectedDate = null;
+      selectedRoute = null;
+    } else {
+      alert('❌ 預約失敗：' + (result.message || '未知錯誤'));
+    }
+  } catch(error){
+    console.error('❌ 預約錯誤:', error);
+    alert('❌ 網路錯誤，請稍後再試');
+  }
+}
+
+/* === 顯示規則 === */
+function showRules(){
+  alert(`📘 預約規則\n\n1. 每人每日限預約一個班次\n2. 請於搭乘日前一天預約\n3. 如需取消請提前通知\n4. 上車時請主動出示預約紀錄`);
+}
+
 window.addEventListener('load', init);
 </script>
 </body>
