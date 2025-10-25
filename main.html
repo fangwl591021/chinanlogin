@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>穿山甲專車預約 🚍</title>
+<title>穿山甲專車預約 🚍 | Pangolin Shuttle Reservation</title>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
 <style>
@@ -79,6 +79,7 @@ select {
   border:1px solid #ccc;
   border-radius:6px;
   margin-top:8px;
+  font-family: system-ui, "Noto Sans TC", sans-serif;
 }
 .submit-btn {
   background:#3c8050;
@@ -142,25 +143,53 @@ select {
   border-top: 3px solid #3c8050;
   box-shadow: 0 -3px 5px rgba(0,0,0,0.1);
 }
+
+/* 雙語樣式 */
+.bilingual {
+  line-height: 1.4;
+}
+.chinese {
+  font-weight: 500;
+  display: block;
+}
+.english {
+  font-size: 12px;
+  color: #666;
+  display: block;
+  font-style: italic;
+}
+
+.stop-option {
+  padding: 8px 12px;
+}
 </style>
 </head>
 
 <body>
-<header>穿山甲專車預約</header>
+<header>
+  <div class="chinese">穿山甲專車預約</div>
+  <div class="english">Pangolin Shuttle Reservation</div>
+</header>
 
 <main>
-  <div id="userInfo" style="padding:16px"><div>⏳ 系統初始化中...</div></div>
+  <div id="userInfo" style="padding:16px"><div>⏳ 系統初始化中... | System initializing...</div></div>
 
   <div class="btn-group">
-    <button id="calendarBtn" class="btn-large btn-calendar" onclick="toggleCalendar()">📅 打開月曆</button>
-    <button id="ruleBtn" class="btn-large btn-rule" onclick="showRules()">📘 預約規則</button>
+    <button id="calendarBtn" class="btn-large btn-calendar" onclick="toggleCalendar()">
+      <div class="chinese">📅 打開月曆</div>
+      <div class="english">Open Calendar</div>
+    </button>
+    <button id="ruleBtn" class="btn-large btn-rule" onclick="showRules()">
+      <div class="chinese">📘 預約規則</div>
+      <div class="english">Reservation Rules</div>
+    </button>
   </div>
 
   <div id="calendarContainer" style="display:none;margin-top:10px;padding:0 16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <button onclick="changeMonth(-1)">◀ 上個月</button>
+      <button onclick="changeMonth(-1)">◀ 上個月 | Previous</button>
       <h3 id="calendarTitle"></h3>
-      <button onclick="changeMonth(1)">下個月 ▶</button>
+      <button onclick="changeMonth(1)">下個月 ▶ | Next</button>
     </div>
     <div id="calendar" class="calendar"></div>
   </div>
@@ -168,24 +197,39 @@ select {
   <div id="selectedDate" class="notice success" style="display:none"></div>
 
   <div id="routeSection" class="route-section" style="display:none">
-    <h3>請選擇搭乘班次</h3>
+    <h3 class="bilingual">
+      <span class="chinese">請選擇搭乘班次</span>
+      <span class="english">Please Select Shuttle Route</span>
+    </h3>
     <div id="routeButtons" class="route-buttons"></div>
   </div>
 
   <div id="fromStopSection" class="stop-selector" style="display:none">
-    <h3>請選擇上車站</h3>
-    <select id="fromStop"><option value="">請先選擇班次</option></select>
+    <h3 class="bilingual">
+      <span class="chinese">請選擇上車站</span>
+      <span class="english">Please Select Boarding Stop</span>
+    </h3>
+    <select id="fromStop"><option value="">請先選擇班次 | Please select route first</option></select>
   </div>
 
   <div id="toStopSection" class="stop-selector" style="display:none">
-    <h3>請選擇下車站</h3>
-    <select id="toStop"><option value="">請選擇上車站</option></select>
+    <h3 class="bilingual">
+      <span class="chinese">請選擇下車站</span>
+      <span class="english">Please Select Alighting Stop</span>
+    </h3>
+    <select id="toStop"><option value="">請選擇上車站 | Please select boarding stop</option></select>
   </div>
 
-  <button id="submitBtn" class="submit-btn" onclick="submitReservation()" style="display:none">送出預約</button>
+  <button id="submitBtn" class="submit-btn" onclick="submitReservation()" style="display:none">
+    <div class="chinese">送出預約</div>
+    <div class="english">Submit Reservation</div>
+  </button>
 
   <div id="reservationPanel" style="display:none">
-    <div style="text-align:center;font-weight:bold;color:#2d6140;margin-bottom:5px;">我的預約紀錄</div>
+    <div style="text-align:center;font-weight:bold;color:#2d6140;margin-bottom:5px;" class="bilingual">
+      <span class="chinese">我的預約紀錄</span>
+      <span class="english">My Reservations</span>
+    </div>
     <div id="reservationInfo"></div>
   </div>
 </main>
@@ -219,12 +263,6 @@ async function init(){
     
     existingReservations = reservations.reservations || [];
     console.log('📦 預約列表 (共 ' + existingReservations.length + ' 筆):', existingReservations);
-    
-    // 🔍 除錯檢查
-    if (existingReservations.length > 0) {
-      console.log('🔍 第一筆資料:', existingReservations[0]);
-      console.log('🔍 有 rowNumber?', existingReservations[0].rowNumber);
-    }
     
     renderReservationInfo();
     loadCalendar();
@@ -273,7 +311,10 @@ function toggleCalendar(){
 function selectDate(dateStr){
   selectedDate=dateStr;
   document.getElementById('selectedDate').style.display='block';
-  document.getElementById('selectedDate').textContent=`✅ 已選擇：${dateStr}`;
+  document.getElementById('selectedDate').innerHTML = `
+    <div class="chinese">✅ 已選擇：${dateStr}</div>
+    <div class="english">✅ Selected: ${dateStr}</div>
+  `;
 }
 
 /* === 預約紀錄 === */
@@ -288,56 +329,39 @@ function renderReservationInfo(){
   
   panel.style.display='block';
   
-  // ✅ 優先使用預約ID，備用行號
   box.innerHTML = existingReservations.map(r => {
-    console.log('🔍 渲染預約:', r);
-    
-    // 使用預約ID或行號（向下相容）
-    const identifier = r.reservationId ? `'${r.reservationId}'` : r.rowNumber;
-    const idType = r.reservationId ? 'id' : 'row';
-    
     return `
     <div class="resv-card">
-      <div class="resv-row">🕒 時間：${r.date}</div>
-      <div class="resv-row">🚌 班次：${r.route}</div>
-      <div class="resv-row">⬆ 上車：${r.fromStop}　⬇ 下車：${r.toStop}</div>
-      <button class="cancel-btn" onclick="cancelReservation(${identifier}, '${idType}')">取消預約</button>
+      <div class="resv-row bilingual">
+        <span class="chinese">🕒 時間：${r.date}</span>
+        <span class="english">🕒 Time: ${r.date}</span>
+      </div>
+      <div class="resv-row bilingual">
+        <span class="chinese">🚌 班次：${r.route}</span>
+        <span class="english">🚌 Route: ${r.route}</span>
+      </div>
+      <div class="resv-row bilingual">
+        <span class="chinese">⬆ 上車：${r.fromStop}　⬇ 下車：${r.toStop}</span>
+        <span class="english">⬆ Board: ${r.fromStop}　⬇ Alight: ${r.toStop}</span>
+      </div>
+      <button class="cancel-btn" onclick="cancelReservation('${r.date}','${r.route}')">
+        <div class="chinese">取消預約</div>
+        <div class="english">Cancel Reservation</div>
+      </button>
     </div>`;
   }).join('');
 }
 
-// ✅ 使用預約ID的取消函數（向下相容行號）
-async function cancelReservation(identifier, idType) {
-  console.log('🎯 取消預約 - 類型:', idType, '識別碼:', identifier);
+/* === 取消預約 === */
+async function cancelReservation(date, route) {
+  if (!confirm(`確定取消 ${date} ${route} 嗎？\nConfirm cancellation of ${date} ${route}?`)) return;
   
-  // 從列表找出完整資訊
-  let reservation;
-  if (idType === 'id') {
-    reservation = existingReservations.find(r => r.reservationId === identifier);
-  } else {
-    reservation = existingReservations.find(r => r.rowNumber === identifier);
-  }
-  
-  if (!reservation) {
-    alert('❌ 找不到預約資料');
-    return;
-  }
-  
-  console.log('📋 預約資料:', reservation);
-  
-  if (!confirm(`確定取消以下預約嗎？\n\n日期：${reservation.date}\n班次：${reservation.route}\n上車：${reservation.fromStop}\n下車：${reservation.toStop}`)) {
-    return;
-  }
-  
-  // ✅ 優先傳送預約ID
   const payload = {
-    type: 'cancel',
-    userId: userData.userId,
-    reservationId: reservation.reservationId || null,  // 優先使用預約ID
-    rowNumber: reservation.rowNumber  // 備用行號
+    type: 'cancel', 
+    userId: userData.userId, 
+    date: date, 
+    route: route
   };
-  
-  console.log('📤 傳送資料:', payload);
   
   try {
     const res = await fetch(WORKER_URL, {
@@ -347,56 +371,128 @@ async function cancelReservation(identifier, idType) {
     });
     
     const result = await res.json();
-    console.log('📥 伺服器回應:', result);
     
     if (result.status === 'success') {
-      alert('✅ 已取消預約');
-      // 從列表移除（用預約ID或行號）
-      existingReservations = existingReservations.filter(x => {
-        if (reservation.reservationId) {
-          return x.reservationId !== reservation.reservationId;
-        } else {
-          return x.rowNumber !== reservation.rowNumber;
-        }
-      });
+      alert('✅ 已取消預約\n✅ Reservation cancelled');
+      existingReservations = existingReservations.filter(x => !(x.date === date && x.route === route));
       renderReservationInfo();
     } else {
       console.error('❌ 取消失敗:', result);
-      alert('❌ 取消失敗：' + (result.message || '未知錯誤'));
+      alert('❌ 取消失敗：' + (result.message || '未知錯誤\nCancellation failed'));
     }
   } catch (error) {
     console.error('❌ 網路錯誤:', error);
-    alert('❌ 網路錯誤，請稍後再試');
+    alert('❌ 網路錯誤，請稍後再試\nNetwork error, please try again');
   }
 }
 
-/* === 路線與站點資料 === */
+/* === 路線與站點資料 - 修正版 === */
 const ROUTES = {
-  'A1': { name: 'A1 晚間22:00', time: '22:00-22:30', direction: '暨大→埔里總站' },
-  'B1': { name: 'B1 晚間22:30', time: '22:30-23:00', direction: '埔里總站→暨大' },
-  'A2': { name: 'A2 晚間23:00', time: '23:00-23:30', direction: '暨大→埔里總站' },
-  'B2': { name: 'B2 晚間23:30', time: '23:30-24:00', direction: '埔里總站→暨大' }
+  'A1': { 
+    name: 'A1 晚間22:00', 
+    time: '22:00-22:30', 
+    direction: '暨大→埔里總站',
+    directionEn: 'NCNU → Puli Terminal'
+  },
+  'B1': { 
+    name: 'B1 晚間22:30', 
+    time: '22:30-23:00', 
+    direction: '埔里總站→暨大',
+    directionEn: 'Puli Terminal → NCNU'
+  },
+  'A2': { 
+    name: 'A2 晚間23:00', 
+    time: '23:00-23:30', 
+    direction: '暨大→埔里總站',
+    directionEn: 'NCNU → Puli Terminal'
+  },
+  'B2': { 
+    name: 'B2 晚間23:30', 
+    time: '23:30-24:00', 
+    direction: '埔里總站→暨大',
+    directionEn: 'Puli Terminal → NCNU'
+  }
 };
 
+// 雙語站點資料
 const STOPS = {
-  'A1': ['暨大總站', '暨大郵局', '管院大樓', '人社院', '埔里總站'],
-  'B1': ['埔里總站', '7-11門市', '暨大郵局', '人社院', '科技學院', '暨大總站'],
-  'A2': ['暨大總站', '暨大郵局', '管院大樓', '人社院', '埔里總站'],
-  'B2': ['埔里總站', '7-11門市', '暨大郵局', '人社院', '科技學院', '暨大總站']
+  // 去程：暨大→埔里總站
+  'A1': [
+    { zh: '行政大樓', en: 'Administrative Building' },
+    { zh: '中餐廳', en: 'Chinese Restaurant' },
+    { zh: '科技學院', en: 'College of Science and Technology' },
+    { zh: '學人會館', en: 'Scholars Residence' },
+    { zh: '中城', en: 'Zhongcheng' },
+    { zh: '下城', en: 'Xiacheng' },
+    { zh: '坪頂', en: 'Pingding' },
+    { zh: '愛蘭橋', en: 'Allan Bridge' },
+    { zh: '大成國小', en: 'Dacheng Elementary School' },
+    { zh: '中山安七街口', en: 'Zhongshan Anqi St. Intersection' },
+    { zh: '榮民診所', en: 'Veterans Clinic' },
+    { zh: '埔里酒廠', en: 'Puli Distillery' },
+    { zh: '埔里總站', en: 'Puli Bus Terminal' }
+  ],
+  'A2': [
+    { zh: '行政大樓', en: 'Administrative Building' },
+    { zh: '中餐廳', en: 'Chinese Restaurant' },
+    { zh: '科技學院', en: 'College of Science and Technology' },
+    { zh: '學人會館', en: 'Scholars Residence' },
+    { zh: '中城', en: 'Zhongcheng' },
+    { zh: '下城', en: 'Xiacheng' },
+    { zh: '坪頂', en: 'Pingding' },
+    { zh: '愛蘭橋', en: 'Allan Bridge' },
+    { zh: '大成國小', en: 'Dacheng Elementary School' },
+    { zh: '中山安七街口', en: 'Zhongshan Anqi St. Intersection' },
+    { zh: '榮民診所', en: 'Veterans Clinic' },
+    { zh: '埔里酒廠', en: 'Puli Distillery' },
+    { zh: '埔里總站', en: 'Puli Bus Terminal' }
+  ],
+  // 回程：埔里總站→暨大
+  'B1': [
+    { zh: '埔里總站', en: 'Puli Bus Terminal' },
+    { zh: '埔里酒廠', en: 'Puli Distillery' },
+    { zh: '榮民診所', en: 'Veterans Clinic' },
+    { zh: '中山安七街口', en: 'Zhongshan Anqi St. Intersection' },
+    { zh: '大成國小', en: 'Dacheng Elementary School' },
+    { zh: '愛蘭橋', en: 'Allan Bridge' },
+    { zh: '坪頂', en: 'Pingding' },
+    { zh: '下城', en: 'Xiacheng' },
+    { zh: '中城', en: 'Zhongcheng' },
+    { zh: '學人會館', en: 'Scholars Residence' },
+    { zh: '科技學院', en: 'College of Science and Technology' },
+    { zh: '中餐廳', en: 'Chinese Restaurant' },
+    { zh: '行政大樓', en: 'Administrative Building' }
+  ],
+  'B2': [
+    { zh: '埔里總站', en: 'Puli Bus Terminal' },
+    { zh: '埔里酒廠', en: 'Puli Distillery' },
+    { zh: '榮民診所', en: 'Veterans Clinic' },
+    { zh: '中山安七街口', en: 'Zhongshan Anqi St. Intersection' },
+    { zh: '大成國小', en: 'Dacheng Elementary School' },
+    { zh: '愛蘭橋', en: 'Allan Bridge' },
+    { zh: '坪頂', en: 'Pingding' },
+    { zh: '下城', en: 'Xiacheng' },
+    { zh: '中城', en: 'Zhongcheng' },
+    { zh: '學人會館', en: 'Scholars Residence' },
+    { zh: '科技學院', en: 'College of Science and Technology' },
+    { zh: '中餐廳', en: 'Chinese Restaurant' },
+    { zh: '行政大樓', en: 'Administrative Building' }
+  ]
 };
 
 /* === 選擇日期後顯示路線 === */
 function selectDate(dateStr){
   selectedDate = dateStr;
-  selectedRoute = null;  // 重置選擇
+  selectedRoute = null;
   
   document.getElementById('selectedDate').style.display = 'block';
-  document.getElementById('selectedDate').textContent = `✅ 已選擇：${dateStr}`;
+  document.getElementById('selectedDate').innerHTML = `
+    <div class="chinese">✅ 已選擇：${dateStr}</div>
+    <div class="english">✅ Selected: ${dateStr}</div>
+  `;
   
-  // 顯示路線選擇區
   showRoutes();
   
-  // 隱藏站點選擇
   document.getElementById('fromStopSection').style.display = 'none';
   document.getElementById('toStopSection').style.display = 'none';
   document.getElementById('submitBtn').style.display = 'none';
@@ -412,7 +508,10 @@ function showRoutes(){
   container.innerHTML = Object.keys(ROUTES).map(code => `
     <div class="route-btn" onclick="selectRoute('${code}')">
       <div style="font-weight:bold;font-size:16px">${ROUTES[code].name}</div>
-      <div style="font-size:13px;color:#666;margin-top:4px">${ROUTES[code].direction}</div>
+      <div class="bilingual" style="margin-top:4px">
+        <div class="chinese">${ROUTES[code].direction}</div>
+        <div class="english">${ROUTES[code].directionEn}</div>
+      </div>
     </div>
   `).join('');
 }
@@ -421,14 +520,11 @@ function showRoutes(){
 function selectRoute(routeCode){
   selectedRoute = routeCode;
   
-  // 更新視覺效果
   document.querySelectorAll('.route-btn').forEach(btn => btn.classList.remove('selected'));
   event.target.closest('.route-btn').classList.add('selected');
   
-  // 載入上車站選項
   loadStops(routeCode);
   
-  // 顯示站點選擇區
   document.getElementById('fromStopSection').style.display = 'block';
   document.getElementById('toStopSection').style.display = 'none';
   document.getElementById('submitBtn').style.display = 'none';
@@ -439,23 +535,23 @@ function loadStops(routeCode){
   const fromSelect = document.getElementById('fromStop');
   const stops = STOPS[routeCode] || [];
   
-  fromSelect.innerHTML = '<option value="">請選擇上車站</option>' +
-    stops.map(stop => `<option value="${stop}">${stop}</option>`).join('');
+  fromSelect.innerHTML = '<option value="">請選擇上車站 | Please select boarding stop</option>' +
+    stops.map(stop => `
+      <option value="${stop.zh}" class="stop-option">
+        ${stop.zh} | ${stop.en}
+      </option>
+    `).join('');
   
-  // ✅ 重新綁定事件監聽器
   fromSelect.onchange = function(){
-    console.log('🚌 選擇上車站:', this.value);
     if(this.value){
       loadToStops(routeCode, this.value);
     } else {
-      // 如果取消選擇，隱藏下車站區塊
       document.getElementById('toStopSection').style.display = 'none';
       document.getElementById('submitBtn').style.display = 'none';
     }
   };
   
-  // ✅ 重置下車站和提交按鈕
-  document.getElementById('toStop').innerHTML = '<option value="">請先選擇上車站</option>';
+  document.getElementById('toStop').innerHTML = '<option value="">請先選擇上車站 | Please select boarding stop first</option>';
   document.getElementById('toStopSection').style.display = 'none';
   document.getElementById('submitBtn').style.display = 'none';
 }
@@ -464,64 +560,32 @@ function loadStops(routeCode){
 function loadToStops(routeCode, fromStop){
   const toSelect = document.getElementById('toStop');
   const stops = STOPS[routeCode] || [];
-  const fromIndex = stops.indexOf(fromStop);
+  const fromIndex = stops.findIndex(stop => stop.zh === fromStop);
   
-  console.log('📍 路線站點:', stops);
-  console.log('📍 選擇的上車站:', fromStop, '索引:', fromIndex);
-  
-  // 只顯示上車站之後的站點
   const availableStops = stops.slice(fromIndex + 1);
   
-  console.log('📍 可選下車站:', availableStops);
-  
   if(availableStops.length === 0){
-    toSelect.innerHTML = '<option value="">此站為終點站</option>';
+    toSelect.innerHTML = '<option value="">此站為終點站 | This is the final stop</option>';
     document.getElementById('toStopSection').style.display = 'block';
-    document.getElementById('submitBtn').style.display = 'none'; // 終點站不能選擇下車
+    document.getElementById('submitBtn').style.display = 'none';
     return;
   }
   
-  toSelect.innerHTML = '<option value="">請選擇下車站</option>' +
-    availableStops.map(stop => `<option value="${stop}">${stop}</option>`).join('');
+  toSelect.innerHTML = '<option value="">請選擇下車站 | Please select alighting stop</option>' +
+    availableStops.map(stop => `
+      <option value="${stop.zh}" class="stop-option">
+        ${stop.zh} | ${stop.en}
+      </option>
+    `).join('');
   
-  // ✅ 確保顯示下車站區塊
   document.getElementById('toStopSection').style.display = 'block';
-  document.getElementById('submitBtn').style.display = 'none'; // 先隱藏提交按鈕
+  document.getElementById('submitBtn').style.display = 'none';
   
-  // ✅ 重新綁定下車站變化事件
   toSelect.onchange = function(){
-    console.log('🎯 選擇下車站:', this.value);
     if(this.value){
       document.getElementById('submitBtn').style.display = 'block';
     } else {
       document.getElementById('submitBtn').style.display = 'none';
-    }
-  };
-}
-
-/* === 載入下車站選項 === */
-function loadToStops(routeCode, fromStop){
-  const toSelect = document.getElementById('toStop');
-  const stops = STOPS[routeCode] || [];
-  const fromIndex = stops.indexOf(fromStop);
-  
-  // 只顯示上車站之後的站點
-  const availableStops = stops.slice(fromIndex + 1);
-  
-  if(availableStops.length === 0){
-    toSelect.innerHTML = '<option value="">此站為終點站</option>';
-    document.getElementById('toStopSection').style.display = 'block';
-    return;
-  }
-  
-  toSelect.innerHTML = '<option value="">請選擇下車站</option>' +
-    availableStops.map(stop => `<option value="${stop}">${stop}</option>`).join('');
-  
-  document.getElementById('toStopSection').style.display = 'block';
-  
-  toSelect.onchange = function(){
-    if(this.value){
-      document.getElementById('submitBtn').style.display = 'block';
     }
   };
 }
@@ -532,11 +596,14 @@ async function submitReservation(){
   const toStop = document.getElementById('toStop').value;
   
   if(!selectedDate || !selectedRoute || !fromStop || !toStop){
-    alert('請完成所有選擇');
+    alert('請完成所有選擇\nPlease complete all selections');
     return;
   }
   
-  if(!confirm(`確定預約嗎？\n\n日期：${selectedDate}\n班次：${ROUTES[selectedRoute].name}\n上車：${fromStop}\n下車：${toStop}`)){
+  const fromStopEn = STOPS[selectedRoute].find(stop => stop.zh === fromStop)?.en || fromStop;
+  const toStopEn = STOPS[selectedRoute].find(stop => stop.zh === toStop)?.en || toStop;
+  
+  if(!confirm(`確定預約嗎？\n\n日期：${selectedDate}\n班次：${ROUTES[selectedRoute].name}\n上車：${fromStop}\n下車：${toStop}\n\nConfirm reservation?\n\nDate: ${selectedDate}\nRoute: ${ROUTES[selectedRoute].name}\nBoard: ${fromStopEn}\nAlight: ${toStopEn}`)){
     return;
   }
   
@@ -551,8 +618,6 @@ async function submitReservation(){
     toStop: toStop
   };
   
-  console.log('📤 送出預約:', payload);
-  
   try {
     const res = await fetch(WORKER_URL, {
       method: 'POST',
@@ -561,17 +626,14 @@ async function submitReservation(){
     });
     
     const result = await res.json();
-    console.log('📥 預約結果:', result);
     
     if(result.status === 'success'){
-      alert('✅ 預約成功！');
+      alert('✅ 預約成功！\n✅ Reservation successful!');
       
-      // 重新載入預約列表
       const reservations = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`).then(r=>r.json());
       existingReservations = reservations.reservations || [];
       renderReservationInfo();
       
-      // 重置表單
       document.getElementById('routeSection').style.display = 'none';
       document.getElementById('fromStopSection').style.display = 'none';
       document.getElementById('toStopSection').style.display = 'none';
@@ -580,17 +642,17 @@ async function submitReservation(){
       selectedDate = null;
       selectedRoute = null;
     } else {
-      alert('❌ 預約失敗：' + (result.message || '未知錯誤'));
+      alert('❌ 預約失敗：' + (result.message || '未知錯誤\nReservation failed'));
     }
   } catch(error){
     console.error('❌ 預約錯誤:', error);
-    alert('❌ 網路錯誤，請稍後再試');
+    alert('❌ 網路錯誤，請稍後再試\nNetwork error, please try again');
   }
 }
 
 /* === 顯示規則 === */
 function showRules(){
-  alert(`📘 預約規則\n\n1. 每人每日限預約一個班次\n2. 請於搭乘日前一天預約\n3. 如需取消請提前通知\n4. 上車時請主動出示預約紀錄`);
+  alert(`📘 預約規則 | Reservation Rules\n\n1. 每人每日限預約一個班次\n   Only one reservation per person per day\n\n2. 請於搭乘日前一天預約\n   Please reserve one day before the ride\n\n3. 如需取消請提前通知\n   Please notify in advance for cancellation\n\n4. 上車時請主動出示預約紀錄\n   Please show your reservation when boarding`);
 }
 
 window.addEventListener('load', init);
