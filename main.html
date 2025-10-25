@@ -25,7 +25,7 @@ header {
 }
 main {
   flex: 1;
-  padding-bottom: 40px; /* 預留空間 */
+  padding-bottom: 40px;
 }
 .notice {
   padding: 10px 16px;
@@ -135,7 +135,6 @@ select {
 }
 .resv-row { margin:4px 0; }
 
-/* === 底部區塊 === */
 #reservationPanel {
   margin-top: 40px;
   padding: 10px 0 20px 0;
@@ -185,7 +184,6 @@ select {
 
   <button id="submitBtn" class="submit-btn" onclick="submitReservation()" style="display:none">送出預約</button>
 
-  <!-- ✅ 推開式底部區塊 -->
   <div id="reservationPanel" style="display:none">
     <div style="text-align:center;font-weight:bold;color:#2d6140;margin-bottom:5px;">我的預約紀錄</div>
     <div id="reservationInfo"></div>
@@ -199,19 +197,41 @@ let currentYear=new Date().getFullYear(), currentMonth=new Date().getMonth();
 
 /* === 初始化 === */
 async function init(){
-  await liff.init({liffId:"2006590746-KJodGOda"});
-  if(!liff.isLoggedIn())return liff.login();
-  const profile=await liff.getProfile();
-  const [checkRes, reservations]=await Promise.all([
-    fetch(`${WORKER_URL}?mode=check&userId=${profile.userId}`).then(r=>r.json()),
-    fetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`).then(r=>r.json())
-  ]);
-  if(!checkRes.registered)return location.href='register.html';
-  userData=checkRes.user;
-  renderUser(userData);
-  existingReservations=reservations.reservations||[];
-  renderReservationInfo();
-  loadCalendar();
+  try {
+    await liff.init({liffId:"2006590746-KJodGOda"});
+    if(!liff.isLoggedIn()) return liff.login();
+    
+    const profile = await liff.getProfile();
+    console.log('👤 用戶 ID:', profile.userId);
+    
+    const [checkRes, reservations] = await Promise.all([
+      fetch(`${WORKER_URL}?mode=check&userId=${profile.userId}`).then(r=>r.json()),
+      fetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`).then(r=>r.json())
+    ]);
+    
+    console.log('✅ 用戶檢查:', checkRes);
+    console.log('📋 預約回應:', reservations);
+    
+    if(!checkRes.registered) return location.href='register.html';
+    
+    userData = checkRes.user;
+    renderUser(userData);
+    
+    existingReservations = reservations.reservations || [];
+    console.log('📦 預約列表 (共 ' + existingReservations.length + ' 筆):', existingReservations);
+    
+    // 🔍 除錯檢查
+    if (existingReservations.length > 0) {
+      console.log('🔍 第一筆資料:', existingReservations[0]);
+      console.log('🔍 有 rowNumber?', existingReservations[0].rowNumber);
+    }
+    
+    renderReservationInfo();
+    loadCalendar();
+  } catch (err) {
+    console.error('❌ 初始化錯誤:', err);
+    alert('系統錯誤: ' + err.message);
+  }
 }
 
 /* === 顯示用戶資訊 === */
@@ -258,28 +278,54 @@ function selectDate(dateStr){
 
 /* === 預約紀錄 === */
 function renderReservationInfo(){
-  const panel=document.getElementById('reservationPanel');
-  const box=document.getElementById('reservationInfo');
-  if(!existingReservations.length){panel.style.display='none';return;}
+  const panel = document.getElementById('reservationPanel');
+  const box = document.getElementById('reservationInfo');
+  
+  if(!existingReservations.length){
+    panel.style.display='none';
+    return;
+  }
+  
   panel.style.display='block';
-  box.innerHTML=existingReservations.map(r=>`
+  
+  // ✅ 使用 rowNumber 作為按鈕參數
+  box.innerHTML = existingReservations.map(r => {
+    console.log('🔍 渲染預約:', r); // 除錯用
+    return `
     <div class="resv-card">
       <div class="resv-row">🕒 時間：${r.date}</div>
       <div class="resv-row">🚌 班次：${r.route}</div>
       <div class="resv-row">⬆ 上車：${r.fromStop}　⬇ 下車：${r.toStop}</div>
-      <button class="cancel-btn" onclick="cancelReservation('${r.date}','${r.route}')">取消預約</button>
-    </div>`).join('');
+      <button class="cancel-btn" onclick="cancelReservation(${r.rowNumber})">取消預約</button>
+    </div>`;
+  }).join('');
 }
 
-async function cancelReservation(date, route) {
-  if (!confirm(`確定取消 ${date} ${route} 嗎？`)) return;
+// ✅ 使用行號的取消函數
+async function cancelReservation(rowNumber) {
+  console.log('🎯 取消預約 - 行號:', rowNumber);
+  
+  // 從列表找出完整資訊
+  const reservation = existingReservations.find(r => r.rowNumber === rowNumber);
+  
+  if (!reservation) {
+    alert('❌ 找不到預約資料');
+    return;
+  }
+  
+  console.log('📋 預約資料:', reservation);
+  
+  if (!confirm(`確定取消以下預約嗎？\n\n日期：${reservation.date}\n班次：${reservation.route}\n上車：${reservation.fromStop}\n下車：${reservation.toStop}`)) {
+    return;
+  }
   
   const payload = {
-    type: 'cancel', 
-    userId: userData.userId, 
-    date: date, 
-    route: route
+    type: 'cancel',
+    userId: userData.userId,
+    rowNumber: rowNumber  // ✅ 傳送行號
   };
+  
+  console.log('📤 傳送資料:', payload);
   
   try {
     const res = await fetch(WORKER_URL, {
@@ -287,24 +333,26 @@ async function cancelReservation(date, route) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
+    
     const result = await res.json();
+    console.log('📥 伺服器回應:', result);
     
     if (result.status === 'success') {
       alert('✅ 已取消預約');
-      existingReservations = existingReservations.filter(x => !(x.date === date && x.route === route));
+      // 從列表移除
+      existingReservations = existingReservations.filter(x => x.rowNumber !== rowNumber);
       renderReservationInfo();
     } else {
-      // 顯示詳細錯誤訊息
-      console.error('取消失敗詳細資訊:', result);
+      console.error('❌ 取消失敗:', result);
       alert('❌ 取消失敗：' + (result.message || '未知錯誤'));
     }
   } catch (error) {
-    console.error('取消請求錯誤:', error);
+    console.error('❌ 網路錯誤:', error);
     alert('❌ 網路錯誤，請稍後再試');
   }
 }
 
-window.addEventListener('load',init);
+window.addEventListener('load', init);
 </script>
 </body>
 </html>
