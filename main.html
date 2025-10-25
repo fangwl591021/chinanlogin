@@ -25,6 +25,14 @@ header{background:#3c8050;color:#fff;text-align:center;padding:15px;font-size:22
 select{width:100%;padding:12px;border:1px solid #ccc;border-radius:6px;margin-top:8px}
 .submit-btn{background:#3c8050;color:white;border:none;padding:15px;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;width:calc(100% - 32px);margin:20px 16px}
 .submit-btn:hover{background:#2d6140}
+.btn-group{display:flex;justify-content:center;gap:12px;margin:15px}
+.btn-large{font-size:18px;padding:12px 20px;border:none;border-radius:8px;cursor:pointer;font-weight:bold}
+.btn-calendar{background:#3c8050;color:white}
+.btn-calendar:hover{background:#2d6140}
+.btn-rule{background:#e0e0e0;color:#333}
+.btn-rule:hover{background:#d6d6d6}
+.dialog{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center}
+.dialog-content{background:white;padding:20px;border-radius:10px;width:90%;max-width:400px}
 </style>
 </head>
 
@@ -34,7 +42,11 @@ select{width:100%;padding:12px;border:1px solid #ccc;border-radius:6px;margin-to
 <div id="userInfo" style="padding:16px"><div class="loading-state">⏳ 系統初始化中...</div></div>
 <div id="currentReservationCard" style="display:none"></div>
 
-<button id="calendarBtn" onclick="toggleCalendar()">📅 打開月曆</button>
+<!-- 📅 按鈕區 -->
+<div class="btn-group">
+  <button id="calendarBtn" class="btn-large btn-calendar" onclick="toggleCalendar()">📅 打開月曆</button>
+  <button id="ruleBtn" class="btn-large btn-rule" onclick="showRules()">📘 預約規則</button>
+</div>
 
 <div id="calendarContainer" style="display:none;margin-top:10px;padding:0 16px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -64,6 +76,20 @@ select{width:100%;padding:12px;border:1px solid #ccc;border-radius:6px;margin-to
 
 <button id="submitBtn" class="submit-btn" onclick="submitReservation()" style="display:none">送出預約</button>
 
+<!-- 📘 規則彈窗 -->
+<div id="ruleDialog" class="dialog" style="display:none">
+  <div class="dialog-content">
+    <h3>🚍 預約規則</h3>
+    <ul>
+      <li>同日不可預約 A1+B1 或 A2+B2 班次（避免即時往返）</li>
+      <li>停駛、公休日不可預約（以行事曆為準）</li>
+      <li>每人每班次限預約 1 次</li>
+      <li>取消請提前 1 小時以上</li>
+    </ul>
+    <button onclick="closeRules()" style="margin-top:10px;width:100%;padding:10px;border:none;background:#3c8050;color:white;border-radius:6px">我了解了</button>
+  </div>
+</div>
+
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
 const WORKER_URL='https://delicate-math-7e61.fangwl591021.workers.dev/';
@@ -75,28 +101,23 @@ const stopsOutbound=["行政大樓","中餐廳","科技學院","學人會館","�
 const stopsReturn=[...stopsOutbound].reverse();
 
 /* ======================
-   登入驗證與資料載入
+   登入驗證
 ====================== */
 async function init(){
   try{
     await liff.init({liffId:"2006590746-KJodGOda"});
     if(!liff.isLoggedIn())return liff.login();
-
     const profile=await liff.getProfile();
     const [userCheck,reservations]=await Promise.allSettled([
       fetch(`${WORKER_URL}?mode=check&userId=${profile.userId}`).then(r=>r.json()),
       fetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`).then(r=>r.json())
     ]);
-
     if(userCheck.status==='fulfilled'){
       const result=userCheck.value.data||userCheck.value;
       if(!result.registered)return location.href='register.html';
       userData=result.user;
       renderUser(userData);
-    }else{
-      throw new Error('用戶驗證失敗');
     }
-
     if(reservations.status==='fulfilled'&&reservations.value){
       existingReservations=reservations.value.reservations||[];
       renderCurrentReservationCard();
@@ -126,31 +147,22 @@ function renderCurrentReservationCard(){
 }
 
 /* ======================
-   📅 月曆控制與停駛日讀取
+   📅 月曆控制
 ====================== */
 async function loadNoServiceDates(){
-  try{
-    const start=`${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`;
-    const end=`${currentYear}-${String(currentMonth+2).padStart(2,'0')}-01`;
-    const res=await fetch(`${WORKER_URL}?mode=calendar&start=${start}&end=${end}&calendarId=${CALENDAR_ID}`);
-    const data=await res.json();
-    noServiceDates={};
-
-    const events = data.events || data.holidays || [];
-    events.forEach(e=>{
-      const title = e.title || e.summary || '';
-      if(title && (title.includes('停駛') || title.includes('公休'))){
+  const start=`${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`;
+  const end=`${currentYear}-${String(currentMonth+2).padStart(2,'0')}-01`;
+  const res=await fetch(`${WORKER_URL}?mode=calendar&start=${start}&end=${end}&calendarId=${CALENDAR_ID}`);
+  const data=await res.json();
+  noServiceDates={};
+  if(data.events){
+    data.events.forEach(e=>{
+      if(e.title.includes('停駛')||e.title.includes('公休')){
         noServiceDates[e.date]=true;
       }
     });
-
-    console.log('✅ 停駛/公休日載入完成:', noServiceDates);
-    loadCalendar();
-  }catch(err){
-    console.error('🚨 載入停駛日期失敗:', err);
-    noServiceDates={};
-    loadCalendar();
   }
+  loadCalendar();
 }
 
 function toggleCalendar(){
@@ -182,15 +194,8 @@ function loadCalendar(){
     cal.appendChild(div);
   }
 }
-function changeMonth(delta){
-  currentMonth+=delta;
-  if(currentMonth<0){currentMonth=11;currentYear--;}
-  if(currentMonth>11){currentMonth=0;currentYear++;}
-  loadNoServiceDates();
-}
-function formatDate(d){
-  return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
+function changeMonth(delta){currentMonth+=delta;if(currentMonth<0){currentMonth=11;currentYear--;}if(currentMonth>11){currentMonth=0;currentYear++;}loadNoServiceDates();}
+function formatDate(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 
 /* ======================
    🚍 預約流程
@@ -218,18 +223,13 @@ function selectRoute(rid,dir,btn){
   selectedRoute=rid;
   document.querySelectorAll('.route-btn').forEach(b=>b.classList.remove('selected'));
   btn.classList.add('selected');
-
   const from=document.getElementById('fromStop');
   const to=document.getElementById('toStop');
-  const isOutbound=dir.includes('暨大→');
-  const stops=isOutbound?stopsOutbound:stopsReturn;
-
+  const stops=dir.includes('暨大→')?stopsOutbound:stopsReturn;
   from.innerHTML='<option value="">請選擇上車站</option>'+stops.map(s=>`<option value="${s}">${s}</option>`).join('');
   to.innerHTML='<option value="">請選擇下車站</option>';
-
   document.getElementById('fromStopSection').style.display='block';
   document.getElementById('toStopSection').style.display='block';
-
   from.onchange=function(){
     to.innerHTML='<option value="">請選擇下車站</option>';
     stops.filter(stop=>stop!==from.value).forEach(stop=>{
@@ -240,7 +240,6 @@ function selectRoute(rid,dir,btn){
   };
   to.onchange=checkSubmitReady;
 }
-
 function checkSubmitReady(){
   const from=document.getElementById('fromStop').value;
   const to=document.getElementById('toStop').value;
@@ -255,23 +254,20 @@ async function submitReservation(){
   const to=document.getElementById('toStop').value;
   if(!selectedDate||!selectedRoute||!from||!to)return alert('請完整選擇日期、班次與上下車站');
 
-  // 預約規則：禁止同日 A1+B1 或 A2+B2
-  const conflict=existingReservations.some(r=>{
-    return r.date===selectedDate &&
-      ((r.route.startsWith('A')&&selectedRoute.startsWith('B'))||
-       (r.route.startsWith('B')&&selectedRoute.startsWith('A'))) &&
-      Math.abs(parseInt(r.route[1])-parseInt(selectedRoute[1]))===0;
-  });
-  if(conflict)return alert('⚠️ 不可同日預約 A1+B1 或 A2+B2 班次');
-
-  const payload={type:'reserve',userId:userData.userId,name:userData.name,studentId:userData.studentId,
-    department:userData.department,phone:userData.phone||'',route:selectedRoute,fromStop:from,toStop:to,date:selectedDate};
+  const payload={type:'reserve',userId:userData.userId,name:userData.name,phone:userData.phone||'',department:userData.department,
+    route:selectedRoute,fromStop:from,toStop:to,date:selectedDate};
 
   const res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const r=await res.json();
   if(r.status==='success'){alert('✅ 預約成功！');existingReservations.push(payload);renderCurrentReservationCard();}
   else alert('❌ 預約失敗');
 }
+
+/* ======================
+   📘 規則視窗控制
+====================== */
+function showRules(){document.getElementById('ruleDialog').style.display='flex';}
+function closeRules(){document.getElementById('ruleDialog').style.display='none';}
 
 window.addEventListener('load',init);
 </script>
