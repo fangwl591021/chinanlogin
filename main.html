@@ -560,6 +560,23 @@ function renderReservationInfo(){
     const routeCode = r.route.split(' ')[0];
     const routeInfo = ROUTES[routeCode];
     
+    // ✅ 處理站名：如果沒有英文，嘗試從 STOPS 資料中匹配
+    function formatStopName(stopName, routeCode) {
+      // 如果已經包含英文，直接返回
+      if (stopName && (stopName.includes('(') || stopName.split(' ').length > 1)) {
+        return stopName;
+      }
+      
+      // 否則從 STOPS 資料中尋找匹配
+      const stops = STOPS[routeCode] || [];
+      const matched = stops.find(s => s.startsWith(stopName + ' ') || s === stopName);
+      
+      return matched || stopName;
+    }
+    
+    const fromStopDisplay = formatStopName(r.fromStop, routeCode);
+    const toStopDisplay = formatStopName(r.toStop, routeCode);
+    
     return `
     <div class="resv-card">
       <div class="resv-row">
@@ -581,13 +598,13 @@ function renderReservationInfo(){
       <div class="resv-row" style="margin-top:10px">
         <div style="margin-bottom:8px">
           <span style="color:#2563eb;font-weight:bold;font-size:15px">上車 Boarding:</span>
-          <div style="margin-left:8px;margin-top:4px;font-weight:500">${r.fromStop}</div>
+          <div style="margin-left:8px;margin-top:4px;font-weight:500">${fromStopDisplay}</div>
         </div>
       </div>
       <div class="resv-row">
         <div style="margin-bottom:12px">
           <span style="color:#2563eb;font-weight:bold;font-size:15px">下車 Alighting:</span>
-          <div style="margin-left:8px;margin-top:4px;font-weight:500">${r.toStop}</div>
+          <div style="margin-left:8px;margin-top:4px;font-weight:500">${toStopDisplay}</div>
         </div>
       </div>
       <button class="cancel-btn" onclick="cancelReservation(${identifier}, '${idType}')">取消預約 Cancel Reservation</button>
