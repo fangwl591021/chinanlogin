@@ -271,26 +271,37 @@ function renderReservationInfo(){
     </div>`).join('');
 }
 
-/* === 取消預約 === */
-async function cancelReservation(date,route){
-  if(!confirm(`確定取消 ${date} ${route} 嗎？`))return;
-  const payload={type:'cancel',userId:userData.userId,date,route};
-  const res=await fetch(WORKER_URL,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(payload)
-  });
-  const r=await res.json();
-  if(r.status==='success'){
-    alert('✅ 已取消預約');
-    existingReservations=existingReservations.filter(x=>!(x.date===date&&x.route===route));
-    renderReservationInfo();
-  }else alert('❌ 取消失敗：'+r.message);
-}
-
-/* === 規則 === */
-function showRules(){
-  alert('🚍 預約規則：\n1️⃣ 同日不可預約A1+B1、A2+B2\n2️⃣ 停駛日不可預約\n3️⃣ 取消須提前1小時以上');
+async function cancelReservation(date, route) {
+  if (!confirm(`確定取消 ${date} ${route} 嗎？`)) return;
+  
+  const payload = {
+    type: 'cancel', 
+    userId: userData.userId, 
+    date: date, 
+    route: route
+  };
+  
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    
+    if (result.status === 'success') {
+      alert('✅ 已取消預約');
+      existingReservations = existingReservations.filter(x => !(x.date === date && x.route === route));
+      renderReservationInfo();
+    } else {
+      // 顯示詳細錯誤訊息
+      console.error('取消失敗詳細資訊:', result);
+      alert('❌ 取消失敗：' + (result.message || '未知錯誤'));
+    }
+  } catch (error) {
+    console.error('取消請求錯誤:', error);
+    alert('❌ 網路錯誤，請稍後再試');
+  }
 }
 
 window.addEventListener('load',init);
