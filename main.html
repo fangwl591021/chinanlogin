@@ -63,17 +63,22 @@ async function init(){
       cachedUser?fetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`).then(r=>r.json()):null
     ]);
     
-    if(userCheck.status==='fulfilled'){
-      const result=userCheck.value;
+    if (userCheck.status === 'fulfilled') {
+  const result = userCheck.value;
 
-      // ✅【新增：兼容 result.data 格式】
-      const payload=result.data||result;
+  // ✅ 新增兼容處理：有些 GAS 回傳在 data 內
+  const payload = result.data || result;
 
-      if(!payload.registered)return location.href='register.html';
-      userData=payload.user;
-      cache.set('pangolinUser',userData);
-      renderUser(userData);
-    }
+  if (!payload.registered) {
+    console.warn("⚠️ 用戶未註冊，導回註冊頁");
+    return location.href = 'register.html';
+  }
+
+  userData = payload.user;
+  cache.set('pangolinUser', userData);
+  renderUser(userData);
+}
+
     
     if(reservations.status==='fulfilled'&&reservations.value){
       existingReservations=reservations.value.reservations||[];
