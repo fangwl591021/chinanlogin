@@ -288,25 +288,35 @@ function renderReservationInfo(){
   
   panel.style.display='block';
   
-  // ✅ 使用 rowNumber 作為按鈕參數
+  // ✅ 優先使用預約ID，備用行號
   box.innerHTML = existingReservations.map(r => {
-    console.log('🔍 渲染預約:', r); // 除錯用
+    console.log('🔍 渲染預約:', r);
+    
+    // 使用預約ID或行號（向下相容）
+    const identifier = r.reservationId ? `'${r.reservationId}'` : r.rowNumber;
+    const idType = r.reservationId ? 'id' : 'row';
+    
     return `
     <div class="resv-card">
       <div class="resv-row">🕒 時間：${r.date}</div>
       <div class="resv-row">🚌 班次：${r.route}</div>
       <div class="resv-row">⬆ 上車：${r.fromStop}　⬇ 下車：${r.toStop}</div>
-      <button class="cancel-btn" onclick="cancelReservation(${r.rowNumber})">取消預約</button>
+      <button class="cancel-btn" onclick="cancelReservation(${identifier}, '${idType}')">取消預約</button>
     </div>`;
   }).join('');
 }
 
-// ✅ 使用行號的取消函數
-async function cancelReservation(rowNumber) {
-  console.log('🎯 取消預約 - 行號:', rowNumber);
+// ✅ 使用預約ID的取消函數（向下相容行號）
+async function cancelReservation(identifier, idType) {
+  console.log('🎯 取消預約 - 類型:', idType, '識別碼:', identifier);
   
   // 從列表找出完整資訊
-  const reservation = existingReservations.find(r => r.rowNumber === rowNumber);
+  let reservation;
+  if (idType === 'id') {
+    reservation = existingReservations.find(r => r.reservationId === identifier);
+  } else {
+    reservation = existingReservations.find(r => r.rowNumber === identifier);
+  }
   
   if (!reservation) {
     alert('❌ 找不到預約資料');
@@ -319,10 +329,12 @@ async function cancelReservation(rowNumber) {
     return;
   }
   
+  // ✅ 優先傳送預約ID
   const payload = {
     type: 'cancel',
     userId: userData.userId,
-    rowNumber: rowNumber  // ✅ 傳送行號
+    reservationId: reservation.reservationId || null,  // 優先使用預約ID
+    rowNumber: reservation.rowNumber  // 備用行號
   };
   
   console.log('📤 傳送資料:', payload);
@@ -339,8 +351,14 @@ async function cancelReservation(rowNumber) {
     
     if (result.status === 'success') {
       alert('✅ 已取消預約');
-      // 從列表移除
-      existingReservations = existingReservations.filter(x => x.rowNumber !== rowNumber);
+      // 從列表移除（用預約ID或行號）
+      existingReservations = existingReservations.filter(x => {
+        if (reservation.reservationId) {
+          return x.reservationId !== reservation.reservationId;
+        } else {
+          return x.rowNumber !== reservation.rowNumber;
+        }
+      });
       renderReservationInfo();
     } else {
       console.error('❌ 取消失敗:', result);
