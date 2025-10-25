@@ -1,402 +1,736 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>暨大穿山甲專車預約平台</title>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
-    @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
-    .hidden { display: none !important; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>穿山甲專車預約 🚍 | Pangolin Shuttle Reservation</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+<style>
+body {
+  font-family: system-ui, "Noto Sans TC", sans-serif;
+  background: #f5f6f7;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+header {
+  background: #3c8050;
+  color: #fff;
+  text-align: center;
+  padding: 15px;
+  font-size: 22px;
+  font-weight: bold;
+}
+main {
+  flex: 1;
+  padding-bottom: 40px;
+}
+.notice {
+  padding: 10px 16px;
+  margin: 10px 16px;
+  border-radius: 6px;
+}
+.notice.success { background: #e8f5e9; color: #2e7d32; border: 1px solid #81c784; }
+.notice.error { background: #fdecea; color: #b71c1c; border: 1px solid #f5c2c7; }
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  text-align: center;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+.calendar-day {
+  padding: 8px 0;
+  min-height: 45px;
+  border-radius: 4px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  cursor: pointer;
+}
+.calendar-day:hover { background: #eaf5ea; }
+.calendar-day.past { background: #f5f5f5; color: #ccc; cursor:not-allowed; }
+.calendar-day.disabled { background: #ffe6e6; color: #999; cursor:not-allowed; }
+.calendar-day.selected { background: #3c8050; color: #fff; font-weight:bold; }
+
+.route-section, .stop-selector { padding: 0 16px; margin: 20px 0; }
+.route-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.route-btn {
+  padding: 12px;
+  border: 2px solid #3c8050;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  text-align: center;
+}
+.route-btn:hover { background: #eaf5ea; }
+.route-btn.selected { background: #3c8050; color:white; }
+
+select {
+  width:100%;
+  padding:12px;
+  border:1px solid #ccc;
+  border-radius:6px;
+  margin-top:8px;
+  font-family: system-ui, "Noto Sans TC", sans-serif;
+}
+.submit-btn {
+  background:#3c8050;
+  color:white;
+  border:none;
+  padding:15px;
+  border-radius:8px;
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer;
+  width:calc(100% - 32px);
+  margin:20px 16px;
+}
+.submit-btn:hover { background:#2d6140; }
+
+.btn-group {
+  display:flex;
+  justify-content:center;
+  gap:12px;
+  margin:15px;
+}
+.btn-large {
+  font-size:18px;
+  padding:12px 20px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+  color: white !important; /* 確保文字是白色 */
+}
+.btn-calendar { background:#3c8050; }
+.btn-calendar:hover { background:#2d6140; }
+.btn-rule { background:#6c757d; } /* 改為灰色 */
+.btn-rule:hover { background:#5a6268; }
+
+.cancel-btn {
+  background:#c62828;
+  color:white;
+  border:none;
+  padding:10px 20px;
+  border-radius:6px;
+  font-weight:bold;
+  cursor:pointer;
+  margin-top:8px;
+  width:100%;
+}
+.cancel-btn:hover { background:#b71c1c; }
+
+.resv-card {
+  background:#f0fdf4;
+  border:1px solid #a5d6a7;
+  padding:10px 16px;
+  border-radius:8px;
+  margin:10px 16px;
+}
+.resv-row { margin:4px 0; }
+
+#reservationPanel {
+  margin-top: 40px;
+  padding: 10px 0 20px 0;
+  background: #ffffff;
+  border-top: 3px solid #3c8050;
+  box-shadow: 0 -3px 5px rgba(0,0,0,0.1);
+}
+
+/* 雙語樣式 */
+.bilingual {
+  line-height: 1.4;
+}
+.chinese {
+  font-weight: 500;
+  display: block;
+  color: inherit; /* 繼承父元素顏色 */
+}
+.english {
+  font-size: 12px;
+  color: inherit; /* 繼承父元素顏色 */
+  display: block;
+  font-style: italic;
+  opacity: 0.9; /* 稍微降低不透明度 */
+}
+
+.stop-option {
+  padding: 8px 12px;
+}
+
+/* 確保按鈕內文字都是白色 */
+.btn-large .chinese,
+.btn-large .english,
+.submit-btn .chinese, 
+.submit-btn .english,
+.cancel-btn .chinese,
+.cancel-btn .english {
+  color: white !important;
+}
+
+/* 用戶資訊樣式 */
+.user-profile {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  margin: 10px 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.user-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-right: 12px;
+  border: 2px solid #3c8050;
+}
+.user-info {
+  flex: 1;
+}
+.user-name {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+.user-status {
+  font-size: 14px;
+  color: #666;
+}
+</style>
 </head>
-<body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen flex items-center justify-center p-4">
 
-  <!-- 🟢 開場 LOGO + Loading -->
-  <div id="splash" class="flex flex-col items-center justify-center w-full h-screen fade-in">
-    <img src="https://voom-obs.line-scdn.net/h9F1A8P9IemhZVGlmbgJ9EXBscUdzUyB6TF1OS3pRTx9KU3t5WyddDVVgUxJAbmB5TxZCDkheWAV0bSB2YDhsTEFkYQZdfXc_TAVZSVJkYlFdeA/L1080x1920" 
-     width="400" 
-     style="height: auto;">
-    <div class="flex items-center space-x-2 text-green-700 font-semibold text-lg mt-4">
-      <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
-      <span>登入中,請稍候...</span>
-    </div>
-    <div id="debugInfo" class="mt-8 text-xs text-gray-500 text-center max-w-xs"></div>
+<body>
+<header>
+  <div class="chinese">穿山甲專車預約</div>
+  <div class="english">Pangolin Shuttle Reservation</div>
+</header>
+
+<main>
+  <div id="userInfo" style="padding:16px">
+    <div>⏳ 系統初始化中... | System initializing...</div>
   </div>
 
-  <!-- 📝 註冊表單 -->
-  <div id="registerForm" class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm hidden fade-in">
-    <div class="text-center mb-6">
-      <h1 class="text-xl font-bold text-gray-800 mb-2">學生接駁車註冊</h1>
-      <h2 class="text-sm text-gray-600 mb-4">請填寫資料完成註冊</h2>
-      <div id="userIdDisplay" class="text-xs text-gray-400 mb-2"></div>
-    </div>
-
-    <div class="space-y-3">
-      <input id="name" type="text" placeholder="姓名" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none transition-all duration-200">
-      <input id="phone" type="tel" placeholder="電話" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none transition-all duration-200">
-      <input id="studentId" type="text" placeholder="學號" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none transition-all duration-200">
-      
-      <select id="department" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none transition-all duration-200">
-        <option value="">請選擇科系</option>
-        <optgroup label="人文學院 - College of Humanities">
-          <option value="chinese">中國語文學系</option>
-          <option value="foreign_lang">外國語文學系</option>
-          <option value="social_policy">社會政策與社會工作學系</option>
-          <option value="public_admin">公共行政與政策學系</option>
-          <option value="history">歷史學系</option>
-          <option value="southeast_asian">東南亞學系</option>
-          <option value="indigenous">原鄉發展跨領域學士學位學程原住民專班</option>
-        </optgroup>
-        <optgroup label="管理學院 - College of Management">
-          <option value="ib">國際企業學系</option>
-          <option value="economics">經濟學系</option>
-          <option value="finance">財務金融學系</option>
-          <option value="im">資訊管理學系</option>
-          <option value="tourism">觀光休閒與餐旅管理學系</option>
-          <option value="management">管理學院學士班</option>
-        </optgroup>
-        <optgroup label="科技學院 - College of Science and Technology">
-          <option value="cs">資訊工程學系</option>
-          <option value="civil">土木工程學系</option>
-          <option value="ee">電機工程學系</option>
-          <option value="chemistry">應用化學系</option>
-          <option value="materials">應用材料及光電工程學系</option>
-          <option value="tech">科技學院學士班</option>
-        </optgroup>
-        <optgroup label="教育學院 - College of Education">
-          <option value="international_edu">國際文教與比較教育學系</option>
-          <option value="edu_policy">教育政策與行政學系</option>
-          <option value="counseling">諮商心理與人力資源發展學系</option>
-        </optgroup>
-        <optgroup label="水沙連學院 - College of Shu-Sha-Lian">
-          <option value="shushalian">水沙連學院學士班</option>
-        </optgroup>
-        <optgroup label="護理暨健康福祉學院 - College of Nursing and Health Innovation">
-          <option value="nursing">護理學系</option>
-        </optgroup>
-        <optgroup label="碩博士學位學程 - Master's and Doctoral Degree Programs">
-          <option value="cultural_marketing">文創社會行銷碩士</option>
-          <option value="long_term_care">長期照顧經營管理碩士</option>
-          <option value="business_tech">商管及資訊科技創新應用全英碩士</option>
-          <option value="european_industry">歐興產業策略與發展碩士</option>
-          <option value="regional_development">區域發展重點產業碩士</option>
-          <option value="business_management">經營管理碩士</option>
-          <option value="emerging_industry_phd">新興產業策略與發展博士</option>
-          <option value="ai_robotics">人工智慧與機器人碩士</option>
-          <option value="mental_health">心理健康與諮詢碩士</option>
-          <option value="curriculum_tech">課程教學與科技研究所</option>
-          <option value="lifelong_learning">終身學習與人力資源發展碩士</option>
-          <option value="international_edu_phd">國際文教管理人才博士</option>
-          <option value="local_revitalization">地方創生與跨域治理碩士</option>
-          <option value="chinese_teaching">華語文教學碩士學位學程</option>
-        </optgroup>
-      </select>
-
-      <button id="registerBtn" onclick="registerUser()" class="w-full bg-green-500 text-white py-2 rounded-lg font-bold text-lg hover:bg-green-600 transition-all duration-200 active:scale-95">
-        <span id="btnText">立即註冊</span>
-        <div id="btnSpinner" class="hidden animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>
-      </button>
-    </div>
-    <div class="mt-4 text-center text-sm text-gray-500">
-      本系統僅用於接駁車服務,不對外公開個資。
-    </div>
+  <div class="btn-group">
+    <button id="calendarBtn" class="btn-large btn-calendar" onclick="toggleCalendar()">
+      <div class="chinese">📅 打開月曆</div>
+      <div class="english">Open Calendar</div>
+    </button>
+    <button id="ruleBtn" class="btn-large btn-rule" onclick="showRules()">
+      <div class="chinese">📘 預約規則</div>
+      <div class="english">Reservation Rules</div>
+    </button>
   </div>
+
+  <div id="calendarContainer" style="display:none;margin-top:10px;padding:0 16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <button onclick="changeMonth(-1)">◀ 上個月 | Previous</button>
+      <h3 id="calendarTitle"></h3>
+      <button onclick="changeMonth(1)">下個月 ▶ | Next</button>
+    </div>
+    <div id="calendar" class="calendar"></div>
+  </div>
+
+  <div id="selectedDate" class="notice success" style="display:none"></div>
+
+  <div id="routeSection" class="route-section" style="display:none">
+    <h3 class="bilingual">
+      <span class="chinese">請選擇搭乘班次</span>
+      <span class="english">Please Select Shuttle Route</span>
+    </h3>
+    <div id="routeButtons" class="route-buttons"></div>
+  </div>
+
+  <div id="fromStopSection" class="stop-selector" style="display:none">
+    <h3 class="bilingual">
+      <span class="chinese">請選擇上車站</span>
+      <span class="english">Please Select Boarding Stop</span>
+    </h3>
+    <select id="fromStop"><option value="">請先選擇班次 | Please select route first</option></select>
+  </div>
+
+  <div id="toStopSection" class="stop-selector" style="display:none">
+    <h3 class="bilingual">
+      <span class="chinese">請選擇下車站</span>
+      <span class="english">Please Select Alighting Stop</span>
+    </h3>
+    <select id="toStop"><option value="">請選擇上車站 | Please select boarding stop</option></select>
+  </div>
+
+  <button id="submitBtn" class="submit-btn" onclick="submitReservation()" style="display:none">
+    <div class="chinese">送出預約</div>
+    <div class="english">Submit Reservation</div>
+  </button>
+
+  <div id="reservationPanel" style="display:none">
+    <div style="text-align:center;font-weight:bold;color:#2d6140;margin-bottom:5px;" class="bilingual">
+      <span class="chinese">我的預約紀錄</span>
+      <span class="english">My Reservations</span>
+    </div>
+    <div id="reservationInfo"></div>
+  </div>
+</main>
 
 <script>
-// ⚙️ 使用 Cloudflare Worker 作為代理(解決 CORS 問題)
-const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+const WORKER_URL='https://delicate-math-7e61.fangwl591021.workers.dev/';
+let userData=null, existingReservations=[], selectedDate=null, selectedRoute=null;
+let currentYear=new Date().getFullYear(), currentMonth=new Date().getMonth();
+let lineProfile = null; // 儲存 LINE 用戶資料
 
-let currentUserId = null;
-let startTime = Date.now();
-
-function updateDebugInfo(msg) {
-  const debug = document.getElementById('debugInfo');
-  if (debug) {
-    debug.innerHTML = (debug.innerHTML ? debug.innerHTML + '<br>' : '') + msg;
-  }
-  console.log('🔍 DEBUG:', msg);
-}
-
-function showForm() {
-  document.getElementById('splash').classList.add('hidden');
-  document.getElementById('registerForm').classList.remove('hidden');
-  if (currentUserId) {
-    document.getElementById('userIdDisplay').textContent = `(ID: ${currentUserId.substring(0, 12)}...)`;
-  }
-}
-
-function showError(message) {
-  document.getElementById('splash').classList.add('hidden');
-  alert('⚠️ ' + message);
-}
-
-function setButtonLoading(loading) {
-  const btn = document.getElementById('registerBtn');
-  const btnText = document.getElementById('btnText');
-  const spinner = document.getElementById('btnSpinner');
-  
-  if (loading) {
-    btn.disabled = true;
-    btnText.classList.add('hidden');
-    spinner.classList.remove('hidden');
-    btn.classList.add('opacity-75');
-  } else {
-    btn.disabled = false;
-    btnText.classList.remove('hidden');
-    spinner.classList.add('hidden');
-    btn.classList.remove('opacity-75');
-  }
-}
-
-// 測試 Worker 連接
-async function testWorkerConnection() {
+/* === 初始化 === */
+async function init(){
   try {
-    updateDebugInfo('測試 Worker 連接...');
-    const testResponse = await fetch(WORKER_URL);
-    const result = await testResponse.json();
-    updateDebugInfo('✅ Worker 連接成功');
-    console.log('Worker 測試回應:', result);
-    return true;
-  } catch (error) {
-    updateDebugInfo('❌ Worker 連接失敗');
-    console.error('Worker 連接測試失敗:', error);
-    return false;
-  }
-}
-
-// 🔧 修正的檢查註冊狀態函數
-async function checkRegistrationStatus(userId) {
-  try {
-    const checkUrl = `${WORKER_URL}?mode=check&userId=${encodeURIComponent(userId)}`;
-    console.log('📡 檢查 URL:', checkUrl);
+    await liff.init({liffId:"2006590746-KJodGOda"});
+    if(!liff.isLoggedIn()) return liff.login();
     
-    const res = await fetch(checkUrl);
-    const text = await res.text();
-    console.log('📨 原始回應:', text);
+    // 取得 LINE 用戶資料
+    lineProfile = await liff.getProfile();
+    console.log('👤 LINE 用戶資料:', lineProfile);
     
-    let result = {};
-    try {
-      result = JSON.parse(text);
-    } catch (e) {
-      console.error('❌ JSON 解析失敗:', e);
-      throw new Error('回應解析失敗');
-    }
+    const [checkRes, reservations] = await Promise.all([
+      fetch(`${WORKER_URL}?mode=check&userId=${lineProfile.userId}`).then(r=>r.json()),
+      fetch(`${WORKER_URL}?mode=reservations&userId=${lineProfile.userId}`).then(r=>r.json())
+    ]);
     
-    console.log('🔍 檢查結果:', result);
+    console.log('✅ 用戶檢查:', checkRes);
+    console.log('📋 預約回應:', reservations);
     
-    // 🟢 修正的檢查邏輯 - 多種可能的成功條件
-    if (result.ok === true && result.data) {
-      // 新格式: { ok: true, data: { registered: true, user: {...} } }
-      if (result.data.registered === true) {
-        return { registered: true, user: result.data.user };
-      }
-      // 或者 data 直接包含用戶資訊
-      if (result.data.userId || result.data.name) {
-        return { registered: true, user: result.data };
-      }
-    }
+    if(!checkRes.registered) return location.href='register.html';
     
-    // 舊格式或其他可能的格式
-    if (result.registered === true) {
-      return { registered: true, user: result.user || result.data };
-    }
+    userData = checkRes.user;
+    renderUser(userData, lineProfile);
     
-    // 如果沒有明確的 registered 欄位，但有用戶資料也視為已註冊
-    if (result.user && result.user.userId) {
-      return { registered: true, user: result.user };
-    }
+    existingReservations = reservations.reservations || [];
+    console.log('📦 預約列表 (共 ' + existingReservations.length + ' 筆):', existingReservations);
     
-    if (result.data && result.data.userId) {
-      return { registered: true, user: result.data };
-    }
-    
-    return { registered: false };
-    
-  } catch (error) {
-    console.error('❌ 檢查註冊狀態失敗:', error);
-    throw error;
-  }
-}
-
-(async function init() {
-  try {
-    startTime = Date.now();
-    
-    updateDebugInfo('初始化 LIFF...');
-    
-    const liffInit = await liff.init({ liffId: "2006590746-KJodGOda" });
-    updateDebugInfo(`LIFF 初始化完成: ${Date.now() - startTime}ms`);
-    
-    if (!liff.isLoggedIn()) {
-      updateDebugInfo('使用者未登入,跳轉到 LINE 登入...');
-      liff.login();
-      return;
-    }
-
-    const profile = await liff.getProfile();
-    currentUserId = profile.userId;
-    updateDebugInfo(`✅ 獲取用戶ID: ${currentUserId.substring(0, 20)}...`);
-
-    // 測試 Worker 連接
-    await testWorkerConnection();
-
-    // 🔑 檢查是否已註冊 - 使用修正後的函數
-    const checkStart = Date.now();
-    updateDebugInfo(`檢查註冊狀態中...`);
-    
-    const checkResult = await checkRegistrationStatus(currentUserId);
-    
-    updateDebugInfo(`檢查完成: ${Date.now() - checkStart}ms`);
-
-    if (checkResult.registered) {
-      updateDebugInfo(`✅ 已註冊用戶: ${checkResult.user?.name || '未知'}`);
-      updateDebugInfo('跳轉到主頁面...');
-      
-      // 儲存用戶資訊到 localStorage
-      if (checkResult.user) {
-        localStorage.setItem('pangolin_user', JSON.stringify(checkResult.user));
-      }
-      localStorage.setItem('pangolin_registered', 'true');
-      localStorage.setItem('pangolin_userId', currentUserId);
-      
-      setTimeout(() => {
-        window.location.href = 'main.html';
-      }, 1500);
-    } else {
-      updateDebugInfo('顯示註冊表單');
-      showForm();
-    }
-
+    renderReservationInfo();
+    loadCalendar();
   } catch (err) {
-    console.error('❌ 初始化錯誤', err);
-    updateDebugInfo(`❌ 錯誤: ${err.message}`);
-    showError('系統發生錯誤,請稍後再試\n\n' + err.message);
+    console.error('❌ 初始化錯誤:', err);
+    alert('系統錯誤: ' + err.message);
   }
-})();
+}
 
-async function registerUser() {
-  const name = document.getElementById('name').value.trim();
-  const phone = document.getElementById('phone').value.trim();
-  const studentId = document.getElementById('studentId').value.trim();
-  const department = document.getElementById('department').value;
+/* === 顯示用戶資訊 - 使用 LINE 頭像和名稱 === */
+function renderUser(u, lineProfile){
+  const userInfoDiv = document.getElementById('userInfo');
+  
+  userInfoDiv.innerHTML = `
+    <div class="user-profile">
+      <img src="${lineProfile.pictureUrl}" alt="用戶頭像" class="user-avatar" 
+           onerror="this.src='https://via.placeholder.com/50x50/3c8050/ffffff?text=USER'">
+      <div class="user-info">
+        <div class="user-name">${lineProfile.displayName}</div>
+        <div class="user-status bilingual">
+          <span class="chinese">✅ 已註冊用戶</span>
+          <span class="english">✅ Registered User</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
 
-  if (!name || !phone || !studentId || !department) {
-    alert('⚠️ 請完整填寫所有欄位');
+/* === 月曆 === */
+function loadCalendar(){
+  const cal=document.getElementById('calendar');
+  cal.innerHTML='';
+  const first=new Date(currentYear,currentMonth,1);
+  const last=new Date(currentYear,currentMonth+1,0);
+  document.getElementById('calendarTitle').textContent=
+    `${currentYear}年${currentMonth+1}月`;
+
+  const today=new Date();
+  for(let d=1;d<=last.getDate();d++){
+    const dateStr=`${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const div=document.createElement('div');
+    div.className='calendar-day';
+    if(new Date(dateStr)<today)div.classList.add('past');
+    else{div.textContent=d;div.onclick=()=>selectDate(dateStr);}
+    cal.appendChild(div);
+  }
+}
+function changeMonth(delta){
+  currentMonth+=delta;
+  if(currentMonth<0){currentMonth=11;currentYear--;}
+  if(currentMonth>11){currentMonth=0;currentYear++;}
+  loadCalendar();
+}
+function toggleCalendar(){
+  const c=document.getElementById('calendarContainer');
+  c.style.display=(c.style.display==='none')?'block':'none';
+}
+function selectDate(dateStr){
+  selectedDate=dateStr;
+  document.getElementById('selectedDate').style.display='block';
+  document.getElementById('selectedDate').innerHTML = `
+    <div class="chinese">✅ 已選擇：${dateStr}</div>
+    <div class="english">✅ Selected: ${dateStr}</div>
+  `;
+}
+
+/* === 預約紀錄 - 修正顯示格式 === */
+function renderReservationInfo(){
+  const panel = document.getElementById('reservationPanel');
+  const box = document.getElementById('reservationInfo');
+  
+  if(!existingReservations.length){
+    panel.style.display='none';
     return;
   }
-
-  if (phone.length < 7) {
-    alert('⚠️ 請輸入有效的電話號碼');
-    return;
-  }
-
-  if (studentId.length < 3) {
-    alert('⚠️ 請輸入有效的學號');
-    return;
-  }
-
-  // 📌 符合 GAS doPost 預期的資料格式
-  const data = {
-    type: 'register',
-    userId: currentUserId,
-    name,
-    phone,
-    studentId,
-    department,
-    timestamp: new Date().toISOString()
-  };
-
-  console.log('📤 發送註冊資料:', data);
-  setButtonLoading(true);
-
-  try {
-    const registerStart = Date.now();
+  
+  panel.style.display='block';
+  
+  box.innerHTML = existingReservations.map(r => {
+    // 格式化日期：只顯示年月日
+    const dateObj = new Date(r.date);
+    const formattedDate = dateObj.toISOString().split('T')[0]; // YYYY-MM-DD
+    const displayDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
     
-    // 使用 Worker 發送註冊請求
+    // 取得站點的英文名稱
+    const fromStopEn = getStopEnglishName(r.route, r.fromStop);
+    const toStopEn = getStopEnglishName(r.route, r.toStop);
+    
+    return `
+    <div class="resv-card">
+      <div class="resv-row">
+        <span class="chinese">🕒 時間：${displayDate}</span>
+        <span class="english">Time: ${displayDate}</span>
+      </div>
+      <div class="resv-row">
+        <span class="chinese">🚌 班次：${r.route}</span>
+        <span class="english">Route: ${r.route}</span>
+      </div>
+      <div class="resv-row">
+        <span class="chinese">⬆ 上車：${r.fromStop}　⬇ 下車：${r.toStop}</span>
+        <span class="english">Board: ${fromStopEn}　Alight: ${toStopEn}</span>
+      </div>
+      <button class="cancel-btn" onclick="cancelReservation('${r.date}','${r.route}')">
+        <div class="chinese">取消預約</div>
+        <div class="english">Cancel Reservation</div>
+      </button>
+    </div>`;
+  }).join('');
+}
+
+/* === 取得站點英文名稱 === */
+function getStopEnglishName(route, stopName) {
+  const stops = STOPS[route] || [];
+  const stop = stops.find(s => s.zh === stopName);
+  return stop ? stop.en : stopName;
+}
+
+/* === 取消預約 === */
+async function cancelReservation(date, route) {
+  if (!confirm(`確定取消 ${date} ${route} 嗎？\nConfirm cancellation of ${date} ${route}?`)) return;
+  
+  const payload = {
+    type: 'cancel', 
+    userId: userData.userId, 
+    date: date, 
+    route: route
+  };
+  
+  try {
     const res = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      body: JSON.stringify(payload)
     });
     
-    const text = await res.text();
-    console.log('📨 註冊回應原始文字:', text);
-    console.log('📊 HTTP 狀態:', res.status);
+    const result = await res.json();
     
-    if (!res.ok) {
-      let errorMsg = `HTTP ${res.status}: ${res.statusText}`;
-      try {
-        const errorData = JSON.parse(text);
-        if (errorData.error) errorMsg = errorData.error;
-        if (errorData.message) errorMsg += ' - ' + errorData.message;
-      } catch (e) {
-        console.error('❌ 無法解析錯誤回應:', text);
-      }
-      throw new Error(errorMsg);
+    if (result.status === 'success') {
+      alert('✅ 已取消預約\n✅ Reservation cancelled');
+      existingReservations = existingReservations.filter(x => !(x.date === date && x.route === route));
+      renderReservationInfo();
+    } else {
+      console.error('❌ 取消失敗:', result);
+      alert('❌ 取消失敗：' + (result.message || '未知錯誤\nCancellation failed'));
     }
-    
-    let result = {};
-    try {
-      result = JSON.parse(text);
-    } catch (e) {
-      throw new Error('伺服器回應格式錯誤');
-    }
-    
-    console.log(`✅ 註冊請求完成,耗時: ${Date.now() - registerStart}ms`);
-    
-    // 🟢 處理成功回應
-    if (result.ok === true || result.status === 'success' || result.success === true) {
-      localStorage.setItem('pangolin_registered', 'true');
-      localStorage.setItem('pangolin_userId', currentUserId);
-      
-      const btn = document.getElementById('registerBtn');
-      btn.classList.remove('bg-green-500', 'hover:bg-green-600');
-      btn.classList.add('bg-green-600');
-      document.getElementById('btnText').textContent = '✅ 註冊成功!';
-      
-      updateDebugInfo('✅ 註冊成功,跳轉中...');
-      
-      setTimeout(() => {
-        window.location.href = 'main.html';
-      }, 1000);
-      return;
-    }
-    
-    throw new Error(result.error || result.message || '註冊失敗');
-    
-  } catch (err) {
-    console.error('❌ 註冊失敗', err);
-    
-    let userMessage = err.message;
-    if (err.message.includes('已註冊') || err.message.includes('已存在')) {
-      userMessage = '此帳號已註冊過,請直接使用主功能';
-      setTimeout(() => {
-        window.location.href = 'main.html';
-      }, 2000);
-    }
-    
-    alert('❌ ' + userMessage);
-    setButtonLoading(false);
+  } catch (error) {
+    console.error('❌ 網路錯誤:', error);
+    alert('❌ 網路錯誤，請稍後再試\nNetwork error, please try again');
   }
 }
 
-// 開發環境測試資料
-document.addEventListener('DOMContentLoaded', function() {
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    setTimeout(() => {
-      if (document.getElementById('name') && !document.getElementById('name').value) {
-        document.getElementById('name').value = '測試學生';
-        document.getElementById('phone').value = '0912345678';
-        document.getElementById('studentId').value = 'D1234567';
-        document.getElementById('department').value = 'cs';
-        updateDebugInfo('🧪 開發模式:已填入測試資料');
-      }
-    }, 1000);
+/* === 路線與站點資料 - 修正版 === */
+const ROUTES = {
+  'A1': { 
+    name: 'A1 晚間22:00', 
+    time: '22:00-22:30', 
+    direction: '暨大→埔里總站',
+    directionEn: 'NCNU → Puli Terminal'
+  },
+  'B1': { 
+    name: 'B1 晚間22:30', 
+    time: '22:30-23:00', 
+    direction: '埔里總站→暨大',
+    directionEn: 'Puli Terminal → NCNU'
+  },
+  'A2': { 
+    name: 'A2 晚間23:00', 
+    time: '23:00-23:30', 
+    direction: '暨大→埔里總站',
+    directionEn: 'NCNU → Puli Terminal'
+  },
+  'B2': { 
+    name: 'B2 晚間23:30', 
+    time: '23:30-24:00', 
+    direction: '埔里總站→暨大',
+    directionEn: 'Puli Terminal → NCNU'
   }
-});
+};
+
+// 雙語站點資料
+const STOPS = {
+  // 去程：暨大→埔里總站
+  'A1': [
+    { zh: '行政大樓', en: 'Administrative Building' },
+    { zh: '中餐廳', en: 'Chinese Restaurant' },
+    { zh: '科技學院', en: 'College of Science and Technology' },
+    { zh: '學人會館', en: 'Scholars Residence' },
+    { zh: '中城', en: 'Zhongcheng' },
+    { zh: '下城', en: 'Xiacheng' },
+    { zh: '坪頂', en: 'Pingding' },
+    { zh: '愛蘭橋', en: 'Allan Bridge' },
+    { zh: '大成國小', en: 'Dacheng Elementary School' },
+    { zh: '中山安七街口', en: 'Zhongshan Anqi St. Intersection' },
+    { zh: '榮民診所', en: 'Veterans Clinic' },
+    { zh: '埔里酒廠', en: 'Puli Distillery' },
+    { zh: '埔里總站', en: 'Puli Bus Terminal' }
+  ],
+  'A2': [
+    { zh: '行政大樓', en: 'Administrative Building' },
+    { zh: '中餐廳', en: 'Chinese Restaurant' },
+    { zh: '科技學院', en: 'College of Science and Technology' },
+    { zh: '學人會館', en: 'Scholars Residence' },
+    { zh: '中城', en: 'Zhongcheng' },
+    { zh: '下城', en: 'Xiacheng' },
+    { zh: '坪頂', en: 'Pingding' },
+    { zh: '愛蘭橋', en: 'Allan Bridge' },
+    { zh: '大成國小', en: 'Dacheng Elementary School' },
+    { zh: '中山安七街口', en: 'Zhongshan Anqi St. Intersection' },
+    { zh: '榮民診所', en: 'Veterans Clinic' },
+    { zh: '埔里酒廠', en: 'Puli Distillery' },
+    { zh: '埔里總站', en: 'Puli Bus Terminal' }
+  ],
+  // 回程：埔里總站→暨大
+  'B1': [
+    { zh: '埔里總站', en: 'Puli Bus Terminal' },
+    { zh: '埔里酒廠', en: 'Puli Distillery' },
+    { zh: '榮民診所', en: 'Veterans Clinic' },
+    { zh: '中山安七街口', en: 'Zhongshan Anqi St. Intersection' },
+    { zh: '大成國小', en: 'Dacheng Elementary School' },
+    { zh: '愛蘭橋', en: 'Allan Bridge' },
+    { zh: '坪頂', en: 'Pingding' },
+    { zh: '下城', en: 'Xiacheng' },
+    { zh: '中城', en: 'Zhongcheng' },
+    { zh: '學人會館', en: 'Scholars Residence' },
+    { zh: '科技學院', en: 'College of Science and Technology' },
+    { zh: '中餐廳', en: 'Chinese Restaurant' },
+    { zh: '行政大樓', en: 'Administrative Building' }
+  ],
+  'B2': [
+    { zh: '埔里總站', en: 'Puli Bus Terminal' },
+    { zh: '埔里酒廠', en: 'Puli Distillery' },
+    { zh: '榮民診所', en: 'Veterans Clinic' },
+    { zh: '中山安七街口', en: 'Zhongshan Anqi St. Intersection' },
+    { zh: '大成國小', en: 'Dacheng Elementary School' },
+    { zh: '愛蘭橋', en: 'Allan Bridge' },
+    { zh: '坪頂', en: 'Pingding' },
+    { zh: '下城', en: 'Xiacheng' },
+    { zh: '中城', en: 'Zhongcheng' },
+    { zh: '學人會館', en: 'Scholars Residence' },
+    { zh: '科技學院', en: 'College of Science and Technology' },
+    { zh: '中餐廳', en: 'Chinese Restaurant' },
+    { zh: '行政大樓', en: 'Administrative Building' }
+  ]
+};
+
+/* === 選擇日期後顯示路線 === */
+function selectDate(dateStr){
+  selectedDate = dateStr;
+  selectedRoute = null;
+  
+  document.getElementById('selectedDate').style.display = 'block';
+  document.getElementById('selectedDate').innerHTML = `
+    <div class="chinese">✅ 已選擇：${dateStr}</div>
+    <div class="english">✅ Selected: ${dateStr}</div>
+  `;
+  
+  showRoutes();
+  
+  document.getElementById('fromStopSection').style.display = 'none';
+  document.getElementById('toStopSection').style.display = 'none';
+  document.getElementById('submitBtn').style.display = 'none';
+}
+
+/* === 顯示路線選擇 === */
+function showRoutes(){
+  const section = document.getElementById('routeSection');
+  const container = document.getElementById('routeButtons');
+  
+  section.style.display = 'block';
+  
+  container.innerHTML = Object.keys(ROUTES).map(code => `
+    <div class="route-btn" onclick="selectRoute('${code}')">
+      <div style="font-weight:bold;font-size:16px">${ROUTES[code].name}</div>
+      <div class="bilingual" style="margin-top:4px">
+        <div class="chinese">${ROUTES[code].direction}</div>
+        <div class="english">${ROUTES[code].directionEn}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* === 選擇路線 === */
+function selectRoute(routeCode){
+  selectedRoute = routeCode;
+  
+  document.querySelectorAll('.route-btn').forEach(btn => btn.classList.remove('selected'));
+  event.target.closest('.route-btn').classList.add('selected');
+  
+  loadStops(routeCode);
+  
+  document.getElementById('fromStopSection').style.display = 'block';
+  document.getElementById('toStopSection').style.display = 'none';
+  document.getElementById('submitBtn').style.display = 'none';
+}
+
+/* === 載入站點選項 === */
+function loadStops(routeCode){
+  const fromSelect = document.getElementById('fromStop');
+  const stops = STOPS[routeCode] || [];
+  
+  fromSelect.innerHTML = '<option value="">請選擇上車站 | Please select boarding stop</option>' +
+    stops.map(stop => `
+      <option value="${stop.zh}" class="stop-option">
+        ${stop.zh} | ${stop.en}
+      </option>
+    `).join('');
+  
+  fromSelect.onchange = function(){
+    if(this.value){
+      loadToStops(routeCode, this.value);
+    } else {
+      document.getElementById('toStopSection').style.display = 'none';
+      document.getElementById('submitBtn').style.display = 'none';
+    }
+  };
+  
+  document.getElementById('toStop').innerHTML = '<option value="">請先選擇上車站 | Please select boarding stop first</option>';
+  document.getElementById('toStopSection').style.display = 'none';
+  document.getElementById('submitBtn').style.display = 'none';
+}
+
+/* === 載入下車站選項 === */
+function loadToStops(routeCode, fromStop){
+  const toSelect = document.getElementById('toStop');
+  const stops = STOPS[routeCode] || [];
+  const fromIndex = stops.findIndex(stop => stop.zh === fromStop);
+  
+  const availableStops = stops.slice(fromIndex + 1);
+  
+  if(availableStops.length === 0){
+    toSelect.innerHTML = '<option value="">此站為終點站 | This is the final stop</option>';
+    document.getElementById('toStopSection').style.display = 'block';
+    document.getElementById('submitBtn').style.display = 'none';
+    return;
+  }
+  
+  toSelect.innerHTML = '<option value="">請選擇下車站 | Please select alighting stop</option>' +
+    availableStops.map(stop => `
+      <option value="${stop.zh}" class="stop-option">
+        ${stop.zh} | ${stop.en}
+      </option>
+    `).join('');
+  
+  document.getElementById('toStopSection').style.display = 'block';
+  document.getElementById('submitBtn').style.display = 'none';
+  
+  toSelect.onchange = function(){
+    if(this.value){
+      document.getElementById('submitBtn').style.display = 'block';
+    } else {
+      document.getElementById('submitBtn').style.display = 'none';
+    }
+  };
+}
+
+/* === 送出預約 === */
+async function submitReservation(){
+  const fromStop = document.getElementById('fromStop').value;
+  const toStop = document.getElementById('toStop').value;
+  
+  if(!selectedDate || !selectedRoute || !fromStop || !toStop){
+    alert('請完成所有選擇\nPlease complete all selections');
+    return;
+  }
+  
+  const fromStopEn = STOPS[selectedRoute].find(stop => stop.zh === fromStop)?.en || fromStop;
+  const toStopEn = STOPS[selectedRoute].find(stop => stop.zh === toStop)?.en || toStop;
+  
+  if(!confirm(`確定預約嗎？\n\n日期：${selectedDate}\n班次：${ROUTES[selectedRoute].name}\n上車：${fromStop}\n下車：${toStop}\n\nConfirm reservation?\n\nDate: ${selectedDate}\nRoute: ${ROUTES[selectedRoute].name}\nBoard: ${fromStopEn}\nAlight: ${toStopEn}`)){
+    return;
+  }
+  
+  const payload = {
+    type: 'reserve',
+    userId: userData.userId,
+    name: userData.name,
+    phone: userData.phone,
+    date: selectedDate,
+    route: selectedRoute,
+    fromStop: fromStop,
+    toStop: toStop
+  };
+  
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    const result = await res.json();
+    
+    if(result.status === 'success'){
+      alert('✅ 預約成功！\n✅ Reservation successful!');
+      
+      const reservations = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`).then(r=>r.json());
+      existingReservations = reservations.reservations || [];
+      renderReservationInfo();
+      
+      document.getElementById('routeSection').style.display = 'none';
+      document.getElementById('fromStopSection').style.display = 'none';
+      document.getElementById('toStopSection').style.display = 'none';
+      document.getElementById('submitBtn').style.display = 'none';
+      document.getElementById('selectedDate').style.display = 'none';
+      selectedDate = null;
+      selectedRoute = null;
+    } else {
+      alert('❌ 預約失敗：' + (result.message || '未知錯誤\nReservation failed'));
+    }
+  } catch(error){
+    console.error('❌ 預約錯誤:', error);
+    alert('❌ 網路錯誤，請稍後再試\nNetwork error, please try again');
+  }
+}
+
+/* === 顯示規則 === */
+function showRules(){
+  alert(`📘 預約規則 | Reservation Rules\n\n1. 每人每日限預約一個班次\n   Only one reservation per person per day\n\n2. 請於搭乘日前一天預約\n   Please reserve one day before the ride\n\n3. 如需取消請提前通知\n   Please notify in advance for cancellation\n\n4. 上車時請主動出示預約紀錄\n   Please show your reservation when boarding`);
+}
+
+window.addEventListener('load', init);
 </script>
 </body>
 </html>
