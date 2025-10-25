@@ -175,6 +175,36 @@ select {
 .cancel-btn .english {
   color: white !important;
 }
+
+/* 用戶資訊樣式 */
+.user-profile {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  margin: 10px 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.user-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-right: 12px;
+  border: 2px solid #3c8050;
+}
+.user-info {
+  flex: 1;
+}
+.user-name {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+.user-status {
+  font-size: 14px;
+  color: #666;
+}
 </style>
 </head>
 
@@ -185,7 +215,9 @@ select {
 </header>
 
 <main>
-  <div id="userInfo" style="padding:16px"><div>⏳ 系統初始化中... | System initializing...</div></div>
+  <div id="userInfo" style="padding:16px">
+    <div>⏳ 系統初始化中... | System initializing...</div>
+  </div>
 
   <div class="btn-group">
     <button id="calendarBtn" class="btn-large btn-calendar" onclick="toggleCalendar()">
@@ -251,6 +283,7 @@ select {
 const WORKER_URL='https://delicate-math-7e61.fangwl591021.workers.dev/';
 let userData=null, existingReservations=[], selectedDate=null, selectedRoute=null;
 let currentYear=new Date().getFullYear(), currentMonth=new Date().getMonth();
+let lineProfile = null; // 儲存 LINE 用戶資料
 
 /* === 初始化 === */
 async function init(){
@@ -258,12 +291,13 @@ async function init(){
     await liff.init({liffId:"2006590746-KJodGOda"});
     if(!liff.isLoggedIn()) return liff.login();
     
-    const profile = await liff.getProfile();
-    console.log('👤 用戶 ID:', profile.userId);
+    // 取得 LINE 用戶資料
+    lineProfile = await liff.getProfile();
+    console.log('👤 LINE 用戶資料:', lineProfile);
     
     const [checkRes, reservations] = await Promise.all([
-      fetch(`${WORKER_URL}?mode=check&userId=${profile.userId}`).then(r=>r.json()),
-      fetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`).then(r=>r.json())
+      fetch(`${WORKER_URL}?mode=check&userId=${lineProfile.userId}`).then(r=>r.json()),
+      fetch(`${WORKER_URL}?mode=reservations&userId=${lineProfile.userId}`).then(r=>r.json())
     ]);
     
     console.log('✅ 用戶檢查:', checkRes);
@@ -272,7 +306,7 @@ async function init(){
     if(!checkRes.registered) return location.href='register.html';
     
     userData = checkRes.user;
-    renderUser(userData);
+    renderUser(userData, lineProfile);
     
     existingReservations = reservations.reservations || [];
     console.log('📦 預約列表 (共 ' + existingReservations.length + ' 筆):', existingReservations);
@@ -285,16 +319,23 @@ async function init(){
   }
 }
 
-/* === 顯示用戶資訊 - 修正手機顯示 === */
-function renderUser(u){
-  // 檢查手機號碼是否正確，如果沒有手機號碼或顯示科系，顯示提示
-  const phone = u.phone || '';
-  const hasValidPhone = phone && !phone.includes('_') && phone.length >= 8;
+/* === 顯示用戶資訊 - 使用 LINE 頭像和名稱 === */
+function renderUser(u, lineProfile){
+  const userInfoDiv = document.getElementById('userInfo');
   
-  document.getElementById('userInfo').innerHTML=
-    `<div style="font-size:18px;font-weight:bold">${u.name}</div>
-     <div>${u.department} | ${hasValidPhone ? phone : '📞 請更新手機號碼'}</div>
-     ${!hasValidPhone ? '<div style="color:#d32f2f;font-size:12px;margin-top:4px">手機號碼顯示異常，請聯繫管理員</div>' : ''}`;
+  userInfoDiv.innerHTML = `
+    <div class="user-profile">
+      <img src="${lineProfile.pictureUrl}" alt="用戶頭像" class="user-avatar" 
+           onerror="this.src='https://via.placeholder.com/50x50/3c8050/ffffff?text=USER'">
+      <div class="user-info">
+        <div class="user-name">${lineProfile.displayName}</div>
+        <div class="user-status bilingual">
+          <span class="chinese">✅ 已註冊用戶</span>
+          <span class="english">✅ Registered User</span>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 /* === 月曆 === */
