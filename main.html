@@ -1,12 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>穿山甲專車預約 🚍</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#f5f6f7;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+header{background:#3c8050;color:#fff;text-align:center;padding:15px;font-size:22px;font-weight:bold}
+.notice{padding:10px 16px;margin:10px 0;border-radius:6px}
+.notice.success{background:#e8f5e9;color:#2e7d32;border:1px solid #81c784}
+.notice.error{background:#fdecea;color:#b71c1c;border:1px solid #f5c2c7}
+.fade-in{animation:fadeIn .3s ease-in}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+</style>
+</head>
+<body>
+<header>穿山甲專車預約</header>
+<div id="userInfo" style="padding:16px"><div class="loading-state">⏳ 系統初始化中...</div></div>
+<div id="currentReservationCard" style="display:none"></div>
+
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
 const WORKER_URL='https://delicate-math-7e61.fangwl591021.workers.dev/';
 const CALENDAR_ID='86eee89e759f27d2a2c7a44853868f7be880aa8e745ba3839933ec84b562631e@group.calendar.google.com';
 const CACHE_DURATION=5*60*1000;
 let selectedDate=null,selectedRoute=null,currentMonth=new Date().getMonth(),currentYear=new Date().getFullYear();
 let userData=null,existingReservations=[],noServiceDates={};
-const stopsOutbound=["行政大樓","中餐廳","科技學院","學人會館","中城","下城","坪頂","愛蘭橋","大成國小","中山安七街口","榮民診所","埔里酒廠","埔里總站"];
-const stopsReturn=[...stopsOutbound].reverse();
-const routeTimes={'A1':{time:'22:00-22:30',direction:'暨大→埔里總站'},'B1':{time:'22:30-23:00',direction:'埔里總站→暨大'},'A2':{time:'23:00-23:30',direction:'暨大→埔里總站'},'B2':{time:'23:30-24:00',direction:'埔里總站→暨大'}};
 
 // 快取管理
 const cache={
@@ -24,14 +43,13 @@ const cache={
   }
 };
 
-// 初始化 - 優化版
+// 初始化
 async function init(){
   try{
     const cachedUser=cache.get('pangolinUser');
     if(cachedUser){
       userData=cachedUser;
       renderUser(userData);
-      loadExistingReservations();
     }
     
     await liff.init({liffId:"2006590746-KJodGOda"});
@@ -39,7 +57,7 @@ async function init(){
     
     const profile=await liff.getProfile();
     
-    // 並行請求優化
+    // 並行請求
     const [userCheck,reservations]=await Promise.allSettled([
       fetch(`${WORKER_URL}?check=${profile.userId}`).then(r=>r.json()),
       cachedUser?fetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`).then(r=>r.json()):null
@@ -49,7 +67,7 @@ async function init(){
       const result=userCheck.value;
 
       // ✅【新增：兼容 result.data 格式】
-      const payload = result.data || result;
+      const payload=result.data||result;
 
       if(!payload.registered)return location.href='register.html';
       userData=payload.user;
@@ -61,12 +79,35 @@ async function init(){
       existingReservations=reservations.value.reservations||[];
       cache.set('pangolinReservations',existingReservations);
       renderCurrentReservationCard();
-    }else if(!cachedUser){
-      await loadExistingReservations();
     }
   }catch(e){
     console.error("登入錯誤",e);
     document.getElementById('userInfo').innerHTML=`<div class='notice error'>登入失敗，請重新載入</div>`;
   }
 }
+
+// 顯示使用者資訊
+function renderUser(u){
+  document.getElementById('userInfo').innerHTML=`
+    <div style="font-size:18px;font-weight:bold">${u.name||'未命名'}</div>
+    <div>${u.department||''} | ${u.studentId||''}</div>`;
+}
+
+// 模擬預約卡（尚未接上預約資料）
+function renderCurrentReservationCard(){
+  const box=document.getElementById('currentReservationCard');
+  if(!existingReservations.length){
+    box.style.display='block';
+    box.innerHTML=`<div class='notice'>尚無預約紀錄</div>`;
+  }else{
+    const r=existingReservations[0];
+    box.style.display='block';
+    box.innerHTML=`<div class='notice success'>✅ 您已預約 ${r.route||''} 班次</div>`;
+  }
+}
+
+// ✅ 啟動
+window.addEventListener('load',init);
 </script>
+</body>
+</html>
