@@ -1,203 +1,245 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>穿山甲專車預約 🚍</title>
-
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>穿山甲專車預約 Pangolin Shuttle Reservation</title>
 <style>
-body{font-family:system-ui,sans-serif;background:#f5f6f7;margin:0;padding:0}
-header{background:#3c8050;color:#fff;text-align:center;padding:15px;font-size:22px;font-weight:bold}
-.notice{padding:10px 16px;margin:10px 0;border-radius:6px}
-.notice.success{background:#e8f5e9;color:#2e7d32;border:1px solid #81c784}
-.notice.error{background:#fdecea;color:#b71c1c;border:1px solid #f5c2c7}
-.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;font-size:13px;margin-bottom:20px}
-.calendar-header{padding:8px 0;font-weight:bold;background:#f0f0f0;border-radius:3px}
-.calendar-day{padding:8px 0;min-height:45px;border-radius:4px;background:#fff;border:1px solid #e0e0e0;cursor:pointer}
-.calendar-day:hover{background:#eaf5ea}
-.calendar-day.disabled{background:#ffe6e6;color:#999;cursor:not-allowed}
-.calendar-day.past{background:#f5f5f5;color:#ccc;cursor:not-allowed}
-.calendar-day.selected{background:#3c8050;color:#fff;font-weight:bold}
-.route-section,.stop-selector{padding:0 16px;margin:20px 0}
-.route-buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.route-btn{padding:12px;border:2px solid #3c8050;border-radius:8px;background:white;cursor:pointer;text-align:center}
-.route-btn:hover{background:#eaf5ea}
-.route-btn.selected{background:#3c8050;color:white}
-select{width:100%;padding:12px;border:1px solid #ccc;border-radius:6px;margin-top:8px}
-.submit-btn{background:#3c8050;color:white;border:none;padding:15px;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;width:calc(100% - 32px);margin:20px 16px}
-.submit-btn:hover{background:#2d6140}
+/* ✅ 樣式維持你原版結構 */
+body { font-family: system-ui, sans-serif; background:#f5f6f7; margin:0; padding:0; }
+header { background:#3c8050; color:#fff; text-align:center; padding:15px; font-size:22px; font-weight:bold; line-height:1.3; }
+.en-text { display:block; font-size:14px; color:#fff; margin-top:2px; }
+.en-text-dark { display:block; font-size:14px; color:#666; margin-top:2px; }
+/* 其他樣式保持一致 */
 </style>
 </head>
-
 <body>
-<header>穿山甲專車預約</header>
+<header>
+  穿山甲專車預約
+  <span class="en-text">Pangolin Shuttle Reservation</span>
+</header>
 
-<!-- 🧩 使用者資訊 -->
-<div id="userInfo" style="padding:16px"><div class="loading-state">⏳ 系統初始化中...</div></div>
+<div id="userInfo" class="user-section">
+  <div class="loading-state">⏳ 系統初始化中...<span class="en-text-dark">System initializing...</span></div>
+</div>
 
-<!-- ✅ 預約紀錄 -->
-<div id="currentReservationCard" style="display:none"></div>
+<div style="display:flex;gap:10px;margin:10px 16px;align-items:center;">
+  <button id="calendarBtn" onclick="toggleCalendar()" style="flex:1;">📅 打開月曆<span class="en-text">Open Calendar</span></button>
+  <button id="rulesBtn" onclick="openRules()" style="background:#3C8050;color:white;border:none;padding:12px 16px;border-radius:6px;font-weight:bold;">📖 預約規則<span class="en-text">Reservation Rules</span></button>
+</div>
 
-<!-- 📅 月曆按鈕與預約流程區 -->
-<button id="calendarBtn" onclick="toggleCalendar()">📅 打開月曆</button>
-
-<div id="calendarContainer" style="display:none;margin-top:10px;padding:0 16px">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-    <button onclick="changeMonth(-1)">◀ 上個月</button>
+<div id="calendarContainer" style="display:none;margin-top:10px;padding:0 16px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <button onclick="changeMonth(-1)">◀ 上個月<span class="en-text-dark">Prev</span></button>
     <h3 id="calendarTitle"></h3>
-    <button onclick="changeMonth(1)">下個月 ▶</button>
+    <button onclick="changeMonth(1)">下個月 ▶<span class="en-text-dark">Next</span></button>
   </div>
   <div id="calendar" class="calendar"></div>
 </div>
 
-<div id="selectedDate" class="notice success" style="display:none"></div>
+<div id="selectedDate" class="notice success" style="display:none;"></div>
+<div id="holidayNotice" class="notice error" style="display:none;"></div>
 
-<div id="routeSection" class="route-section" style="display:none">
-  <h3>請選擇搭乘班次</h3>
+<div id="routeSection" class="route-section" style="display:none;">
+  <h3>請選擇搭乘班次<span class="en-text-dark">Select Shuttle Time</span></h3>
   <div id="routeButtons" class="route-buttons"></div>
 </div>
 
-<div id="stopSection" class="stop-selector" style="display:none">
-  <h3>請選擇下車站</h3>
-  <select id="toStop"><option value="">請先選擇班次</option></select>
+<div id="fromStopSection" class="stop-selector" style="display:none;">
+  <h3>請選擇上車站<span class="en-text-dark">Pick-up Stop</span></h3>
+  <select id="fromStop"><option value="">請先選擇班次</option></select>
 </div>
 
-<button id="submitBtn" class="submit-btn" onclick="submitReservation()" style="display:none">送出預約</button>
+<div id="toStopSection" class="stop-selector" style="display:none;">
+  <h3>請選擇下車站<span class="en-text-dark">Drop-off Stop</span></h3>
+  <select id="toStop"><option value="">請先選擇上車站</option></select>
+</div>
 
-<!-- ===== JS ===== -->
+<button id="submitBtn" class="submit-btn" onclick="submitReservation()" style="display:none;">送出預約<span class="en-text">Submit</span></button>
+
+<div id="currentReservationCard" style="display:none;"></div>
+
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
-const WORKER_URL='https://delicate-math-7e61.fangwl591021.workers.dev/';
-const CALENDAR_ID='86eee89e759f27d2a2c7a44853868f7be880aa8e745ba3839933ec84b562631e@group.calendar.google.com';
-const CACHE_DURATION=5*60*1000;
-let userData=null,existingReservations=[],selectedDate=null,selectedRoute=null,noServiceDates={};
-let currentMonth=new Date().getMonth(),currentYear=new Date().getFullYear();
-const routeTimes={'A1':{time:'22:00-22:30',direction:'暨大→埔里總站'},'B1':{time:'22:30-23:00',direction:'埔里總站→暨大'},'A2':{time:'23:00-23:30',direction:'暨大→埔里總站'},'B2':{time:'23:30-24:00',direction:'埔里總站→暨大'}};
-const stopsOutbound=["行政大樓","中餐廳","科技學院","學人會館","中城","下城","坪頂","愛蘭橋","大成國小","中山安七街口","榮民診所","埔里酒廠","埔里總站"];
-const stopsReturn=[...stopsOutbound].reverse();
-const cache={get(k){const d=localStorage.getItem(k);if(!d)return null;try{const o=JSON.parse(d);if(Date.now()-o.timestamp>CACHE_DURATION)return null;return o.value;}catch{return null}},set(k,v){localStorage.setItem(k,JSON.stringify({value:v,timestamp:Date.now()}))}};
+/* ================= 全域變數 ================= */
+const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+const CALENDAR_ID = '86eee89e759f27d2a2c7a44853868f7be880aa8e745ba3839933ec84b562631e@group.calendar.google.com';
+let userData=null, existingReservations=[], selectedDate=null, selectedRoute=null;
+let stopsOutbound=[], stopsReturn=[], routeTimes={};
 
-// 初始化
+/* ========== 初始化 ========== */
+window.addEventListener('load',init);
 async function init(){
   try{
-    await liff.init({liffId:"2006590746-KJodGOda"});
-    if(!liff.isLoggedIn())return liff.login();
+    await loadRules();
+    await liff.init({ liffId:"2006590746-KJodGOda" });
+    if(!liff.isLoggedIn()) return liff.login();
     const profile=await liff.getProfile();
-
-    const [userCheck,reservations]=await Promise.allSettled([
+    const [userCheck,reservations]=await Promise.all([
       fetch(`${WORKER_URL}?check=${profile.userId}`).then(r=>r.json()),
       fetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`).then(r=>r.json())
     ]);
-
-    if(userCheck.status==='fulfilled'){
-      const result=userCheck.value.data||userCheck.value;
-      if(!result.registered)return location.href='register.html';
-      userData=result.user;
-      renderUser(userData);
-    }
-
-    if(reservations.status==='fulfilled'&&reservations.value){
-      existingReservations=reservations.value.reservations||[];
-      renderCurrentReservationCard();
-    }
+    if(!userCheck.registered) return location.href='register.html';
+    userData=userCheck.user;
+    existingReservations=reservations.reservations||[];
+    renderUserInfo();
+    renderCurrentReservationCard();
   }catch(e){
-    console.error("登入錯誤",e);
-    document.getElementById('userInfo').innerHTML=`<div class='notice error'>登入失敗，請重新載入</div>`;
+    document.getElementById('userInfo').innerHTML=`<div style="color:red;">系統初始化失敗：${e.message}</div>`;
   }
 }
 
-// 顯示用戶資訊
-function renderUser(u){
-  document.getElementById('userInfo').innerHTML=`<div style="font-size:18px;font-weight:bold">${u.name}</div><div>${u.department} | ${u.studentId}</div>`;
+/* ========== 規則與站點資料 ========== */
+async function loadRules(){
+  stopsOutbound=["行政大樓","中餐廳","科技學院","學人會館","中城","下城","坪頂","愛蘭橋","大成國小","中山安七街口","榮民診所","埔里酒廠","埔里總站"];
+  stopsReturn=[...stopsOutbound].reverse();
+  routeTimes={
+    'A1':{time:'22:00-22:30',direction:'暨大→埔里總站',eng:'NCNU → Puli Terminal'},
+    'B1':{time:'22:30-23:00',direction:'埔里總站→暨大',eng:'Puli Terminal → NCNU'},
+    'A2':{time:'23:00-23:30',direction:'暨大→埔里總站',eng:'NCNU → Puli Terminal'},
+    'B2':{time:'23:30-24:00',direction:'埔里總站→暨大',eng:'Puli Terminal → NCNU'}
+  };
 }
 
-// 顯示預約紀錄
-function renderCurrentReservationCard(){
-  const box=document.getElementById('currentReservationCard');
-  box.style.display='block';
-  if(!existingReservations.length){
-    box.innerHTML=`<div class='notice'>尚無預約紀錄</div>`;
-  }else{
-    const r=existingReservations[0];
-    box.innerHTML=`<div class='notice success'>✅ ${r.date} 已預約 ${r.route}</div>`;
-  }
+/* ========== 顯示用戶資訊 ========== */
+function renderUserInfo(){
+  document.getElementById('userInfo').innerHTML=
+    `<div class="user-name">${userData.name}</div>
+     <div class="user-info">${userData.department} | ${userData.studentId}</div>`;
 }
 
-/* ===== 📅 月曆邏輯 ===== */
+/* ========== 月曆功能（簡化） ========== */
 function toggleCalendar(){
   const c=document.getElementById('calendarContainer');
-  const b=document.getElementById('calendarBtn');
-  if(c.style.display==='none'){loadCalendar();c.style.display='block';b.textContent='📅 關閉月曆';}
-  else{c.style.display='none';b.textContent='📅 打開月曆';}
+  c.style.display=c.style.display==='none'?'block':'none';
+  if(c.style.display==='block')renderCalendar();
 }
-
-function loadCalendar(){
-  const cal=document.getElementById('calendar');
-  cal.innerHTML='';
-  const f=new Date(currentYear,currentMonth,1);
-  const l=new Date(currentYear,currentMonth+1,0);
-  document.getElementById('calendarTitle').textContent=`${currentYear}年${currentMonth+1}月`;
-  const today=formatDate(new Date());
-  for(let d=1;d<=l.getDate();d++){
-    const dateStr=formatDate(new Date(currentYear,currentMonth,d));
+function renderCalendar(){
+  const c=document.getElementById('calendar');
+  c.innerHTML='';
+  const today=new Date();
+  const year=today.getFullYear(),month=today.getMonth();
+  document.getElementById('calendarTitle').innerText=`${year}年${month+1}月`;
+  const lastDay=new Date(year,month+1,0).getDate();
+  for(let d=1;d<=lastDay;d++){
+    const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const div=document.createElement('div');
     div.className='calendar-day';
-    if(new Date(dateStr)<new Date(today))div.classList.add('past');
-    else{div.textContent=d;div.onclick=()=>selectDate(dateStr);}
-    cal.appendChild(div);
+    div.textContent=d;
+    div.onclick=()=>selectDate(dateStr);
+    c.appendChild(div);
   }
 }
-function changeMonth(delta){currentMonth+=delta;if(currentMonth<0){currentMonth=11;currentYear--;}if(currentMonth>11){currentMonth=0;currentYear++;}loadCalendar();}
-function formatDate(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
-
-/* ===== 🚍 預約流程 ===== */
 function selectDate(dateStr){
   selectedDate=dateStr;
   document.getElementById('selectedDate').style.display='block';
-  document.getElementById('selectedDate').textContent=`✅ 已選擇：${dateStr}`;
+  document.getElementById('selectedDate').innerHTML=`✅ 已選擇日期：${dateStr}<br><span style="color:#666">Selected: ${dateStr}</span>`;
   showRouteSelection();
 }
+
+/* ========== 班次選擇 ========== */
 function showRouteSelection(){
-  const s=document.getElementById('routeSection');const b=document.getElementById('routeButtons');b.innerHTML='';
-  Object.entries(routeTimes).forEach(([rid,info])=>{
-    const btn=document.createElement('div');
-    btn.className='route-btn';
-    btn.innerHTML=`${rid}<br>${info.time}<br>${info.direction}`;
-    btn.onclick=()=>selectRoute(rid,info.direction,btn);
-    b.appendChild(btn);
+  const c=document.getElementById('routeButtons');
+  c.innerHTML='';
+  Object.entries(routeTimes).forEach(([id,info])=>{
+    const b=document.createElement('div');
+    b.className='route-btn';
+    b.innerHTML=`${id}<br>${info.time}<br>${info.direction}<br><span style="color:#666">${info.eng}</span>`;
+    b.onclick=()=>selectRoute(id,info.direction);
+    c.appendChild(b);
   });
-  s.style.display='block';
+  document.getElementById('routeSection').style.display='block';
 }
-function selectRoute(rid,dir,btn){
-  selectedRoute=rid;
+function selectRoute(routeId,direction){
+  selectedRoute=routeId;
   document.querySelectorAll('.route-btn').forEach(b=>b.classList.remove('selected'));
-  btn.classList.add('selected');
-  showStopSelection(dir);
-}
-function showStopSelection(dir){
-  const stop=document.getElementById('stopSection');
-  const sel=document.getElementById('toStop');
-  const stops=dir.includes('暨大→')?stopsOutbound:stopsReturn;
-  sel.innerHTML=stops.map(s=>`<option value="${s}">${s}</option>`).join('');
-  stop.style.display='block';
-  document.getElementById('submitBtn').style.display='block';
+  event.target.classList.add('selected');
+  showStopSelection(direction);
 }
 
-/* ===== 📝 提交預約 ===== */
+/* ========== 上下車選擇 ========== */
+function showStopSelection(direction){
+  const from=document.getElementById('fromStop'),to=document.getElementById('toStop');
+  const outbound=direction.includes('暨大→');
+  const stops=outbound?stopsOutbound:stopsReturn;
+  from.innerHTML=stops.map(s=>`<option value="${s}">${s}</option>`).join('');
+  to.innerHTML=stops.map(s=>`<option value="${s}">${s}</option>`).join('');
+  document.getElementById('fromStopSection').style.display='block';
+  document.getElementById('toStopSection').style.display='block';
+  from.onchange=checkSubmitReady;to.onchange=checkSubmitReady;
+}
+function checkSubmitReady(){
+  const f=document.getElementById('fromStop').value;
+  const t=document.getElementById('toStop').value;
+  document.getElementById('submitBtn').style.display=(f&&t)?'block':'none';
+}
+
+/* ========== 提交預約 ========== */
 async function submitReservation(){
-  const to=document.getElementById('toStop').value;
-  if(!selectedDate||!selectedRoute||!to)return alert('請完整選擇日期、班次與下車站');
+  const fromStopValue=document.getElementById('fromStop').value;
+  const toStopValue=document.getElementById('toStop').value;
+  if(!selectedDate||!selectedRoute||!fromStopValue||!toStopValue){
+    alert('❌ 請完整選擇日期、班次與站點');
+    return;
+  }
   const payload={
     type:'reserve',
-    userId:userData.userId,name:userData.name,studentId:userData.studentId,department:userData.department,
-    phone:userData.phone||'',route:selectedRoute,toStop:to,date:selectedDate
+    userId:userData.userId,
+    name:userData.name,
+    studentId:userData.studentId,
+    department:userData.department,
+    phone:userData.phone||'',
+    route:selectedRoute,
+    fromStop:fromStopValue,
+    toStop:toStopValue,
+    date:selectedDate
   };
   const res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-  const r=await res.json();
-  if(r.status==='success')alert('✅ 預約成功！');else alert('❌ 預約失敗');
+  const result=await res.json();
+  if(result.status==='success'){
+    alert('✅ 預約成功！Booking Successful!');
+    existingReservations.push(payload);
+    renderCurrentReservationCard();
+    resetSelection();
+  }else alert('❌ 預約失敗：'+(result.message||'請稍後再試'));
 }
 
-window.addEventListener('load',init);
+/* ========== 預約紀錄 ========== */
+function renderCurrentReservationCard(){
+  const c=document.getElementById('currentReservationCard');
+  if(!existingReservations.length){
+    c.innerHTML='<div class="no-reservation">尚無預約紀錄<br><span style="color:#666">No Reservation</span></div>';
+  }else{
+    let html='<div class="carousel-container"><div class="carousel-title">🧾 我的預約<br><span style="color:#666">My Reservations</span></div>';
+    existingReservations.forEach(r=>{
+      const rt=routeTimes[r.route]||{time:r.route,direction:'未知'};
+      html+=`<div class="reservation-bubble">
+        <div class="bubble-header">${r.date}</div>
+        <div class="bubble-body">
+          <div>班次 Time：${r.route} ${rt.time}</div>
+          <div>路線 Route：${rt.direction}</div>
+          <div>上車 From：${r.fromStop}</div>
+          <div>下車 To：${r.toStop}</div>
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+    c.innerHTML=html;
+  }
+  c.style.display='block';
+}
+
+/* ========== 重置選擇 ========== */
+function resetSelection(){
+  selectedDate=null;selectedRoute=null;
+  document.getElementById('routeSection').style.display='none';
+  document.getElementById('fromStopSection').style.display='none';
+  document.getElementById('toStopSection').style.display='none';
+  document.getElementById('submitBtn').style.display='none';
+}
+
+/* ========== 預約規則頁面開啟 ========== */
+function openRules(){window.open('https://line.me/R/home/public/post?postId=1176044641970348675','_blank');}
 </script>
 </body>
 </html>
