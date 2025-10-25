@@ -528,14 +528,22 @@ function renderReservationInfo(){
   panel.style.display='block';
   
   box.innerHTML = existingReservations.map(r => {
+    console.log('🔍 渲染預約:', r);
+    console.log('  - reservationId:', r.reservationId);
+    console.log('  - rowNumber:', r.rowNumber);
+    
+    // ✅ 優先使用預約ID，備用行號
     const identifier = r.reservationId ? `'${r.reservationId}'` : r.rowNumber;
     const idType = r.reservationId ? 'id' : 'row';
+    
+    console.log('  - 使用識別方式:', idType, '值:', identifier);
     
     return `
     <div class="resv-card">
       <div class="resv-row">🕒 時間：${r.date}</div>
       <div class="resv-row">🚌 班次：${r.route}</div>
-      <div class="resv-row">⬆ 上車：${r.fromStop}　⬇ 下車：${r.toStop}</div>
+      <div class="resv-row">⬆ 上車：${r.fromStop}</div>
+      <div class="resv-row">⬇ 下車：${r.toStop}</div>
       <button class="cancel-btn" onclick="cancelReservation(${identifier}, '${idType}')">取消預約</button>
     </div>`;
   }).join('');
@@ -543,19 +551,38 @@ function renderReservationInfo(){
 
 /* === 取消預約 === */
 async function cancelReservation(identifier, idType) {
-  console.log('🎯 取消預約 - 類型:', idType, '識別碼:', identifier);
+  console.log('🎯 取消預約開始');
+  console.log('  - 類型:', idType);
+  console.log('  - 識別碼:', identifier);
+  console.log('  - 現有預約列表:', existingReservations);
   
+  // 從列表找出完整資訊
   let reservation;
   if (idType === 'id') {
-    reservation = existingReservations.find(r => r.reservationId === identifier);
+    console.log('  - 使用預約ID搜尋...');
+    reservation = existingReservations.find(r => {
+      console.log('    檢查:', r.reservationId, '===', identifier, '?', r.reservationId === identifier);
+      return r.reservationId === identifier;
+    });
   } else {
-    reservation = existingReservations.find(r => r.rowNumber === identifier);
+    console.log('  - 使用行號搜尋...');
+    reservation = existingReservations.find(r => {
+      console.log('    檢查:', r.rowNumber, '===', identifier, '?', r.rowNumber === identifier);
+      return r.rowNumber === identifier;
+    });
   }
   
+  console.log('  - 找到的預約:', reservation);
+  
   if (!reservation) {
-    alert('❌ 找不到預約資料');
+    console.error('❌ 找不到預約！');
+    console.error('搜尋條件:', { identifier, idType });
+    console.error('預約列表:', existingReservations);
+    alert('❌ 找不到預約資料\n\n請查看 Console (F12) 取得詳細資訊');
     return;
   }
+  
+  console.log('📋 預約資料:', reservation);
   
   if (!confirm(`確定取消以下預約嗎？\n\n日期：${reservation.date}\n班次：${reservation.route}\n上車：${reservation.fromStop}\n下車：${reservation.toStop}`)) {
     return;
