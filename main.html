@@ -75,23 +75,28 @@ const stopsOutbound=["行政大樓","中餐廳","科技學院","學人會館","�
 const stopsReturn=[...stopsOutbound].reverse();
 
 /* ======================
-   登入驗證
+   登入驗證與資料載入
 ====================== */
 async function init(){
   try{
     await liff.init({liffId:"2006590746-KJodGOda"});
     if(!liff.isLoggedIn())return liff.login();
+
     const profile=await liff.getProfile();
     const [userCheck,reservations]=await Promise.allSettled([
       fetch(`${WORKER_URL}?mode=check&userId=${profile.userId}`).then(r=>r.json()),
       fetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`).then(r=>r.json())
     ]);
+
     if(userCheck.status==='fulfilled'){
       const result=userCheck.value.data||userCheck.value;
       if(!result.registered)return location.href='register.html';
       userData=result.user;
       renderUser(userData);
+    }else{
+      throw new Error('用戶驗證失敗');
     }
+
     if(reservations.status==='fulfilled'&&reservations.value){
       existingReservations=reservations.value.reservations||[];
       renderCurrentReservationCard();
@@ -121,22 +126,31 @@ function renderCurrentReservationCard(){
 }
 
 /* ======================
-   📅 月曆控制
+   📅 月曆控制與停駛日讀取
 ====================== */
 async function loadNoServiceDates(){
-  const start=`${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`;
-  const end=`${currentYear}-${String(currentMonth+2).padStart(2,'0')}-01`;
-  const res=await fetch(`${WORKER_URL}?mode=calendar&start=${start}&end=${end}&calendarId=${CALENDAR_ID}`);
-  const data=await res.json();
-  noServiceDates={};
-  if(data.events){
-    data.events.forEach(e=>{
-      if(e.summary.includes('停駛')||e.summary.includes('公休')){
+  try{
+    const start=`${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`;
+    const end=`${currentYear}-${String(currentMonth+2).padStart(2,'0')}-01`;
+    const res=await fetch(`${WORKER_URL}?mode=calendar&start=${start}&end=${end}&calendarId=${CALENDAR_ID}`);
+    const data=await res.json();
+    noServiceDates={};
+
+    const events = data.events || data.holidays || [];
+    events.forEach(e=>{
+      const title = e.title || e.summary || '';
+      if(title && (title.includes('停駛') || title.includes('公休'))){
         noServiceDates[e.date]=true;
       }
     });
+
+    console.log('✅ 停駛/公休日載入完成:', noServiceDates);
+    loadCalendar();
+  }catch(err){
+    console.error('🚨 載入停駛日期失敗:', err);
+    noServiceDates={};
+    loadCalendar();
   }
-  loadCalendar();
 }
 
 function toggleCalendar(){
@@ -149,7 +163,6 @@ function toggleCalendar(){
 function loadCalendar(){
   const cal=document.getElementById('calendar');
   cal.innerHTML='';
-  const f=new Date(currentYear,currentMonth,1);
   const l=new Date(currentYear,currentMonth+1,0);
   document.getElementById('calendarTitle').textContent=`${currentYear}年${currentMonth+1}月`;
   const today=formatDate(new Date());
@@ -169,8 +182,15 @@ function loadCalendar(){
     cal.appendChild(div);
   }
 }
-function changeMonth(delta){currentMonth+=delta;if(currentMonth<0){currentMonth=11;currentYear--;}if(currentMonth>11){currentMonth=0;currentYear++;}loadNoServiceDates();}
-function formatDate(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function changeMonth(delta){
+  currentMonth+=delta;
+  if(currentMonth<0){currentMonth=11;currentYear--;}
+  if(currentMonth>11){currentMonth=0;currentYear++;}
+  loadNoServiceDates();
+}
+function formatDate(d){
+  return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 
 /* ======================
    🚍 預約流程
