@@ -442,9 +442,59 @@ function loadStops(routeCode){
   fromSelect.innerHTML = '<option value="">請選擇上車站</option>' +
     stops.map(stop => `<option value="${stop}">${stop}</option>`).join('');
   
+  // ✅ 重新綁定事件監聽器
   fromSelect.onchange = function(){
+    console.log('🚌 選擇上車站:', this.value);
     if(this.value){
       loadToStops(routeCode, this.value);
+    } else {
+      // 如果取消選擇，隱藏下車站區塊
+      document.getElementById('toStopSection').style.display = 'none';
+      document.getElementById('submitBtn').style.display = 'none';
+    }
+  };
+  
+  // ✅ 重置下車站和提交按鈕
+  document.getElementById('toStop').innerHTML = '<option value="">請先選擇上車站</option>';
+  document.getElementById('toStopSection').style.display = 'none';
+  document.getElementById('submitBtn').style.display = 'none';
+}
+
+/* === 載入下車站選項 === */
+function loadToStops(routeCode, fromStop){
+  const toSelect = document.getElementById('toStop');
+  const stops = STOPS[routeCode] || [];
+  const fromIndex = stops.indexOf(fromStop);
+  
+  console.log('📍 路線站點:', stops);
+  console.log('📍 選擇的上車站:', fromStop, '索引:', fromIndex);
+  
+  // 只顯示上車站之後的站點
+  const availableStops = stops.slice(fromIndex + 1);
+  
+  console.log('📍 可選下車站:', availableStops);
+  
+  if(availableStops.length === 0){
+    toSelect.innerHTML = '<option value="">此站為終點站</option>';
+    document.getElementById('toStopSection').style.display = 'block';
+    document.getElementById('submitBtn').style.display = 'none'; // 終點站不能選擇下車
+    return;
+  }
+  
+  toSelect.innerHTML = '<option value="">請選擇下車站</option>' +
+    availableStops.map(stop => `<option value="${stop}">${stop}</option>`).join('');
+  
+  // ✅ 確保顯示下車站區塊
+  document.getElementById('toStopSection').style.display = 'block';
+  document.getElementById('submitBtn').style.display = 'none'; // 先隱藏提交按鈕
+  
+  // ✅ 重新綁定下車站變化事件
+  toSelect.onchange = function(){
+    console.log('🎯 選擇下車站:', this.value);
+    if(this.value){
+      document.getElementById('submitBtn').style.display = 'block';
+    } else {
+      document.getElementById('submitBtn').style.display = 'none';
     }
   };
 }
