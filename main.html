@@ -22,6 +22,7 @@ header {
   padding: 15px;
   font-size: 22px;
   font-weight: bold;
+  line-height: 1.4;
 }
 main {
   flex: 1;
@@ -146,7 +147,10 @@ select {
 </head>
 
 <body>
-<header>穿山甲專車預約</header>
+<header>
+  穿山甲專車預約<br>
+  <span style="font-size:16px;font-weight:normal">Pangolin Shuttle Reservation</span>
+</header>
 
 <main>
   <div id="userInfo" style="padding:16px"><div>⏳ 系統初始化中...</div></div>
@@ -197,10 +201,10 @@ let currentYear=new Date().getFullYear(), currentMonth=new Date().getMonth();
 
 /* === 路線與站點資料 === */
 const ROUTES = {
-  'A1': { name: 'A1 晚間22:00', time: '22:00-22:30', direction: '暨大→埔里總站' },
-  'B1': { name: 'B1 晚間22:30', time: '22:30-23:00', direction: '埔里總站→暨大' },
-  'A2': { name: 'A2 晚間23:00', time: '23:00-23:30', direction: '暨大→埔里總站' },
-  'B2': { name: 'B2 晚間23:30', time: '23:30-24:00', direction: '埔里總站→暨大' }
+  'A1': { name: 'A1 晚間22:00', nameEn: 'A1 10:00 PM', time: '22:00-22:30', direction: '暨大→埔里總站', directionEn: 'NCNU → Puli Bus Terminal' },
+  'B1': { name: 'B1 晚間22:30', nameEn: 'B1 10:30 PM', time: '22:30-23:00', direction: '埔里總站→暨大', directionEn: 'Puli Bus Terminal → NCNU' },
+  'A2': { name: 'A2 晚間23:00', nameEn: 'A2 11:00 PM', time: '23:00-23:30', direction: '暨大→埔里總站', directionEn: 'NCNU → Puli Bus Terminal' },
+  'B2': { name: 'B2 晚間23:30', nameEn: 'B2 11:30 PM', time: '23:30-24:00', direction: '埔里總站→暨大', directionEn: 'Puli Bus Terminal → NCNU' }
 };
 
 const STOPS = {
@@ -389,6 +393,7 @@ function showRoutes(){
     <div class="route-btn" onclick="selectRoute('${code}')">
       <div style="font-weight:bold;font-size:16px">${ROUTES[code].name}</div>
       <div style="font-size:13px;color:#666;margin-top:4px">${ROUTES[code].direction}</div>
+      <div style="font-size:12px;color:#999;margin-top:2px">${ROUTES[code].directionEn}</div>
     </div>
   `).join('');
   
@@ -541,43 +546,49 @@ function renderReservationInfo(){
     console.log('  - reservationId:', r.reservationId);
     console.log('  - rowNumber:', r.rowNumber);
     
-    // ✅ 優先使用預約ID，備用行號
     const identifier = r.reservationId ? `'${r.reservationId}'` : r.rowNumber;
     const idType = r.reservationId ? 'id' : 'row';
     
     console.log('  - 使用識別方式:', idType, '值:', identifier);
     
-    // ✅ 格式化顯示日期時間（去掉時區標記）
     let displayDate = r.date;
     if (typeof displayDate === 'string' && displayDate.includes('T')) {
       displayDate = displayDate.split('T')[0];
     }
     
+    // 提取路線代碼 (A1, B1 等)
+    const routeCode = r.route.split(' ')[0];
+    const routeInfo = ROUTES[routeCode];
+    
     return `
     <div class="resv-card">
       <div class="resv-row">
-        <div style="font-weight:bold;color:#2d6140;margin-bottom:8px">🕒 ${displayDate}</div>
+        <div style="margin-bottom:12px">
+          <span style="color:#2563eb;font-weight:bold;font-size:15px">時間 Time:</span>
+          <span style="margin-left:8px;font-weight:500">${displayDate}</span>
+        </div>
       </div>
       <div class="resv-row">
-        <div style="display:flex;align-items:center;gap:8px;margin:6px 0">
-          <span>🚌</span>
-          <span style="font-weight:bold">${r.route}</span>
+        <div style="margin-bottom:8px">
+          <div><span style="color:#2563eb;font-weight:bold;font-size:15px">班次 Route:</span></div>
+          <div style="margin-left:8px;margin-top:4px">
+            <div style="font-weight:500">${routeInfo ? routeInfo.name : routeCode}</div>
+            <div style="font-size:13px;color:#666;margin-top:2px">${routeInfo ? routeInfo.direction : ''}</div>
+            <div style="font-size:12px;color:#999;margin-top:1px">${routeInfo ? routeInfo.directionEn : ''}</div>
+          </div>
         </div>
-        <div style="font-size:13px;color:#666;margin-left:28px">Time / Route</div>
       </div>
       <div class="resv-row" style="margin-top:10px">
-        <div style="display:flex;align-items:center;gap:8px;margin:4px 0">
-          <span>⬆</span>
-          <span>${r.fromStop}</span>
+        <div style="margin-bottom:8px">
+          <span style="color:#2563eb;font-weight:bold;font-size:15px">上車 Boarding:</span>
+          <div style="margin-left:8px;margin-top:4px;font-weight:500">${r.fromStop}</div>
         </div>
-        <div style="font-size:13px;color:#666;margin-left:28px">Boarding Stop</div>
       </div>
       <div class="resv-row">
-        <div style="display:flex;align-items:center;gap:8px;margin:4px 0">
-          <span>⬇</span>
-          <span>${r.toStop}</span>
+        <div style="margin-bottom:12px">
+          <span style="color:#2563eb;font-weight:bold;font-size:15px">下車 Alighting:</span>
+          <div style="margin-left:8px;margin-top:4px;font-weight:500">${r.toStop}</div>
         </div>
-        <div style="font-size:13px;color:#666;margin-left:28px">Alighting Stop</div>
       </div>
       <button class="cancel-btn" onclick="cancelReservation(${identifier}, '${idType}')">取消預約 Cancel Reservation</button>
     </div>`;
