@@ -273,7 +273,7 @@ async function init(){
     if(!liff.isLoggedIn()) return liff.login();
     
     const profile = await liff.getProfile();
-    console.log('👤 用戶 ID:', profile.userId);
+    console.log('👤 LINE 用戶資料:', profile);
     
     const [checkRes, reservations] = await Promise.all([
       fetch(`${WORKER_URL}?mode=check&userId=${profile.userId}`).then(r=>r.json()),
@@ -286,6 +286,10 @@ async function init(){
     if(!checkRes.registered) return location.href='register.html';
     
     userData = checkRes.user;
+    // ✅ 加入 LINE 頭像和顯示名稱
+    userData.lineDisplayName = profile.displayName;
+    userData.linePictureUrl = profile.pictureUrl;
+    
     renderUser(userData);
     
     existingReservations = reservations.reservations || [];
@@ -306,8 +310,13 @@ async function init(){
 /* === 顯示用戶資訊 === */
 function renderUser(u){
   document.getElementById('userInfo').innerHTML=
-    `<div style="font-size:18px;font-weight:bold">${u.name}</div>
-     <div>${u.department} | ${u.phone}</div>`;
+    `<div style="display:flex;align-items:center;gap:12px">
+       <img src="${u.linePictureUrl}" alt="頭像" style="width:50px;height:50px;border-radius:50%;border:2px solid #3c8050">
+       <div>
+         <div style="font-size:18px;font-weight:bold">${u.lineDisplayName}</div>
+         <div style="font-size:14px;color:#666;margin-top:2px">${u.department} | ${u.phone}</div>
+       </div>
+     </div>`;
 }
 
 /* === 月曆 === */
@@ -538,13 +547,39 @@ function renderReservationInfo(){
     
     console.log('  - 使用識別方式:', idType, '值:', identifier);
     
+    // ✅ 格式化顯示日期時間（去掉時區標記）
+    let displayDate = r.date;
+    if (typeof displayDate === 'string' && displayDate.includes('T')) {
+      displayDate = displayDate.split('T')[0];
+    }
+    
     return `
     <div class="resv-card">
-      <div class="resv-row">🕒 時間：${r.date}</div>
-      <div class="resv-row">🚌 班次：${r.route}</div>
-      <div class="resv-row">⬆ 上車：${r.fromStop}</div>
-      <div class="resv-row">⬇ 下車：${r.toStop}</div>
-      <button class="cancel-btn" onclick="cancelReservation(${identifier}, '${idType}')">取消預約</button>
+      <div class="resv-row">
+        <div style="font-weight:bold;color:#2d6140;margin-bottom:8px">🕒 ${displayDate}</div>
+      </div>
+      <div class="resv-row">
+        <div style="display:flex;align-items:center;gap:8px;margin:6px 0">
+          <span>🚌</span>
+          <span style="font-weight:bold">${r.route}</span>
+        </div>
+        <div style="font-size:13px;color:#666;margin-left:28px">Time / Route</div>
+      </div>
+      <div class="resv-row" style="margin-top:10px">
+        <div style="display:flex;align-items:center;gap:8px;margin:4px 0">
+          <span>⬆</span>
+          <span>${r.fromStop}</span>
+        </div>
+        <div style="font-size:13px;color:#666;margin-left:28px">Boarding Stop</div>
+      </div>
+      <div class="resv-row">
+        <div style="display:flex;align-items:center;gap:8px;margin:4px 0">
+          <span>⬇</span>
+          <span>${r.toStop}</span>
+        </div>
+        <div style="font-size:13px;color:#666;margin-left:28px">Alighting Stop</div>
+      </div>
+      <button class="cancel-btn" onclick="cancelReservation(${identifier}, '${idType}')">取消預約 Cancel Reservation</button>
     </div>`;
   }).join('');
 }
