@@ -177,14 +177,11 @@ select {
 </main>
 
 <script>
-const WORKER_URL='https://delicate-math-7e61.fangwl591021.workers.dev/';
-const CALENDAR_ID='86eee89e759f27d2a2c7a44853868f7be880aa8e745ba3839933ec84b562631e@group.calendar.google.com';
+// ============================ 系統配置 ============================
+const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxL3jt2nWNTeBdyVW47kA8ywzzRMeK0iJySule8uxNZIK3MqVMp_K81I9qE3h6m4bNf_w/exec';
 
-let userData=null, existingReservations=[], selectedDate=null, selectedRoute=null;
-let currentYear=new Date().getFullYear(), currentMonth=new Date().getMonth();
-let disabledDates=[];
-
-/* === 路線與站點資料 === */
+// ============================ 路線與站點資料 ============================
 const ROUTES = {
   'A1': { name: 'A1 晚間22:00', nameEn: 'A1 10:00 PM', time: '22:00-22:30', direction: '暨大→埔里總站', directionEn: 'NCNU → Puli Bus Terminal' },
   'B1': { name: 'B1 晚間22:30', nameEn: 'B1 10:30 PM', time: '22:30-23:00', direction: '埔里總站→暨大', directionEn: 'Puli Bus Terminal → NCNU' },
@@ -255,7 +252,12 @@ const STOPS = {
   ]
 };
 
-/* === 初始化 === */
+// ============================ 全域變數 ============================
+let userData = null, existingReservations = [], selectedDate = null, selectedRoute = null;
+let currentYear = new Date().getFullYear(), currentMonth = new Date().getMonth();
+let disabledDates = [];
+
+// ============================ 初始化 ============================
 async function init(){
   try {
     await liff.init({liffId:"2006590746-KJodGOda"});
@@ -264,6 +266,7 @@ async function init(){
     const profile = await liff.getProfile();
     console.log('👤 LINE 用戶資料:', profile);
 
+    // 檢查用戶是否註冊
     const checkRes = await fetch(`${WORKER_URL}?mode=check&userId=${profile.userId}`).then(r=>r.json());
     
     if(!checkRes.registered) {
@@ -286,7 +289,7 @@ async function init(){
   }
 }
 
-/* === 用戶資料 === */
+// ============================ 用戶資料顯示 ============================
 function renderUser(u){
   document.getElementById('userInfo').innerHTML=
     `<div style="display:flex;align-items:center;gap:12px">
@@ -298,7 +301,7 @@ function renderUser(u){
      </div>`;
 }
 
-/* === 本地儲存預約資料 === */
+// ============================ 本地儲存管理 ============================
 function saveLocalReservations() {
   try {
     localStorage.setItem(`pangolin_reservations_${userData.userId}`, JSON.stringify(existingReservations));
@@ -320,48 +323,43 @@ function loadLocalReservations() {
   }
 }
 
-/* === 讀取預約 === */
+// ============================ 預約資料管理 - 真實資料查詢 ============================
 async function fetchReservations(){
   try {
-    console.log('📥 開始載入預約資料...');
+    console.log('📥 開始載入真實預約資料...');
     const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
     const data = await res.json();
     
-    console.log('📥 從伺服器取得的原始資料:', data);
+    console.log('📥 從伺服器取得的真實資料:', data);
     
-    // 先初始化現有預約陣列
     existingReservations = [];
     
-    // 檢查伺服器回傳的資料結構
     if (data.status === 'success') {
       if (Array.isArray(data.reservations) && data.reservations.length > 0) {
-        // 正常情況：有預約陣列
-        existingReservations = data.reservations;
-        console.log('✅ 從伺服器成功載入預約:', existingReservations.length, '筆');
-      } else if (data.reservations && typeof data.reservations === 'object') {
-        // 單一預約物件
-        existingReservations = [data.reservations];
-        console.log('✅ 從伺服器載入單筆預約');
+        // 處理真實的預約資料格式
+        existingReservations = data.reservations.map(resv => ({
+          reservationId: resv.reservationId || resv[11],
+          userId: resv.userId || resv[10],
+          name: resv.name || resv[1],
+          phone: resv.phone || resv[2] || '',
+          date: resv.date || resv[0],
+          route: resv.route || resv[3],
+          fromStop: resv.fromStop || resv[4],
+          toStop: resv.toStop || resv[5],
+          timestamp: resv.timestamp || resv[6],
+          status: resv.status || resv[7] || '已預約'
+        })).filter(resv => resv.status === '已預約'); // 只顯示未取消的預約
+        
+        console.log('✅ 從伺服器成功載入真實預約:', existingReservations.length, '筆');
       } else {
         console.log('ℹ️ 伺服器回傳成功但沒有預約資料');
+        existingReservations = [];
       }
     } else {
       console.warn('⚠ 伺服器回傳失敗:', data.message);
+      // 失敗時使用本地備份
+      existingReservations = loadLocalReservations();
     }
-    
-    // 載入本地儲存的預約（作為備份）
-    const localReservations = loadLocalReservations();
-    console.log('💾 本地儲存的預約:', localReservations.length, '筆');
-    
-    // 合併預約，避免重複
-    localReservations.forEach(localResv => {
-      const exists = existingReservations.some(serverResv => 
-        serverResv.reservationId === localResv.reservationId
-      );
-      if (!exists) {
-        existingReservations.push(localResv);
-      }
-    });
     
     console.log('📋 最終預約列表:', existingReservations.length, '筆');
     renderReservationInfo();
@@ -375,23 +373,19 @@ async function fetchReservations(){
   }
 }
 
-/* === 新增本地預約 === */
 function addLocalReservation(reservation) {
   console.log('➕ 開始新增本地預約:', reservation);
   
-  // 確保 existingReservations 是陣列
   if (!Array.isArray(existingReservations)) {
     console.log('🔄 初始化 existingReservations 為空陣列');
     existingReservations = [];
   }
   
-  // 確保 reservationId 存在
   if (!reservation.reservationId) {
     reservation.reservationId = 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     console.log('🆔 生成新的 reservationId:', reservation.reservationId);
   }
   
-  // 檢查是否已存在相同預約
   const exists = existingReservations.some(r => 
     r.reservationId === reservation.reservationId
   );
@@ -401,18 +395,15 @@ function addLocalReservation(reservation) {
     console.log('✅ 預約已新增到陣列，現在有:', existingReservations.length, '筆預約');
     saveLocalReservations();
     
-    // 重新渲染預約資訊
     setTimeout(() => {
       console.log('🔄 重新渲染預約資訊');
       renderReservationInfo();
     }, 100);
-    
   } else {
     console.log('⚠ 預約已存在，不重複新增');
   }
 }
 
-/* === 移除本地預約 === */
 function removeLocalReservation(reservationId) {
   const initialLength = existingReservations.length;
   existingReservations = existingReservations.filter(r => r.reservationId !== reservationId);
@@ -426,25 +417,25 @@ function removeLocalReservation(reservationId) {
   }
 }
 
-/* === 停駛日載入（從 GAS 代理取得） === */
+// ============================ 停駛日管理 ============================
 async function fetchDisabledDates(){
   try {
     const res = await fetch(`${WORKER_URL}?mode=calendar`);
     const data = await res.json();
     if (data.status === 'success' && Array.isArray(data.disabledDates)) {
       disabledDates = data.disabledDates;
-      console.log('🈲 停駛日:', disabledDates);
+      console.log('🈲 真實停駛日:', disabledDates);
     } else {
       console.warn('⚠ 無法取得停駛日:', data);
       disabledDates = [];
     }
   } catch (e) {
-    console.warn('⚠ 停駛日讀取失敗（可忽略）', e);
+    console.warn('⚠ 停駛日讀取失敗', e);
     disabledDates = [];
   }
 }
 
-/* === 月曆 === */
+// ============================ 月曆功能 ============================
 function loadCalendar(){
   const cal=document.getElementById('calendar');
   cal.innerHTML='';
@@ -486,7 +477,7 @@ function toggleCalendar(){
   if(c.style.display==='block') loadCalendar();
 }
 
-/* === 選擇日期 === */
+// ============================ 預約流程控制 ============================
 function selectDate(dateStr){
   selectedDate = dateStr;
   selectedRoute = null;
@@ -503,7 +494,6 @@ function selectDate(dateStr){
   document.getElementById('submitBtn').style.display = 'none';
 }
 
-/* === 顯示路線 === */
 function showRoutes(){
   const section = document.getElementById('routeSection');
   const container = document.getElementById('routeButtons');
@@ -521,7 +511,6 @@ function showRoutes(){
   console.log('🚌 顯示路線選擇');
 }
 
-/* === 選擇路線 === */
 function selectRoute(routeCode){
   selectedRoute = routeCode;
   
@@ -537,7 +526,6 @@ function selectRoute(routeCode){
   document.getElementById('submitBtn').style.display = 'none';
 }
 
-/* === 載入上車站 === */
 function loadStops(routeCode){
   const fromSelect = document.getElementById('fromStop');
   const stops = STOPS[routeCode] || [];
@@ -558,7 +546,6 @@ function loadStops(routeCode){
   };
 }
 
-/* === 載入下車站 === */
 function loadToStops(routeCode, fromStop){
   const toSelect = document.getElementById('toStop');
   const stops = STOPS[routeCode] || [];
@@ -590,7 +577,7 @@ function loadToStops(routeCode, fromStop){
   };
 }
 
-/* === 送出預約 === */
+// ============================ 預約提交 - 真實資料寫入 ============================
 async function submitReservation(){
   const fromStop = document.getElementById('fromStop').value;
   const toStop = document.getElementById('toStop').value;
@@ -604,7 +591,6 @@ async function submitReservation(){
     return;
   }
   
-  // 建立完整的預約資料
   const reservationData = {
     type: 'reserve',
     userId: userData.userId,
@@ -612,13 +598,13 @@ async function submitReservation(){
     phone: userData.phone || '',
     department: userData.department || '',
     date: selectedDate,
-    route: selectedRoute, // 傳送路線代碼
+    route: selectedRoute,
     fromStop: fromStop,
     toStop: toStop,
     timestamp: new Date().toISOString()
   };
   
-  console.log('📤 送出預約資料:', reservationData);
+  console.log('📤 送出真實預約資料:', reservationData);
   
   try {
     const res = await fetch(WORKER_URL, {
@@ -633,29 +619,26 @@ async function submitReservation(){
     if(result.status === 'success'){
       alert('✅ 預約成功！');
       
-      // 建立新的預約物件 - 使用伺服器回傳的資料
+      // 使用伺服器回傳的真實預約資料
       const newReservation = {
         reservationId: result.reservationId,
         userId: userData.userId,
         name: userData.name || userData.lineDisplayName,
         phone: userData.phone || '',
         date: selectedDate,
-        route: ROUTES[selectedRoute].name, // 前端顯示用完整名稱
-        routeCode: selectedRoute, // 儲存代碼
+        route: ROUTES[selectedRoute].name,
+        routeCode: selectedRoute,
         fromStop: fromStop,
         toStop: toStop,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        status: '已預約'
       };
       
       console.log('🆕 新預約物件:', newReservation);
-      
-      // 新增到本地儲存
       addLocalReservation(newReservation);
-      
-      // 重置表單
       resetForm();
       
-      // 重新載入預約資料（從伺服器）
+      // 重新載入真實預約資料
       setTimeout(() => {
         fetchReservations();
       }, 500);
@@ -667,7 +650,6 @@ async function submitReservation(){
     console.error('❌ 預約錯誤:', error);
     alert('❌ 網路錯誤，已儲存到本地備份');
     
-    // 網路錯誤時在本地儲存
     const localReservation = {
       reservationId: 'local_' + Date.now(),
       userId: userData.userId,
@@ -687,7 +669,7 @@ async function submitReservation(){
   }
 }
 
-/* === 重置表單函數 === */
+// ============================ 表單重置 ============================
 function resetForm() {
   document.getElementById('routeSection').style.display = 'none';
   document.getElementById('fromStopSection').style.display = 'none';
@@ -699,23 +681,20 @@ function resetForm() {
   selectedDate = null;
   selectedRoute = null;
   
-  // 清空選擇
   document.getElementById('fromStop').selectedIndex = 0;
   document.getElementById('toStop').selectedIndex = 0;
   
-  // 移除路線選擇狀態
   document.querySelectorAll('.route-btn').forEach(btn => btn.classList.remove('selected'));
 }
 
-/* === 預約紀錄顯示 === */
+// ============================ 預約顯示 ============================
 function renderReservationInfo(){
   const panel = document.getElementById('reservationPanel');
   const box = document.getElementById('reservationInfo');
   
-  console.log('🎯 渲染預約資訊，現有預約數:', existingReservations?.length || 0);
-  console.log('📋 預約資料內容:', existingReservations);
+  console.log('🎯 渲染真實預約資訊，現有預約數:', existingReservations?.length || 0);
+  console.log('📋 真實預約資料內容:', existingReservations);
   
-  // 檢查預約資料是否存在且為陣列
   if(!existingReservations || !Array.isArray(existingReservations) || existingReservations.length === 0){
     console.log('ℹ️ 沒有預約資料，隱藏面板');
     panel.style.display = 'none';
@@ -723,10 +702,9 @@ function renderReservationInfo(){
     return;
   }
   
-  console.log('✅ 有預約資料，顯示面板');
+  console.log('✅ 有真實預約資料，顯示面板');
   panel.style.display = 'block';
   
-  // 按日期排序預約（最新的在前面）
   const sortedReservations = [...existingReservations].sort((a, b) => {
     try {
       const dateA = new Date(a.date);
@@ -740,24 +718,19 @@ function renderReservationInfo(){
   
   console.log('📊 排序後的預約:', sortedReservations);
   
-  // 生成 HTML 內容
   const reservationsHTML = sortedReservations.map((r, index) => {
     console.log(`處理第 ${index} 筆預約:`, r);
     
-    // 處理日期格式
     let displayDate = r.date;
     if (typeof displayDate === 'string' && displayDate.includes('T')) {
       displayDate = displayDate.split('T')[0];
     }
     
-    // 處理路線名稱顯示
     let routeDisplay = r.route;
     if (typeof r.route === 'string' && r.route.length <= 3) {
-      // 如果是路線代碼，查找對應的名稱
       routeDisplay = ROUTES[r.route] ? ROUTES[r.route].name : r.route;
     }
     
-    // 確保 reservationId 存在
     const reservationId = r.reservationId || `unknown-${index}`;
     
     return `
@@ -767,19 +740,18 @@ function renderReservationInfo(){
       <div><strong>⬆ 上車:</strong> ${r.fromStop}</div>
       <div><strong>⬇ 下車:</strong> ${r.toStop}</div>
       <div><strong>🆔 預約編號:</strong> ${reservationId}</div>
+      <div><strong>📊 狀態:</strong> ${r.status || '已預約'}</div>
       <button class="cancel-btn" onclick="cancelReservation('${reservationId}')">取消預約 Cancel Reservation</button>
     </div>`;
   }).join('');
   
   console.log('生成的HTML:', reservationsHTML);
   box.innerHTML = reservationsHTML;
-  
-  // 強制顯示面板
   panel.style.display = 'block';
-  console.log('✅ 預約面板已更新，應該可見');
+  console.log('✅ 預約面板已更新，顯示真實資料');
 }
 
-/* === 取消預約 === */
+// ============================ 取消預約 - 真實資料操作 ============================
 async function cancelReservation(reservationId) {
   if (!confirm('確定取消此預約嗎？')) return;
   
@@ -799,8 +771,11 @@ async function cancelReservation(reservationId) {
     const result = await res.json();
     if(result.status === 'success'){
       alert('✅ 已取消預約');
-      // 從本地儲存中移除
       removeLocalReservation(reservationId);
+      // 重新載入真實資料
+      setTimeout(() => {
+        fetchReservations();
+      }, 500);
     } else {
       alert('❌ 取消失敗：' + (result.message || '未知錯誤'));
     }
@@ -810,7 +785,7 @@ async function cancelReservation(reservationId) {
   }
 }
 
-/* === 顯示規則 === */
+// ============================ 其他功能 ============================
 function showRules(){
   alert(`📘 預約規則\n\n1. 每人每日限預約一個班次\n2. 請於搭乘日前一天預約\n3. 如需取消請提前通知\n4. 上車時請主動出示預約紀錄`);
 }
