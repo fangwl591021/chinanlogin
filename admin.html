@@ -226,50 +226,40 @@ async function loadDashboardStats(){
   }catch(e){console.warn('統計資料載入失敗');}
 }
 
-/* 📊 載入預約資料 - 修正版本 */
+/* 📊 載入預約資料 - 使用後台專用模式 */
 async function loadReservations() {
   const tbody = document.getElementById('tbl');
   tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">🔄 查詢中...</td></tr>`;
 
   try {
-    const res = await fetch(`${WORKER_URL}?mode=reservations`);
+    // 使用後台專用的 allReservations 模式
+    const res = await fetch(`${WORKER_URL}?mode=allReservations`);
     const json = await res.json();
 
-    console.log('📥 收到預約資料:', json); // 除錯用
+    console.log('📥 後台收到預約資料:', json);
 
-    // 兼容各種格式
-    const list = json.reservations || json.data || json.list || json.rows || [];
+    if (json.status !== 'success') {
+      throw new Error(json.message || '後台查詢失敗');
+    }
+
+    const list = json.reservations || [];
 
     if (!Array.isArray(list) || list.length === 0) {
       tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">目前沒有預約資料</td></tr>`;
       return;
     }
 
-    // 處理資料格式轉換 - 修正版本
-    const data = list.map(r => {
-      // 如果是後端的新格式（包含 reservationId）
-      if (r.reservationId) {
-        return {
-          date: r.date || '',
-          route: r.route || '',
-          name: r.name || '',
-          status: r.status || '',
-          // 保留其他欄位供除錯用
-          _raw: r
-        };
-      }
-      // 如果是舊的試算表欄位格式
-      else {
-        return {
-          date: r.A || r.date || r.日期 || '',
-          route: r.B || r.route || r.班次 || '',
-          name: r.D || r.name || r.姓名 || '',
-          status: r.F || r.status || r.狀態 || ''
-        };
-      }
-    });
+    // 處理資料格式轉換
+    const data = list.map(r => ({
+      date: r.date || '',
+      route: r.route || '',
+      name: r.name || '',
+      status: r.status || '',
+      // 保留完整資料供除錯
+      _raw: r
+    }));
 
-    console.log('📊 處理後的資料:', data); // 除錯用
+    console.log(`📊 後台處理後資料：共 ${data.length} 筆`, data);
 
     // 排序：日期倒序，班次順序
     const order = { A1: 1, A2: 2, B1: 3, B2: 4 };
@@ -281,9 +271,17 @@ async function loadReservations() {
 
     renderTable(data);
     allData = data;
+    
+    showToast(`✅ 載入 ${data.length} 筆預約資料`);
+    
   } catch (e) {
-    console.error('❌ 查詢錯誤', e);
-    tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">❌ 查詢失敗，請稍後再試</td></tr>`;
+    console.error('❌ 後台查詢錯誤', e);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="p-4 text-center text-red-500">
+          ❌ 查詢失敗：${e.message}
+        </td>
+      </tr>`;
   }
 }
 
