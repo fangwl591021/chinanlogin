@@ -226,7 +226,7 @@ async function loadDashboardStats(){
   }catch(e){console.warn('統計資料載入失敗');}
 }
 
-/* 📊 載入預約資料 */
+/* 📊 載入預約資料 - 修正版本 */
 async function loadReservations() {
   const tbody = document.getElementById('tbl');
   tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">🔄 查詢中...</td></tr>`;
@@ -237,7 +237,7 @@ async function loadReservations() {
 
     console.log('📥 收到預約資料:', json); // 除錯用
 
-    // 兼容各種 GAS 格式
+    // 兼容各種格式
     const list = json.reservations || json.data || json.list || json.rows || [];
 
     if (!Array.isArray(list) || list.length === 0) {
@@ -245,16 +245,33 @@ async function loadReservations() {
       return;
     }
 
-    // 資料清理與排序 - 修正欄位映射
-    const data = list.map(r => ({
-      date: r.A || r.date || r.日期 || '',
-      route: r.B || r.route || r.班次 || '',
-      name: r.D || r.name || r.姓名 || '',
-      status: r.F || r.status || r.狀態 || ''
-    }));
+    // 處理資料格式轉換 - 修正版本
+    const data = list.map(r => {
+      // 如果是後端的新格式（包含 reservationId）
+      if (r.reservationId) {
+        return {
+          date: r.date || '',
+          route: r.route || '',
+          name: r.name || '',
+          status: r.status || '',
+          // 保留其他欄位供除錯用
+          _raw: r
+        };
+      }
+      // 如果是舊的試算表欄位格式
+      else {
+        return {
+          date: r.A || r.date || r.日期 || '',
+          route: r.B || r.route || r.班次 || '',
+          name: r.D || r.name || r.姓名 || '',
+          status: r.F || r.status || r.狀態 || ''
+        };
+      }
+    });
 
     console.log('📊 處理後的資料:', data); // 除錯用
 
+    // 排序：日期倒序，班次順序
     const order = { A1: 1, A2: 2, B1: 3, B2: 4 };
     data.sort((a, b) => {
       if (a.date < b.date) return 1;
