@@ -327,7 +327,7 @@ function loadLocalReservations() {
 async function fetchReservations(){
   try {
     console.log('📥 開始載入真實預約資料...');
-    console.log('👤 當前用戶資料:', userData); // 檢查用戶資料
+    console.log('👤 當前用戶資料:', userData);
     
     const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
     const data = await res.json();
@@ -337,14 +337,14 @@ async function fetchReservations(){
     existingReservations = [];
     
     if (data.status === 'success' && Array.isArray(data.reservations)) {
-      // 處理真實的預約資料格式
+      // 處理真實的預約資料格式 - 簡化日期處理
       existingReservations = data.reservations.map(resv => {
         const reservation = {
           reservationId: resv.reservationId || resv[11] || `resv-${Date.now()}`,
           userId: resv.userId || resv[10] || userData.userId,
           name: resv.name || resv[1] || userData.lineDisplayName,
-          phone: resv.phone || resv[2] || userData.phone || '', // 確保電話有值
-          date: formatDate(resv.date || resv[0]),
+          phone: resv.phone || resv[2] || userData.phone || '',
+          date: resv.date || resv[0], // 直接使用回傳的日期，不需要格式化
           route: resv.route || resv[3] || '',
           fromStop: resv.fromStop || resv[4] || '',
           toStop: resv.toStop || resv[5] || '',
@@ -352,7 +352,7 @@ async function fetchReservations(){
           status: resv.status || resv[7] || '已預約'
         };
         
-        console.log('📝 處理預約資料（電話欄位）:', reservation.phone);
+        console.log('📝 處理預約資料:', reservation);
         return reservation;
       }).filter(resv => resv.status === '已預約');
       
