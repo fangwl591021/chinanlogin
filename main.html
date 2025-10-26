@@ -344,6 +344,7 @@ function renderUser(u){
 }
 
 /* === 讀取預約 === */
+/* === 讀取預約 - 修正版本 === */
 async function fetchReservations(){
   try {
     console.log('📥 開始載入預約資料...');
@@ -355,44 +356,26 @@ async function fetchReservations(){
     // 先初始化現有預約陣列
     existingReservations = [];
     
-    // 加入從伺服器取得的預約
+    // 檢查伺服器回傳的資料結構
     if (data.status === 'success') {
-      // 處理不同的資料格式
-      if (Array.isArray(data.reservations)) {
-        existingReservations = data.reservations.map(resv => ({
-          reservationId: resv.reservationId || `server_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          userId: resv.userId || userData.userId,
-          name: resv.name || userData.name,
-          phone: resv.phone || userData.phone,
-          date: resv.date,
-          route: resv.route,
-          fromStop: resv.fromStop,
-          toStop: resv.toStop,
-          timestamp: resv.timestamp || new Date().toISOString()
-        }));
-        console.log('✅ 從伺服器成功載入預約:', existingReservations);
-      } else if (data.reservations) {
-        // 如果是單一物件，轉為陣列
-        existingReservations = [{
-          reservationId: data.reservations.reservationId || `server_${Date.now()}`,
-          userId: data.reservations.userId || userData.userId,
-          name: data.reservations.name || userData.name,
-          phone: data.reservations.phone || userData.phone,
-          date: data.reservations.date,
-          route: data.reservations.route,
-          fromStop: data.reservations.fromStop,
-          toStop: data.reservations.toStop,
-          timestamp: data.reservations.timestamp || new Date().toISOString()
-        }];
-        console.log('✅ 從伺服器載入單筆預約:', existingReservations);
+      if (Array.isArray(data.reservations) && data.reservations.length > 0) {
+        // 正常情況：有預約陣列
+        existingReservations = data.reservations;
+        console.log('✅ 從伺服器成功載入預約:', existingReservations.length, '筆');
+      } else if (data.reservations && typeof data.reservations === 'object') {
+        // 單一預約物件
+        existingReservations = [data.reservations];
+        console.log('✅ 從伺服器載入單筆預約');
+      } else {
+        console.log('ℹ️ 伺服器回傳成功但沒有預約資料');
       }
     } else {
-      console.warn('⚠ 無法從伺服器載入預約:', data.message);
+      console.warn('⚠ 伺服器回傳失敗:', data.message);
     }
     
     // 載入本地儲存的預約（作為備份）
     const localReservations = loadLocalReservations();
-    console.log('💾 本地儲存的預約:', localReservations);
+    console.log('💾 本地儲存的預約:', localReservations.length, '筆');
     
     // 合併預約，避免重複
     localReservations.forEach(localResv => {
@@ -404,37 +387,143 @@ async function fetchReservations(){
       }
     });
     
-    console.log('📋 最終預約列表:', existingReservations);
+    console.log('📋 最終預約列表:', existingReservations.length, '筆');
     renderReservationInfo();
     
   } catch (error) { 
     console.error('❌ 載入預約錯誤:', error);
     // 如果載入失敗，使用本地儲存的預約
     existingReservations = loadLocalReservations();
-    console.log('🔄 使用本地預約備份:', existingReservations);
+    console.log('🔄 使用本地預約備份:', existingReservations.length, '筆');
     renderReservationInfo();
   }
 }
 
-/* === 本地儲存預約資料 === */
-function saveLocalReservations() {
+/* === 送出預約 - 修正版本 === */
+async function submitReservation(){
+  const fromStop = document.getElementById('fromStop').value;
+  const toStop = document.getElementById('toStop').value;
+  
+  if(!selectedDate || !selectedRoute || !fromStop || !toStop){
+    alert('請完成所有選擇');
+    return;
+  }
+  
+  if(!confirm(`確定預約嗎？\n\n日期：${selectedDate}\n班次：${ROUTES[selectedRoute].name}\n上車：${fromStop}\n下車：${toStop}`)){
+    return;
+  }
+  
+  // 建立完整的預約資料
+  const reservationData = {
+    type: 'reserve',
+    userId: userData.userId,
+    name: userData.name || userData.lineDisplayName,
+    phone: userData.phone || '',
+    department: userData.department || '',
+    date: selectedDate,
+    route: selectedRoute, // 傳送路線代碼
+    fromStop: fromStop,
+    toStop: toStop,
+    timestamp: new Date().toISOString()
+  };
+  
+  console.log('📤 送出預約資料:', reservationData);
+  
   try {
-    localStorage.setItem(`pangolin_reservations_${userData.userId}`, JSON.stringify(existingReservations));
-    console.log('💾 預約資料已儲存到本地:', existingReservations.length, '筆預約');
-  } catch (e) {
-    console.error('❌ 儲存預約到本地失敗:', e);
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(reservationData)
+    });
+    
+    const result = await res.json();
+    console.log('📥 預約結果:', result);
+    
+    if(result.status === 'success'){
+      alert('✅ 預約成功！');
+      
+      // 建立新的預約物件 - 使用伺服器回傳的資料
+      const newReservation = {
+        reservationId: result.reservationId,
+        userId: userData.userId,
+        name: userData.name || userData.lineDisplayName,
+        phone: userData.phone || '',
+        date: selectedDate,
+        route: ROUTES[selectedRoute].name, // 前端顯示用完整名稱
+        routeCode: selectedRoute, // 儲存代碼
+        fromStop: fromStop,
+        toStop: toStop,
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log('🆕 新預約物件:', newReservation);
+      
+      // 新增到本地儲存
+      addLocalReservation(newReservation);
+      
+      // 重置表單
+      resetForm();
+      
+      // 重新載入預約資料（從伺服器）
+      setTimeout(() => {
+        fetchReservations();
+      }, 500);
+      
+    } else {
+      alert('❌ 預約失敗：' + (result.message || '未知錯誤'));
+    }
+  } catch(error){
+    console.error('❌ 預約錯誤:', error);
+    alert('❌ 網路錯誤，已儲存到本地備份');
+    
+    // 網路錯誤時在本地儲存
+    const localReservation = {
+      reservationId: 'local_' + Date.now(),
+      userId: userData.userId,
+      name: userData.name || userData.lineDisplayName,
+      phone: userData.phone || '',
+      date: selectedDate,
+      route: ROUTES[selectedRoute].name,
+      routeCode: selectedRoute,
+      fromStop: fromStop,
+      toStop: toStop,
+      timestamp: new Date().toISOString(),
+      localOnly: true
+    };
+    
+    addLocalReservation(localReservation);
+    resetForm();
   }
 }
 
-function loadLocalReservations() {
+/* === 修改初始化，移除測試資料 === */
+async function init(){
   try {
-    const saved = localStorage.getItem(`pangolin_reservations_${userData.userId}`);
-    const reservations = saved ? JSON.parse(saved) : [];
-    console.log('📂 從本地載入預約:', reservations.length, '筆');
-    return reservations;
-  } catch (e) {
-    console.error('❌ 從本地載入預約失敗:', e);
-    return [];
+    await liff.init({liffId:"2006590746-KJodGOda"});
+    if(!liff.isLoggedIn()) return liff.login();
+
+    const profile = await liff.getProfile();
+    console.log('👤 LINE 用戶資料:', profile);
+
+    const checkRes = await fetch(`${WORKER_URL}?mode=check&userId=${profile.userId}`).then(r=>r.json());
+    
+    if(!checkRes.registered) {
+      console.log('❌ 用戶未註冊，跳轉到註冊頁面');
+      return location.href='register.html';
+    }
+    
+    userData = checkRes.user || {};
+    userData.userId = profile.userId;
+    userData.lineDisplayName = profile.displayName;
+    userData.linePictureUrl = profile.pictureUrl;
+
+    renderUser(userData);
+    await fetchReservations();
+    await fetchDisabledDates();
+    
+  } catch (err) {
+    console.error('❌ 初始化錯誤:', err);
+    alert('系統錯誤: ' + err.message);
   }
 }
 
