@@ -3,36 +3,36 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v6.3.3</title>
+<title>穿山甲專車後台 v6.3.4</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
-body { font-family: "Noto Sans TC", system-ui, sans-serif; background:#f8fafc; margin:0; }
-#loadingScreen, #loginScreen, #noAuthScreen { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:#f8fafc; flex-direction:column; text-align:center; }
-#loginScreen, #noAuthScreen { display:none; }
-#app { display:none; }
-#topBar { position:sticky; top:0; background:#3c8050; color:white; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; }
-#userInfo { display:flex; align-items:center; gap:10px; }
-#userPicture { width:40px; height:40px; border-radius:50%; border:2px solid white; }
-.nav-btn { flex:1; padding:10px 0; text-align:center; font-size:12px; font-weight:600; cursor:pointer; color:#666; }
-.nav-btn.active { color:#3c8050; border-top:3px solid #3c8050; }
-.section { display:none; }
-.section.active { display:block; }
-.card { background:white; border-radius:12px; padding:16px; margin:16px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-.section-title { font-weight:800; font-size:18px; color:#14532d; margin-bottom:16px; }
-#bottomNav { position:fixed; bottom:0; left:0; width:100%; background:white; border-top:1px solid #ddd; display:flex; justify-content:space-around; z-index:50; }
-.toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%); padding:10px 20px; border-radius:8px; color:white; font-weight:600; box-shadow:0 2px 6px rgba(0,0,0,0.2); opacity:0; transition:opacity .3s ease; z-index:999; }
-.toast.show { opacity:1; }
-.toast.success { background:#22c55e; }
-.toast.error { background:#ef4444; }
-.status-ok { color:#16a34a; font-weight:bold; }
-.status-cancel { color:#dc2626; font-weight:bold; }
-.status-wait { color:#ca8a04; font-weight:bold; }
+body { font-family:"Noto Sans TC",system-ui,sans-serif;background:#f8fafc;margin:0; }
+#loadingScreen,#loginScreen,#noAuthScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#f8fafc;flex-direction:column;text-align:center;}
+#loginScreen,#noAuthScreen{display:none;}
+#app{display:none;}
+#topBar{position:sticky;top:0;background:#3c8050;color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;}
+#userInfo{display:flex;align-items:center;gap:10px;}
+#userPicture{width:40px;height:40px;border-radius:50%;border:2px solid white;}
+.nav-btn{flex:1;padding:10px 0;text-align:center;font-size:12px;font-weight:600;cursor:pointer;color:#666;}
+.nav-btn.active{color:#3c8050;border-top:3px solid #3c8050;}
+.section{display:none;}
+.section.active{display:block;}
+.card{background:white;border-radius:12px;padding:16px;margin:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+.section-title{font-weight:800;font-size:18px;color:#14532d;margin-bottom:16px;}
+#bottomNav{position:fixed;bottom:0;left:0;width:100%;background:white;border-top:1px solid #ddd;display:flex;justify-content:space-around;z-index:50;}
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:8px;color:white;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,0.2);opacity:0;transition:opacity .3s ease;z-index:999;}
+.toast.show{opacity:1;}
+.toast.success{background:#22c55e;}
+.toast.error{background:#ef4444;}
+.status-ok{color:#16a34a;font-weight:bold;}
+.status-cancel{color:#dc2626;font-weight:bold;}
+.status-wait{color:#ca8a04;font-weight:bold;}
 </style>
 </head>
 
 <body>
-<!-- 🌀 載入中畫面 -->
+<!-- 🌀 載入畫面 -->
 <div id="loadingScreen">
   <div class="animate-pulse text-center">
     <div class="text-3xl mb-3">🚌 穿山甲後台載入中...</div>
@@ -40,7 +40,7 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background:#f8fafc; m
   </div>
 </div>
 
-<!-- 🔐 登入提示畫面 -->
+<!-- 🔐 登入提示 -->
 <div id="loginScreen">
   <div class="text-5xl mb-4">🔐</div>
   <div class="text-2xl font-bold text-green-800 mb-2">尚未登入</div>
@@ -49,7 +49,7 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background:#f8fafc; m
   <p class="text-sm text-gray-500 mt-4">請在 LINE App 中開啟此頁面</p>
 </div>
 
-<!-- 🚫 無權限畫面 -->
+<!-- 🚫 無權限提示 -->
 <div id="noAuthScreen">
   <div class="text-5xl mb-4">🚫</div>
   <div class="text-2xl font-bold text-red-800 mb-2">無權限使用此頁面</div>
@@ -71,9 +71,14 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background:#f8fafc; m
   <main>
     <!-- 📊 儀表板 -->
     <section id="dashboard" class="section active">
-      <div class="card">
+      <div class="card text-center">
         <h2 class="section-title">📊 營運儀表板</h2>
-        <div id="statsArea">載入中...</div>
+        <p class="text-gray-600 mb-4">歡迎使用穿山甲後台系統</p>
+        <div id="statsArea" class="grid grid-cols-3 gap-4">
+          <div class="bg-green-100 p-4 rounded-lg"><p>今日預約</p><p id="todayCount" class="text-2xl font-bold text-green-700">-</p></div>
+          <div class="bg-red-100 p-4 rounded-lg"><p>已取消</p><p id="cancelCount" class="text-2xl font-bold text-red-700">-</p></div>
+          <div class="bg-blue-100 p-4 rounded-lg"><p>已搭乘</p><p id="checkinCount" class="text-2xl font-bold text-blue-700">-</p></div>
+        </div>
       </div>
     </section>
 
@@ -112,7 +117,7 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background:#f8fafc; m
       </div>
     </section>
 
-    <!-- ⚙️ 系統設定 -->
+    <!-- ⚙️ 設定 -->
     <section id="config" class="section">
       <div class="card">
         <h2 class="section-title">⚙️ 系統設定</h2>
@@ -145,141 +150,129 @@ body { font-family: "Noto Sans TC", system-ui, sans-serif; background:#f8fafc; m
 <div id="toast" class="toast"></div>
 
 <script>
-const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
-const LIFF_ID = '2006590746-wgL4l54z';
-let allData = [];
+const WORKER_URL='https://delicate-math-7e61.fangwl591021.workers.dev/';
+const LIFF_ID='2006590746-wgL4l54z';
+let allData=[];
 
-async function init() {
-  try {
-    await liff.init({ liffId: LIFF_ID });
-    if (!liff.isLoggedIn()) {
-      document.getElementById('loadingScreen').style.display = 'none';
-      document.getElementById('loginScreen').style.display = 'flex';
+async function init(){
+  try{
+    await liff.init({liffId:LIFF_ID});
+    if(!liff.isLoggedIn()){
+      document.getElementById('loadingScreen').style.display='none';
+      document.getElementById('loginScreen').style.display='flex';
       return;
     }
 
-    const profile = await liff.getProfile();
-    const roleRes = await fetch(`${WORKER_URL}?mode=getRole&userId=${profile.userId}`);
-    const roleData = await roleRes.json();
+    const profile=await liff.getProfile();
+    const roleRes=await fetch(`${WORKER_URL}?mode=getRole&userId=${profile.userId}`);
+    const roleData=await roleRes.json();
 
-    if (roleData.role !== 'admin') {
-      document.getElementById('loadingScreen').style.display = 'none';
-      document.getElementById('noAuthScreen').style.display = 'flex';
+    if(roleData.role!=='admin'){
+      document.getElementById('loadingScreen').style.display='none';
+      document.getElementById('noAuthScreen').style.display='flex';
       return;
     }
 
-    // ✅ 顯示主畫面
-    document.getElementById('loadingScreen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    document.getElementById('userName').textContent = profile.displayName + ' (管理員)';
-    document.getElementById('userPicture').src = profile.pictureUrl;
+    document.getElementById('loadingScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('userName').textContent=profile.displayName+' (管理員)';
+    document.getElementById('userPicture').src=profile.pictureUrl;
 
     setupNav();
-    await loadReservations();
-    await loadRules();
-  } catch (e) {
+
+    // 停留在儀表板
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.getElementById('dashboard').classList.add('active');
+
+    // 延遲載入其他資料
+    setTimeout(async()=>{
+      await loadReservations();
+      await loadRules();
+      await loadDashboardStats();
+    },1500);
+  }catch(e){
     console.error(e);
-    showToast('⚠️ 初始化錯誤', 'error');
+    showToast('⚠️ 初始化錯誤','error');
   }
 }
 
-// 登入 / 登出控制
-document.getElementById('loginButton').addEventListener('click', () => liff.login());
-document.getElementById('reLogin').addEventListener('click', () => liff.login());
-document.getElementById('logoutBtn').addEventListener('click', () => {
-  liff.logout();
-  location.reload();
-});
+// 登入登出
+document.getElementById('loginButton').addEventListener('click',()=>liff.login());
+document.getElementById('reLogin').addEventListener('click',()=>liff.login());
+document.getElementById('logoutBtn').addEventListener('click',()=>{liff.logout();location.reload();});
 
 // Toast
-function showToast(msg, type = 'success') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `toast show ${type}`;
-  setTimeout(() => t.classList.remove('show'), 3000);
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className=`toast show ${type}`;
+  setTimeout(()=>t.classList.remove('show'),3000);
 }
 
-// 載入預約表
-async function loadReservations() {
-  try {
-    const res = await fetch(`${WORKER_URL}?mode=reservations`);
-    const json = await res.json();
-    allData = (json.reservations || []);
+// Dashboard 統計
+async function loadDashboardStats(){
+  try{
+    const res=await fetch(`${WORKER_URL}?mode=dashboard`);
+    const data=await res.json();
+    document.getElementById('todayCount').textContent=data.dashboard?.todayCount||'-';
+    document.getElementById('cancelCount').textContent=data.dashboard?.cancelCount||'-';
+    document.getElementById('checkinCount').textContent=data.dashboard?.checkinCount||'-';
+  }catch(e){console.warn('統計資料載入失敗');}
+}
+
+// 查詢表格
+async function loadReservations(){
+  try{
+    const res=await fetch(`${WORKER_URL}?mode=reservations`);
+    const json=await res.json();
+    allData=json.reservations||[];
     renderTable(allData);
-  } catch (e) {
-    showToast('❌ 資料載入失敗', 'error');
-  }
+  }catch(e){showToast('❌ 資料載入失敗','error');}
 }
 
-function renderTable(data) {
-  const tbody = document.getElementById('tbl');
-  tbody.innerHTML = data.map(r => {
-    let cls = r.status.includes('取消') ? 'status-cancel' :
-              (r.status.includes('搭乘') ? 'status-ok' : 'status-wait');
-    return `<tr>
-      <td class="p-2">${r.date}</td>
-      <td class="p-2">${r.route}</td>
-      <td class="p-2">${r.name}</td>
-      <td class="p-2 ${cls}">${r.status}</td>
-    </tr>`;
+function renderTable(data){
+  const tbody=document.getElementById('tbl');
+  tbody.innerHTML=data.map(r=>{
+    let cls=r.status.includes('取消')?'status-cancel':(r.status.includes('搭乘')?'status-ok':'status-wait');
+    return `<tr><td class="p-2">${r.date}</td><td class="p-2">${r.route}</td><td class="p-2">${r.name}</td><td class="p-2 ${cls}">${r.status}</td></tr>`;
   }).join('');
 }
 
-// 搜尋
-document.getElementById('search').addEventListener('input', e => {
-  const k = e.target.value.toLowerCase();
-  renderTable(allData.filter(r =>
-    r.name?.toLowerCase().includes(k) || r.route?.toLowerCase().includes(k) || r.date?.includes(k)
-  ));
+document.getElementById('search').addEventListener('input',e=>{
+  const k=e.target.value.toLowerCase();
+  renderTable(allData.filter(r=>r.name?.toLowerCase().includes(k)||r.route?.toLowerCase().includes(k)||r.date?.includes(k)));
 });
 
-// 載入規則
-async function loadRules() {
-  const res = await fetch(`${WORKER_URL}?mode=getRules`);
-  const json = await res.json();
-  const r = json.current;
-  seatLimit.value = r.seatLimit;
-  maxNoShow.value = r.maxNoShow;
-  banWeeks.value = r.banWeeks;
-  tripMode.value = r.tripMode;
-  ruleMeta.textContent = `最後更新：${r.lastUpdate}`;
+// 系統設定
+async function loadRules(){
+  const res=await fetch(`${WORKER_URL}?mode=getRules`);
+  const json=await res.json();
+  const r=json.current;
+  seatLimit.value=r.seatLimit;maxNoShow.value=r.maxNoShow;banWeeks.value=r.banWeeks;tripMode.value=r.tripMode;
+  ruleMeta.textContent=`最後更新：${r.lastUpdate}`;
 }
-
-document.getElementById('saveRules').addEventListener('click', async () => {
-  const body = {
-    seatLimit: +seatLimit.value,
-    maxNoShow: +maxNoShow.value,
-    banWeeks: +banWeeks.value,
-    tripMode: tripMode.value
-  };
-  try {
-    const res = await fetch(`${WORKER_URL}?mode=updateRules`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    const json = await res.json();
-    if (json.status === 'success') {
-      showToast('✅ 已成功更新設定', 'success');
-      loadRules();
-    } else showToast('❌ 更新失敗', 'error');
-  } catch {
-    showToast('❌ 連線錯誤', 'error');
-  }
+document.getElementById('saveRules').addEventListener('click',async()=>{
+  const body={seatLimit:+seatLimit.value,maxNoShow:+maxNoShow.value,banWeeks:+banWeeks.value,tripMode:tripMode.value};
+  try{
+    const res=await fetch(`${WORKER_URL}?mode=updateRules`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const json=await res.json();
+    if(json.status==='success'){showToast('✅ 已成功更新設定');loadRules();}
+    else showToast('❌ 更新失敗','error');
+  }catch{showToast('❌ 連線錯誤','error');}
 });
 
-// 導覽切換
-function setupNav() {
-  document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+// 導覽
+function setupNav(){
+  document.querySelectorAll('.nav-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
       document.getElementById(btn.dataset.sec).classList.add('active');
     });
   });
-  document.getElementById('goCheckin').addEventListener('click', () => {
-    liff.openWindow({ url: 'https://liff.line.me/2006590746-G7B12a1K', external: false });
+  document.getElementById('goCheckin').addEventListener('click',()=>{
+    liff.openWindow({url:'https://liff.line.me/2006590746-G7B12a1K',external:false});
   });
 }
 
