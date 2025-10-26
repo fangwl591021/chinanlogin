@@ -7,6 +7,7 @@
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
 <style>
+/* 保持原有的 CSS 樣式不變 */
 body {
   font-family: system-ui, "Noto Sans TC", sans-serif;
   background: #f5f6f7;
@@ -301,12 +302,25 @@ async function fetchReservations(){
     const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
     const data = await res.json();
     
+    console.log('📥 從伺服器取得的原始資料:', data);
+    
     // 先初始化現有預約陣列
     existingReservations = [];
     
-    // 加入從伺服器取得的預約
+    // 加入從伺服器取得的預約 - 修正資料格式轉換
     if (data.status === 'success' && Array.isArray(data.reservations)) {
-      existingReservations = [...data.reservations];
+      // 將伺服器資料轉換為前端格式
+      existingReservations = data.reservations.map(resv => ({
+        reservationId: resv.reservationId || `server_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        userId: resv.userId || userData.userId,
+        name: resv.name || userData.name,
+        phone: resv.phone || userData.phone,
+        date: resv.date,
+        route: resv.route,
+        fromStop: resv.fromStop,
+        toStop: resv.toStop,
+        timestamp: resv.timestamp || new Date().toISOString()
+      }));
       console.log('📥 從伺服器載入預約:', existingReservations);
     } else {
       console.warn('⚠ 無法從伺服器載入預約，使用本地備份');
@@ -615,15 +629,15 @@ async function submitReservation(){
     if(result.status === 'success'){
       alert('✅ 預約成功！');
       
-      // 建立新的預約物件
+      // 建立新的預約物件 - 修正格式以匹配 Google Sheets
       const newReservation = {
         reservationId: result.reservationId || 'local_' + Date.now(),
         userId: userData.userId,
         name: userData.name,
         phone: userData.phone,
         date: selectedDate,
-        route: ROUTES[selectedRoute].name,
-        routeCode: selectedRoute,
+        route: ROUTES[selectedRoute].name, // 儲存完整名稱
+        routeCode: selectedRoute, // 儲存代碼
         fromStop: fromStop,
         toStop: toStop,
         timestamp: new Date().toISOString()
