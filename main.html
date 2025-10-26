@@ -195,7 +195,6 @@ async function fetchReservations(){
   } catch (error) { console.error('❌ 載入預約錯誤:', error); }
 }
 
-/* === 停駛日載入 === */
 async function fetchDisabledDates(){
   try {
     const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${CALENDAR_ID}/events?key=YOUR_GOOGLE_API_KEY_HERE`);
@@ -208,6 +207,7 @@ async function fetchDisabledDates(){
     }
   } catch(e){ console.warn('⚠ 無法取得停駛日（可忽略）'); }
 }
+
 
 /* === 月曆 === */
 function loadCalendar(){
