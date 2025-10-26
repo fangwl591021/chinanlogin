@@ -237,6 +237,7 @@ async function loadReservations() {
     
     const startTime = Date.now();
     const res = await fetch(`${WORKER_URL}?mode=allReservations`);
+
     const endTime = Date.now();
     
     console.log('✅ 請求完成，狀態:', res.status, '耗時:', endTime - startTime + 'ms');
