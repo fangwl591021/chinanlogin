@@ -195,18 +195,22 @@ async function fetchReservations(){
   } catch (error) { console.error('❌ 載入預約錯誤:', error); }
 }
 
+/* === 停駛日載入（從 GAS 代理取得） === */
 async function fetchDisabledDates(){
   try {
-    const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${CALENDAR_ID}/events?key=YOUR_GOOGLE_API_KEY_HERE`);
+    const res = await fetch(`${WORKER_URL}?mode=calendar`);
     const data = await res.json();
-    if(Array.isArray(data.items)){
-      disabledDates = data.items
-        .filter(e => e.summary.includes('停駛') || e.summary.includes('公休'))
-        .map(e => e.start.date);
+    if (data.status === 'success' && Array.isArray(data.disabledDates)) {
+      disabledDates = data.disabledDates;
       console.log('🈲 停駛日:', disabledDates);
+    } else {
+      console.warn('⚠ 無法取得停駛日:', data);
     }
-  } catch(e){ console.warn('⚠ 無法取得停駛日（可忽略）'); }
+  } catch (e) {
+    console.warn('⚠ 停駛日讀取失敗（可忽略）', e);
+  }
 }
+
 
 
 /* === 月曆 === */
