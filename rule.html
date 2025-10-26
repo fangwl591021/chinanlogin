@@ -1,4 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>穿山甲專車設定管理 v2.7</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+body {
+  font-family: "Noto Sans TC", system-ui, sans-serif;
+  background: #f8fafc;
+  margin: 0;
+  padding: 0;
+}
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin: 24px auto;
+  max-width: 560px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+input, select {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 16px;
+}
+button {
+  width: 100%;
+  background: #3c8050;
+  color: white;
+  padding: 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+button:hover { background: #2e6b40; }
+#userInfo { text-align:center; margin:16px 0; }
+#userPicture { width:60px; height:60px; border-radius:50%; border:2px solid #3c8050; margin-bottom:8px; }
+.toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: #16a34a; color: white; padding: 12px 24px;
+  border-radius: 8px; font-weight: bold; display: none;
+  animation: fadeInOut 3s ease forwards;
+}
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translate(-50%, 20px); }
+  10%, 90% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, 20px); }
+}
+pre {
+  background: #f1f5f9;
+  color: #1e293b;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  overflow-x: auto;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2 class="text-2xl font-bold text-green-700 mb-4 text-center">⚙️ 穿山甲專車規則設定</h2>
+
+  <div id="status" class="text-center text-sm text-gray-500 mb-2">載入中...</div>
+
+  <div id="userInfo">
+    <img id="userPicture" src="https://via.placeholder.com/60" alt="User">
+    <div id="userName" class="font-bold text-lg">登入中...</div>
+    <div id="userIdDisplay" class="text-xs text-gray-500 mt-1"></div>
+  </div>
+
+  <div id="formArea" style="display:none;">
+    <label>每班次搭載人數上限</label>
+    <input type="number" id="seatLimit" min="1" max="20">
+
+    <label>未核銷達幾次後封鎖</label>
+    <input type="number" id="maxNoShow" min="1" max="10">
+
+    <label>封鎖週數</label>
+    <input type="number" id="banWeeks" min="1" max="12">
+
+    <label>預約模式</label>
+    <select id="tripMode">
+      <option value="single">單程</option>
+      <option value="roundtrip">來回</option>
+    </select>
+
+    <p id="lastUpdate" class="text-sm text-gray-500 mb-3"></p>
+
+    <button id="saveBtn">💾 儲存設定</button>
+    <button id="debugBtn" class="mt-2 bg-gray-600 hover:bg-gray-700">🧩 檢視完整設定</button>
+
+    <div id="metaArea" class="mt-4 text-sm text-gray-600 hidden">
+      <h3 class="font-semibold mb-1 text-green-700">設定摘要</h3>
+      <pre id="metaText">{}</pre>
+    </div>
+  </div>
+
+  <div id="loadingText" class="text-center text-gray-500 mt-4">⏳ 載入中...</div>
+</div>
+
+<div id="toast" class="toast">✅ 已成功更新設定！</div>
+
 <script>
+const CONFIG = {
+  WORKER_URL: 'https://delicate-math-7e61.fangwl591021.workers.dev/',
+  LIFF_ID: '2006590746-gpLmx9md',
+  MASTER_ADMINS: [
+    'U84b2e88d818b98575f45fcf14a380517',
+    'Ue7a07fe317565389fbf4479172088f87'
+  ]
+};
+
+let currentUserId = 'test-user';
+let isAdmin = false;
+
+document.addEventListener('DOMContentLoaded', init);
+
+async function init(){
+  await initLINE();
+  await loadRules();
+  document.getElementById('saveBtn').addEventListener('click', saveRules);
+  document.getElementById('debugBtn').addEventListener('click', debugRules);
+}
+
+// === 初始化 LINE ===
+async function initLINE(){
+  try{
+    await liff.init({ liffId: CONFIG.LIFF_ID });
+    if(!liff.isLoggedIn()){ liff.login(); return; }
+    const profile = await liff.getProfile();
+    currentUserId = profile.userId;
+    document.getElementById('userName').textContent = profile.displayName;
+    document.getElementById('userPicture').src = profile.pictureUrl;
+    document.getElementById('userIdDisplay').textContent = 'ID: ' + currentUserId;
+    document.getElementById('status').textContent = "🔗 LINE 登入模式";
+    isAdmin = CONFIG.MASTER_ADMINS.includes(currentUserId);
+    if(!isAdmin) {
+      document.getElementById('saveBtn').disabled = true;
+      document.getElementById('saveBtn').style.background = '#999';
+      document.getElementById('status').textContent = "🚫 非管理員，僅可檢視設定";
+    }
+  }catch(e){
+    console.warn("⚠️ LIFF 初始化失敗，啟動測試模式", e);
+    currentUserId = 'test-user';
+    isAdmin = true;
+    document.getElementById('status').textContent = "🧪 測試模式（管理員預設開啟）";
+    document.getElementById('userName').textContent = '測試用戶';
+    document.getElementById('userIdDisplay').textContent = 'ID: test-user';
+  }
+}
+
+// === 載入設定 ===
+async function loadRules(){
+  try{
+    const res = await fetch(CONFIG.WORKER_URL + '?mode=getRules');
+    const json = await res.json();
+    const r = json.current || {};
+
+    document.getElementById('seatLimit').value = r.seatLimit || 6;
+    document.getElementById('maxNoShow').value = r.maxNoShow || 3;
+    document.getElementById('banWeeks').value = r.banWeeks || 2;
+    document.getElementById('tripMode').value = r.tripMode || 'single';
+    document.getElementById('lastUpdate').textContent =
+      `最後更新：${r.lastUpdate || '無'}　更新者：${r.updatedBy || '未知'}`;
+
+    document.getElementById('metaText').textContent = JSON.stringify(r.meta || {}, null, 2);
+    document.getElementById('metaArea').classList.remove('hidden');
+
+    document.getElementById('loadingText').style.display = 'none';
+    document.getElementById('formArea').style.display = 'block';
+  }catch(e){
+    console.error('❌ 載入規則失敗', e);
+    document.getElementById('loadingText').textContent = '❌ 無法載入規則，請稍後重試';
+  }
+}
+
+// === 儲存設定 ===
+async function saveRules(){
+  if(!isAdmin){
+    alert('🚫 您沒有修改權限');
+    return;
+  }
+
+  const body = {
+    seatLimit: parseInt(document.getElementById('seatLimit').value),
+    maxNoShow: parseInt(document.getElementById('maxNoShow').value),
+    banWeeks: parseInt(document.getElementById('banWeeks').value),
+    tripMode: document.getElementById('tripMode').value,
+    updatedBy: currentUserId,
+    lastUpdate: new Date().toISOString()
+  };
+
+  try{
+    const res = await fetch(CONFIG.WORKER_URL + '?mode=updateRules', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    const json = await res.json();
+    if(json.status === 'success'){
+      showToast('✅ 已更新設定');
+      await loadRules();
+    }else{
+      alert('❌ 更新失敗：' + (json.message || '未知錯誤'));
+    }
+  }catch(e){
+    alert('❌ 更新錯誤：' + e.message);
+  }
+}<script>
 async function saveRules(){
   if(!isAdmin){
     alert('🚫 您沒有修改權限');
@@ -34,3 +248,26 @@ async function saveRules(){
   }
 }
 </script>
+
+
+// === 除錯功能：顯示完整 JSON ===
+async function debugRules(){
+  try{
+    const res = await fetch(CONFIG.WORKER_URL + '?mode=getRules');
+    const json = await res.json();
+    alert('🔍 規則內容：\n' + JSON.stringify(json.current || {}, null, 2));
+  }catch(e){
+    alert('讀取規則失敗: ' + e.message);
+  }
+}
+
+// === 浮動提示 ===
+function showToast(msg){
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.style.display = 'block';
+  setTimeout(()=>toast.style.display='none', 2800);
+}
+</script>
+</body>
+</html>
