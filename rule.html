@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>穿山甲專車規則設定 rule.html v2.6</title>
+<title>穿山甲專車設定管理 v2.7</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -18,7 +18,7 @@ body {
   border-radius: 16px;
   padding: 24px;
   margin: 24px auto;
-  max-width: 500px;
+  max-width: 560px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 input, select {
@@ -41,16 +41,9 @@ button:hover { background: #2e6b40; }
 #userInfo { text-align:center; margin:16px 0; }
 #userPicture { width:60px; height:60px; border-radius:50%; border:2px solid #3c8050; margin-bottom:8px; }
 .toast {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #16a34a;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: bold;
-  display: none;
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: #16a34a; color: white; padding: 12px 24px;
+  border-radius: 8px; font-weight: bold; display: none;
   animation: fadeInOut 3s ease forwards;
 }
 @keyframes fadeInOut {
@@ -58,17 +51,25 @@ button:hover { background: #2e6b40; }
   10%, 90% { opacity: 1; transform: translate(-50%, 0); }
   100% { opacity: 0; transform: translate(-50%, 20px); }
 }
+pre {
+  background: #f1f5f9;
+  color: #1e293b;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  overflow-x: auto;
+}
 </style>
 </head>
 <body>
 
 <div class="card">
-  <h2 class="text-2xl font-bold text-green-700 mb-4 text-center">⚙️ 穿山甲專車設定管理</h2>
+  <h2 class="text-2xl font-bold text-green-700 mb-4 text-center">⚙️ 穿山甲專車規則設定</h2>
 
   <div id="status" class="text-center text-sm text-gray-500 mb-2">載入中...</div>
 
   <div id="userInfo">
-    <img id="userPicture" src="https://via.placeholder.com/60" alt="">
+    <img id="userPicture" src="https://via.placeholder.com/60" alt="User">
     <div id="userName" class="font-bold text-lg">登入中...</div>
     <div id="userIdDisplay" class="text-xs text-gray-500 mt-1"></div>
   </div>
@@ -90,7 +91,14 @@ button:hover { background: #2e6b40; }
     </select>
 
     <p id="lastUpdate" class="text-sm text-gray-500 mb-3"></p>
+
     <button id="saveBtn">💾 儲存設定</button>
+    <button id="debugBtn" class="mt-2 bg-gray-600 hover:bg-gray-700">🧩 檢視完整設定</button>
+
+    <div id="metaArea" class="mt-4 text-sm text-gray-600 hidden">
+      <h3 class="font-semibold mb-1 text-green-700">設定摘要</h3>
+      <pre id="metaText">{}</pre>
+    </div>
   </div>
 
   <div id="loadingText" class="text-center text-gray-500 mt-4">⏳ 載入中...</div>
@@ -102,11 +110,14 @@ button:hover { background: #2e6b40; }
 const CONFIG = {
   WORKER_URL: 'https://delicate-math-7e61.fangwl591021.workers.dev/',
   LIFF_ID: '2006590746-gpLmx9md',
-  RETRY_LIMIT: 3
+  MASTER_ADMINS: [
+    'U84b2e88d818b98575f45fcf14a380517',
+    'Ue7a07fe317565389fbf4479172088f87'
+  ]
 };
 
-let mode = 'normal';
 let currentUserId = 'test-user';
+let isAdmin = false;
 
 document.addEventListener('DOMContentLoaded', init);
 
@@ -114,83 +125,76 @@ async function init(){
   await initLINE();
   await loadRules();
   document.getElementById('saveBtn').addEventListener('click', saveRules);
+  document.getElementById('debugBtn').addEventListener('click', debugRules);
 }
 
 // === 初始化 LINE ===
 async function initLINE(){
   try{
     await liff.init({ liffId: CONFIG.LIFF_ID });
-    if(!liff.isLoggedIn()){ 
-      liff.login(); 
-      return; 
-    }
-
+    if(!liff.isLoggedIn()){ liff.login(); return; }
     const profile = await liff.getProfile();
     currentUserId = profile.userId;
-    
     document.getElementById('userName').textContent = profile.displayName;
     document.getElementById('userPicture').src = profile.pictureUrl;
     document.getElementById('userIdDisplay').textContent = 'ID: ' + currentUserId;
     document.getElementById('status').textContent = "🔗 LINE 登入模式";
-    
-    console.log('✅ LINE 登入成功:', currentUserId);
+    isAdmin = CONFIG.MASTER_ADMINS.includes(currentUserId);
+    if(!isAdmin) {
+      document.getElementById('saveBtn').disabled = true;
+      document.getElementById('saveBtn').style.background = '#999';
+      document.getElementById('status').textContent = "🚫 非管理員，僅可檢視設定";
+    }
   }catch(e){
     console.warn("⚠️ LIFF 初始化失敗，啟動測試模式", e);
-    mode = 'test';
     currentUserId = 'test-user';
-    document.getElementById('status').textContent = "🧪 測試模式啟動中（LIFF 無法使用）";
+    isAdmin = true;
+    document.getElementById('status').textContent = "🧪 測試模式（管理員預設開啟）";
     document.getElementById('userName').textContent = '測試用戶';
     document.getElementById('userIdDisplay').textContent = 'ID: test-user';
   }
 }
 
 // === 載入設定 ===
-async function loadRules(retry=0){
+async function loadRules(){
   try{
-    console.log('📤 請求載入規則:', CONFIG.WORKER_URL + '?mode=getRules');
     const res = await fetch(CONFIG.WORKER_URL + '?mode=getRules');
     const json = await res.json();
-    
-    console.log('📥 收到規則回應:', json);
-    
-    if(json.status !== 'success') throw new Error('Worker 無法回應');
-
     const r = json.current || {};
+
     document.getElementById('seatLimit').value = r.seatLimit || 6;
     document.getElementById('maxNoShow').value = r.maxNoShow || 3;
     document.getElementById('banWeeks').value = r.banWeeks || 2;
     document.getElementById('tripMode').value = r.tripMode || 'single';
-    document.getElementById('lastUpdate').textContent = '最後更新：' + (r.lastUpdate || '無');
+    document.getElementById('lastUpdate').textContent =
+      `最後更新：${r.lastUpdate || '無'}　更新者：${r.updatedBy || '未知'}`;
+
+    document.getElementById('metaText').textContent = JSON.stringify(r.meta || {}, null, 2);
+    document.getElementById('metaArea').classList.remove('hidden');
 
     document.getElementById('loadingText').style.display = 'none';
     document.getElementById('formArea').style.display = 'block';
   }catch(e){
     console.error('❌ 載入規則失敗', e);
-    if(retry < CONFIG.RETRY_LIMIT){
-      document.getElementById('loadingText').textContent = `重試中 (${retry+1}/${CONFIG.RETRY_LIMIT})...`;
-      setTimeout(()=>loadRules(retry+1),1500);
-    }else{
-      document.getElementById('loadingText').textContent = '❌ 無法載入規則，請稍後重試';
-    }
+    document.getElementById('loadingText').textContent = '❌ 無法載入規則，請稍後重試';
   }
 }
 
 // === 儲存設定 ===
 async function saveRules(){
-  console.log('📝 開始儲存設定，當前 userId:', currentUserId);
-  
+  if(!isAdmin){
+    alert('🚫 您沒有修改權限');
+    return;
+  }
+
   const body = {
     seatLimit: parseInt(document.getElementById('seatLimit').value),
     maxNoShow: parseInt(document.getElementById('maxNoShow').value),
     banWeeks: parseInt(document.getElementById('banWeeks').value),
     tripMode: document.getElementById('tripMode').value,
-    lastUpdate: new Date().toISOString(),
-    updatedBy: currentUserId
+    updatedBy: currentUserId,
+    lastUpdate: new Date().toISOString()
   };
-
-  console.log('📤 準備送出更新請求:', body);
-  console.log("🧩 傳送的 updatedBy:", currentUserId);
-  console.log('🔗 目標 URL:', CONFIG.WORKER_URL + '?mode=updateRules');
 
   try{
     const res = await fetch(CONFIG.WORKER_URL + '?mode=updateRules', {
@@ -198,26 +202,26 @@ async function saveRules(){
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(body)
     });
-    
-    console.log('📡 回應狀態:', res.status);
-    
     const json = await res.json();
-    console.log('📥 收到回應:', json);
-
-    if(json.status === 'success' || json.ok){
-
-      showToast('✅ 規則已更新');
-      loadRules();
-    } else {
-      const errMsg = '❌ 更新失敗：' + (json.message || '未知錯誤');
-      if(json.debug){
-        console.error('除錯資訊:', json.debug);
-      }
-      alert(errMsg + '\n\n您的角色: ' + (json.currentRole || '未知'));
+    if(json.status === 'success'){
+      showToast('✅ 已更新設定');
+      await loadRules();
+    }else{
+      alert('❌ 更新失敗：' + (json.message || '未知錯誤'));
     }
   }catch(e){
-    console.error('❌ 更新錯誤:', e);
     alert('❌ 更新錯誤：' + e.message);
+  }
+}
+
+// === 除錯功能：顯示完整 JSON ===
+async function debugRules(){
+  try{
+    const res = await fetch(CONFIG.WORKER_URL + '?mode=getRules');
+    const json = await res.json();
+    alert('🔍 規則內容：\n' + JSON.stringify(json.current || {}, null, 2));
+  }catch(e){
+    alert('讀取規則失敗: ' + e.message);
   }
 }
 
@@ -228,31 +232,6 @@ function showToast(msg){
   toast.style.display = 'block';
   setTimeout(()=>toast.style.display='none', 2800);
 }
-// 在 rule.html 的 script 中添加除錯功能
-async function debugRules() {
-  try {
-    const res = await fetch(`${CONFIG.WORKER_URL}?mode=getRules`);
-    const data = await res.json();
-    console.log('🔍 當前規則狀態:', data);
-    
-    // 顯示詳細資訊
-    const rules = data.current || {};
-    alert(`當前規則：
-座位上限: ${rules.seatLimit}
-未核銷封鎖: ${rules.maxNoShow}
-封鎖週數: ${rules.banWeeks}
-預約模式: ${rules.tripMode}
-最後更新: ${rules.lastUpdate}
-KV 狀態: ${data.fallback ? '使用預設值' : '從 KV 讀取'}
-    `);
-  } catch (e) {
-    console.error('除錯失敗:', e);
-    alert('讀取規則失敗: ' + e.message);
-  }
-}
-
-// 在表單區域添加除錯按鈕
-document.getElementById('debugBtn').addEventListener('click', debugRules);
 </script>
 </body>
 </html>
