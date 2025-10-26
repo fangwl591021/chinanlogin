@@ -177,48 +177,37 @@ async function init(){
     const profile=await liff.getProfile();
     console.log('👤 用戶資料:', profile);
     
-    // 使用 allUsers 模式獲取所有用戶資料
+    // 方法1: 先嘗試用 check 模式檢查用戶資料
     console.log('🔑 正在檢查用戶權限...');
-    const usersUrl = `${WORKER_URL}?mode=allUsers`;
-    console.log('📡 請求 URL:', usersUrl);
+    let checkUrl = `${WORKER_URL}?mode=check&userId=${profile.userId}`;
+    console.log('📡 請求 URL:', checkUrl);
     
-    const usersRes = await fetch(usersUrl);
-    console.log('📡 回應狀態:', usersRes.status);
+    let checkRes = await fetch(checkUrl);
+    console.log('📡 check 回應狀態:', checkRes.status);
     
-    const usersData = await usersRes.json();
-    console.log('🎯 用戶列表資料:', usersData);
+    let userData = await checkRes.json();
+    console.log('🎯 check 結果:', userData);
 
-    // 檢查用戶是否有 admin 權限
     let isAdmin = false;
     let debugMsg = '';
     
-    if (usersData.ok && Array.isArray(usersData.users)) {
-      console.log(`📋 共有 ${usersData.users.length} 位用戶`);
+    // 檢查 check 模式的回應
+    if (userData.registered && userData.user) {
+      console.log('✓ 用戶已註冊');
+      console.log('- userId:', userData.user.userId);
+      console.log('- name:', userData.user.name);
+      console.log('- role:', userData.user.role);
       
-      const currentUser = usersData.users.find(u => u.userId === profile.userId);
-      console.log('👤 當前用戶資料:', currentUser);
-      
-      if (currentUser) {
-        console.log('✓ 找到用戶資料');
-        console.log('- userId:', currentUser.userId);
-        console.log('- name:', currentUser.name);
-        console.log('- role:', currentUser.role);
-        
-        if (currentUser.role === 'admin') {
-          isAdmin = true;
-          console.log('✅ 用戶是管理員');
-        } else {
-          console.log('❌ 用戶不是管理員');
-          debugMsg = `您的帳號角色：${currentUser.role || '(無)'}\n需要角色：admin`;
-        }
+      if (userData.user.role === 'admin') {
+        isAdmin = true;
+        console.log('✅ 用戶是管理員');
       } else {
-        console.log('❌ 找不到用戶資料');
-        debugMsg = `您的 LINE ID：${profile.userId}\n系統中找不到此用戶`;
+        console.log('❌ 用戶不是管理員');
+        debugMsg = `您的帳號角色：${userData.user.role || '(無)'}\n需要角色：admin`;
       }
     } else {
-      console.log('❌ 無法獲取用戶列表');
-      console.log('回應資料:', usersData);
-      debugMsg = `API 錯誤：${usersData.error || '無法獲取用戶列表'}`;
+      console.log('❌ 用戶未註冊或資料不完整');
+      debugMsg = `用戶狀態：${userData.registered ? '已註冊但資料不完整' : '未註冊'}`;
     }
 
     if (!isAdmin) {
