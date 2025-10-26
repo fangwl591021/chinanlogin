@@ -226,62 +226,133 @@ async function loadDashboardStats(){
   }catch(e){console.warn('統計資料載入失敗');}
 }
 
-/* 📊 載入預約資料 - 使用後台專用模式 */
+/* 📊 載入預約資料 - 詳細除錯版本 */
 async function loadReservations() {
   const tbody = document.getElementById('tbl');
   tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">🔄 查詢中...</td></tr>`;
 
   try {
-    // 使用後台專用的 allReservations 模式
+    console.log('🚀 開始載入預約資料...');
+    console.log('📡 請求 URL:', `${WORKER_URL}?mode=allReservations`);
+    
+    const startTime = Date.now();
     const res = await fetch(`${WORKER_URL}?mode=allReservations`);
-    const json = await res.json();
+    const endTime = Date.now();
+    
+    console.log('✅ 請求完成，狀態:', res.status, '耗時:', endTime - startTime + 'ms');
+    console.log('📋 Response headers:', [...res.headers.entries()]);
+    
+    const text = await res.text();
+    console.log('📄 原始回應文字:', text);
+    
+    let json;
+    try {
+      json = JSON.parse(text);
+      console.log('📊 解析後的 JSON:', json);
+    } catch (parseError) {
+      console.error('❌ JSON 解析錯誤:', parseError);
+      throw new Error('回應格式錯誤: ' + parseError.message);
+    }
 
-    console.log('📥 後台收到預約資料:', json);
+    // 詳細檢查回應結構
+    console.log('🔍 檢查回應結構:');
+    console.log('- json.ok:', json.ok);
+    console.log('- json.status:', json.status);
+    console.log('- json.reservations:', json.reservations);
+    console.log('- Array.isArray(reservations):', Array.isArray(json.reservations));
+    
+    if (json.reservations) {
+      console.log('- reservations.length:', json.reservations.length);
+      if (json.reservations.length > 0) {
+        console.log('- 第一筆資料範例:', json.reservations[0]);
+      }
+    }
 
-    if (json.status !== 'success') {
+    // 檢查回應狀態
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+
+    if (json.status === 'error') {
       throw new Error(json.message || '後台查詢失敗');
+    }
+
+    if (!json.ok) {
+      throw new Error(json.error || 'Worker 回應錯誤');
     }
 
     const list = json.reservations || [];
 
-    if (!Array.isArray(list) || list.length === 0) {
+    if (!Array.isArray(list)) {
+      console.error('❌ reservations 不是陣列:', typeof list, list);
+      throw new Error('資料格式錯誤: reservations 應該是陣列');
+    }
+
+    if (list.length === 0) {
+      console.log('ℹ️ 沒有預約資料，列表為空陣列');
       tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">目前沒有預約資料</td></tr>`;
       return;
     }
 
-    // 處理資料格式轉換
-    const data = list.map(r => ({
-      date: r.date || '',
-      route: r.route || '',
-      name: r.name || '',
-      status: r.status || '',
-      // 保留完整資料供除錯
-      _raw: r
-    }));
+    console.log(`📊 收到 ${list.length} 筆原始資料:`, list);
 
-    console.log(`📊 後台處理後資料：共 ${data.length} 筆`, data);
+    // 處理資料格式轉換
+    const data = list.map((r, index) => {
+      const processed = {
+        date: r.date || '',
+        route: r.route || '',
+        name: r.name || '',
+        status: r.status || '',
+        _index: index,
+        _raw: r
+      };
+      
+      // 檢查每個欄位是否為空
+      if (!processed.date || !processed.route || !processed.name || !processed.status) {
+        console.warn(`⚠️ 第 ${index} 筆資料有空白欄位:`, processed);
+      }
+      
+      return processed;
+    });
+
+    console.log(`📊 處理後資料：共 ${data.length} 筆`, data);
+
+    // 過濾掉完全空白的資料
+    const validData = data.filter(r => r.date || r.route || r.name || r.status);
+    console.log(`✅ 有效資料：共 ${validData.length} 筆`, validData);
+
+    if (validData.length === 0) {
+      console.log('ℹ️ 所有資料都是空白的');
+      tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">目前沒有有效的預約資料</td></tr>`;
+      return;
+    }
 
     // 排序：日期倒序，班次順序
     const order = { A1: 1, A2: 2, B1: 3, B2: 4 };
-    data.sort((a, b) => {
+    validData.sort((a, b) => {
       if (a.date < b.date) return 1;
       if (a.date > b.date) return -1;
       return (order[a.route] || 99) - (order[b.route] || 99);
     });
 
-    renderTable(data);
-    allData = data;
+    renderTable(validData);
+    allData = validData;
     
-    showToast(`✅ 載入 ${data.length} 筆預約資料`);
+    showToast(`✅ 載入 ${validData.length} 筆預約資料`);
     
   } catch (e) {
     console.error('❌ 後台查詢錯誤', e);
+    console.error('錯誤堆栈:', e.stack);
+    
     tbody.innerHTML = `
       <tr>
         <td colspan="4" class="p-4 text-center text-red-500">
-          ❌ 查詢失敗：${e.message}
+          ❌ 查詢失敗：${e.message}<br>
+          <small>請查看控制台獲取詳細錯誤資訊</small>
         </td>
       </tr>`;
+      
+    showToast('❌ 載入預約資料失敗', 'error');
   }
 }
 
