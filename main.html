@@ -167,7 +167,10 @@ select {
 
 <main>
   <div id="userInfo" style="padding:16px">
-    <div>⏳ 系統初始化中... / System Initializing...</div>
+    <div class="bilingual-text">
+      <div class="chinese-text">⏳ 系統初始化中...</div>
+      <div class="english-text">⏳ System Initializing...</div>
+    </div>
   </div>
 
   <div class="btn-group">
@@ -188,7 +191,7 @@ select {
   <div id="calendarContainer" style="display:none;margin-top:10px;padding:0 16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <button class="month-nav-btn" onclick="changeMonth(-1)">◀ 上個月 / Prev</button>
-      <h3 id="calendarTitle"></h3>
+      <h3 id="calendarTitle" class="bilingual-text"></h3>
       <button class="month-nav-btn" onclick="changeMonth(1)">下個月 / Next ▶</button>
     </div>
     <div id="calendar" class="calendar"></div>
@@ -320,27 +323,6 @@ const STOPS = {
 let userData = null, existingReservations = [], selectedDate = null, selectedRoute = null;
 let currentYear = new Date().getFullYear(), currentMonth = new Date().getMonth();
 let disabledDates = [];
-
-// ============================ 日期格式化工具函數 ============================
-function formatDate(dateString) {
-  if (!dateString) return '';
-  
-  if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-    return dateString;
-  }
-  
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) {
-      console.warn('無效的日期:', dateString);
-      return dateString;
-    }
-    return date.toISOString().split('T')[0];
-  } catch (e) {
-    console.warn('日期格式化失敗:', dateString, e);
-    return dateString;
-  }
-}
 
 // ============================ 初始化 ============================
 async function init(){
@@ -524,7 +506,12 @@ function loadCalendar(){
   const cal=document.getElementById('calendar');
   cal.innerHTML='';
   document.getElementById('calendarContainer').style.display='block';
-  document.getElementById('calendarTitle').textContent=`${currentYear}年${currentMonth+1}月 / ${currentYear}-${currentMonth+1}`;
+  
+  const monthTitle = document.getElementById('calendarTitle');
+  monthTitle.innerHTML = `
+    <div class="chinese-text">${currentYear}年${currentMonth+1}月</div>
+    <div class="english-text">${currentYear}-${currentMonth+1}</div>
+  `;
 
   const today=new Date(); today.setHours(0,0,0,0);
   const lastDay=new Date(currentYear,currentMonth+1,0).getDate();
@@ -844,7 +831,7 @@ function renderReservationInfo(){
       <div class="bilingual-text">
         <div><strong>📊 狀態 / Status:</strong> ${r.status || '已預約 / Reserved'}</div>
       </div>
-      <button class="cancel-btn">
+      <button class="cancel-btn" onclick="cancelReservation('${reservationId}')">
         <div class="bilingual-text">
           <div class="chinese-text">取消預約</div>
           <div class="english-text">Cancel Reservation</div>
@@ -889,4 +876,30 @@ async function cancelReservation(reservationId) {
     }
   } catch (error) {
     console.error('❌ 取消錯誤:', error);
-   
+    alert('❌ 網路錯誤，請稍後再試 / Network error, please try again later');
+  }
+}
+
+// ============================ 其他功能 ============================
+function showRules(){
+  const rulesContent = `📘 預約規則 / Reservation Rules
+
+1. 每人每日限預約一個班次
+   Each person can reserve one shuttle per day
+
+2. 請於搭乘日前一天預約
+   Please reserve at least one day before the ride
+
+3. 如需取消請提前通知
+   Please notify in advance if cancellation is needed
+
+4. 上車時請主動出示預約紀錄
+   Please show your reservation record when boarding`;
+  
+  alert(rulesContent);
+}
+
+window.addEventListener('load', init);
+</script>
+</body>
+</html>
