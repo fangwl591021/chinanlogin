@@ -204,7 +204,8 @@ async function saveRules(){
     const json = await res.json();
     console.log('📥 收到回應:', json);
 
-    if(json.status === 'success'){
+    if(json.status === 'success' || json.ok){
+
       showToast('✅ 規則已更新');
       loadRules();
     } else {
