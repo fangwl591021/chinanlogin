@@ -300,10 +300,57 @@ async function fetchReservations(){
   try {
     const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
     const data = await res.json();
-    if (data.status === 'success') existingReservations = data.reservations || [];
-    else existingReservations = [];
+    if (data.status === 'success') {
+      existingReservations = data.reservations || [];
+    } else {
+      existingReservations = [];
+    }
+    
+    // 同時載入本地儲存的模擬預約
+    const localReservations = loadLocalReservations();
+    if (localReservations.length > 0) {
+      existingReservations = [...existingReservations, ...localReservations];
+    }
+    
     renderReservationInfo();
-  } catch (error) { console.error('❌ 載入預約錯誤:', error); }
+  } catch (error) { 
+    console.error('❌ 載入預約錯誤:', error);
+    // 如果載入失敗，使用本地儲存的預約
+    existingReservations = loadLocalReservations();
+    renderReservationInfo();
+  }
+}
+
+/* === 本地儲存預約資料 === */
+function saveLocalReservations() {
+  try {
+    localStorage.setItem(`pangolin_reservations_${userData.userId}`, JSON.stringify(existingReservations));
+    console.log('💾 預約資料已儲存到本地:', existingReservations);
+  } catch (e) {
+    console.error('❌ 儲存預約到本地失敗:', e);
+  }
+}
+
+function loadLocalReservations() {
+  try {
+    const saved = localStorage.getItem(`pangolin_reservations_${userData.userId}`);
+    return saved ? JSON.parse(saved) : [];
+  } catch (e) {
+    console.error('❌ 從本地載入預約失敗:', e);
+    return [];
+  }
+}
+
+function addLocalReservation(reservation) {
+  existingReservations.push(reservation);
+  saveLocalReservations();
+  renderReservationInfo();
+}
+
+function removeLocalReservation(reservationId) {
+  existingReservations = existingReservations.filter(r => r.reservationId !== reservationId);
+  saveLocalReservations();
+  renderReservationInfo();
 }
 
 /* === 停駛日載入（從 GAS 代理取得） === */
@@ -510,10 +557,22 @@ async function submitReservation(){
     if(result.status === 'success'){
       alert('✅ 預約成功！');
       
-      const reservations = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`).then(r=>r.json());
-      existingReservations = reservations.reservations || [];
-      renderReservationInfo();
+      // 將預約資料儲存到本地
+      const newReservation = {
+        reservationId: result.reservationId,
+        userId: userData.userId,
+        name: userData.name,
+        phone: userData.phone,
+        date: selectedDate,
+        route: ROUTES[selectedRoute].name,
+        fromStop: fromStop,
+        toStop: toStop,
+        timestamp: new Date().toISOString()
+      };
       
+      addLocalReservation(newReservation);
+      
+      // 重置表單
       document.getElementById('routeSection').style.display = 'none';
       document.getElementById('fromStopSection').style.display = 'none';
       document.getElementById('toStopSection').style.display = 'none';
@@ -550,23 +609,23 @@ function renderReservationInfo(){
     
     return `
     <div class="resv-card">
-      <div>📅 ${displayDate}</div>
-      <div>🚌 ${r.route}</div>
-      <div>⬆ ${r.fromStop}</div>
-      <div>⬇ ${r.toStop}</div>
-      <button class="cancel-btn" onclick="cancelReservation('${r.reservationId || r.rowNumber}')">取消預約</button>
+      <div><strong>📅 日期:</strong> ${displayDate}</div>
+      <div><strong>🚌 班次:</strong> ${r.route}</div>
+      <div><strong>⬆ 上車:</strong> ${r.fromStop}</div>
+      <div><strong>⬇ 下車:</strong> ${r.toStop}</div>
+      <button class="cancel-btn" onclick="cancelReservation('${r.reservationId}')">取消預約 Cancel Reservation</button>
     </div>`;
   }).join('');
 }
 
 /* === 取消預約 === */
-async function cancelReservation(identifier) {
+async function cancelReservation(reservationId) {
   if (!confirm('確定取消此預約嗎？')) return;
   
   const payload = {
     type: 'cancel',
     userId: userData.userId,
-    reservationId: identifier
+    reservationId: reservationId
   };
   
   try {
@@ -579,7 +638,8 @@ async function cancelReservation(identifier) {
     const result = await res.json();
     if(result.status === 'success'){
       alert('✅ 已取消預約');
-      await fetchReservations();
+      // 從本地儲存中移除
+      removeLocalReservation(reservationId);
     } else {
       alert('❌ 取消失敗：' + (result.message || '未知錯誤'));
     }
