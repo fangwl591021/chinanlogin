@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v6.3.4</title>
+<title>穿山甲專車後台 v6.3.5</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -54,7 +54,8 @@ body { font-family:"Noto Sans TC",system-ui,sans-serif;background:#f8fafc;margin
   <div class="text-5xl mb-4">🚫</div>
   <div class="text-2xl font-bold text-red-800 mb-2">無權限使用此頁面</div>
   <p class="text-gray-600 mb-4">請使用管理員帳號登入或聯絡系統管理員。</p>
-  <button id="reLogin" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded">重新登入</button>
+  <div id="debugInfo" class="text-xs text-gray-500 bg-gray-100 p-3 rounded mt-4 text-left max-w-md"></div>
+  <button id="reLogin" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded mt-4">重新登入</button>
 </div>
 
 <!-- ✅ 主畫面 -->
@@ -157,7 +158,7 @@ body { font-family:"Noto Sans TC",system-ui,sans-serif;background:#f8fafc;margin
 
 <script>
 const WORKER_URL='https://delicate-math-7e61.fangwl591021.workers.dev/';
-const LIFF_ID = '2006590746-wgL4I54z'; // 大寫 I，不是小寫 L
+const LIFF_ID = '2006590746-wgL4I54z';
 let allData=[];
 
 async function init(){
@@ -176,36 +177,60 @@ async function init(){
     const profile=await liff.getProfile();
     console.log('👤 用戶資料:', profile);
     
-    // 方法1: 使用 check 模式來獲取用戶資料（包含 role）
-    const checkUrl = `${WORKER_URL}?mode=check&userId=${profile.userId}`;
-    console.log('🔑 用戶檢查 URL:', checkUrl);
+    // 使用 allUsers 模式獲取所有用戶資料
+    console.log('🔑 正在檢查用戶權限...');
+    const usersUrl = `${WORKER_URL}?mode=allUsers`;
+    console.log('📡 請求 URL:', usersUrl);
     
-    const checkRes = await fetch(checkUrl);
-    console.log('📡 用戶檢查回應狀態:', checkRes.status);
+    const usersRes = await fetch(usersUrl);
+    console.log('📡 回應狀態:', usersRes.status);
     
-    const userData = await checkRes.json();
-    console.log('🎯 用戶檢查結果:', userData);
+    const usersData = await usersRes.json();
+    console.log('🎯 用戶列表資料:', usersData);
 
     // 檢查用戶是否有 admin 權限
     let isAdmin = false;
+    let debugMsg = '';
     
-    if (userData.registered) {
-      // 從用戶資料中檢查 role
-      if (userData.user && userData.user.role === 'admin') {
-        isAdmin = true;
-        console.log('✅ 用戶是管理員');
+    if (usersData.ok && Array.isArray(usersData.users)) {
+      console.log(`📋 共有 ${usersData.users.length} 位用戶`);
+      
+      const currentUser = usersData.users.find(u => u.userId === profile.userId);
+      console.log('👤 當前用戶資料:', currentUser);
+      
+      if (currentUser) {
+        console.log('✓ 找到用戶資料');
+        console.log('- userId:', currentUser.userId);
+        console.log('- name:', currentUser.name);
+        console.log('- role:', currentUser.role);
+        
+        if (currentUser.role === 'admin') {
+          isAdmin = true;
+          console.log('✅ 用戶是管理員');
+        } else {
+          console.log('❌ 用戶不是管理員');
+          debugMsg = `您的帳號角色：${currentUser.role || '(無)'}\n需要角色：admin`;
+        }
       } else {
-        console.log('❌ 用戶不是管理員或 role 欄位不存在');
-        console.log('用戶資料:', userData.user);
+        console.log('❌ 找不到用戶資料');
+        debugMsg = `您的 LINE ID：${profile.userId}\n系統中找不到此用戶`;
       }
     } else {
-      console.log('❌ 用戶未註冊');
+      console.log('❌ 無法獲取用戶列表');
+      console.log('回應資料:', usersData);
+      debugMsg = `API 錯誤：${usersData.error || '無法獲取用戶列表'}`;
     }
 
     if (!isAdmin) {
       console.log('🚫 用戶無管理員權限，顯示無權限畫面');
       document.getElementById('loadingScreen').style.display='none';
       document.getElementById('noAuthScreen').style.display='flex';
+      document.getElementById('debugInfo').innerHTML = `
+        <strong>除錯資訊：</strong><br>
+        用戶名稱：${profile.displayName}<br>
+        用戶 ID：${profile.userId}<br>
+        ${debugMsg}
+      `;
       return;
     }
 
@@ -217,11 +242,9 @@ async function init(){
 
     setupNav();
 
-    // 停留在儀表板
     document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
     document.getElementById('dashboard').classList.add('active');
 
-    // 延遲載入其他資料
     setTimeout(async()=>{
       await loadReservations();
       await loadRules();
@@ -230,21 +253,14 @@ async function init(){
 
   }catch(e){
     console.error('❌ 初始化錯誤:', e);
-    console.error('錯誤詳細資訊:', {
-      message: e.message,
-      stack: e.stack,
-      name: e.name
-    });
     showToast('⚠️ 初始化錯誤','error');
   }
 }
 
-// 登入登出
 document.getElementById('loginButton').addEventListener('click',()=>liff.login());
 document.getElementById('reLogin').addEventListener('click',()=>liff.login());
 document.getElementById('logoutBtn').addEventListener('click',()=>{liff.logout();location.reload();});
 
-// Toast
 function showToast(msg,type='success'){
   const t=document.getElementById('toast');
   t.textContent=msg;
@@ -252,7 +268,6 @@ function showToast(msg,type='success'){
   setTimeout(()=>t.classList.remove('show'),3000);
 }
 
-// Dashboard 統計
 async function loadDashboardStats(){
   try{
     const res=await fetch(`${WORKER_URL}?mode=dashboard`);
@@ -263,109 +278,47 @@ async function loadDashboardStats(){
   }catch(e){console.warn('統計資料載入失敗');}
 }
 
-/* 📊 載入預約資料 - 詳細除錯版本 */
 async function loadReservations() {
   const tbody = document.getElementById('tbl');
   tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">🔄 查詢中...</td></tr>`;
 
   try {
     console.log('🚀 開始載入預約資料...');
-    console.log('📡 請求 URL:', `${WORKER_URL}?mode=allReservations`);
-    
-    const startTime = Date.now();
     const res = await fetch(`${WORKER_URL}?mode=allReservations`);
-
-    const endTime = Date.now();
+    console.log('✅ 請求完成，狀態:', res.status);
     
-    console.log('✅ 請求完成，狀態:', res.status, '耗時:', endTime - startTime + 'ms');
-    console.log('📋 Response headers:', [...res.headers.entries()]);
-    
-    const text = await res.text();
-    console.log('📄 原始回應文字:', text);
-    
-    let json;
-    try {
-      json = JSON.parse(text);
-      console.log('📊 解析後的 JSON:', json);
-    } catch (parseError) {
-      console.error('❌ JSON 解析錯誤:', parseError);
-      throw new Error('回應格式錯誤: ' + parseError.message);
-    }
+    const json = await res.json();
+    console.log('📊 收到回應:', json);
 
-    // 詳細檢查回應結構
-    console.log('🔍 檢查回應結構:');
-    console.log('- json.ok:', json.ok);
-    console.log('- json.status:', json.status);
-    console.log('- json.reservations:', json.reservations);
-    console.log('- Array.isArray(reservations):', Array.isArray(json.reservations));
-    
-    if (json.reservations) {
-      console.log('- reservations.length:', json.reservations.length);
-      if (json.reservations.length > 0) {
-        console.log('- 第一筆資料範例:', json.reservations[0]);
-      }
-    }
-
-    // 檢查回應狀態
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    }
-
-    if (json.status === 'error') {
-      throw new Error(json.message || '後台查詢失敗');
-    }
-
-    if (!json.ok) {
-      throw new Error(json.error || 'Worker 回應錯誤');
+    if (!res.ok || json.status === 'error' || !json.ok) {
+      throw new Error(json.message || json.error || 'Worker 回應錯誤');
     }
 
     const list = json.reservations || [];
 
     if (!Array.isArray(list)) {
-      console.error('❌ reservations 不是陣列:', typeof list, list);
-      throw new Error('資料格式錯誤: reservations 應該是陣列');
+      throw new Error('資料格式錯誤');
     }
 
     if (list.length === 0) {
-      console.log('ℹ️ 沒有預約資料，列表為空陣列');
       tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">目前沒有預約資料</td></tr>`;
       return;
     }
 
-    console.log(`📊 收到 ${list.length} 筆原始資料:`, list);
+    const data = list.map(r => ({
+      date: r.date || '',
+      route: r.route || '',
+      name: r.name || '',
+      status: r.status || ''
+    }));
 
-    // 處理資料格式轉換
-    const data = list.map((r, index) => {
-      const processed = {
-        date: r.date || '',
-        route: r.route || '',
-        name: r.name || '',
-        status: r.status || '',
-        _index: index,
-        _raw: r
-      };
-      
-      // 檢查每個欄位是否為空
-      if (!processed.date || !processed.route || !processed.name || !processed.status) {
-        console.warn(`⚠️ 第 ${index} 筆資料有空白欄位:`, processed);
-      }
-      
-      return processed;
-    });
-
-    console.log(`📊 處理後資料：共 ${data.length} 筆`, data);
-
-    // 過濾掉完全空白的資料
     const validData = data.filter(r => r.date || r.route || r.name || r.status);
-    console.log(`✅ 有效資料：共 ${validData.length} 筆`, validData);
 
     if (validData.length === 0) {
-      console.log('ℹ️ 所有資料都是空白的');
       tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">目前沒有有效的預約資料</td></tr>`;
       return;
     }
 
-    // 排序：日期倒序，班次順序
     const order = { A1: 1, A2: 2, B1: 3, B2: 4 };
     validData.sort((a, b) => {
       if (a.date < b.date) return 1;
@@ -375,26 +328,15 @@ async function loadReservations() {
 
     renderTable(validData);
     allData = validData;
-    
     showToast(`✅ 載入 ${validData.length} 筆預約資料`);
     
   } catch (e) {
     console.error('❌ 後台查詢錯誤', e);
-    console.error('錯誤堆栈:', e.stack);
-    
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="4" class="p-4 text-center text-red-500">
-          ❌ 查詢失敗：${e.message}<br>
-          <small>請查看控制台獲取詳細錯誤資訊</small>
-        </td>
-      </tr>`;
-      
+    tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">❌ 查詢失敗：${e.message}</td></tr>`;
     showToast('❌ 載入預約資料失敗', 'error');
   }
 }
 
-/* 🧾 渲染查詢結果 - 統一定義 */
 function renderTable(data) {
   const tbody = document.getElementById('tbl');
 
@@ -420,7 +362,6 @@ function renderTable(data) {
   }).join('');
 }
 
-/* 🔍 即時搜尋 */
 document.getElementById('search').addEventListener('input', e => {
   const k = e.target.value.trim().toLowerCase();
   
@@ -437,7 +378,6 @@ document.getElementById('search').addEventListener('input', e => {
   renderTable(filtered);
 });
 
-// 系統設定
 async function loadRules(){
   try {
     const res = await fetch(`${WORKER_URL}?mode=getRules`);
@@ -483,7 +423,6 @@ document.getElementById('saveRules').addEventListener('click', async () => {
   }
 });
 
-// 導覽
 function setupNav(){
   document.querySelectorAll('.nav-btn').forEach(btn=>{
     btn.addEventListener('click',()=>{
