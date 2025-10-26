@@ -300,23 +300,40 @@ async function fetchReservations(){
   try {
     const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
     const data = await res.json();
-    if (data.status === 'success') {
-      existingReservations = data.reservations || [];
+    
+    // 先初始化現有預約陣列
+    existingReservations = [];
+    
+    // 加入從伺服器取得的預約
+    if (data.status === 'success' && Array.isArray(data.reservations)) {
+      existingReservations = [...data.reservations];
+      console.log('📥 從伺服器載入預約:', existingReservations);
     } else {
-      existingReservations = [];
+      console.warn('⚠ 無法從伺服器載入預約，使用本地備份');
     }
     
-    // 同時載入本地儲存的模擬預約
+    // 載入本地儲存的預約（作為備份）
     const localReservations = loadLocalReservations();
-    if (localReservations.length > 0) {
-      existingReservations = [...existingReservations, ...localReservations];
-    }
+    console.log('💾 本地儲存的預約:', localReservations);
     
+    // 合併預約，避免重複
+    localReservations.forEach(localResv => {
+      const exists = existingReservations.some(serverResv => 
+        serverResv.reservationId === localResv.reservationId
+      );
+      if (!exists) {
+        existingReservations.push(localResv);
+      }
+    });
+    
+    console.log('📋 最終預約列表:', existingReservations);
     renderReservationInfo();
+    
   } catch (error) { 
     console.error('❌ 載入預約錯誤:', error);
     // 如果載入失敗，使用本地儲存的預約
     existingReservations = loadLocalReservations();
+    console.log('🔄 使用本地預約備份:', existingReservations);
     renderReservationInfo();
   }
 }
@@ -325,7 +342,7 @@ async function fetchReservations(){
 function saveLocalReservations() {
   try {
     localStorage.setItem(`pangolin_reservations_${userData.userId}`, JSON.stringify(existingReservations));
-    console.log('💾 預約資料已儲存到本地:', existingReservations);
+    console.log('💾 預約資料已儲存到本地:', existingReservations.length, '筆預約');
   } catch (e) {
     console.error('❌ 儲存預約到本地失敗:', e);
   }
@@ -334,100 +351,239 @@ function saveLocalReservations() {
 function loadLocalReservations() {
   try {
     const saved = localStorage.getItem(`pangolin_reservations_${userData.userId}`);
-    return saved ? JSON.parse(saved) : [];
+    const reservations = saved ? JSON.parse(saved) : [];
+    console.log('📂 從本地載入預約:', reservations.length, '筆');
+    return reservations;
   } catch (e) {
     console.error('❌ 從本地載入預約失敗:', e);
     return [];
   }
 }
 
+/* === 新增本地預約 === */
 function addLocalReservation(reservation) {
-  existingReservations.push(reservation);
-  saveLocalReservations();
-  renderReservationInfo();
+  // 確保 reservationId 存在
+  if (!reservation.reservationId) {
+    reservation.reservationId = 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  }
+  
+  // 檢查是否已存在相同預約
+  const exists = existingReservations.some(r => 
+    r.reservationId === reservation.reservationId || 
+    (r.date === reservation.date && r.route === reservation.route && r.userId === reservation.userId)
+  );
+  
+  if (!exists) {
+    existingReservations.push(reservation);
+    saveLocalReservations();
+    renderReservationInfo();
+    console.log('✅ 新增本地預約:', reservation);
+  } else {
+    console.log('⚠ 預約已存在，不重複新增');
+  }
 }
 
+/* === 移除本地預約 === */
 function removeLocalReservation(reservationId) {
+  const initialLength = existingReservations.length;
   existingReservations = existingReservations.filter(r => r.reservationId !== reservationId);
-  saveLocalReservations();
-  renderReservationInfo();
+  
+  if (existingReservations.length < initialLength) {
+    saveLocalReservations();
+    renderReservationInfo();
+    console.log('🗑️ 已移除預約:', reservationId);
+  } else {
+    console.log('⚠ 未找到要移除的預約:', reservationId);
+  }
 }
 
-/* === 停駛日載入（從 GAS 代理取得） === */
-async function fetchDisabledDates(){
+/* === 預約紀錄顯示 === */
+function renderReservationInfo(){
+  const panel = document.getElementById('reservationPanel');
+  const box = document.getElementById('reservationInfo');
+  
+  console.log('🎯 渲染預約資訊，現有預約數:', existingReservations.length);
+  
+  if(!existingReservations || existingReservations.length === 0){
+    panel.style.display = 'none';
+    box.innerHTML = '';
+    return;
+  }
+  
+  panel.style.display = 'block';
+  
+  // 按日期排序預約（最新的在前面）
+  const sortedReservations = [...existingReservations].sort((a, b) => {
+    const dateA = new Date(a.date);
+    const dateB = new Date(b.date);
+    return dateB - dateA;
+  });
+  
+  box.innerHTML = sortedReservations.map(r => {
+    // 處理日期格式
+    let displayDate = r.date;
+    if (typeof displayDate === 'string' && displayDate.includes('T')) {
+      displayDate = displayDate.split('T')[0];
+    }
+    
+    // 處理路線名稱顯示
+    let routeDisplay = r.route;
+    if (typeof r.route === 'string' && r.route.length <= 3) {
+      // 如果是路線代碼，查找對應的名稱
+      routeDisplay = ROUTES[r.route] ? ROUTES[r.route].name : r.route;
+    }
+    
+    return `
+    <div class="resv-card">
+      <div><strong>📅 日期:</strong> ${displayDate}</div>
+      <div><strong>🚌 班次:</strong> ${routeDisplay}</div>
+      <div><strong>⬆ 上車:</strong> ${r.fromStop}</div>
+      <div><strong>⬇ 下車:</strong> ${r.toStop}</div>
+      <div><strong>🆔 預約編號:</strong> ${r.reservationId || '未指定'}</div>
+      <button class="cancel-btn" onclick="cancelReservation('${r.reservationId}')">取消預約 Cancel Reservation</button>
+    </div>`;
+  }).join('');
+  
+  console.log('✅ 預約面板已更新');
+}
+
+/* === 修改初始化部分，確保正確載入 === */
+async function init(){
   try {
-    const res = await fetch(`${WORKER_URL}?mode=calendar`);
-    const data = await res.json();
-    if (data.status === 'success' && Array.isArray(data.disabledDates)) {
-      disabledDates = data.disabledDates;
-      console.log('🈲 停駛日:', disabledDates);
-    } else {
-      console.warn('⚠ 無法取得停駛日:', data);
-      disabledDates = [];
-    }
-  } catch (e) {
-    console.warn('⚠ 停駛日讀取失敗（可忽略）', e);
-    disabledDates = [];
+    await liff.init({liffId:"2006590746-KJodGOda"});
+    if(!liff.isLoggedIn()) return liff.login();
+
+    const profile = await liff.getProfile();
+    console.log('👤 LINE 用戶資料:', profile);
+
+    const [checkRes, reservationsRes] = await Promise.all([
+      fetch(`${WORKER_URL}?mode=check&userId=${profile.userId}`).then(r=>r.json()),
+      fetch(`${WORKER_URL}?mode=reservations&userId=${profile.userId}`).then(r=>r.json())
+    ]);
+
+    if(!checkRes.registered) return location.href='register.html';
+    userData = checkRes.user || {};
+    userData.userId = profile.userId;
+    userData.lineDisplayName = profile.displayName;
+    userData.linePictureUrl = profile.pictureUrl;
+
+    renderUser(userData);
+    await fetchDisabledDates(); // 停駛日資料
+    
+    // 先載入預約資料，再顯示介面
+    await fetchReservations();
+    
+  } catch (err) {
+    console.error('❌ 初始化錯誤:', err);
+    alert('系統錯誤: ' + err.message);
   }
 }
 
-/* === 月曆 === */
-function loadCalendar(){
-  const cal=document.getElementById('calendar');
-  cal.innerHTML='';
-  document.getElementById('calendarContainer').style.display='block';
-  document.getElementById('calendarTitle').textContent=`${currentYear}年${currentMonth+1}月`;
-
-  const today=new Date(); today.setHours(0,0,0,0);
-  const lastDay=new Date(currentYear,currentMonth+1,0).getDate();
-
-  for(let d=1;d<=lastDay;d++){
-    const dateStr=`${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const dateObj=new Date(dateStr);
-    const div=document.createElement('div');
-    div.className='calendar-day'; 
-    div.textContent=d;
-
-    if(dateObj<today) {
-      div.classList.add('past');
-    } else if(disabledDates.includes(dateStr)) {
-      div.classList.add('disabled');
+/* === 在送出預約成功後，確保正確儲存 === */
+async function submitReservation(){
+  const fromStop = document.getElementById('fromStop').value;
+  const toStop = document.getElementById('toStop').value;
+  
+  if(!selectedDate || !selectedRoute || !fromStop || !toStop){
+    alert('請完成所有選擇');
+    return;
+  }
+  
+  if(!confirm(`確定預約嗎？\n\n日期：${selectedDate}\n班次：${ROUTES[selectedRoute].name}\n上車：${fromStop}\n下車：${toStop}`)){
+    return;
+  }
+  
+  const payload = {
+    type: 'reserve',
+    userId: userData.userId,
+    name: userData.name,
+    phone: userData.phone,
+    date: selectedDate,
+    route: selectedRoute,
+    fromStop: fromStop,
+    toStop: toStop
+  };
+  
+  console.log('📤 送出預約:', payload);
+  
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    const result = await res.json();
+    console.log('📥 預約結果:', result);
+    
+    if(result.status === 'success'){
+      alert('✅ 預約成功！');
+      
+      // 建立新的預約物件
+      const newReservation = {
+        reservationId: result.reservationId || 'local_' + Date.now(),
+        userId: userData.userId,
+        name: userData.name,
+        phone: userData.phone,
+        date: selectedDate,
+        route: ROUTES[selectedRoute].name, // 儲存完整名稱而非代碼
+        routeCode: selectedRoute, // 另外儲存代碼
+        fromStop: fromStop,
+        toStop: toStop,
+        timestamp: new Date().toISOString()
+      };
+      
+      // 新增到本地儲存
+      addLocalReservation(newReservation);
+      
+      // 重置表單
+      resetForm();
+      
     } else {
-      div.onclick=()=>selectDate(dateStr);
+      alert('❌ 預約失敗：' + (result.message || '未知錯誤'));
     }
-
-    cal.appendChild(div);
+  } catch(error){
+    console.error('❌ 預約錯誤:', error);
+    alert('❌ 網路錯誤，已儲存到本地備份');
+    
+    // 網路錯誤時仍然在本地儲存
+    const localReservation = {
+      reservationId: 'local_' + Date.now(),
+      userId: userData.userId,
+      name: userData.name,
+      phone: userData.phone,
+      date: selectedDate,
+      route: ROUTES[selectedRoute].name,
+      routeCode: selectedRoute,
+      fromStop: fromStop,
+      toStop: toStop,
+      timestamp: new Date().toISOString(),
+      localOnly: true // 標記為僅本地儲存
+    };
+    
+    addLocalReservation(localReservation);
+    resetForm();
   }
 }
 
-function changeMonth(delta){
-  currentMonth+=delta;
-  if(currentMonth<0){currentMonth=11;currentYear--;}
-  if(currentMonth>11){currentMonth=0;currentYear++;}
-  loadCalendar();
-}
-
-function toggleCalendar(){
-  const c=document.getElementById('calendarContainer');
-  c.style.display=(c.style.display==='none')?'block':'none';
-  if(c.style.display==='block') loadCalendar();
-}
-
-/* === 選擇日期 === */
-function selectDate(dateStr){
-  selectedDate = dateStr;
-  selectedRoute = null;
-  
-  console.log('📅 選擇日期:', dateStr);
-  
-  document.getElementById('selectedDate').style.display = 'block';
-  document.getElementById('selectedDate').textContent = `✅ 已選擇：${dateStr}`;
-  
-  showRoutes();
-  
+/* === 重置表單函數 === */
+function resetForm() {
+  document.getElementById('routeSection').style.display = 'none';
   document.getElementById('fromStopSection').style.display = 'none';
   document.getElementById('toStopSection').style.display = 'none';
   document.getElementById('submitBtn').style.display = 'none';
+  document.getElementById('selectedDate').style.display = 'none';
+  document.getElementById('calendarContainer').style.display = 'none';
+  
+  selectedDate = null;
+  selectedRoute = null;
+  
+  // 清空選擇
+  document.getElementById('fromStop').selectedIndex = 0;
+  document.getElementById('toStop').selectedIndex = 0;
+  
+  // 移除路線選擇狀態
+  document.querySelectorAll('.route-btn').forEach(btn => btn.classList.remove('selected'));
 }
 
 /* === 顯示路線 === */
