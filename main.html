@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>穿山甲專車預約 🚍</title>
+<title>穿山甲專車預約 🚍 | Pangolin Shuttle Reservation</title>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
 <style>
@@ -120,33 +120,76 @@ select {
   border-radius:8px;
   cursor:pointer;
   font-weight:bold;
+  color: white; /* 確保文字白色 */
 }
-.btn-calendar { background:#3c8050; color:white; }
+.btn-calendar { background:#3c8050; }
 .btn-calendar:hover { background:#2d6140; }
 .btn-rule { background:#e0e0e0; color:#333; }
 .btn-rule:hover { background:#d6d6d6; }
+
+/* 雙語文字樣式 */
+.bilingual-text {
+  line-height: 1.4;
+}
+.chinese-text {
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+.english-text {
+  font-size: 0.85em;
+  color: #666;
+  opacity: 0.8;
+}
+
+/* 月曆控制按鈕 */
+.month-nav-btn {
+  background: #3c8050;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.month-nav-btn:hover {
+  background: #2d6140;
+}
 </style>
 </head>
 
 <body>
 <header>
-  穿山甲專車預約<br>
-  <span style="font-size:16px;font-weight:normal">Pangolin Shuttle Reservation</span>
+  <div class="bilingual-text">
+    <div class="chinese-text">穿山甲專車預約</div>
+    <div class="english-text">Pangolin Shuttle Reservation</div>
+  </div>
 </header>
 
 <main>
-  <div id="userInfo" style="padding:16px"><div>⏳ 系統初始化中...</div></div>
+  <div id="userInfo" style="padding:16px">
+    <div>⏳ 系統初始化中... / System Initializing...</div>
+  </div>
 
   <div class="btn-group">
-    <button id="calendarBtn" class="btn-large btn-calendar" onclick="toggleCalendar()">📅 打開月曆</button>
-    <button id="ruleBtn" class="btn-large btn-rule" onclick="showRules()">📘 預約規則</button>
+    <button id="calendarBtn" class="btn-large btn-calendar" onclick="toggleCalendar()">
+      <div class="bilingual-text">
+        <div class="chinese-text">📅 打開月曆</div>
+        <div class="english-text">Open Calendar</div>
+      </div>
+    </button>
+    <button id="ruleBtn" class="btn-large btn-rule" onclick="showRules()">
+      <div class="bilingual-text">
+        <div class="chinese-text">📘 預約規則</div>
+        <div class="english-text">Reservation Rules</div>
+      </div>
+    </button>
   </div>
 
   <div id="calendarContainer" style="display:none;margin-top:10px;padding:0 16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <button onclick="changeMonth(-1)">◀ 上個月</button>
+      <button class="month-nav-btn" onclick="changeMonth(-1)">◀ 上個月 / Prev</button>
       <h3 id="calendarTitle"></h3>
-      <button onclick="changeMonth(1)">下個月 ▶</button>
+      <button class="month-nav-btn" onclick="changeMonth(1)">下個月 / Next ▶</button>
     </div>
     <div id="calendar" class="calendar"></div>
   </div>
@@ -154,24 +197,45 @@ select {
   <div id="selectedDate" class="notice success" style="display:none"></div>
 
   <div id="routeSection" class="route-section" style="display:none">
-    <h3>請選擇搭乘班次</h3>
+    <h3 class="bilingual-text">
+      <div class="chinese-text">請選擇搭乘班次</div>
+      <div class="english-text">Please Select Shuttle Route</div>
+    </h3>
     <div id="routeButtons" class="route-buttons"></div>
   </div>
 
   <div id="fromStopSection" class="stop-selector" style="display:none">
-    <h3>請選擇上車站</h3>
-    <select id="fromStop"><option value="">請先選擇班次</option></select>
+    <h3 class="bilingual-text">
+      <div class="chinese-text">請選擇上車站</div>
+      <div class="english-text">Please Select Boarding Stop</div>
+    </h3>
+    <select id="fromStop">
+      <option value="">請先選擇班次 / Please select route first</option>
+    </select>
   </div>
 
   <div id="toStopSection" class="stop-selector" style="display:none">
-    <h3>請選擇下車站</h3>
-    <select id="toStop"><option value="">請選擇上車站</option></select>
+    <h3 class="bilingual-text">
+      <div class="chinese-text">請選擇下車站</div>
+      <div class="english-text">Please Select Drop-off Stop</div>
+    </h3>
+    <select id="toStop">
+      <option value="">請選擇上車站 / Please select boarding stop</option>
+    </select>
   </div>
 
-  <button id="submitBtn" class="submit-btn" onclick="submitReservation()" style="display:none">送出預約</button>
+  <button id="submitBtn" class="submit-btn" onclick="submitReservation()" style="display:none">
+    <div class="bilingual-text">
+      <div class="chinese-text">送出預約</div>
+      <div class="english-text">Submit Reservation</div>
+    </div>
+  </button>
 
   <div id="reservationPanel" style="display:none">
-    <div style="text-align:center;font-weight:bold;color:#2d6140;margin-bottom:5px;">我的預約紀錄</div>
+    <div style="text-align:center;font-weight:bold;color:#2d6140;margin-bottom:5px;" class="bilingual-text">
+      <div class="chinese-text">我的預約紀錄</div>
+      <div class="english-text">My Reservations</div>
+    </div>
     <div id="reservationInfo"></div>
   </div>
 </main>
@@ -257,6 +321,27 @@ let userData = null, existingReservations = [], selectedDate = null, selectedRou
 let currentYear = new Date().getFullYear(), currentMonth = new Date().getMonth();
 let disabledDates = [];
 
+// ============================ 日期格式化工具函數 ============================
+function formatDate(dateString) {
+  if (!dateString) return '';
+  
+  if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return dateString;
+  }
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      console.warn('無效的日期:', dateString);
+      return dateString;
+    }
+    return date.toISOString().split('T')[0];
+  } catch (e) {
+    console.warn('日期格式化失敗:', dateString, e);
+    return dateString;
+  }
+}
+
 // ============================ 初始化 ============================
 async function init(){
   try {
@@ -266,7 +351,6 @@ async function init(){
     const profile = await liff.getProfile();
     console.log('👤 LINE 用戶資料:', profile);
 
-    // 檢查用戶是否註冊
     const checkRes = await fetch(`${WORKER_URL}?mode=check&userId=${profile.userId}`).then(r=>r.json());
     
     if(!checkRes.registered) {
@@ -285,7 +369,7 @@ async function init(){
     
   } catch (err) {
     console.error('❌ 初始化錯誤:', err);
-    alert('系統錯誤: ' + err.message);
+    alert('系統錯誤 / System Error: ' + err.message);
   }
 }
 
@@ -337,14 +421,13 @@ async function fetchReservations(){
     existingReservations = [];
     
     if (data.status === 'success' && Array.isArray(data.reservations)) {
-      // 處理真實的預約資料格式 - 簡化日期處理
       existingReservations = data.reservations.map(resv => {
         const reservation = {
           reservationId: resv.reservationId || resv[11] || `resv-${Date.now()}`,
           userId: resv.userId || resv[10] || userData.userId,
           name: resv.name || resv[1] || userData.lineDisplayName,
           phone: resv.phone || resv[2] || userData.phone || '',
-          date: resv.date || resv[0], // 直接使用回傳的日期，不需要格式化
+          date: resv.date || resv[0],
           route: resv.route || resv[3] || '',
           fromStop: resv.fromStop || resv[4] || '',
           toStop: resv.toStop || resv[5] || '',
@@ -362,7 +445,6 @@ async function fetchReservations(){
       existingReservations = [];
     }
     
-    // 儲存到本地備份
     saveLocalReservations();
     console.log('📋 最終預約列表:', existingReservations.length, '筆');
     renderReservationInfo();
@@ -442,7 +524,7 @@ function loadCalendar(){
   const cal=document.getElementById('calendar');
   cal.innerHTML='';
   document.getElementById('calendarContainer').style.display='block';
-  document.getElementById('calendarTitle').textContent=`${currentYear}年${currentMonth+1}月`;
+  document.getElementById('calendarTitle').textContent=`${currentYear}年${currentMonth+1}月 / ${currentYear}-${currentMonth+1}`;
 
   const today=new Date(); today.setHours(0,0,0,0);
   const lastDay=new Date(currentYear,currentMonth+1,0).getDate();
@@ -487,7 +569,11 @@ function selectDate(dateStr){
   console.log('📅 選擇日期:', dateStr);
   
   document.getElementById('selectedDate').style.display = 'block';
-  document.getElementById('selectedDate').textContent = `✅ 已選擇：${dateStr}`;
+  document.getElementById('selectedDate').innerHTML = 
+    `<div class="bilingual-text">
+       <div class="chinese-text">✅ 已選擇：${dateStr}</div>
+       <div class="english-text">✅ Selected: ${dateStr}</div>
+     </div>`;
   
   showRoutes();
   
@@ -505,8 +591,10 @@ function showRoutes(){
   container.innerHTML = Object.keys(ROUTES).map(code => `
     <div class="route-btn" onclick="selectRoute('${code}')">
       <div style="font-weight:bold;font-size:16px">${ROUTES[code].name}</div>
-      <div style="font-size:13px;color:#666;margin-top:4px">${ROUTES[code].direction}</div>
-      <div style="font-size:12px;color:#999;margin-top:2px">${ROUTES[code].directionEn}</div>
+      <div class="bilingual-text">
+        <div style="font-size:13px;color:#666;margin-top:4px">${ROUTES[code].direction}</div>
+        <div style="font-size:12px;color:#999;margin-top:2px">${ROUTES[code].directionEn}</div>
+      </div>
     </div>
   `).join('');
   
@@ -534,7 +622,7 @@ function loadStops(routeCode){
   
   console.log('📍 載入站點:', stops);
   
-  fromSelect.innerHTML = '<option value="">請選擇上車站</option>' +
+  fromSelect.innerHTML = '<option value="">請先選擇班次 / Please select route first</option>' +
     stops.map(stop => `<option value="${stop}">${stop}</option>`).join('');
   
   fromSelect.onchange = function(){
@@ -558,13 +646,13 @@ function loadToStops(routeCode, fromStop){
   console.log('⬇ 可選下車站:', availableStops);
   
   if(availableStops.length === 0){
-    toSelect.innerHTML = '<option value="">此站為終點站</option>';
+    toSelect.innerHTML = '<option value="">此站為終點站 / This is the final stop</option>';
     document.getElementById('toStopSection').style.display = 'block';
     document.getElementById('submitBtn').style.display = 'none';
     return;
   }
   
-  toSelect.innerHTML = '<option value="">請選擇下車站</option>' +
+  toSelect.innerHTML = '<option value="">請選擇下車站 / Please select drop-off stop</option>' +
     availableStops.map(stop => `<option value="${stop}">${stop}</option>`).join('');
   
   document.getElementById('toStopSection').style.display = 'block';
@@ -585,11 +673,14 @@ async function submitReservation(){
   const toStop = document.getElementById('toStop').value;
   
   if(!selectedDate || !selectedRoute || !fromStop || !toStop){
-    alert('請完成所有選擇');
+    alert('請完成所有選擇 / Please complete all selections');
     return;
   }
   
-  if(!confirm(`確定預約嗎？\n\n日期：${selectedDate}\n班次：${ROUTES[selectedRoute].name}\n上車：${fromStop}\n下車：${toStop}`)){
+  const routeInfo = ROUTES[selectedRoute];
+  const confirmMessage = `確定預約嗎？\n\n日期 / Date：${selectedDate}\n班次 / Route：${routeInfo.name}\n上車 / Boarding：${fromStop}\n下車 / Drop-off：${toStop}\n\nConfirm reservation?`;
+  
+  if(!confirm(confirmMessage)){
     return;
   }
   
@@ -619,9 +710,8 @@ async function submitReservation(){
     console.log('📥 預約結果:', result);
     
     if(result.status === 'success'){
-      alert('✅ 預約成功！');
+      alert('✅ 預約成功！ / Reservation Successful!');
       
-      // 使用伺服器回傳的真實預約資料
       const newReservation = {
         reservationId: result.reservationId,
         userId: userData.userId,
@@ -640,17 +730,16 @@ async function submitReservation(){
       addLocalReservation(newReservation);
       resetForm();
       
-      // 重新載入真實預約資料
       setTimeout(() => {
         fetchReservations();
       }, 500);
       
     } else {
-      alert('❌ 預約失敗：' + (result.message || '未知錯誤'));
+      alert('❌ 預約失敗：' + (result.message || '未知錯誤 / Unknown Error'));
     }
   } catch(error){
     console.error('❌ 預約錯誤:', error);
-    alert('❌ 網路錯誤，已儲存到本地備份');
+    alert('❌ 網路錯誤，已儲存到本地備份 / Network error, saved locally');
     
     const localReservation = {
       reservationId: 'local_' + Date.now(),
@@ -737,13 +826,30 @@ function renderReservationInfo(){
     
     return `
     <div class="resv-card" id="resv-${reservationId}">
-      <div><strong>📅 日期:</strong> ${displayDate}</div>
-      <div><strong>🚌 班次:</strong> ${routeDisplay}</div>
-      <div><strong>⬆ 上車:</strong> ${r.fromStop}</div>
-      <div><strong>⬇ 下車:</strong> ${r.toStop}</div>
-      <div><strong>🆔 預約編號:</strong> ${reservationId}</div>
-      <div><strong>📊 狀態:</strong> ${r.status || '已預約'}</div>
-      <button class="cancel-btn" onclick="cancelReservation('${reservationId}')">取消預約 Cancel Reservation</button>
+      <div class="bilingual-text">
+        <div><strong>📅 日期 / Date:</strong> ${displayDate}</div>
+      </div>
+      <div class="bilingual-text">
+        <div><strong>🚌 班次 / Route:</strong> ${routeDisplay}</div>
+      </div>
+      <div class="bilingual-text">
+        <div><strong>⬆ 上車 / Boarding:</strong> ${r.fromStop}</div>
+      </div>
+      <div class="bilingual-text">
+        <div><strong>⬇ 下車 / Drop-off:</strong> ${r.toStop}</div>
+      </div>
+      <div class="bilingual-text">
+        <div><strong>🆔 預約編號 / Reservation ID:</strong> ${reservationId}</div>
+      </div>
+      <div class="bilingual-text">
+        <div><strong>📊 狀態 / Status:</strong> ${r.status || '已預約 / Reserved'}</div>
+      </div>
+      <button class="cancel-btn">
+        <div class="bilingual-text">
+          <div class="chinese-text">取消預約</div>
+          <div class="english-text">Cancel Reservation</div>
+        </div>
+      </button>
     </div>`;
   }).join('');
   
@@ -755,7 +861,8 @@ function renderReservationInfo(){
 
 // ============================ 取消預約 - 真實資料操作 ============================
 async function cancelReservation(reservationId) {
-  if (!confirm('確定取消此預約嗎？')) return;
+  const confirmMessage = '確定取消此預約嗎？\n\nConfirm to cancel this reservation?';
+  if (!confirm(confirmMessage)) return;
   
   const payload = {
     type: 'cancel',
@@ -772,27 +879,14 @@ async function cancelReservation(reservationId) {
     
     const result = await res.json();
     if(result.status === 'success'){
-      alert('✅ 已取消預約');
+      alert('✅ 已取消預約 / Reservation Cancelled');
       removeLocalReservation(reservationId);
-      // 重新載入真實資料
       setTimeout(() => {
         fetchReservations();
       }, 500);
     } else {
-      alert('❌ 取消失敗：' + (result.message || '未知錯誤'));
+      alert('❌ 取消失敗：' + (result.message || '未知錯誤 / Unknown Error'));
     }
   } catch (error) {
     console.error('❌ 取消錯誤:', error);
-    alert('❌ 網路錯誤，請稍後再試');
-  }
-}
-
-// ============================ 其他功能 ============================
-function showRules(){
-  alert(`📘 預約規則\n\n1. 每人每日限預約一個班次\n2. 請於搭乘日前一天預約\n3. 如需取消請提前通知\n4. 上車時請主動出示預約紀錄`);
-}
-
-window.addEventListener('load', init);
-</script>
-</body>
-</html>
+   
