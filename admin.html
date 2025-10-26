@@ -84,27 +84,25 @@ body { font-family:"Noto Sans TC",system-ui,sans-serif;background:#f8fafc;margin
 
     <!-- 🧾 查詢 -->
     <section id="query" class="section">
-  <div class="card">
-    <h2 class="section-title">🧾 預約查詢</h2>
-    <input type="text" id="search" placeholder="搜尋姓名、班次或日期..." 
-           class="border border-gray-300 rounded-md p-2 w-full mb-3">
-
-    <div id="tableContainer" style="overflow-x:auto;">
-      <table class="min-w-full text-sm">
-        <thead class="bg-green-700 text-white sticky top-0">
-          <tr>
-            <th class="p-2">日期</th>
-            <th class="p-2">班次</th>
-            <th class="p-2">姓名</th>
-            <th class="p-2">狀態</th>
-          </tr>
-        </thead>
-        <tbody id="tbl"></tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
+      <div class="card">
+        <h2 class="section-title">🧾 預約查詢</h2>
+        <input type="text" id="search" placeholder="搜尋姓名、班次或日期..." 
+               class="border border-gray-300 rounded-md p-2 w-full mb-3">
+        <div id="tableContainer" style="overflow-x:auto;">
+          <table class="min-w-full text-sm">
+            <thead class="bg-green-700 text-white sticky top-0">
+              <tr>
+                <th class="p-2">日期</th>
+                <th class="p-2">班次</th>
+                <th class="p-2">姓名</th>
+                <th class="p-2">狀態</th>
+              </tr>
+            </thead>
+            <tbody id="tbl"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
 
     <!-- 📋 核銷 -->
     <section id="checkin" class="section">
@@ -237,6 +235,8 @@ async function loadReservations() {
     const res = await fetch(`${WORKER_URL}?mode=reservations`);
     const json = await res.json();
 
+    console.log('📥 收到預約資料:', json); // 除錯用
+
     // 兼容各種 GAS 格式
     const list = json.reservations || json.data || json.list || json.rows || [];
 
@@ -245,13 +245,15 @@ async function loadReservations() {
       return;
     }
 
-    // 資料清理與排序
+    // 資料清理與排序 - 修正欄位映射
     const data = list.map(r => ({
-      date: r.A || r.date || '',
-      route: r.B || r.route || '',
-      name: r.D || r.name || '',
-      status: r.F || r.status || ''
+      date: r.A || r.date || r.日期 || '',
+      route: r.B || r.route || r.班次 || '',
+      name: r.D || r.name || r.姓名 || '',
+      status: r.F || r.status || r.狀態 || ''
     }));
+
+    console.log('📊 處理後的資料:', data); // 除錯用
 
     const order = { A1: 1, A2: 2, B1: 3, B2: 4 };
     data.sort((a, b) => {
@@ -268,21 +270,22 @@ async function loadReservations() {
   }
 }
 
-/* 🧾 渲染查詢結果 */
+/* 🧾 渲染查詢結果 - 統一定義 */
 function renderTable(data) {
   const tbody = document.getElementById('tbl');
 
-  if (!data.length) {
+  if (!data || !Array.isArray(data) || data.length === 0) {
     tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">沒有符合條件的紀錄</td></tr>`;
     return;
   }
 
   tbody.innerHTML = data.map(r => {
-    const cls = r.status.includes('取消')
+    const cls = r.status && r.status.includes('取消')
       ? 'status-cancel'
-      : r.status.includes('搭乘')
+      : r.status && r.status.includes('搭乘')
       ? 'status-ok'
       : 'status-wait';
+    
     return `
       <tr class="border-b hover:bg-green-50 transition">
         <td class="p-2">${r.date || '-'}</td>
@@ -296,72 +299,64 @@ function renderTable(data) {
 /* 🔍 即時搜尋 */
 document.getElementById('search').addEventListener('input', e => {
   const k = e.target.value.trim().toLowerCase();
+  
+  if (!allData || !Array.isArray(allData)) {
+    renderTable([]);
+    return;
+  }
+  
   const filtered = allData.filter(r =>
-    r.name?.toLowerCase().includes(k) ||
-    r.route?.toLowerCase().includes(k) ||
-    r.date?.includes(k)
+    (r.name && r.name.toLowerCase().includes(k)) ||
+    (r.route && r.route.toLowerCase().includes(k)) ||
+    (r.date && r.date.includes(k))
   );
   renderTable(filtered);
 });
 
-
-/* 🧾 渲染查詢結果 */
-function renderTable(data) {
-  const tbody = document.getElementById('tbl');
-  if (!data.length) {
-    tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-400">沒有符合條件的紀錄</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = data.map(r => {
-    let cls = r.status.includes('取消')
-      ? 'status-cancel'
-      : r.status.includes('搭乘')
-      ? 'status-ok'
-      : 'status-wait';
-    return `
-      <tr class="border-b hover:bg-green-50 transition">
-        <td class="p-2">${r.date}</td>
-        <td class="p-2">${r.route}</td>
-        <td class="p-2">${r.name}</td>
-        <td class="p-2">${r.phone}</td>
-        <td class="p-2 ${cls}">${r.status}</td>
-        <td class="p-2">${r.note}</td>
-      </tr>
-    `;
-  }).join('');
-}
-
-
-function renderTable(data){
-  const tbody=document.getElementById('tbl');
-  tbody.innerHTML=data.map(r=>{
-    let cls=r.status.includes('取消')?'status-cancel':(r.status.includes('搭乘')?'status-ok':'status-wait');
-    return `<tr><td class="p-2">${r.date}</td><td class="p-2">${r.route}</td><td class="p-2">${r.name}</td><td class="p-2 ${cls}">${r.status}</td></tr>`;
-  }).join('');
-}
-
-document.getElementById('search').addEventListener('input',e=>{
-  const k=e.target.value.toLowerCase();
-  renderTable(allData.filter(r=>r.name?.toLowerCase().includes(k)||r.route?.toLowerCase().includes(k)||r.date?.includes(k)));
-});
-
 // 系統設定
 async function loadRules(){
-  const res=await fetch(`${WORKER_URL}?mode=getRules`);
-  const json=await res.json();
-  const r=json.current;
-  seatLimit.value=r.seatLimit;maxNoShow.value=r.maxNoShow;banWeeks.value=r.banWeeks;tripMode.value=r.tripMode;
-  ruleMeta.textContent=`最後更新：${r.lastUpdate}`;
+  try {
+    const res = await fetch(`${WORKER_URL}?mode=getRules`);
+    const json = await res.json();
+    const r = json.current || {};
+    
+    document.getElementById('seatLimit').value = r.seatLimit || '';
+    document.getElementById('maxNoShow').value = r.maxNoShow || '';
+    document.getElementById('banWeeks').value = r.banWeeks || '';
+    document.getElementById('tripMode').value = r.tripMode || 'single';
+    document.getElementById('ruleMeta').textContent = `最後更新：${r.lastUpdate || '未知'}`;
+  } catch (e) {
+    console.error('載入設定失敗:', e);
+    showToast('❌ 載入設定失敗', 'error');
+  }
 }
-document.getElementById('saveRules').addEventListener('click',async()=>{
-  const body={seatLimit:+seatLimit.value,maxNoShow:+maxNoShow.value,banWeeks:+banWeeks.value,tripMode:tripMode.value};
-  try{
-    const res=await fetch(`${WORKER_URL}?mode=updateRules`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    const json=await res.json();
-    if(json.status==='success'){showToast('✅ 已成功更新設定');loadRules();}
-    else showToast('❌ 更新失敗','error');
-  }catch{showToast('❌ 連線錯誤','error');}
+
+document.getElementById('saveRules').addEventListener('click', async () => {
+  const body = {
+    seatLimit: +document.getElementById('seatLimit').value,
+    maxNoShow: +document.getElementById('maxNoShow').value,
+    banWeeks: +document.getElementById('banWeeks').value,
+    tripMode: document.getElementById('tripMode').value
+  };
+  
+  try {
+    const res = await fetch(`${WORKER_URL}?mode=updateRules`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    const json = await res.json();
+    
+    if(json.status === 'success') {
+      showToast('✅ 已成功更新設定');
+      await loadRules();
+    } else {
+      showToast('❌ 更新失敗', 'error');
+    }
+  } catch(e) {
+    console.error('更新設定失敗:', e);
+    showToast('❌ 連線錯誤', 'error');
+  }
 });
 
 // 導覽
@@ -374,6 +369,7 @@ function setupNav(){
       document.getElementById(btn.dataset.sec).classList.add('active');
     });
   });
+  
   document.getElementById('goCheckin').addEventListener('click',()=>{
     liff.openWindow({url:'https://liff.line.me/2006590746-G7B12a1K',external:false});
   });
