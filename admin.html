@@ -177,7 +177,7 @@ async function init(){
     const profile=await liff.getProfile();
     console.log('👤 用戶資料:', profile);
     
-    // 方法1: 先嘗試用 check 模式檢查用戶資料
+    // 使用 check 模式檢查用戶資料（從 GAS 取得）
     console.log('🔑 正在檢查用戶權限...');
     let checkUrl = `${WORKER_URL}?mode=check&userId=${profile.userId}`;
     console.log('📡 請求 URL:', checkUrl);
@@ -191,35 +191,27 @@ async function init(){
     let isAdmin = false;
     let debugMsg = '';
     
-    // 臨時測試：允許特定用戶 ID 直接通過
-    const allowedUserIds = [
-      'Ue7a07fe317565389fbf447917208f87' // Tonyfang
-    ];
-    
-    if (allowedUserIds.includes(profile.userId)) {
-      isAdmin = true;
-      console.log('✅ 臨時白名單通過');
-    }
     // 檢查 check 模式的回應
-    else if (userData.registered && userData.user) {
+    if (userData.registered && userData.user) {
       console.log('✓ 用戶已註冊');
       console.log('- userId:', userData.user.userId);
       console.log('- name:', userData.user.name);
-      console.log('- role:', userData.user.role);
       console.log('- isAdmin:', userData.user.isAdmin);
+      console.log('- isAdmin type:', typeof userData.user.isAdmin);
       
-      // 新增：檢查 isAdmin 欄位（來自 Google Sheets I 欄）
-      if (userData.user.isAdmin === true || userData.user.isAdmin === 'TRUE' || userData.user.isAdmin === '1') {
+      // 檢查 isAdmin 欄位（來自 Google Sheets I 欄）
+      // 支援多種格式: true, "TRUE", "true", 1, "1"
+      const adminValue = userData.user.isAdmin;
+      if (adminValue === true || 
+          adminValue === 'TRUE' || 
+          adminValue === 'true' ||
+          adminValue === 1 || 
+          adminValue === '1') {
         isAdmin = true;
-        console.log('✅ 用戶是管理員 (isAdmin 欄位)');
-      }
-      // 原有：檢查 role 欄位（向下相容）
-      else if (userData.user.role === 'admin') {
-        isAdmin = true;
-        console.log('✅ 用戶是管理員 (role 欄位)');
+        console.log('✅ 用戶是管理員 (isAdmin 欄位檢查通過)');
       } else {
         console.log('❌ 用戶不是管理員');
-        debugMsg = `您的帳號角色：${userData.user.role || '(無)'}\nisAdmin: ${userData.user.isAdmin || '(無)'}\n需要：admin 或 isAdmin=true`;
+        debugMsg = `isAdmin 欄位值: ${JSON.stringify(adminValue)}\n需要: true/TRUE/1`;
       }
     } else {
       console.log('❌ 用戶未註冊或資料不完整');
