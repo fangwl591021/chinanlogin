@@ -1,219 +1,243 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>穿山甲專車後台管理 v4.3</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>穿山甲專車後台系統 v6.4.7</title>
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
-body {
-  font-family: system-ui, "Noto Sans TC", sans-serif;
-  background: #f6f7f9;
-  margin: 0;
-}
-main {
-  max-width: 760px;
-  margin: 24px auto;
-  background: #fff;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 6px 18px rgba(0,0,0,.06);
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-th, td {
-  border-bottom: 1px solid #eef2f7;
-  padding: 8px;
-  text-align: left;
-}
-th {
-  background: #fafbfc;
-}
-.badge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 8px;
-  background: #eef2f7;
-  font-size: 12px;
-  margin-left: 8px;
-}
-.btn {
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid #d3d7de;
-  background: #fff;
-  cursor: pointer;
-}
-.notice {
-  padding: 12px;
-  background: #fdecea;
-  color: #b71c1c;
-  border: 1px solid #f5c2c7;
-  border-radius: 8px;
-  margin: 40px auto;
-  max-width: 600px;
-  text-align: center;
-  font-weight: bold;
-}
-.loading {
-  text-align: center;
-  color: #666;
-  padding: 50px;
-  font-size: 18px;
-}
+body { font-family: "Noto Sans TC", sans-serif; background: #f8fafc; color: #334155; }
+.nav-btn { flex: 1; text-align: center; padding: 10px 0; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.active-tab { background: #14532d; color: white; border-radius: 12px; }
+.status-reserved { color: #16a34a; font-weight: 700; }
+.status-cancelled { color: #dc2626; font-weight: 700; }
+.status-completed { color: #2563eb; font-weight: 700; }
+.card { background:white; border-radius:16px; padding:24px; box-shadow:0 2px 10px rgba(0,0,0,0.08); margin:16px auto; max-width:900px; margin-bottom: 100px; }
+.toast { position: fixed; bottom: 80px; right: 20px; background: #16a34a; color: white; padding: 10px 20px; border-radius: 8px; opacity: 0; transition: opacity .3s ease-in-out; }
+.toast.show { opacity: 1; }
+.reservation-table-container { overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px; }
+.reservation-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 360px; }
+.reservation-table th, .reservation-table td { padding: 10px 8px; text-align: center; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+.reservation-table thead { background: #14532d; color: white; position: sticky; top: 0; z-index: 10; }
+.reservation-table th { font-weight: 600; }
+.reservation-table tbody tr:hover { background-color: #f8fafc; }
+.notice { text-align:center; color:#b91c1c; font-weight:700; padding:60px 20px; }
 </style>
 </head>
 
 <body>
-<main id="adminPanel" style="display:none">
-  <h1>🚌 Admin / 當日名單與統計</h1>
-  <label>日期：</label><input id="date" type="date"/>
-  <button id="btnLoad" class="btn">載入</button>
-  <div id="stat" style="margin:10px 0;font-weight:bold"></div>
-  <table>
-    <thead>
-      <tr><th>班次</th><th>姓名</th><th>電話</th><th>userId</th><th>核銷</th></tr>
-    </thead>
-    <tbody id="rows"></tbody>
-  </table>
-</main>
+  <!-- 載入畫面 -->
+  <div id="loading" class="flex flex-col items-center justify-center h-screen text-center text-gray-600">
+    <div class="text-3xl mb-3">🚌 穿山甲後台載入中…</div>
+    <p>請稍候驗證您的身分</p>
+  </div>
 
-<!-- 無權限 -->
-<div id="noPermission" class="notice" style="display:none">
-  ❌ 您沒有權限進入此頁面。<br>請使用管理員帳號登入。
-</div>
+  <!-- 🚫 無權限 -->
+  <div id="noAuth" class="hidden notice">
+    🚫 您沒有使用此系統的權限<br>
+    請使用管理員帳號登入。
+    <div class="mt-6">
+      <button onclick="logout()" class="bg-gray-600 text-white px-6 py-2 rounded-lg">返回登入</button>
+    </div>
+  </div>
 
-<!-- 載入提示 -->
-<div id="loading" class="loading">
-  🔄 系統初始化中，請稍候...
-</div>
+  <!-- 主畫面 -->
+  <div id="main" class="hidden">
+    <header class="bg-green-800 text-white flex justify-between items-center px-6 py-4 sticky top-0 z-10">
+      <h1 class="text-xl font-bold">🚌 穿山甲後台系統</h1>
+      <div class="flex items-center space-x-4">
+        <img id="userPicture" class="w-10 h-10 rounded-full" alt="用戶頭像" />
+        <span id="userName"></span>
+        <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm">
+          登出
+        </button>
+      </div>
+    </header>
+
+    <section id="dashboard" class="card">
+      <h2 class="font-bold text-xl mb-4 text-green-900">📊 即時儀表板</h2>
+      <div id="statsArea" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-green-100 p-4 rounded-xl text-center">
+          <p class="text-gray-700 font-semibold">今日預約</p>
+          <p id="todayCount" class="text-3xl font-bold text-green-700">-</p>
+        </div>
+        <div class="bg-red-100 p-4 rounded-xl text-center">
+          <p class="text-gray-700 font-semibold">已取消</p>
+          <p id="cancelCount" class="text-3xl font-bold text-red-700">-</p>
+        </div>
+        <div class="bg-blue-100 p-4 rounded-xl text-center">
+          <p class="text-gray-700 font-semibold">已搭乘</p>
+          <p id="checkinCount" class="text-3xl font-bold text-blue-700">-</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="records" class="card hidden">
+      <h2 class="font-bold text-xl mb-4 text-green-900">📅 預約紀錄查詢</h2>
+      <div id="recordsArea" class="reservation-table-container"></div>
+    </section>
+
+    <section id="checkin" class="card hidden">
+      <h2 class="font-bold text-xl mb-4 text-green-900">✅ 乘客核銷</h2>
+      <div class="text-center mb-4">
+        <button onclick="openCheckinPage()" class="bg-green-700 hover:bg-green-800 text-white font-bold px-6 py-3 rounded-lg shadow">
+          🧾 開啟核銷頁面
+        </button>
+      </div>
+    </section>
+
+    <section id="settings" class="card hidden">
+      <h2 class="font-bold text-xl mb-4 text-green-900">⚙️ 系統設定</h2>
+      <p class="text-center text-gray-600 p-8">📄 若要編輯規則，請前往 <a href="rule.html" target="_blank" class="text-green-600 underline">rule.html</a></p>
+    </section>
+
+    <footer class="fixed bottom-0 left-0 w-full bg-white shadow-lg flex border-t border-gray-200">
+      <button class="nav-btn active-tab" data-tab="dashboard">📊 儀表板</button>
+      <button class="nav-btn" data-tab="records">📋 查詢</button>
+      <button class="nav-btn" data-tab="checkin">✅ 核銷</button>
+      <button class="nav-btn" data-tab="settings">⚙️ 設定</button>
+    </footer>
+  </div>
 
 <script>
-/* === 設定區 === */
-const LIFF_ID  = '2006590746-wgL4l54z';
-const API_BASE = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
-const MASTER_ADMINS = [
-  'U84b2e88d818b98575f45fcf14a380517',
-  'Ue7a07fe317565389fbf4479172088f87'
-];
+const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
+const LIFF_ID = '2006590746-wgL4l54z';
+const CHECKIN_LIFF = 'https://fangwl591021.github.io/chinanlogin/driver-checkin.html';
+const STATUS = { RESERVED:'已預約', CANCELLED:'已取消', COMPLETED:'已搭乘' };
 
-let admin = null;
-const $ = id => document.getElementById(id);
+document.addEventListener('click', e=>{
+  const tab=e.target.closest('[data-tab]');
+  if(tab) showTab(tab.dataset.tab);
+});
 
-/* === API 函數 === */
-async function callGet(q){
-  try {
-    const res = await fetch(API_BASE + '?' + new URLSearchParams(q));
-    return await res.json();
-  } catch (e) {
-    console.error('GET 錯誤:', e);
-    return { ok:false, error: e.message };
-  }
+function logout(){
+  localStorage.removeItem('adminUserId');
+  localStorage.removeItem('adminAuthTime');
+  window.location.href='login.html';
 }
 
-async function callPost(p){
-  try {
-    const res = await fetch(API_BASE, {
-      method:'POST',
-      headers:{'content-type':'application/json'},
-      body:JSON.stringify(p)
-    });
-    return await res.json();
-  } catch (e) {
-    console.error('POST 錯誤:', e);
-    return { ok:false, error: e.message };
-  }
-}
-
-/* === 載入名單 === */
-async function load(){
-  const d = $('date').value;
-  $('rows').innerHTML = `<tr><td colspan="5">⏳ 資料載入中...</td></tr>`;
-  const r = await callGet({ mode:'adminList', userId: admin.userId, date: d });
-
-  if (!r.ok) {
-    alert('❌ '+(r.error || '讀取失敗'));
-    $('rows').innerHTML = '';
-    return;
-  }
-
-  const s = r.data.stat;
-  $('stat').innerHTML = `A1 ${s.A1}/${r.data.cap}、A2 ${s.A2}/${r.data.cap}、B1 ${s.B1}/${r.data.cap}、B2 ${s.B2}/${r.data.cap}`;
-  
-  $('rows').innerHTML = r.data.rows.map(rw => `
-    <tr>
-      <td>${rw.slot}</td>
-      <td>${rw.name||''}</td>
-      <td>${rw.phone||''}</td>
-      <td style="font-size:12px">${rw.uid}</td>
-      <td><button data-uid="${rw.uid}" data-slot="${rw.slot}" class="btn btnCheck">核銷</button></td>
-    </tr>
-  `).join('');
-
-  document.querySelectorAll('.btnCheck').forEach(b=>{
-    b.onclick = async ()=>{
-      const rw = b.dataset;
-      const res = await callPost({
-        mode:'driverCheckin',
-        adminId: admin.userId,
-        userId: rw.uid,
-        date: d,
-        slot: rw.slot
-      });
-      alert(res.ok ? '✅ 已核銷' : '❌ '+res.error);
-      await load();
-    };
-  });
-}
-
-/* === 初始化 === */
 async function init(){
-  try {
-    console.log('🚀 初始化 LIFF...');
+  try{
+    const savedId = localStorage.getItem('adminUserId');
+    const authTime = localStorage.getItem('adminAuthTime');
+    const valid = savedId && authTime && (Date.now() - parseInt(authTime) < 3600000);
+
     await liff.init({ liffId: LIFF_ID });
 
-    if (!liff.isLoggedIn()) {
-      console.warn('未登入，導向登入...');
-      $('loading').innerText = '請登入 LINE 帳號...';
-      return liff.login();
+    // 若快取有效，直接驗證權限
+    let profile;
+    if(valid){
+      profile = await liff.getProfile();
+      if(profile.userId !== savedId) return logout();
+    }else{
+      if(!liff.isLoggedIn()) return liff.login();
+      profile = await liff.getProfile();
+      localStorage.setItem('adminUserId', profile.userId);
+      localStorage.setItem('adminAuthTime', Date.now().toString());
     }
 
-    const profile = await liff.getProfile();
-    admin = profile;
-    console.log('👤 管理員登入:', admin.userId, admin.displayName);
+    document.getElementById('userPicture').src=profile.pictureUrl;
+    document.getElementById('userName').textContent=profile.displayName;
 
-    if (!MASTER_ADMINS.includes(admin.userId)) {
-      console.warn('⛔ 無權限用戶:', admin.userId);
-      $('loading').style.display = 'none';
-      $('noPermission').style.display = 'block';
+    // 後端權限驗證
+    const roleRes = await fetch(`${WORKER_URL}?mode=getRole&userId=${profile.userId}`).then(r=>r.json());
+    if(roleRes.status!=='success'||roleRes.role!=='admin'){
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('noAuth').classList.remove('hidden');
       return;
     }
 
-    // ✅ 通過權限驗證
-    $('loading').style.display = 'none';
-    $('adminPanel').style.display = 'block';
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('main').classList.remove('hidden');
+    loadDashboard();
+    loadReservations();
+    setInterval(loadDashboard,30000);
 
-    const today = new Date();
-    $('date').value = today.toISOString().slice(0,10);
-    await load();
-
-  } catch (err) {
-    console.error('💥 LIFF 初始化錯誤:', err);
-    $('loading').innerHTML = `
-      ❌ LIFF 初始化失敗<br>
-      <small>${err.message}</small><br><br>
-      請檢查：<br>
-      1️⃣ LIFF ID 是否正確<br>
-      2️⃣ Endpoint 是否為 <b>https://fangwl591021.github.io/chinanlogin/</b><br>
-      3️⃣ 是否在 LINE App 開啟此頁面
-    `;
+  }catch(e){
+    console.error('初始化錯誤:',e);
+    logout();
   }
 }
 
-$('btnLoad').onclick = load;
-window.addEventListener('DOMContentLoaded', init);
+function openCheckinPage(){
+  try{ liff.openWindow({ url: CHECKIN_LIFF, external: false }); }
+  catch(e){ window.open(CHECKIN_LIFF,'_blank'); }
+}
+
+function showTab(tabId){
+  ['dashboard','records','checkin','settings'].forEach(id=>{
+    document.getElementById(id).classList.toggle('hidden', id!==tabId);
+  });
+  document.querySelectorAll('.nav-btn').forEach(btn=>btn.classList.remove('active-tab'));
+  document.querySelector(`[data-tab="${tabId}"]`).classList.add('active-tab');
+}
+
+async function loadDashboard(){
+  try{
+    const data = await fetch(`${WORKER_URL}?mode=dashboard`).then(r=>r.json());
+    if(data.status==='success'){
+      document.getElementById('todayCount').textContent=data.dashboard.todayCount;
+      document.getElementById('cancelCount').textContent=data.dashboard.cancelCount;
+      document.getElementById('checkinCount').textContent=data.dashboard.checkinCount;
+    }
+  }catch(e){ console.error('Dashboard 載入失敗:',e); }
+}
+
+function formatDateToMonthDay(dateStr){
+  if(!dateStr) return '-';
+  const d=new Date(dateStr);
+  if(!isNaN(d)) return `${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
+  return dateStr;
+}
+
+function getRouteDisplay(i){ return i.route||i.shift||i.routeName||i.班次||'-'; }
+
+function validateData(list){
+  return list.map(i=>{
+    let s=STATUS.RESERVED;
+    if(i.checkin==='Y'||i.checkedIn===true)s=STATUS.COMPLETED;
+    else if(i.status?.includes('取消'))s=STATUS.CANCELLED;
+    return {...i,route:getRouteDisplay(i),status:s};
+  }).filter(i=>i.date);
+}
+
+function sortReservations(list){
+  const order={A1:1,A2:2,B1:3,B2:4};
+  return list.sort((a,b)=>{
+    const da=new Date(a.date.replace(/\//g,'-')), db=new Date(b.date.replace(/\//g,'-'));
+    if(da.getTime()!==db.getTime())return db-da;
+    return (order[a.route]||99)-(order[b.route]||99);
+  });
+}
+
+async function loadReservations(){
+  try{
+    const data=await fetch(`${WORKER_URL}?mode=reservations`).then(r=>r.json());
+    if(data.status==='success'){
+      const clean=validateData(data.reservations);
+      const sorted=sortReservations(clean);
+      renderReservations(sorted);
+    }
+  }catch(e){console.error('查詢錯誤:',e);}
+}
+
+function renderReservations(list){
+  const c=document.getElementById('recordsArea');
+  if(!list||!list.length){c.innerHTML='<p class="text-center text-gray-500 py-8">暫無預約紀錄</p>';return;}
+  c.innerHTML=`<table class="reservation-table">
+  <thead><tr><th>日期</th><th>班次</th><th>姓名</th><th>狀態</th></tr></thead>
+  <tbody>${list.map(r=>`
+    <tr>
+      <td>${formatDateToMonthDay(r.date)}</td>
+      <td>${r.route}</td>
+      <td>${r.name||'-'}</td>
+      <td class="${r.status===STATUS.CANCELLED?'status-cancelled':r.status===STATUS.COMPLETED?'status-completed':'status-reserved'}">${r.status}</td>
+    </tr>`).join('')}
+  </tbody></table>`;
+}
+
+init();
 </script>
 </body>
 </html>
