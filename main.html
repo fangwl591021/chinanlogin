@@ -138,10 +138,21 @@ select {
 .chinese-text {
   font-weight: bold;
   margin-bottom: 2px;
+  color: white;
 }
 .english-text {
   font-size: 0.85em;
-  color: #fff;
+  color: white;
+  opacity: 0.9;
+}
+
+/* 預約紀錄中的雙語文字 */
+.reservation-item .chinese-text {
+  color: #2d6140; /* 深綠色 */
+  font-weight: normal;
+}
+.reservation-item .english-text {
+  color: #666; /* 灰色 */
   opacity: 0.8;
 }
 
@@ -265,66 +276,67 @@ const ROUTES = {
   'B2': { name: 'B2 晚間23:30', nameEn: 'B2 11:30 PM', time: '23:30-24:00', direction: '埔里總站→暨大', directionEn: 'Puli Bus Terminal → NCNU' }
 };
 
+// 站點資料改為中英分開的格式
 const STOPS = {
   'A1': [
-    '行政大樓 NCNU Administrative Building',
-    '中餐廳 Zhong Can Ting (Chinese Restaurant)',
-    '科技學院 College of Science and Technology',
-    '學人會館 Scholars\' Residence',
-    '中城 Zhongcheng',
-    '下城 Xiacheng',
-    '坪頂 Pingding',
-    '愛蘭橋 Ailan Bridge',
-    '大成國小 Dacheng Elementary School',
-    '中山安七街口 Zhongshan Anqi St. Intersection',
-    '榮民診所 Veterans Clinic',
-    '埔里酒廠 Puli Distillery',
-    '埔里總站 Puli Bus Terminal'
+    { chinese: '行政大樓', english: 'NCNU Administrative Building' },
+    { chinese: '中餐廳', english: 'Zhong Can Ting (Chinese Restaurant)' },
+    { chinese: '科技學院', english: 'College of Science and Technology' },
+    { chinese: '學人會館', english: 'Scholars\' Residence' },
+    { chinese: '中城', english: 'Zhongcheng' },
+    { chinese: '下城', english: 'Xiacheng' },
+    { chinese: '坪頂', english: 'Pingding' },
+    { chinese: '愛蘭橋', english: 'Ailan Bridge' },
+    { chinese: '大成國小', english: 'Dacheng Elementary School' },
+    { chinese: '中山安七街口', english: 'Zhongshan Anqi St. Intersection' },
+    { chinese: '榮民診所', english: 'Veterans Clinic' },
+    { chinese: '埔里酒廠', english: 'Puli Distillery' },
+    { chinese: '埔里總站', english: 'Puli Bus Terminal' }
   ],
   'B1': [
-    '埔里總站 Puli Bus Terminal',
-    '埔里酒廠 Puli Distillery',
-    '榮民診所 Veterans Clinic',
-    '中山安七街口 Zhongshan Anqi St. Intersection',
-    '大成國小 Dacheng Elementary School',
-    '愛蘭橋 Ailan Bridge',
-    '坪頂 Pingding',
-    '下城 Xiacheng',
-    '中城 Zhongcheng',
-    '學人會館 Scholars\' Residence',
-    '科技學院 College of Science and Technology',
-    '中餐廳 Zhong Can Ting (Chinese Restaurant)',
-    '行政大樓 NCNU Administrative Building'
+    { chinese: '埔里總站', english: 'Puli Bus Terminal' },
+    { chinese: '埔里酒廠', english: 'Puli Distillery' },
+    { chinese: '榮民診所', english: 'Veterans Clinic' },
+    { chinese: '中山安七街口', english: 'Zhongshan Anqi St. Intersection' },
+    { chinese: '大成國小', english: 'Dacheng Elementary School' },
+    { chinese: '愛蘭橋', english: 'Ailan Bridge' },
+    { chinese: '坪頂', english: 'Pingding' },
+    { chinese: '下城', english: 'Xiacheng' },
+    { chinese: '中城', english: 'Zhongcheng' },
+    { chinese: '學人會館', english: 'Scholars\' Residence' },
+    { chinese: '科技學院', english: 'College of Science and Technology' },
+    { chinese: '中餐廳', english: 'Zhong Can Ting (Chinese Restaurant)' },
+    { chinese: '行政大樓', english: 'NCNU Administrative Building' }
   ],
   'A2': [
-    '行政大樓 NCNU Administrative Building',
-    '中餐廳 Zhong Can Ting (Chinese Restaurant)',
-    '科技學院 College of Science and Technology',
-    '學人會館 Scholars\' Residence',
-    '中城 Zhongcheng',
-    '下城 Xiacheng',
-    '坪頂 Pingding',
-    '愛蘭橋 Ailan Bridge',
-    '大成國小 Dacheng Elementary School',
-    '中山安七街口 Zhongshan Anqi St. Intersection',
-    '榮民診所 Veterans Clinic',
-    '埔里酒廠 Puli Distillery',
-    '埔里總站 Puli Bus Terminal'
+    { chinese: '行政大樓', english: 'NCNU Administrative Building' },
+    { chinese: '中餐廳', english: 'Zhong Can Ting (Chinese Restaurant)' },
+    { chinese: '科技學院', english: 'College of Science and Technology' },
+    { chinese: '學人會館', english: 'Scholars\' Residence' },
+    { chinese: '中城', english: 'Zhongcheng' },
+    { chinese: '下城', english: 'Xiacheng' },
+    { chinese: '坪頂', english: 'Pingding' },
+    { chinese: '愛蘭橋', english: 'Ailan Bridge' },
+    { chinese: '大成國小', english: 'Dacheng Elementary School' },
+    { chinese: '中山安七街口', english: 'Zhongshan Anqi St. Intersection' },
+    { chinese: '榮民診所', english: 'Veterans Clinic' },
+    { chinese: '埔里酒廠', english: 'Puli Distillery' },
+    { chinese: '埔里總站', english: 'Puli Bus Terminal' }
   ],
   'B2': [
-    '埔里總站 Puli Bus Terminal',
-    '埔里酒廠 Puli Distillery',
-    '榮民診所 Veterans Clinic',
-    '中山安七街口 Zhongshan Anqi St. Intersection',
-    '大成國小 Dacheng Elementary School',
-    '愛蘭橋 Ailan Bridge',
-    '坪頂 Pingding',
-    '下城 Xiacheng',
-    '中城 Zhongcheng',
-    '學人會館 Scholars\' Residence',
-    '科技學院 College of Science and Technology',
-    '中餐廳 Zhong Can Ting (Chinese Restaurant)',
-    '行政大樓 NCNU Administrative Building'
+    { chinese: '埔里總站', english: 'Puli Bus Terminal' },
+    { chinese: '埔里酒廠', english: 'Puli Distillery' },
+    { chinese: '榮民診所', english: 'Veterans Clinic' },
+    { chinese: '中山安七街口', english: 'Zhongshan Anqi St. Intersection' },
+    { chinese: '大成國小', english: 'Dacheng Elementary School' },
+    { chinese: '愛蘭橋', english: 'Ailan Bridge' },
+    { chinese: '坪頂', english: 'Pingding' },
+    { chinese: '下城', english: 'Xiacheng' },
+    { chinese: '中城', english: 'Zhongcheng' },
+    { chinese: '學人會館', english: 'Scholars\' Residence' },
+    { chinese: '科技學院', english: 'College of Science and Technology' },
+    { chinese: '中餐廳', english: 'Zhong Can Ting (Chinese Restaurant)' },
+    { chinese: '行政大樓', english: 'NCNU Administrative Building' }
   ]
 };
 
@@ -619,7 +631,7 @@ function loadStops(routeCode){
   console.log('📍 載入站點:', stops);
   
   fromSelect.innerHTML = '<option value="">請先選擇班次 / Please select route first</option>' +
-    stops.map(stop => `<option value="${stop}">${stop}</option>`).join('');
+    stops.map(stop => `<option value="${stop.chinese}">${stop.chinese} ${stop.english}</option>`).join('');
   
   fromSelect.onchange = function(){
     console.log('⬆ 選擇上車站:', this.value);
@@ -635,7 +647,7 @@ function loadStops(routeCode){
 function loadToStops(routeCode, fromStop){
   const toSelect = document.getElementById('toStop');
   const stops = STOPS[routeCode] || [];
-  const fromIndex = stops.indexOf(fromStop);
+  const fromIndex = stops.findIndex(stop => stop.chinese === fromStop);
   
   const availableStops = stops.slice(fromIndex + 1);
   
@@ -649,7 +661,7 @@ function loadToStops(routeCode, fromStop){
   }
   
   toSelect.innerHTML = '<option value="">請選擇下車站 / Please select drop-off stop</option>' +
-    availableStops.map(stop => `<option value="${stop}">${stop}</option>`).join('');
+    availableStops.map(stop => `<option value="${stop.chinese}">${stop.chinese} ${stop.english}</option>`).join('');
   
   document.getElementById('toStopSection').style.display = 'block';
   
@@ -818,24 +830,36 @@ function renderReservationInfo(){
       routeDisplay = ROUTES[r.route] ? ROUTES[r.route].name : r.route;
     }
     
+    // 獲取站點的英文名稱
+    const getStopEnglishName = (stopChinese, routeCode) => {
+      const stops = STOPS[routeCode] || [];
+      const stop = stops.find(s => s.chinese === stopChinese);
+      return stop ? stop.english : stopChinese;
+    };
+    
+    const fromStopEnglish = getStopEnglishName(r.fromStop, r.routeCode || r.route);
+    const toStopEnglish = getStopEnglishName(r.toStop, r.routeCode || r.route);
+    
     const reservationId = r.reservationId || `unknown-${index}`;
     
     return `
     <div class="resv-card" id="resv-${reservationId}">
       <div class="bilingual-text reservation-item">
-        <div><strong>日期 / Date:</strong> ${displayDate}</div>
+        <div class="chinese-text"><strong>日期 / Date:</strong> ${displayDate}</div>
       </div>
       <div class="bilingual-text reservation-item">
-        <div><strong>班次 / Route:</strong> ${routeDisplay}</div>
+        <div class="chinese-text"><strong>班次 / Route:</strong> ${routeDisplay}</div>
       </div>
       <div class="bilingual-text reservation-item">
-        <div><strong>上車 / Boarding:</strong> ${r.fromStop}</div>
+        <div class="chinese-text"><strong>上車 / Boarding:</strong> ${r.fromStop}</div>
+        <div class="english-text">${fromStopEnglish}</div>
       </div>
       <div class="bilingual-text reservation-item">
-        <div><strong>下車 / Drop-off:</strong> ${r.toStop}</div>
+        <div class="chinese-text"><strong>下車 / Drop-off:</strong> ${r.toStop}</div>
+        <div class="english-text">${toStopEnglish}</div>
       </div>
       <div class="bilingual-text reservation-item">
-        <div><strong>狀態 / Status:</strong> ${r.status || '已預約 / Reserved'}</div>
+        <div class="chinese-text"><strong>狀態 / Status:</strong> ${r.status || '已預約 / Reserved'}</div>
       </div>
       <button class="cancel-btn" onclick="cancelReservation('${reservationId}')">
         <div class="bilingual-text">
