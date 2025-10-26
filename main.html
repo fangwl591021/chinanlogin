@@ -93,14 +93,15 @@ select {
 
 .cancel-btn {
   background:#c62828; color:white; border:none;
-  padding:10px 20px; border-radius:6px; font-weight:bold;
-  cursor:pointer; margin-top:8px; width:100%;
+  padding:12px 20px; border-radius:6px; font-weight:bold;
+  cursor:pointer; margin-top:12px; width:100%;
+  font-size: 16px; /* 取消預約文字更大 */
 }
 .cancel-btn:hover { background:#b71c1c; }
 
 .resv-card {
   background:#f0fdf4; border:1px solid #a5d6a7;
-  padding:10px 16px; border-radius:8px; margin:10px 16px;
+  padding:12px 16px; border-radius:8px; margin:10px 16px;
 }
 #reservationPanel {
   margin-top:40px; padding:10px 0 20px 0; background:#fff;
@@ -124,8 +125,11 @@ select {
 }
 .btn-calendar { background:#3c8050; }
 .btn-calendar:hover { background:#2d6140; }
-.btn-rule { background:#e0e0e0; color:#333; }
-.btn-rule:hover { background:#d6d6d6; }
+.btn-rule { 
+  background:#3c8050; /* 預約規則按鈕改為綠色 */
+  color: white; /* 文字白色 */
+}
+.btn-rule:hover { background:#2d6140; }
 
 /* 雙語文字樣式 */
 .bilingual-text {
@@ -154,6 +158,11 @@ select {
 .month-nav-btn:hover {
   background: #2d6140;
 }
+
+/* 預約紀錄文字樣式 - 移除圖標 */
+.reservation-item {
+  margin-bottom: 8px;
+}
 </style>
 </head>
 
@@ -176,13 +185,13 @@ select {
   <div class="btn-group">
     <button id="calendarBtn" class="btn-large btn-calendar" onclick="toggleCalendar()">
       <div class="bilingual-text">
-        <div class="chinese-text">📅 打開月曆</div>
+        <div class="chinese-text">打開月曆</div>
         <div class="english-text">Open Calendar</div>
       </div>
     </button>
     <button id="ruleBtn" class="btn-large btn-rule" onclick="showRules()">
       <div class="bilingual-text">
-        <div class="chinese-text">📘 預約規則</div>
+        <div class="chinese-text">預約規則</div>
         <div class="english-text">Reservation Rules</div>
       </div>
     </button>
@@ -813,23 +822,20 @@ function renderReservationInfo(){
     
     return `
     <div class="resv-card" id="resv-${reservationId}">
-      <div class="bilingual-text">
-        <div><strong>📅 日期 / Date:</strong> ${displayDate}</div>
+      <div class="bilingual-text reservation-item">
+        <div><strong>日期 / Date:</strong> ${displayDate}</div>
       </div>
-      <div class="bilingual-text">
-        <div><strong>🚌 班次 / Route:</strong> ${routeDisplay}</div>
+      <div class="bilingual-text reservation-item">
+        <div><strong>班次 / Route:</strong> ${routeDisplay}</div>
       </div>
-      <div class="bilingual-text">
-        <div><strong>⬆ 上車 / Boarding:</strong> ${r.fromStop}</div>
+      <div class="bilingual-text reservation-item">
+        <div><strong>上車 / Boarding:</strong> ${r.fromStop}</div>
       </div>
-      <div class="bilingual-text">
-        <div><strong>⬇ 下車 / Drop-off:</strong> ${r.toStop}</div>
+      <div class="bilingual-text reservation-item">
+        <div><strong>下車 / Drop-off:</strong> ${r.toStop}</div>
       </div>
-      <div class="bilingual-text">
-        <div><strong>🆔 預約編號 / Reservation ID:</strong> ${reservationId}</div>
-      </div>
-      <div class="bilingual-text">
-        <div><strong>📊 狀態 / Status:</strong> ${r.status || '已預約 / Reserved'}</div>
+      <div class="bilingual-text reservation-item">
+        <div><strong>狀態 / Status:</strong> ${r.status || '已預約 / Reserved'}</div>
       </div>
       <button class="cancel-btn" onclick="cancelReservation('${reservationId}')">
         <div class="bilingual-text">
