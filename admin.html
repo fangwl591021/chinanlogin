@@ -162,27 +162,58 @@ let allData=[];
 
 async function init(){
   try{
+    console.log('🔍 開始初始化 LIFF...');
     await liff.init({liffId:LIFF_ID});
+    console.log('✅ LIFF 初始化成功');
+    
     if(!liff.isLoggedIn()){
+      console.log('🔐 用戶未登入，顯示登入畫面');
       document.getElementById('loadingScreen').style.display='none';
       document.getElementById('loginScreen').style.display='flex';
       return;
     }
 
     const profile=await liff.getProfile();
-    const roleRes=await fetch(`${WORKER_URL}?mode=getRole&userId=${profile.userId}`);
-    const roleData=await roleRes.json();
+    console.log('👤 用戶資料:', profile);
+    
+    // 方法1: 使用 check 模式來獲取用戶資料（包含 role）
+    const checkUrl = `${WORKER_URL}?mode=check&userId=${profile.userId}`;
+    console.log('🔑 用戶檢查 URL:', checkUrl);
+    
+    const checkRes = await fetch(checkUrl);
+    console.log('📡 用戶檢查回應狀態:', checkRes.status);
+    
+    const userData = await checkRes.json();
+    console.log('🎯 用戶檢查結果:', userData);
 
-    if(roleData.role!=='admin'){
+    // 檢查用戶是否有 admin 權限
+    let isAdmin = false;
+    
+    if (userData.registered) {
+      // 從用戶資料中檢查 role
+      if (userData.user && userData.user.role === 'admin') {
+        isAdmin = true;
+        console.log('✅ 用戶是管理員');
+      } else {
+        console.log('❌ 用戶不是管理員或 role 欄位不存在');
+        console.log('用戶資料:', userData.user);
+      }
+    } else {
+      console.log('❌ 用戶未註冊');
+    }
+
+    if (!isAdmin) {
+      console.log('🚫 用戶無管理員權限，顯示無權限畫面');
       document.getElementById('loadingScreen').style.display='none';
       document.getElementById('noAuthScreen').style.display='flex';
       return;
     }
 
+    console.log('✅ 權限驗證通過，顯示主畫面');
     document.getElementById('loadingScreen').style.display='none';
     document.getElementById('app').style.display='block';
-    document.getElementById('userName').textContent=profile.displayName+' (管理員)';
-    document.getElementById('userPicture').src=profile.pictureUrl;
+    document.getElementById('userName').textContent = profile.displayName + ' (管理員)';
+    document.getElementById('userPicture').src = profile.pictureUrl;
 
     setupNav();
 
@@ -196,8 +227,14 @@ async function init(){
       await loadRules();
       await loadDashboardStats();
     },1500);
+
   }catch(e){
-    console.error(e);
+    console.error('❌ 初始化錯誤:', e);
+    console.error('錯誤詳細資訊:', {
+      message: e.message,
+      stack: e.stack,
+      name: e.name
+    });
     showToast('⚠️ 初始化錯誤','error');
   }
 }
