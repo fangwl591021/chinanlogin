@@ -191,19 +191,35 @@ async function init(){
     let isAdmin = false;
     let debugMsg = '';
     
+    // 臨時測試：允許特定用戶 ID 直接通過
+    const allowedUserIds = [
+      'Ue7a07fe317565389fbf447917208f87' // Tonyfang
+    ];
+    
+    if (allowedUserIds.includes(profile.userId)) {
+      isAdmin = true;
+      console.log('✅ 臨時白名單通過');
+    }
     // 檢查 check 模式的回應
-    if (userData.registered && userData.user) {
+    else if (userData.registered && userData.user) {
       console.log('✓ 用戶已註冊');
       console.log('- userId:', userData.user.userId);
       console.log('- name:', userData.user.name);
       console.log('- role:', userData.user.role);
+      console.log('- isAdmin:', userData.user.isAdmin);
       
-      if (userData.user.role === 'admin') {
+      // 新增：檢查 isAdmin 欄位（來自 Google Sheets I 欄）
+      if (userData.user.isAdmin === true || userData.user.isAdmin === 'TRUE' || userData.user.isAdmin === '1') {
         isAdmin = true;
-        console.log('✅ 用戶是管理員');
+        console.log('✅ 用戶是管理員 (isAdmin 欄位)');
+      }
+      // 原有：檢查 role 欄位（向下相容）
+      else if (userData.user.role === 'admin') {
+        isAdmin = true;
+        console.log('✅ 用戶是管理員 (role 欄位)');
       } else {
         console.log('❌ 用戶不是管理員');
-        debugMsg = `您的帳號角色：${userData.user.role || '(無)'}\n需要角色：admin`;
+        debugMsg = `您的帳號角色：${userData.user.role || '(無)'}\nisAdmin: ${userData.user.isAdmin || '(無)'}\n需要：admin 或 isAdmin=true`;
       }
     } else {
       console.log('❌ 用戶未註冊或資料不完整');
