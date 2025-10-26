@@ -220,15 +220,70 @@ async function loadDashboardStats(){
   }catch(e){console.warn('統計資料載入失敗');}
 }
 
-// 查詢表格
-async function loadReservations(){
-  try{
-    const res=await fetch(`${WORKER_URL}?mode=reservations`);
-    const json=await res.json();
-    allData=json.reservations||[];
+/* 📊 載入預約資料（顯示 A, B, D, E, F, H 欄） */
+async function loadReservations() {
+  const tbody = document.getElementById('tbl');
+  tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">🔄 查詢中...</td></tr>`;
+
+  try {
+    const res = await fetch(`${WORKER_URL}?mode=reservations`);
+    const json = await res.json();
+
+    if (!json || !json.reservations) {
+      tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">⚠️ 無法取得預約資料</td></tr>`;
+      return;
+    }
+
+    const data = json.reservations.map(r => ({
+      date: r.A || r.date || '',
+      route: r.B || r.route || '',
+      name: r.D || r.name || '',
+      phone: r.E || r.phone || '',
+      status: r.F || r.status || '',
+      note: r.H || r.note || ''
+    }));
+
+    allData = data.sort((a, b) => {
+      if (a.date < b.date) return 1;
+      if (a.date > b.date) return -1;
+      const order = ['A1', 'A2', 'B1', 'B2'];
+      return order.indexOf(a.route) - order.indexOf(b.route);
+    });
+
     renderTable(allData);
-  }catch(e){showToast('❌ 資料載入失敗','error');}
+  } catch (e) {
+    console.error('❌ 查詢錯誤', e);
+    tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">❌ 查詢失敗，請稍後再試</td></tr>`;
+  }
 }
+
+/* 🧾 渲染查詢結果 */
+function renderTable(data) {
+  const tbody = document.getElementById('tbl');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-400">沒有符合條件的紀錄</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = data.map(r => {
+    let cls = r.status.includes('取消')
+      ? 'status-cancel'
+      : r.status.includes('搭乘')
+      ? 'status-ok'
+      : 'status-wait';
+    return `
+      <tr class="border-b hover:bg-green-50 transition">
+        <td class="p-2">${r.date}</td>
+        <td class="p-2">${r.route}</td>
+        <td class="p-2">${r.name}</td>
+        <td class="p-2">${r.phone}</td>
+        <td class="p-2 ${cls}">${r.status}</td>
+        <td class="p-2">${r.note}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
 
 function renderTable(data){
   const tbody=document.getElementById('tbl');
