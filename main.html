@@ -695,7 +695,10 @@ function selectDate(dateStr){
        <div class="english-text">✅ Selected: ${dateStr}</div>
      </div>`;
   
-  showRoutes();
+  // 🔄 强制重新载入系统设定以确保使用最新值
+  fetchSystemRules().then(() => {
+    showRoutes();
+  });
   
   document.getElementById('fromStopSection').style.display = 'none';
   document.getElementById('toStopSection').style.display = 'none';
