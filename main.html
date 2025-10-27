@@ -174,12 +174,9 @@ select {
 .reservation-item {
   margin-bottom: 8px;
 }
-</style>
 
 /* ==================== 顏色修正 ==================== */
-/* 覆蓋原本的全域白色設定 */
-
-/* ✅ Header 和按鈕 = 白色 (保持不變) */
+/* ✅ Header 和按鈕 = 白色 */
 header .chinese-text,
 header .english-text,
 .btn-large .chinese-text,
@@ -224,6 +221,52 @@ h3 .english-text,
 .resv-card .reservation-item .english-text {
   color: #666 !important;
 }
+
+/* ==================== 路線按鈕顏色修正 ==================== */
+/* 未選擇的按鈕（白色背景）- 文字深色 */
+.route-btn {
+  color: #333;
+}
+
+.route-btn > div:first-child {
+  color: #333 !important;  /* 班次名稱 */
+  font-weight: bold;
+}
+
+.route-btn > div:not(:first-child) > div {
+  color: #666 !important;  /* 中文路線 */
+}
+
+.route-btn > div:not(:first-child) > div:last-child {
+  color: #888 !important;  /* 英文路線 */
+}
+
+/* 選中的按鈕（綠色背景）- 文字白色 */
+.route-btn.selected {
+  color: white;
+}
+
+.route-btn.selected > div:first-child {
+  color: white !important;  /* 班次名稱 */
+}
+
+.route-btn.selected > div:not(:first-child) > div {
+  color: white !important;  /* 中文路線 */
+  opacity: 0.9;
+}
+
+.route-btn.selected > div:not(:first-child) > div:last-child {
+  color: white !important;  /* 英文路線 */
+  opacity: 0.8;
+}
+
+/* ==================== 通知框顏色修正 ==================== */
+/* 淺綠色通知框（已選擇日期）- 深綠色文字 */
+.notice.success .chinese-text,
+.notice.success .english-text {
+  color: #2e7d32 !important;  /* 深綠色，在淺綠背景上清晰 */
+}
+</style>
 </head>
 
 <body>
