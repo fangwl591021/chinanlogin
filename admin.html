@@ -200,18 +200,19 @@ async function init(){
       console.log('- isAdmin type:', typeof userData.user.isAdmin);
       
       // 檢查 isAdmin 欄位（來自 Google Sheets I 欄）
-      // 支援多種格式: true, "TRUE", "true", 1, "1"
+      // 支援多種格式: true, "TRUE", "true", 1, "1", "admin"
       const adminValue = userData.user.isAdmin;
       if (adminValue === true || 
           adminValue === 'TRUE' || 
           adminValue === 'true' ||
           adminValue === 1 || 
-          adminValue === '1') {
+          adminValue === '1' ||
+          adminValue === 'admin') {
         isAdmin = true;
         console.log('✅ 用戶是管理員 (isAdmin 欄位檢查通過)');
       } else {
         console.log('❌ 用戶不是管理員');
-        debugMsg = `isAdmin 欄位值: ${JSON.stringify(adminValue)}\n需要: true/TRUE/1`;
+        debugMsg = `isAdmin 欄位值: ${JSON.stringify(adminValue)}\n需要: true/TRUE/1/admin`;
       }
     } else {
       console.log('❌ 用戶未註冊或資料不完整');
