@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v6.4</title>
+<title>穿山甲專車後台 v6.3.5</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -11,7 +11,7 @@ body { font-family:"Noto Sans TC",system-ui,sans-serif;background:#f8fafc;margin
 #loadingScreen,#loginScreen,#noAuthScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#f8fafc;flex-direction:column;text-align:center;}
 #loginScreen,#noAuthScreen{display:none;}
 #app{display:none;}
-#topBar{position:sticky;top:0;background:#3c8050;color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;z-index:100;}
+#topBar{position:sticky;top:0;background:#3c8050;color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;}
 #userInfo{display:flex;align-items:center;gap:10px;}
 #userPicture{width:40px;height:40px;border-radius:50%;border:2px solid white;}
 .nav-btn{flex:1;padding:10px 0;text-align:center;font-size:12px;font-weight:600;cursor:pointer;color:#666;}
@@ -28,16 +28,6 @@ body { font-family:"Noto Sans TC",system-ui,sans-serif;background:#f8fafc;margin
 .status-ok{color:#16a34a;font-weight:bold;}
 .status-cancel{color:#dc2626;font-weight:bold;}
 .status-wait{color:#ca8a04;font-weight:bold;}
-/* 優化表格樣式 */
-.data-table{width:100%;font-size:13px;border-collapse:collapse;}
-.data-table th{background:#3c8050;color:white;padding:8px 6px;text-align:left;font-weight:600;position:sticky;top:0;}
-.data-table td{padding:8px 6px;border-bottom:1px solid #e5e7eb;}
-.data-table tr:hover{background:#f0fdf4;}
-/* 讓日期欄位窄一點 */
-.col-date{width:80px;white-space:nowrap;}
-.col-route{width:130px;}
-.col-name{width:auto;min-width:80px;}
-.col-status{width:60px;text-align:center;}
 </style>
 </head>
 
@@ -59,43 +49,36 @@ body { font-family:"Noto Sans TC",system-ui,sans-serif;background:#f8fafc;margin
   <p class="text-sm text-gray-500 mt-4">請在 LINE App 中開啟此頁面</p>
 </div>
 
-<!-- 🚫 無權限畫面 -->
+<!-- 🚫 無權限提示 -->
 <div id="noAuthScreen">
   <div class="text-5xl mb-4">🚫</div>
   <div class="text-2xl font-bold text-red-800 mb-2">無權限使用此頁面</div>
   <p class="text-gray-600 mb-4">請使用管理員帳號登入或聯絡系統管理員。</p>
-  <div id="debugInfo" class="text-sm text-left bg-gray-100 p-4 rounded mb-4 max-w-md"></div>
-  <button id="reLogin" class="bg-gray-600 text-white px-6 py-3 rounded-lg">重新登入</button>
+  <div id="debugInfo" class="text-xs text-gray-500 bg-gray-100 p-3 rounded mt-4 text-left max-w-md"></div>
+  <button id="reLogin" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded mt-4">重新登入</button>
 </div>
 
-<!-- 🎛 主畫面 -->
+<!-- ✅ 主畫面 -->
 <div id="app">
   <div id="topBar">
+    <div class="font-bold text-lg">🚌 穿山甲後台系統</div>
     <div id="userInfo">
-      <img id="userPicture" src="" alt="頭像"/>
+      <img id="userPicture" src="">
       <span id="userName">載入中...</span>
+      <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm ml-2">登出</button>
     </div>
-    <button id="logoutBtn" class="bg-red-600 px-3 py-1 rounded text-sm">登出</button>
   </div>
 
-  <main style="padding-bottom:80px;">
+  <main>
     <!-- 📊 儀表板 -->
     <section id="dashboard" class="section active">
-      <div class="card">
-        <h2 class="section-title">📊 今日統計</h2>
-        <div class="grid grid-cols-3 gap-3 text-center">
-          <div class="bg-green-50 p-3 rounded">
-            <div class="text-2xl font-bold text-green-700" id="todayCount">-</div>
-            <div class="text-xs text-gray-600">今日預約</div>
-          </div>
-          <div class="bg-red-50 p-3 rounded">
-            <div class="text-2xl font-bold text-red-700" id="cancelCount">-</div>
-            <div class="text-xs text-gray-600">已取消</div>
-          </div>
-          <div class="bg-blue-50 p-3 rounded">
-            <div class="text-2xl font-bold text-blue-700" id="checkinCount">-</div>
-            <div class="text-xs text-gray-600">已核銷</div>
-          </div>
+      <div class="card text-center">
+        <h2 class="section-title">📊 營運儀表板</h2>
+        <p class="text-gray-600 mb-4">歡迎使用穿山甲後台系統</p>
+        <div id="statsArea" class="grid grid-cols-3 gap-4">
+          <div class="bg-green-100 p-4 rounded-lg"><p>今日預約</p><p id="todayCount" class="text-2xl font-bold text-green-700">-</p></div>
+          <div class="bg-red-100 p-4 rounded-lg"><p>已取消</p><p id="cancelCount" class="text-2xl font-bold text-red-700">-</p></div>
+          <div class="bg-blue-100 p-4 rounded-lg"><p>已搭乘</p><p id="checkinCount" class="text-2xl font-bold text-blue-700">-</p></div>
         </div>
       </div>
     </section>
@@ -103,27 +86,17 @@ body { font-family:"Noto Sans TC",system-ui,sans-serif;background:#f8fafc;margin
     <!-- 🧾 查詢 -->
     <section id="query" class="section">
       <div class="card">
-        <div class="flex justify-between items-center mb-3">
-          <h2 class="section-title mb-0">🧾 預約查詢</h2>
-          <button id="refreshBtn" class="bg-green-600 text-white px-3 py-1 rounded text-sm font-bold hover:bg-green-700 transition flex items-center gap-1">
-            <span id="refreshIcon">🔄</span>
-            <span>重新整理</span>
-          </button>
-        </div>
-        <input
-          id="search"
-          type="text"
-          placeholder="搜尋姓名、班次或日期..."
-          class="border border-gray-300 rounded px-3 py-2 w-full mb-3 focus:outline-none focus:ring-2 focus:ring-green-600"
-        />
-        <div style="overflow-x:auto;">
-          <table class="data-table">
-            <thead>
+        <h2 class="section-title">🧾 預約查詢</h2>
+        <input type="text" id="search" placeholder="搜尋姓名、班次或日期..." 
+               class="border border-gray-300 rounded-md p-2 w-full mb-3">
+        <div id="tableContainer" style="overflow-x:auto;">
+          <table class="min-w-full text-sm">
+            <thead class="bg-green-700 text-white sticky top-0">
               <tr>
-                <th class="col-date">日期</th>
-                <th class="col-route">班次</th>
-                <th class="col-name">姓名</th>
-                <th class="col-status">狀態</th>
+                <th class="p-2">日期</th>
+                <th class="p-2">班次</th>
+                <th class="p-2">姓名</th>
+                <th class="p-2">狀態</th>
               </tr>
             </thead>
             <tbody id="tbl"></tbody>
@@ -185,85 +158,8 @@ body { font-family:"Noto Sans TC",system-ui,sans-serif;background:#f8fafc;margin
 
 <script>
 const WORKER_URL='https://delicate-math-7e61.fangwl591021.workers.dev/';
-const LIFF_ID = '2006590746-wgL4l54z';
+const LIFF_ID = '2006590746-wgL4l54z'; // ADMIN 後台專用 LIFF ID (注意是小寫 L)
 let allData=[];
-
-// ✅ 修正：格式化日期函數 - 只顯示 YYYY-MM-DD
-function formatDate(dateStr) {
-  if (!dateStr) return '-';
-  
-  try {
-    // 移除所有時間和時區資訊，只保留日期部分
-    let cleanDate = String(dateStr).trim();
-    
-    // 處理完整的日期時間字串（例如：Wed Oct 29 2025 00:00:00 GMT+0800 (台北標準時間)）
-    if (cleanDate.includes('GMT') || cleanDate.includes('標準時間')) {
-      // 使用 Date 物件解析
-      const d = new Date(cleanDate);
-      if (!isNaN(d.getTime())) {
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      }
-    }
-    
-    // 處理 ISO 格式（例如：2025-10-29T00:00:00）
-    if (cleanDate.includes('T')) {
-      return cleanDate.split('T')[0];
-    }
-    
-    // 處理包含空格的格式（例如：2025-10-29 00:00:00）
-    if (cleanDate.includes(' ')) {
-      return cleanDate.split(' ')[0];
-    }
-    
-    // 如果已經是 YYYY-MM-DD 格式，直接回傳
-    if (/^\d{4}-\d{2}-\d{2}$/.test(cleanDate)) {
-      return cleanDate;
-    }
-    
-    // 嘗試用 Date 解析任何其他格式
-    const d = new Date(cleanDate);
-    if (!isNaN(d.getTime())) {
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-    
-    // 如果都失敗，回傳原始值的前10個字元
-    return cleanDate.substring(0, 10);
-  } catch (e) {
-    console.warn('日期格式化失敗:', dateStr, e);
-    return String(dateStr).substring(0, 10);
-  }
-}
-
-// ✅ 修正：簡化路線顯示 - 只顯示班次代碼
-function formatRoute(routeStr) {
-  if (!routeStr) return '-';
-  
-  const str = String(routeStr).trim();
-  
-  // 提取班次代碼（A1, A2, B1, B2）
-  const match = str.match(/^([AB][12])/);
-  if (match) {
-    return match[1]; // 回傳 "A1", "A2", "B1", "B2"
-  }
-  
-  // 如果包含 "|"，取前面部分並去除空白
-  if (str.includes('|')) {
-    const parts = str.split('|');
-    const code = parts[0].trim();
-    // 再次嘗試提取班次代碼
-    const codeMatch = code.match(/([AB][12])/);
-    return codeMatch ? codeMatch[1] : code;
-  }
-  
-  // 回傳原始字串（可能已經是班次代碼）
-  return str.length <= 3 ? str : str.substring(0, 2);
-}
 
 async function init(){
   try{
@@ -281,6 +177,7 @@ async function init(){
     const profile=await liff.getProfile();
     console.log('👤 用戶資料:', profile);
     
+    // 使用 check 模式檢查用戶資料（從 GAS 取得）
     console.log('🔑 正在檢查用戶權限...');
     let checkUrl = `${WORKER_URL}?mode=check&userId=${profile.userId}`;
     console.log('📡 請求 URL:', checkUrl);
@@ -294,12 +191,16 @@ async function init(){
     let isAdmin = false;
     let debugMsg = '';
     
+    // 檢查 check 模式的回應
     if (userData.registered && userData.user) {
       console.log('✓ 用戶已註冊');
       console.log('- userId:', userData.user.userId);
       console.log('- name:', userData.user.name);
       console.log('- isAdmin:', userData.user.isAdmin);
+      console.log('- isAdmin type:', typeof userData.user.isAdmin);
       
+      // 檢查 isAdmin 欄位（來自 Google Sheets I 欄）
+      // 支援多種格式: true, "TRUE", "true", 1, "1", "admin"
       const adminValue = userData.user.isAdmin;
       if (adminValue === true || 
           adminValue === 'TRUE' || 
@@ -308,10 +209,10 @@ async function init(){
           adminValue === '1' ||
           adminValue === 'admin') {
         isAdmin = true;
-        console.log('✅ 用戶是管理員');
+        console.log('✅ 用戶是管理員 (isAdmin 欄位檢查通過)');
       } else {
         console.log('❌ 用戶不是管理員');
-        debugMsg = `isAdmin 欄位值: ${JSON.stringify(adminValue)}`;
+        debugMsg = `isAdmin 欄位值: ${JSON.stringify(adminValue)}\n需要: true/TRUE/1/admin`;
       }
     } else {
       console.log('❌ 用戶未註冊或資料不完整');
@@ -319,20 +220,19 @@ async function init(){
     }
 
     if (!isAdmin) {
-      console.log('🚫 用戶無管理員權限');
+      console.log('🚫 用戶無管理員權限，顯示無權限畫面');
       document.getElementById('loadingScreen').style.display='none';
       document.getElementById('noAuthScreen').style.display='flex';
       document.getElementById('debugInfo').innerHTML = `
         <strong>除錯資訊：</strong><br>
         用戶名稱：${profile.displayName}<br>
         用戶 ID：${profile.userId}<br>
-        用戶狀態：${userData.registered ? '未註冊' : '未註冊'}<br>
         ${debugMsg}
       `;
       return;
     }
 
-    console.log('✅ 權限驗證通過');
+    console.log('✅ 權限驗證通過，顯示主畫面');
     document.getElementById('loadingScreen').style.display='none';
     document.getElementById('app').style.display='block';
     document.getElementById('userName').textContent = profile.displayName + ' (管理員)';
@@ -347,7 +247,7 @@ async function init(){
       await loadReservations();
       await loadRules();
       await loadDashboardStats();
-    },500);
+    },1500);
 
   }catch(e){
     console.error('❌ 初始化錯誤:', e);
@@ -378,15 +278,7 @@ async function loadDashboardStats(){
 
 async function loadReservations() {
   const tbody = document.getElementById('tbl');
-  // ✅ 加入更明顯的 loading 動畫
-  tbody.innerHTML = `
-    <tr>
-      <td colspan="4" class="p-6 text-center">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-2"></div>
-        <div class="text-gray-600 font-medium">🔄 正在重新載入資料...</div>
-      </td>
-    </tr>
-  `;
+  tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">🔄 查詢中...</td></tr>`;
 
   try {
     console.log('🚀 開始載入預約資料...');
@@ -411,10 +303,9 @@ async function loadReservations() {
       return;
     }
 
-    // ✅ 優化：格式化日期和路線
     const data = list.map(r => ({
-      date: formatDate(r.date),           // 只顯示年月日
-      route: formatRoute(r.route),        // 只顯示班次代碼
+      date: r.date || '',
+      route: r.route || '',
       name: r.name || '',
       status: r.status || ''
     }));
@@ -430,9 +321,7 @@ async function loadReservations() {
     validData.sort((a, b) => {
       if (a.date < b.date) return 1;
       if (a.date > b.date) return -1;
-      const routeA = a.route.split(' ')[0]; // 提取 "A1" 等
-      const routeB = b.route.split(' ')[0];
-      return (order[routeA] || 99) - (order[routeB] || 99);
+      return (order[a.route] || 99) - (order[b.route] || 99);
     });
 
     renderTable(validData);
@@ -462,11 +351,11 @@ function renderTable(data) {
       : 'status-wait';
     
     return `
-      <tr>
-        <td class="col-date">${r.date || '-'}</td>
-        <td class="col-route">${r.route || '-'}</td>
-        <td class="col-name">${r.name || '-'}</td>
-        <td class="col-status ${cls}">${r.status || '-'}</td>
+      <tr class="border-b hover:bg-green-50 transition">
+        <td class="p-2">${r.date || '-'}</td>
+        <td class="p-2">${r.route || '-'}</td>
+        <td class="p-2">${r.name || '-'}</td>
+        <td class="p-2 ${cls}">${r.status || '-'}</td>
       </tr>`;
   }).join('');
 }
@@ -490,94 +379,64 @@ document.getElementById('search').addEventListener('input', e => {
 async function loadRules(){
   try {
     const res = await fetch(`${WORKER_URL}?mode=getRules`);
-    if (!res.ok) throw new Error('無法取得規則');
-    const data = await res.json();
-    if (data.ok && data.rules) {
-      document.getElementById('seatLimit').value = data.rules.seatLimit || 15;
-      document.getElementById('maxNoShow').value = data.rules.maxNoShow || 3;
-      document.getElementById('banWeeks').value = data.rules.banWeeks || 2;
-      document.getElementById('tripMode').value = data.rules.tripMode || 'single';
-    }
+    const json = await res.json();
+    const r = json.current || {};
+    
+    document.getElementById('seatLimit').value = r.seatLimit || '';
+    document.getElementById('maxNoShow').value = r.maxNoShow || '';
+    document.getElementById('banWeeks').value = r.banWeeks || '';
+    document.getElementById('tripMode').value = r.tripMode || 'single';
+    document.getElementById('ruleMeta').textContent = `最後更新：${r.lastUpdate || '未知'}`;
   } catch (e) {
-    console.warn('規則載入失敗:', e);
+    console.error('載入設定失敗:', e);
+    showToast('❌ 載入設定失敗', 'error');
   }
 }
 
 document.getElementById('saveRules').addEventListener('click', async () => {
+  const body = {
+    seatLimit: +document.getElementById('seatLimit').value,
+    maxNoShow: +document.getElementById('maxNoShow').value,
+    banWeeks: +document.getElementById('banWeeks').value,
+    tripMode: document.getElementById('tripMode').value
+  };
+  
   try {
-    const rules = {
-      seatLimit: parseInt(document.getElementById('seatLimit').value),
-      maxNoShow: parseInt(document.getElementById('maxNoShow').value),
-      banWeeks: parseInt(document.getElementById('banWeeks').value),
-      tripMode: document.getElementById('tripMode').value
-    };
-    
     const res = await fetch(`${WORKER_URL}?mode=updateRules`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(rules)
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
     });
+    const json = await res.json();
     
-    if (!res.ok) throw new Error('更新失敗');
-    showToast('✅ 設定已儲存', 'success');
-  } catch (e) {
-    console.error('儲存失敗:', e);
-    showToast('❌ 儲存失敗', 'error');
+    if(json.status === 'success') {
+      showToast('✅ 已成功更新設定');
+      await loadRules();
+    } else {
+      showToast('❌ 更新失敗', 'error');
+    }
+  } catch(e) {
+    console.error('更新設定失敗:', e);
+    showToast('❌ 連線錯誤', 'error');
   }
 });
 
-document.getElementById('goCheckin').addEventListener('click', () => {
-  liff.openWindow({
-    url: 'https://liff.line.me/2006590746-G7B12a1K',
-    external: false
-  });
-});
-
-// ✅ 重新整理按鈕
-document.getElementById('refreshBtn').addEventListener('click', async () => {
-  const icon = document.getElementById('refreshIcon');
-  const btn = document.getElementById('refreshBtn');
-  
-  // 按鈕禁用並顯示載入中
-  btn.disabled = true;
-  btn.classList.add('opacity-50', 'cursor-not-allowed');
-  icon.classList.add('inline-block', 'animate-spin');
-  
-  try {
-    await loadReservations();
-  } finally {
-    // 恢復按鈕狀態
-    btn.disabled = false;
-    btn.classList.remove('opacity-50', 'cursor-not-allowed');
-    icon.classList.remove('inline-block', 'animate-spin');
-  }
-});
-
-function setupNav() {
-  document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const target = btn.getAttribute('data-sec');
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+function setupNav(){
+  document.querySelectorAll('.nav-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-      document.getElementById(target).classList.add('active');
-      
-      // ✅ 當切換到查詢分頁時，重新載入資料
-      if (target === 'query') {
-        console.log('🔄 切換到查詢分頁，重新載入資料');
-        await loadReservations();
-      }
-      
-      // ✅ 當切換到儀表板時，重新載入統計
-      if (target === 'dashboard') {
-        console.log('🔄 切換到儀表板，重新載入統計');
-        await loadDashboardStats();
-      }
+      document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+      document.getElementById(btn.dataset.sec).classList.add('active');
     });
+  });
+  
+  document.getElementById('goCheckin').addEventListener('click',()=>{
+    liff.openWindow({url:'https://liff.line.me/2006590746-G7B12a1K',external:false});
   });
 }
 
-liff.ready.then(() => init());
+init();
 </script>
 </body>
 </html>
