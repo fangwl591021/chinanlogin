@@ -212,43 +212,7 @@ async function saveRules(){
   }catch(e){
     alert('❌ 更新錯誤：' + e.message);
   }
-}<script>
-async function saveRules(){
-  if(!isAdmin){
-    alert('🚫 您沒有修改權限');
-    return;
-  }
-
-  const body = {
-    mode: 'updateRules',   // ✅ 新增：明確標示更新模式
-    seatLimit: parseInt(document.getElementById('seatLimit').value),
-    maxNoShow: parseInt(document.getElementById('maxNoShow').value),
-    banWeeks: parseInt(document.getElementById('banWeeks').value),
-    tripMode: document.getElementById('tripMode').value,
-    updatedBy: currentUserId,
-    lastUpdate: new Date().toISOString()
-  };
-
-  try{
-    const res = await fetch(CONFIG.WORKER_URL + '?mode=updateRules', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(body)
-    });
-    const json = await res.json();
-    if(json.status === 'success'){
-      showToast('✅ 已更新設定');
-      await loadRules();
-    }else{
-      alert('❌ 更新失敗：' + (json.message || '未知錯誤'));
-      console.log('GAS回傳：', json);
-    }
-  }catch(e){
-    alert('❌ 更新錯誤：' + e.message);
-  }
 }
-</script>
-
 
 // === 除錯功能：顯示完整 JSON ===
 async function debugRules(){
