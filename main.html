@@ -42,7 +42,6 @@ main { flex: 1; padding-bottom: 40px; }
   margin-bottom: 20px;
 }
 
-/* ⭐ 新增：星期標題樣式 */
 .calendar-header {
   padding: 8px 0;
   font-weight: bold;
@@ -68,21 +67,18 @@ main { flex: 1; padding-bottom: 40px; }
 }
 .calendar-day:hover { background: #eaf5ea; }
 
-/* ⭐ 新增：過去日期樣式 */
 .calendar-day.past { 
   background: #f5f5f5; 
   color: #ccc; 
   cursor: not-allowed; 
 }
 
-/* ⭐ 更新：停駛日樣式 */
 .calendar-day.disabled { 
   background: #f8f9fa; 
   color: #999; 
   cursor: not-allowed;
 }
 
-/* ⭐ 新增：已預約樣式 */
 .calendar-day.booked {
   background: #e0e8ff;
   border: 1px solid #b3c6ff;
@@ -90,12 +86,10 @@ main { flex: 1; padding-bottom: 40px; }
   cursor: not-allowed;
 }
 
-/* ⭐ 新增：週末樣式 */
 .calendar-day.weekend {
   background: #fff8e1;
 }
 
-/* ⭐ 新增：未開放樣式 */
 .calendar-day.not-open {
   background: #f8f9fa;
   color: #999;
@@ -108,7 +102,6 @@ main { flex: 1; padding-bottom: 40px; }
   font-weight: bold; 
 }
 
-/* ⭐ 新增：其他月份的日期 */
 .calendar-day.other-month { 
   color: #ccc; 
   background: #fafafa;
@@ -117,7 +110,14 @@ main { flex: 1; padding-bottom: 40px; }
 
 /* ==================== 班次選擇 ==================== */
 .route-section, .stop-selector { padding: 0 16px; margin: 20px 0; }
-.route-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* 修改：班次按鈕改為 2x2 網格 */
+.route-buttons { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 10px; 
+}
+
 .route-btn {
   padding: 12px;
   border: 2px solid #3c8050;
@@ -164,9 +164,10 @@ select {
 }
 
 /* ==================== 按鈕群組 ==================== */
+/* 修改：改為左右排列（2個按鈕） */
 .btn-group {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
   padding: 0 16px;
   margin: 16px 0;
@@ -198,14 +199,6 @@ select {
   background: #1565c0;
 }
 
-.btn-refresh {
-  background: #f57c00;
-  color: white;
-}
-.btn-refresh:hover {
-  background: #ef6c00;
-}
-
 .month-nav-btn {
   background: #3c8050;
   color: white;
@@ -219,7 +212,7 @@ select {
   background: #2d6140;
 }
 
-/* ==================== 預約卡片 ==================== */
+/* ==================== 預約卡片（按照圖片格式修改） ==================== */
 .cancel-btn {
   background: #c62828; 
   color: white; 
@@ -240,32 +233,50 @@ select {
   padding: 16px;
   margin: 12px 16px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border: 1px solid #e0e0e0;
 }
 
-.resv-card-header {
-  background: #3c8050;
-  color: white;
-  padding: 12px;
-  border-radius: 8px 8px 0 0;
-  margin: -16px -16px 12px -16px;
-  font-weight: bold;
-  text-align: center;
-}
-
+/* 修改：預約項目格式按照圖片 */
 .reservation-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
+  padding: 10px 0;
   border-bottom: 1px solid #f0f0f0;
+  font-size: 15px;
+  line-height: 1.6;
 }
 
-.reservation-item:last-child {
+.reservation-item:last-of-type {
   border-bottom: none;
 }
 
-.reservation-item strong {
+.reservation-label {
   color: #666;
-  min-width: 80px;
+  font-size: 14px;
+}
+
+.reservation-value {
+  color: #333;
+  font-weight: normal;
+  font-size: 15px;
+}
+
+/* 狀態標籤 */
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: bold;
+  margin-top: 5px;
+}
+
+.status-active {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-cancelled {
+  background: #ffebee;
+  color: #c62828;
 }
 
 /* ==================== 雙語文字 ==================== */
@@ -285,7 +296,6 @@ select {
   margin-top: 2px;
 }
 
-/* 標題中的雙語文字 */
 header .chinese-text {
   color: white;
   font-size: 22px;
@@ -296,7 +306,6 @@ header .english-text {
   font-size: 14px;
 }
 
-/* 按鈕中的雙語文字 */
 .btn-large .chinese-text,
 .submit-btn .chinese-text,
 .cancel-btn .chinese-text {
@@ -311,7 +320,6 @@ header .english-text {
   font-size: 11px;
 }
 
-/* 路線按鈕中的雙語文字 */
 .route-btn .chinese-text {
   color: #333;
   font-size: 14px;
@@ -327,7 +335,6 @@ header .english-text {
   color: white !important;
 }
 
-/* 通知框中的雙語文字 */
 .notice .chinese-text {
   font-size: 14px;
 }
@@ -359,10 +366,6 @@ header .english-text {
   .btn-group {
     grid-template-columns: 1fr;
   }
-  
-  .route-buttons {
-    grid-template-columns: 1fr;
-  }
 }
 </style>
 </head>
@@ -383,11 +386,12 @@ header .english-text {
     </div>
   </div>
 
+  <!-- 修改：只保留兩個按鈕 -->
   <div class="btn-group">
     <button id="calendarBtn" class="btn-large btn-calendar" onclick="toggleCalendar()">
       <div class="bilingual-text">
-        <div class="chinese-text">📅 打開月曆</div>
-        <div class="english-text">Open Calendar</div>
+        <div class="chinese-text">📅 關閉月曆</div>
+        <div class="english-text">Close Calendar</div>
       </div>
     </button>
     <button id="ruleBtn" class="btn-large btn-rule" onclick="showRules()">
@@ -396,29 +400,13 @@ header .english-text {
         <div class="english-text">Reservation Rules</div>
       </div>
     </button>
-    <button id="refreshBtn" class="btn-large btn-refresh" onclick="refreshSystem()">
-      <div class="bilingual-text">
-        <div class="chinese-text">🔄 刷新設定</div>
-        <div class="english-text">Refresh Settings</div>
-      </div>
-    </button>
   </div>
 
-  <div id="calendarContainer" style="display:none;margin-top:10px;padding:0 16px">
+  <div id="calendarContainer" style="display:block;margin-top:10px;padding:0 16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <button class="month-nav-btn" onclick="changeMonth(-1)">
-        <div class="bilingual-text">
-          <div class="chinese-text">◀ 上個月</div>
-          <div class="english-text">Prev Month</div>
-        </div>
-      </button>
+      <button class="month-nav-btn" onclick="changeMonth(-1)">◀ 上個月 / Prev</button>
       <h3 id="calendarTitle" class="bilingual-text" style="margin:0;font-size:16px;"></h3>
-      <button class="month-nav-btn" onclick="changeMonth(1)">
-        <div class="bilingual-text">
-          <div class="chinese-text">下個月 ▶</div>
-          <div class="english-text">Next Month</div>
-        </div>
-      </button>
+      <button class="month-nav-btn" onclick="changeMonth(1)">下個月 / Next ▶</button>
     </div>
     <div id="calendar" class="calendar"></div>
   </div>
@@ -546,10 +534,6 @@ const STOPS = {
   ]
 };
 
-// 複製 A1/B1 的站點到 A2/B2（相同路線）
-STOPS.A2 = STOPS.A1;
-STOPS.B2 = STOPS.B1;
-
 // ============================ 全域變數 ============================
 let userData = null;
 let existingReservations = [];
@@ -558,14 +542,14 @@ let selectedRoute = null;
 let currentYear = new Date().getFullYear();
 let currentMonth = new Date().getMonth();
 let disabledDates = [];
-let maxCapacity = 45; // 預設值，會從設定檔讀取
-let systemRules = {}; // 儲存完整的系統規則
+let maxCapacity = 45;
+let systemRules = {};
 
 // ============================ 預約規則 ============================
 const RESERVATION_RULES = {
-  maxPerDay: 1,           // 每天最多預約數
-  dailyDeadline: '19:00', // 當日預約截止時間
-  maxDaysAhead: 7         // 最多可預約幾天後
+  maxPerDay: 1,
+  dailyDeadline: '19:00',
+  maxDaysAhead: 7
 };
 
 // ============================ 初始化 ============================
@@ -584,7 +568,6 @@ async function init() {
     const profile = await liff.getProfile();
     console.log('👤 LINE 用戶資料:', profile);
 
-    // ⭐ 正確的 API 格式
     const checkRes = await fetch(`${WORKER_URL}?mode=check&userId=${profile.userId}`).then(r => r.json());
     
     if (!checkRes.registered) {
@@ -599,14 +582,15 @@ async function init() {
 
     renderUser(userData);
     
-    // 並行載入資料
     await Promise.all([
       fetchReservations(),
       fetchDisabledDates(),
       fetchSystemRules()
     ]);
     
-    // 定期刷新系統設定（每30秒）
+    // 初始化時立即渲染月曆
+    renderCalendar();
+    
     setInterval(async () => {
       await fetchSystemRules();
       if (selectedDate) {
@@ -636,7 +620,6 @@ async function init() {
   }
 }
 
-// ============================ 用戶資料渲染 ============================
 function renderUser(user) {
   document.getElementById('userInfo').innerHTML = `
     <div style="text-align:center">
@@ -646,7 +629,6 @@ function renderUser(user) {
   `;
 }
 
-// ============================ 載入預約資料 ============================
 async function fetchReservations() {
   try {
     const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
@@ -664,7 +646,6 @@ async function fetchReservations() {
   }
 }
 
-// ============================ 載入停駛日 ============================
 async function fetchDisabledDates() {
   try {
     const res = await fetch(`${WORKER_URL}?mode=calendar`);
@@ -681,7 +662,6 @@ async function fetchDisabledDates() {
   }
 }
 
-// ============================ 載入系統設定 ============================
 async function fetchSystemRules() {
   try {
     const res = await fetch(`${WORKER_URL}?mode=getRules`);
@@ -690,9 +670,7 @@ async function fetchSystemRules() {
       systemRules = data.current;
       maxCapacity = data.current.seatLimit || 45;
       console.log('⚙️ 系統設定載入成功，每班次最大座位數:', maxCapacity);
-      console.log('📋 完整系統規則:', systemRules);
     } else {
-      console.warn('⚠ 無法取得系統設定，使用預設值 45');
       maxCapacity = 45;
       systemRules = { seatLimit: 45 };
     }
@@ -703,52 +681,12 @@ async function fetchSystemRules() {
   }
 }
 
-// ============================ 手動刷新系統設定 ============================
-async function refreshSystem() {
-  const refreshBtn = document.getElementById('refreshBtn');
-  const originalText = refreshBtn.innerHTML;
-  
-  refreshBtn.innerHTML = `
-    <div class="bilingual-text">
-      <div class="chinese-text"><span class="loading-spinner"></span>刷新中...</div>
-      <div class="english-text"><span class="loading-spinner"></span>Refreshing...</div>
-    </div>
-  `;
-  refreshBtn.disabled = true;
-  
-  try {
-    await fetchSystemRules();
-    if (selectedDate) {
-      showRoutes();
-    }
-    
-    const successMsg = `✅ 系統設定已刷新！
-
-當前每班次座位上限：${maxCapacity}
-未核銷封鎖次數：${systemRules.maxNoShow || 3}
-封鎖週數：${systemRules.banWeeks || 2}
-預約模式：${systemRules.tripMode === 'roundtrip' ? '來回' : '單程'}
-
-✅ System settings refreshed!
-
-Current seat limit: ${maxCapacity}
-Max no-show: ${systemRules.maxNoShow || 3}
-Ban weeks: ${systemRules.banWeeks || 2}
-Trip mode: ${systemRules.tripMode === 'roundtrip' ? 'Round-trip' : 'One-way'}`;
-    
-    alert(successMsg);
-  } catch (e) {
-    alert('❌ 刷新失敗\n❌ Refresh failed');
-  } finally {
-    refreshBtn.innerHTML = originalText;
-    refreshBtn.disabled = false;
-  }
-}
-
 // ============================ 日期工具函數 ============================
-// ⭐ 修復時區問題：使用本地時間
 function formatDateToLocal(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function getMonthName(month) {
@@ -769,9 +707,7 @@ function getDayOfWeek(dateStr) {
 }
 
 // ============================ 預約規則驗證類 ============================
-// ⭐ 從舊版整合完整的驗證邏輯
 class ReservationValidator {
-  // 檢查是否為過去日期
   static isPastDate(dateStr) {
     const [year, month, day] = dateStr.split('-').map(Number);
     const selected = new Date(year, month - 1, day);
@@ -783,12 +719,10 @@ class ReservationValidator {
     return selected < today;
   }
 
-  // 檢查是否為停駛日
   static isNoServiceDate(dateStr) {
     return disabledDates.includes(dateStr);
   }
 
-  // 檢查是否超過預約截止時間
   static isAfterDeadline(dateStr) {
     if (this.isToday(dateStr)) {
       const now = new Date();
@@ -800,7 +734,6 @@ class ReservationValidator {
     return false;
   }
 
-  // 檢查是否在可預約時間範圍內
   static isWithinBookingWindow(dateStr) {
     const [year, month, day] = dateStr.split('-').map(Number);
     const selected = new Date(year, month - 1, day);
@@ -816,13 +749,11 @@ class ReservationValidator {
     return selected >= today && selected <= maxDate;
   }
 
-  // 檢查是否為今天
   static isToday(dateStr) {
     const today = formatDateToLocal(new Date());
     return dateStr === today;
   }
 
-  // 檢查該日是否已有預約
   static hasExistingReservation(userId, dateStr) {
     const userReservations = existingReservations.filter(
       res => res.userId === userId && 
@@ -850,7 +781,6 @@ function toggleCalendar() {
   }
 }
 
-// ⭐ 整合舊版的完整月曆渲染邏輯
 function renderCalendar() {
   const cal = document.getElementById('calendar');
   const title = document.getElementById('calendarTitle');
@@ -868,25 +798,21 @@ function renderCalendar() {
   
   let html = '';
   
-  // ⭐ 星期標題
   ['日', '一', '二', '三', '四', '五', '六'].forEach(d => {
     const engDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const engDay = engDays[['日', '一', '二', '三', '四', '五', '六'].indexOf(d)];
     html += `<div class="calendar-header">${d}<br><small style="font-size: 10px;">${engDay}</small></div>`;
   });
   
-  // 上個月的日期
   for (let i = startWeekday - 1; i >= 0; i--) {
     const day = prevLastDay.getDate() - i;
     html += `<div class="calendar-day other-month">${day}</div>`;
   }
   
-  // ⭐ 本月日期（完整狀態顯示）
   for (let day = 1; day <= daysInMonth; day++) {
     const dateObj = new Date(currentYear, currentMonth, day);
     const dateStr = formatDateToLocal(dateObj);
     
-    // 使用預約規則驗證日期狀態
     const isPast = ReservationValidator.isPastDate(dateStr);
     const isNoService = ReservationValidator.isNoServiceDate(dateStr);
     const isAfterDeadline = ReservationValidator.isAfterDeadline(dateStr);
@@ -895,7 +821,6 @@ function renderCalendar() {
     
     let classes = 'calendar-day';
     
-    // ⭐ 根據狀態顯示不同樣式
     if (hasReservation) {
       classes += ' booked';
       html += `<div class="${classes}">${day}<br><small style="font-size:10px;">您已預約</small><br><small style="color: #666; font-size: 9px;">Booked</small></div>`;
@@ -916,7 +841,6 @@ function renderCalendar() {
         classes += ' selected';
       }
       
-      // ⭐ 週末標記
       const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
       if (isWeekend) {
         classes += ' weekend';
@@ -929,7 +853,6 @@ function renderCalendar() {
     }
   }
   
-  // 下個月的日期
   const remainingDays = 7 - ((startWeekday + daysInMonth) % 7);
   if (remainingDays < 7) {
     for (let i = 1; i <= remainingDays; i++) {
@@ -950,7 +873,6 @@ async function changeMonth(delta) {
     currentYear++;
   }
   
-  // 重新載入停駛日（可能跨月）
   await fetchDisabledDates();
   renderCalendar();
 }
@@ -962,7 +884,6 @@ function selectDate(dateStr) {
     return;
   }
 
-  // 使用預約規則進行完整驗證
   const validation = {
     past: ReservationValidator.isPastDate(dateStr),
     noService: ReservationValidator.isNoServiceDate(dateStr),
@@ -1003,25 +924,18 @@ function selectDate(dateStr) {
 
   selectedDate = dateStr;
   
-  // 更新選擇狀態
   renderCalendar();
   
-  // 顯示選擇的日期
   const weekday = getDayOfWeek(dateStr);
   document.getElementById('selectedDate').style.display = 'block';
   document.getElementById('selectedDate').innerHTML = `
     <div class="bilingual-text">
-      <div class="chinese-text">✅ 已選擇日期：${dateStr} (週${weekday.zh})</div>
-      <div class="english-text">✅ Selected date: ${dateStr} (${weekday.en})</div>
+      <div class="chinese-text">✅ 已選擇：${dateStr} (週${weekday.zh})</div>
+      <div class="english-text">✅ Selected: ${dateStr} (${weekday.en})</div>
     </div>
   `;
   document.getElementById('errorNotice').style.display = 'none';
   
-  // 關閉月曆
-  document.getElementById('calendarContainer').style.display = 'none';
-  document.getElementById('calendarBtn').innerHTML = '<div class="bilingual-text"><div class="chinese-text">📅 打開月曆</div><div class="english-text">Open Calendar</div></div>';
-  
-  // 顯示班次選擇
   showRoutes();
 }
 
@@ -1048,7 +962,6 @@ async function showRoutes() {
   
   let html = '';
   for (const [routeId, route] of Object.entries(ROUTES)) {
-    // ⭐ 使用動態座位數計算剩餘座位
     const currentCount = await getRouteReservationCount(selectedDate, routeId);
     const remainingSeats = maxCapacity - currentCount;
     const isFull = remainingSeats <= 0;
@@ -1078,7 +991,6 @@ async function showRoutes() {
   document.getElementById('submitBtn').style.display = 'none';
 }
 
-// 取得班次預約人數
 async function getRouteReservationCount(dateStr, route) {
   try {
     const count = existingReservations.filter(r => 
@@ -1097,11 +1009,9 @@ async function getRouteReservationCount(dateStr, route) {
 function selectRoute(routeId) {
   selectedRoute = routeId;
   
-  // 更新按鈕選擇狀態
   document.querySelectorAll('.route-btn').forEach(btn => btn.classList.remove('selected'));
   event.target.closest('.route-btn').classList.add('selected');
   
-  // 顯示站點選擇
   showStopSelection(routeId);
 }
 
@@ -1109,7 +1019,6 @@ function selectRoute(routeId) {
 function showStopSelection(routeId) {
   const stops = STOPS[routeId];
   
-  // 顯示上車站選擇
   document.getElementById('fromStopSection').style.display = 'block';
   const fromSelect = document.getElementById('fromStop');
   fromSelect.innerHTML = '<option value="">請選擇上車站 / Please select pick-up stop</option>';
@@ -1117,7 +1026,6 @@ function showStopSelection(routeId) {
     fromSelect.innerHTML += `<option value="${stop.chinese}">${stop.chinese} / ${stop.english}</option>`;
   });
   
-  // 重置下車站和提交按鈕
   document.getElementById('toStopSection').style.display = 'none';
   document.getElementById('submitBtn').style.display = 'none';
 }
@@ -1133,7 +1041,6 @@ function updateToStops() {
   const stops = STOPS[selectedRoute];
   const fromIndex = stops.findIndex(s => s.chinese === fromStop);
   
-  // 顯示下車站選擇（排除上車站）
   document.getElementById('toStopSection').style.display = 'block';
   const toSelect = document.getElementById('toStop');
   toSelect.innerHTML = '<option value="">請選擇下車站 / Please select drop-off stop</option>';
@@ -1143,7 +1050,6 @@ function updateToStops() {
     }
   });
   
-  // 監聽下車站選擇
   toSelect.onchange = function() {
     if (this.value) {
       document.getElementById('submitBtn').style.display = 'block';
@@ -1179,6 +1085,10 @@ async function submitReservation() {
     `;
     
     const route = ROUTES[selectedRoute];
+    
+    // 修正：確保日期格式正確
+    console.log('📅 選擇的日期:', selectedDate);
+    
     const data = {
       type: 'reserve',
       userId: userData.userId,
@@ -1190,7 +1100,7 @@ async function submitReservation() {
       routeName: `${route.name} ${route.direction}`,
       fromStop: fromStop,
       toStop: toStop,
-      date: selectedDate
+      date: selectedDate  // 使用正確的日期格式
     };
     
     console.log('📤 發送預約資料:', data);
@@ -1207,15 +1117,8 @@ async function submitReservation() {
     if (result.status === 'success') {
       alert('✅ 預約成功！\n✅ Booking successful!');
       
-      // 重新載入預約資料
       await fetchReservations();
-      
-      // 重置表單
       resetReservationForm();
-      
-      // 關閉月曆
-      document.getElementById('calendarContainer').style.display = 'none';
-      document.getElementById('calendarBtn').innerHTML = '<div class="bilingual-text"><div class="chinese-text">📅 打開月曆</div><div class="english-text">Open Calendar</div></div>';
       
     } else {
       alert('❌ 預約失敗：' + (result.message || '請稍後再試\nPlease try again later'));
@@ -1245,7 +1148,7 @@ function resetReservationForm() {
   document.getElementById('submitBtn').style.display = 'none';
 }
 
-// ============================ 預約資料顯示 ============================
+// ============================ 預約資料顯示（按照圖片格式） ============================
 function renderReservationInfo() {
   const panel = document.getElementById('reservationPanel');
   const container = document.getElementById('reservationInfo');
@@ -1260,61 +1163,44 @@ function renderReservationInfo() {
   let html = '';
   existingReservations.forEach(reservation => {
     const route = ROUTES[reservation.route];
-    const weekday = getDayOfWeek(reservation.date.split('T')[0]);
+    const dateStr = reservation.date.split('T')[0];
     
     html += `
       <div class="resv-card">
-        <div class="resv-card-header">
-          <div class="bilingual-text">
-            <div class="chinese-text">${reservation.date.split('T')[0]} (週${weekday.zh})</div>
-            <div class="english-text">${reservation.date.split('T')[0]} (${weekday.en})</div>
+        <div class="reservation-item">
+          <div class="reservation-label">日期 / Date:</div>
+          <div class="reservation-value">${dateStr}</div>
+        </div>
+        
+        <div class="reservation-item">
+          <div class="reservation-label">班次 / Route:</div>
+          <div class="reservation-value">${reservation.route} | ${route ? route.time : ''} ${route ? route.direction : ''}</div>
+        </div>
+        
+        <div class="reservation-item">
+          <div class="reservation-label">上車 / Boarding:</div>
+          <div class="reservation-value">${reservation.fromStop}</div>
+        </div>
+        
+        <div class="reservation-item">
+          <div class="reservation-label">下車 / Drop-off:</div>
+          <div class="reservation-value">${reservation.toStop}</div>
+        </div>
+        
+        <div class="reservation-item">
+          <div class="reservation-label">狀態 / Status:</div>
+          <div class="reservation-value">
+            <span class="status-badge ${reservation.status === '已取消' ? 'status-cancelled' : 'status-active'}">
+              ${reservation.status === '已取消' ? '已取消' : '已預約'}
+            </span>
           </div>
         </div>
         
-        <div class="reservation-item">
-          <strong class="bilingual-text">
-            <div class="chinese-text">班次</div>
-            <div class="english-text">Time</div>
-          </strong>
-          <span class="bilingual-text">
-            <div class="chinese-text">${route ? route.name : reservation.route}</div>
-            <div class="english-text">${route ? route.time : ''}</div>
-          </span>
-        </div>
-        
-        <div class="reservation-item">
-          <strong class="bilingual-text">
-            <div class="chinese-text">路線</div>
-            <div class="english-text">Route</div>
-          </strong>
-          <span class="bilingual-text">
-            <div class="chinese-text">${route ? route.direction : ''}</div>
-            <div class="english-text">${route ? route.directionEn : ''}</div>
-          </span>
-        </div>
-        
-        <div class="reservation-item">
-          <strong class="bilingual-text">
-            <div class="chinese-text">上車站</div>
-            <div class="english-text">From</div>
-          </strong>
-          <span>${reservation.fromStop}</span>
-        </div>
-        
-        <div class="reservation-item">
-          <strong class="bilingual-text">
-            <div class="chinese-text">下車站</div>
-            <div class="english-text">To</div>
-          </strong>
-          <span>${reservation.toStop}</span>
-        </div>
-        
-        <button class="cancel-btn" onclick="cancelReservation('${reservation.reservationId || reservation.id}')">
-          <div class="bilingual-text">
-            <div class="chinese-text">取消預約</div>
-            <div class="english-text">Cancel Reservation</div>
-          </div>
-        </button>
+        ${reservation.status !== '已取消' ? `
+          <button class="cancel-btn" onclick="cancelReservation('${reservation.reservationId || reservation.id}')">
+            取消預約<br>Cancel Reservation
+          </button>
+        ` : ''}
       </div>
     `;
   });
