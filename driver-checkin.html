@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車 - 司機核銷系統 v4.0.0</title>
+<title>穿山甲專車 - 司機核銷系統 v4.1</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Microsoft JhengHei',sans-serif;}
 body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden;}
@@ -27,9 +27,12 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
 .reservation-table{width:100%;border-collapse:collapse;}
 .table-header th{background:#3c8050;color:white;padding:8px;font-size:12px;border:1px solid #2f6842;}
 .table-row td{padding:8px;border:1px solid #ddd;font-size:12px;text-align:center;}
-.checkin-btn{background:#3c8050;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;}
+.checkin-btn{background:#3c8050;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:bold;}
 .checkin-btn:hover{background:#2f6842;}
-.checkin-btn:disabled{background:#ccc;cursor:not-allowed;}
+.checkin-btn:disabled{background:#ccc;cursor:not-allowed;color:#666;}
+.status-checked{color:#16a34a;font-weight:bold;}
+.status-cancelled{color:#dc2626;font-weight:bold;}
+.status-pending{color:#ca8a04;font-weight:bold;}
 .no-data{text-align:center;color:#999;padding:20px;}
 .loading{text-align:center;color:#3c8050;padding:20px;}
 .hidden{display:none;}
@@ -50,7 +53,7 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
 <div class="container">
   <div class="header">
     <h1>🚌 穿山甲專車核銷系統</h1>
-    <p>司機簽到核銷作業 v4.0.0</p>
+    <p>司機簽到核銷作業 v4.1</p>
   </div>
 
   <div class="calendar-section">
@@ -99,7 +102,7 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
           <th>上車</th>
           <th>下車</th>
           <th>狀態</th>
-          <th>操作</th>
+          <th>核銷</th>
         </tr>
       </thead>
       <tbody id="reservation-list"></tbody>
@@ -137,7 +140,7 @@ function showLoading(show) {
 }
 function showError(msg) {
   const e = document.getElementById('errorMsg');
-  e.textContent = '❌ ' + msg;
+  e.textContent = '✕ ' + msg;
   e.classList.remove('hidden');
 }
 function hideError() {
@@ -321,24 +324,39 @@ function renderReservationRows(list,title){
   list.forEach(r=>{
     const checked=r.checkin==='Y'||r.status==='已搭乘';
     const cancelled=r.status==='已取消';
-    const status=checked?'✅ 已搭乘':cancelled?'❌ 已取消':'⏳ 已預約';
+    
+    let statusText, statusClass, statusIcon;
+    if(checked){
+      statusText='已搭乘';
+      statusClass='status-checked';
+      statusIcon='✓';
+    }else if(cancelled){
+      statusText='已取消';
+      statusClass='status-cancelled';
+      statusIcon='✕';
+    }else{
+      statusText='已預約';
+      statusClass='status-pending';
+      statusIcon='⏳';
+    }
+    
     const tr=document.createElement('tr');
     tr.className='table-row';
     tr.innerHTML=`
       <td>${r.date}</td>
-      <td>${r.route}</td>
+      <td><strong>${r.route}</strong></td>
       <td>${r.name}</td>
-      <td>${r.fromStop}</td>
-      <td>${r.toStop}</td>
-      <td>${status}</td>
-      <td>${checked||cancelled?'<button class="checkin-btn" disabled>✅</button>':`<button class="checkin-btn" onclick="confirmCheckin('${r.id}', ${r.rowNumber})">核銷</button>`}</td>`;
+      <td style="font-size:11px;">${r.fromStop}</td>
+      <td style="font-size:11px;">${r.toStop}</td>
+      <td><span class="${statusClass}">${statusIcon} ${statusText}</span></td>
+      <td>${checked||cancelled?'<button class="checkin-btn" disabled>已完成</button>':`<button class="checkin-btn" onclick="confirmCheckin('${r.id}', ${r.rowNumber})">核銷</button>`}</td>`;
     tbody.appendChild(tr);
   });
   document.getElementById('checkin-title').textContent=title;
 }
 
 async function confirmCheckin(id, rowNumber){
-  if(!confirm('確認此乘客已核銷？'))return;
+  if(!confirm('確認乘客已上車？'))return;
   try{
     // ✅ 使用 POST 方法更新核銷狀態
     const url = `${WORKER_URL}`;
@@ -358,14 +376,14 @@ async function confirmCheckin(id, rowNumber){
     
     const contentType = response.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
-      throw new Error('API 回應格式錯誤');
+      throw new Error('系統回應格式錯誤');
     }
     
     const data = await response.json();
     console.log('📨 核銷回應:', data);
     
     if (data.ok && data.status === 'success') {
-      alert('✅ 核銷成功');
+      alert('✓ 核銷成功');
       // 更新本地資料
       const target = allReservations.find(r => r.id === id);
       if (target) {
@@ -374,11 +392,11 @@ async function confirmCheckin(id, rowNumber){
       }
       showAllReservations();
     } else {
-      alert('❌ 核銷失敗: ' + (data.message || '未知錯誤'));
+      alert('✕ 核銷失敗\n' + (data.message || '未知錯誤'));
     }
   } catch (e) {
     console.error('❌ 核銷錯誤:', e);
-    alert('❌ 錯誤: ' + e.message);
+    alert('✕ 發生錯誤\n' + e.message);
   }
 }
 
