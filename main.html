@@ -436,6 +436,7 @@ const STOPS = {
 let userData = null, existingReservations = [], selectedDate = null, selectedRoute = null;
 let currentYear = new Date().getFullYear(), currentMonth = new Date().getMonth();
 let disabledDates = [];
+let maxCapacity = 45; // 預設值，會從設定檔讀取
 
 // ============================ 初始化 ============================
 async function init(){
@@ -461,6 +462,7 @@ async function init(){
     renderUser(userData);
     await fetchReservations();
     await fetchDisabledDates();
+    await fetchSystemRules(); // 載入系統設定（座位數上限）
     
   } catch (err) {
     console.error('❌ 初始化錯誤:', err);
@@ -614,6 +616,24 @@ async function fetchDisabledDates(){
   }
 }
 
+// ============================ 載入系統設定 ============================
+async function fetchSystemRules(){
+  try {
+    const res = await fetch(`${WORKER_URL}?mode=getRules`);
+    const data = await res.json();
+    if (data.status === 'success' && data.current) {
+      maxCapacity = data.current.seatLimit || 45; // 從設定讀取座位數上限
+      console.log('⚙️ 系統設定載入成功，每班次最大座位數:', maxCapacity);
+    } else {
+      console.warn('⚠ 無法取得系統設定，使用預設值 45');
+      maxCapacity = 45;
+    }
+  } catch (e) {
+    console.warn('⚠ 系統設定讀取失敗，使用預設值 45', e);
+    maxCapacity = 45;
+  }
+}
+
 // ============================ 月曆功能 ============================
 function loadCalendar(){
   const cal=document.getElementById('calendar');
@@ -688,17 +708,77 @@ function showRoutes(){
   
   section.style.display = 'block';
   
-  container.innerHTML = Object.keys(ROUTES).map(code => `
-    <div class="route-btn" onclick="selectRoute('${code}')">
+  // 計算每個班次的剩餘座位數
+  const routeCapacity = calculateRouteCapacity(selectedDate);
+  
+  container.innerHTML = Object.keys(ROUTES).map(code => {
+    const available = routeCapacity[code] || 0;
+    const isFullyBooked = available <= 0;
+    const isAlmostFull = available > 0 && available <= 5;
+    
+    // 座位數顯示顏色
+    let capacityColor = '#4caf50';
+    let capacityText = `剩餘 ${available} 位`;
+    let capacityTextEn = `${available} seats left`;
+    
+    if (isFullyBooked) {
+      capacityColor = '#f44336';
+      capacityText = '已額滿';
+      capacityTextEn = 'Fully Booked';
+    } else if (isAlmostFull) {
+      capacityColor = '#ff9800';
+      capacityText = `僅剩 ${available} 位`;
+      capacityTextEn = `Only ${available} left`;
+    }
+    
+    return `
+    <div class="route-btn ${isFullyBooked ? 'disabled' : ''}" onclick="${isFullyBooked ? '' : `selectRoute('${code}')`}" style="${isFullyBooked ? 'opacity:0.5;cursor:not-allowed;' : ''}">
       <div style="font-weight:bold;font-size:16px">${ROUTES[code].name}</div>
       <div class="bilingual-text">
         <div style="font-size:13px;color:#666;margin-top:4px">${ROUTES[code].direction}</div>
         <div style="font-size:12px;color:#999;margin-top:2px">${ROUTES[code].directionEn}</div>
       </div>
-    </div>
-  `).join('');
+      <div style="margin-top:8px;padding:4px 8px;background:${capacityColor}15;border-radius:4px;border:1px solid ${capacityColor};">
+        <div style="font-size:12px;color:${capacityColor};font-weight:bold;">${capacityText}</div>
+        <div style="font-size:11px;color:${capacityColor};opacity:0.8;">${capacityTextEn}</div>
+      </div>
+    </div>`;
+  }).join('');
   
-  console.log('🚌 顯示路線選擇');
+  console.log('🚌 顯示路線選擇，座位資訊:', routeCapacity);
+}
+
+// ============================ 計算剩餘座位數 ============================
+function calculateRouteCapacity(date) {
+  // 使用全域的 maxCapacity（從設定檔讀取）
+  const capacity = {
+    'A1': maxCapacity,
+    'B1': maxCapacity,
+    'A2': maxCapacity,
+    'B2': maxCapacity
+  };
+  
+  if (!date || !existingReservations || existingReservations.length === 0) {
+    return capacity;
+  }
+  
+  existingReservations.forEach(reservation => {
+    const reservationDate = reservation.date ? reservation.date.split('T')[0] : '';
+    if (reservationDate === date && reservation.status !== '已取消') {
+      const routeCode = reservation.routeCode || reservation.route;
+      let code = routeCode;
+      if (typeof routeCode === 'string' && routeCode.length > 2) {
+        const match = routeCode.match(/([AB][12])/);
+        if (match) code = match[1];
+      }
+      if (capacity[code] !== undefined) {
+        capacity[code]--;
+      }
+    }
+  });
+  
+  console.log(`📊 ${date} 座位統計:`, capacity);
+  return capacity;
 }
 
 function selectRoute(routeCode){
