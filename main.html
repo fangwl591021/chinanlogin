@@ -108,6 +108,7 @@ select {
   border-top:3px solid #3c8050; box-shadow:0 -3px 5px rgba(0,0,0,0.1);
 }
 
+/* ==================== 按鈕樣式 ==================== */
 .btn-group {
   display:flex;
   justify-content:center;
@@ -121,42 +122,94 @@ select {
   border-radius:8px;
   cursor:pointer;
   font-weight:bold;
-  color: white; /* 確保文字白色 */
 }
-.btn-calendar { background:#3c8050; }
-.btn-calendar:hover { background:#2d6140; }
-.btn-rule { 
-  background:#3c8050; /* 預約規則按鈕改為綠色 */
-  color: white; /* 文字白色 */
+/* ✅ 綠色按鈕白色文字 */
+.btn-calendar, .btn-rule { 
+  background:#3c8050;
 }
-.btn-rule:hover { background:#2d6140; }
+.btn-calendar:hover, .btn-rule:hover { 
+  background:#2d6140;
+}
 
-/* 雙語文字樣式 */
+/* ==================== 文字顏色控制 ==================== */
 .bilingual-text {
   line-height: 1.4;
 }
-.chinese-text {
-  font-weight: bold;
-  margin-bottom: 2px;
+
+/* ✅ 按鈕內文字 = 白色 */
+.btn-large .chinese-text,
+.btn-large .english-text,
+.submit-btn .chinese-text,
+.submit-btn .english-text,
+.cancel-btn .chinese-text,
+.cancel-btn .english-text {
   color: white;
 }
-.english-text {
+
+.btn-large .chinese-text,
+.submit-btn .chinese-text,
+.cancel-btn .chinese-text {
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.btn-large .english-text,
+.submit-btn .english-text,
+.cancel-btn .english-text {
   font-size: 0.85em;
+  opacity: 0.95;
+}
+
+/* ✅ Header 文字 = 白色 */
+header .chinese-text {
   color: white;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+header .english-text {
+  color: white;
+  font-size: 0.85em;
   opacity: 0.9;
 }
 
-/* 預約紀錄中的雙語文字 */
-.reservation-item .chinese-text {
-  color: #2d6140; /* 深綠色 */
-  font-weight: normal;
+/* ✅ 頁面標題（h3等）= 黑色 */
+h3 .chinese-text,
+.route-section h3 .chinese-text,
+.stop-selector h3 .chinese-text {
+  color: #333;
+  font-weight: bold;
+  margin-bottom: 2px;
 }
-.reservation-item .english-text {
-  color: #666; /* 灰色 */
-  opacity: 0.8;
+h3 .english-text,
+.route-section h3 .english-text,
+.stop-selector h3 .english-text {
+  color: #666;
+  font-size: 0.85em;
+  opacity: 0.9;
 }
 
-/* 月曆控制按鈕 */
+/* ✅ 預約紀錄面板標題 = 深綠色 */
+#reservationPanel > div:first-child .chinese-text {
+  color: #2d6140;
+  font-weight: bold;
+}
+#reservationPanel > div:first-child .english-text {
+  color: #666;
+  font-size: 0.85em;
+}
+
+/* ✅ 預約卡片內容 = 黑色 */
+.resv-card .reservation-item .chinese-text {
+  color: #333;
+  font-weight: normal;
+}
+.resv-card .reservation-item .english-text {
+  color: #666;
+  opacity: 0.8;
+  font-size: 0.85em;
+}
+
+/* ✅ 月曆控制按鈕 = 綠色白字 */
 .month-nav-btn {
   background: #3c8050;
   color: white;
@@ -170,11 +223,9 @@ select {
   background: #2d6140;
 }
 
-/* 預約紀錄文字樣式 - 移除圖標 */
 .reservation-item {
   margin-bottom: 8px;
 }
-</style>
 </head>
 
 <body>
