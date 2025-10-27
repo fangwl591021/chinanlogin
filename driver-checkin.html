@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車 - 司機核銷系統 v3.9.0</title>
+<title>穿山甲專車 - 司機核銷系統 v4.0.0</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Microsoft JhengHei',sans-serif;}
 body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden;}
@@ -35,7 +35,13 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
 .hidden{display:none;}
 .error-msg{background:#fee;border:1px solid #fcc;color:#c33;padding:10px;border-radius:6px;margin:10px 0;text-align:center;}
 .route-map-section{position:relative;}
+.route-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.route-header h2{font-size:16px;color:#333;}
+.route-header button{background:#3c8050;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;}
 #route-content{display:none;animation:fadeIn .25s ease-in-out;}
+.route-line{margin:10px 0;padding:10px;background:#f9f9f9;border-left:4px solid #3c8050;border-radius:6px;}
+.route-line h3{font-size:14px;margin-bottom:8px;color:#3c8050;}
+.stops{font-size:12px;color:#666;line-height:1.8;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-5px);}to{opacity:1;transform:translateY(0);}}
 </style>
 </head>
@@ -44,7 +50,7 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
 <div class="container">
   <div class="header">
     <h1>🚌 穿山甲專車核銷系統</h1>
-    <p>司機簽到核銷作業 v3.9.0</p>
+    <p>司機簽到核銷作業 v4.0.0</p>
   </div>
 
   <div class="calendar-section">
@@ -138,12 +144,64 @@ function hideError() {
   document.getElementById('errorMsg').classList.add('hidden');
 }
 
+// ✅ 格式化日期 - 只保留年月日
+function formatDateOnly(dateStr) {
+  if (!dateStr) return '';
+  
+  try {
+    const str = String(dateStr).trim();
+    
+    // 處理完整日期時間格式
+    if (str.includes('GMT') || str.includes('標準時間')) {
+      const d = new Date(str);
+      if (!isNaN(d.getTime())) {
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      }
+    }
+    
+    // 處理 ISO 格式
+    if (str.includes('T')) return str.split('T')[0];
+    
+    // 處理空格格式
+    if (str.includes(' ')) return str.split(' ')[0];
+    
+    // 如果已經是 YYYY-MM-DD 格式
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+    
+    return str.substring(0, 10);
+  } catch (e) {
+    return String(dateStr).substring(0, 10);
+  }
+}
+
+// ✅ 格式化路線代碼
+function formatRouteCode(routeStr) {
+  if (!routeStr) return '-';
+  
+  const str = String(routeStr).trim();
+  
+  // 提取班次代碼（A1, A2, B1, B2）
+  const match = str.match(/([AB][12])/);
+  if (match) return match[1];
+  
+  // 如果包含 "|"，取前面部分
+  if (str.includes('|')) {
+    const parts = str.split('|');
+    const code = parts[0].trim();
+    const codeMatch = code.match(/([AB][12])/);
+    return codeMatch ? codeMatch[1] : code;
+  }
+  
+  return str;
+}
+
 async function loadAllReservations() {
   try {
     hideError();
-    const urlParams = new URLSearchParams(window.location.search);
-    const adminId = urlParams.get('admin') || 'all';
-    const fetchUrl = `${WORKER_URL}?mode=reservations&userId=${adminId}`;
+    // ✅ 修正：使用 allReservations 模式取得所有預約
+    const fetchUrl = `${WORKER_URL}?mode=allReservations`;
+    console.log('📡 請求 URL:', fetchUrl);
+    
     const response = await fetch(fetchUrl);
     const contentType = response.headers.get('content-type') || '';
 
@@ -156,24 +214,34 @@ async function loadAllReservations() {
     if (!contentType.includes('application/json')) {
       const text = await response.text();
       console.warn('⚠️ 非 JSON 格式:', text.slice(0,150));
-      showError('GAS 連接異常，請稍後再試');
+      showError('API 回應格式錯誤');
       renderEmptyList();
       return;
     }
 
     const data = await response.json();
-    if (data.status === 'success' && Array.isArray(data.reservations)) {
+    console.log('📊 收到資料:', data);
+    
+    // ✅ 改進：處理新的 API 回應格式
+    if (data.ok && data.status === 'success' && Array.isArray(data.reservations)) {
       allReservations = data.reservations.map((r,i)=>({
-        id:String(r.id||r.reservationId||i+1),
-        date:r.date||r.日期||'',
-        route:r.route||r.班次||r.shift||'-',
-        name:r.name||r.姓名||'-',
-        fromStop:r.fromStop||r.上車點||r.E||'未提供',
-        toStop:r.toStop||r.下車點||r.F||'未提供',
-        checkin:r.checkin||r.J||'',
-        status:r.status||'已預約'
+        id: String(r.reservationId || r.id || i+1),
+        rowNumber: r.rowNumber || (i+2), // 用於更新 Google Sheets
+        date: formatDateOnly(r.date || ''),  // 格式化日期
+        route: formatRouteCode(r.route || '-'),  // 格式化路線
+        name: r.name || '-',
+        fromStop: r.fromStop || '未提供',
+        toStop: r.toStop || '未提供',
+        checkin: r.signed || r.checkin || '',
+        status: r.status || '已預約'
       }));
+      console.log('✅ 成功載入', allReservations.length, '筆預約');
+      
+      if (allReservations.length === 0) {
+        renderEmptyList();
+      }
     } else {
+      console.warn('❌ 資料格式不符:', data);
       showError(data.message || '無法取得預約資料');
       renderEmptyList();
     }
@@ -241,7 +309,7 @@ function showAllReservations(){
   const routes=['A1','B1','A2','B2'];
   const sorted=[...allReservations].sort((a,b)=>{
     const dateCompare=(a.date||'').localeCompare(b.date||'');
-    if(dateCompare!==0)return dateCompare;
+    if(dateCompare!==0)return -dateCompare; // 最新的在前面
     return routes.indexOf(a.route)-routes.indexOf(b.route);
   });
   renderReservationRows(sorted,`全部預約列表 (${sorted.length} 筆)`);
@@ -252,7 +320,8 @@ function renderReservationRows(list,title){
   tbody.innerHTML='';
   list.forEach(r=>{
     const checked=r.checkin==='Y'||r.status==='已搭乘';
-    const status=checked?'已搭乘':r.status==='已取消'?'已取消':'已預約';
+    const cancelled=r.status==='已取消';
+    const status=checked?'✅ 已搭乘':cancelled?'❌ 已取消':'⏳ 已預約';
     const tr=document.createElement('tr');
     tr.className='table-row';
     tr.innerHTML=`
@@ -262,29 +331,55 @@ function renderReservationRows(list,title){
       <td>${r.fromStop}</td>
       <td>${r.toStop}</td>
       <td>${status}</td>
-      <td>${checked?'<button class="checkin-btn" disabled>✅</button>':`<button class="checkin-btn" onclick="confirmCheckin('${r.id}')">核銷</button>`}</td>`;
+      <td>${checked||cancelled?'<button class="checkin-btn" disabled>✅</button>':`<button class="checkin-btn" onclick="confirmCheckin('${r.id}', ${r.rowNumber})">核銷</button>`}</td>`;
     tbody.appendChild(tr);
   });
   document.getElementById('checkin-title').textContent=title;
 }
 
-async function confirmCheckin(id){
+async function confirmCheckin(id, rowNumber){
   if(!confirm('確認此乘客已核銷？'))return;
   try{
-    const url=`${WORKER_URL}?mode=confirmCheckin&id=${encodeURIComponent(id)}`;
-    const response=await fetch(url,{method:'POST'});
-    const contentType=response.headers.get('content-type')||'';
-    if(!contentType.includes('application/json')){
-      throw new Error('API 格式錯誤');
+    // ✅ 使用 POST 方法更新核銷狀態
+    const url = `${WORKER_URL}`;
+    const payload = {
+      type: 'checkin',
+      reservationId: id,
+      rowNumber: rowNumber
+    };
+    
+    console.log('📤 發送核銷請求:', payload);
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      throw new Error('API 回應格式錯誤');
     }
-    const data=await response.json();
-    if(data.status==='success'){
+    
+    const data = await response.json();
+    console.log('📨 核銷回應:', data);
+    
+    if (data.ok && data.status === 'success') {
       alert('✅ 核銷成功');
-      const target=allReservations.find(r=>r.id===id);
-      if(target){target.checkin='Y';target.status='已搭乘';}
+      // 更新本地資料
+      const target = allReservations.find(r => r.id === id);
+      if (target) {
+        target.checkin = 'Y';
+        target.status = '已搭乘';
+      }
       showAllReservations();
-    }else alert('❌ 核銷失敗: '+(data.message||'未知錯誤'));
-  }catch(e){alert('❌ 錯誤: '+e.message);}
+    } else {
+      alert('❌ 核銷失敗: ' + (data.message || '未知錯誤'));
+    }
+  } catch (e) {
+    console.error('❌ 核銷錯誤:', e);
+    alert('❌ 錯誤: ' + e.message);
+  }
 }
 
 function changeMonth(d){
