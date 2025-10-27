@@ -188,17 +188,19 @@ const WORKER_URL='https://delicate-math-7e61.fangwl591021.workers.dev/';
 const LIFF_ID = '2006590746-wgL4l54z';
 let allData=[];
 
-// ✅ 新增：格式化日期函數
+// ✅ 修正：格式化日期函數 - 只顯示 YYYY-MM-DD
 function formatDate(dateStr) {
   if (!dateStr) return '-';
   
-  // 處理各種可能的日期格式
   try {
-    // 如果是 ISO 格式或包含時間的格式
-    if (dateStr.includes('T') || dateStr.includes(' ')) {
-      const d = new Date(dateStr);
+    // 移除所有時間和時區資訊，只保留日期部分
+    let cleanDate = String(dateStr).trim();
+    
+    // 處理完整的日期時間字串（例如：Wed Oct 29 2025 00:00:00 GMT+0800 (台北標準時間)）
+    if (cleanDate.includes('GMT') || cleanDate.includes('標準時間')) {
+      // 使用 Date 物件解析
+      const d = new Date(cleanDate);
       if (!isNaN(d.getTime())) {
-        // 只回傳年月日
         const year = d.getFullYear();
         const month = String(d.getMonth() + 1).padStart(2, '0');
         const day = String(d.getDate()).padStart(2, '0');
@@ -206,30 +208,61 @@ function formatDate(dateStr) {
       }
     }
     
-    // 如果已經是 YYYY-MM-DD 格式
-    if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
-      return dateStr.substring(0, 10);
+    // 處理 ISO 格式（例如：2025-10-29T00:00:00）
+    if (cleanDate.includes('T')) {
+      return cleanDate.split('T')[0];
     }
     
-    // 回傳原始字串的前10個字元
-    return dateStr.substring(0, 10);
+    // 處理包含空格的格式（例如：2025-10-29 00:00:00）
+    if (cleanDate.includes(' ')) {
+      return cleanDate.split(' ')[0];
+    }
+    
+    // 如果已經是 YYYY-MM-DD 格式，直接回傳
+    if (/^\d{4}-\d{2}-\d{2}$/.test(cleanDate)) {
+      return cleanDate;
+    }
+    
+    // 嘗試用 Date 解析任何其他格式
+    const d = new Date(cleanDate);
+    if (!isNaN(d.getTime())) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    
+    // 如果都失敗，回傳原始值的前10個字元
+    return cleanDate.substring(0, 10);
   } catch (e) {
     console.warn('日期格式化失敗:', dateStr, e);
-    return dateStr;
+    return String(dateStr).substring(0, 10);
   }
 }
 
-// ✅ 新增：簡化路線顯示
+// ✅ 修正：簡化路線顯示 - 只顯示班次代碼
 function formatRoute(routeStr) {
   if (!routeStr) return '-';
   
-  // 如果包含 "|"，只取前面的班次代碼
-  if (routeStr.includes('|')) {
-    const parts = routeStr.split('|');
-    return parts[0].trim(); // 例如 "A1" 或 "B2"
+  const str = String(routeStr).trim();
+  
+  // 提取班次代碼（A1, A2, B1, B2）
+  const match = str.match(/^([AB][12])/);
+  if (match) {
+    return match[1]; // 回傳 "A1", "A2", "B1", "B2"
   }
   
-  return routeStr;
+  // 如果包含 "|"，取前面部分並去除空白
+  if (str.includes('|')) {
+    const parts = str.split('|');
+    const code = parts[0].trim();
+    // 再次嘗試提取班次代碼
+    const codeMatch = code.match(/([AB][12])/);
+    return codeMatch ? codeMatch[1] : code;
+  }
+  
+  // 回傳原始字串（可能已經是班次代碼）
+  return str.length <= 3 ? str : str.substring(0, 2);
 }
 
 async function init(){
