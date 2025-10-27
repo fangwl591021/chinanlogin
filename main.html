@@ -130,6 +130,11 @@ select {
   color: white; /* 文字白色 */
 }
 .btn-rule:hover { background:#2d6140; }
+.btn-refresh { 
+  background:#1e88e5; /* 刷新按鈕藍色 */
+  color: white; /* 文字白色 */
+}
+.btn-refresh:hover { background:#1565c0; }
 
 /* 雙語文字樣式 */
 .bilingual-text {
@@ -266,6 +271,22 @@ h3 .english-text,
 .notice.success .english-text {
   color: #2e7d32 !important;  /* 深綠色，在淺綠背景上清晰 */
 }
+
+/* 載入動畫 */
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 </style>
 </head>
 
@@ -296,6 +317,13 @@ h3 .english-text,
       <div class="bilingual-text">
         <div class="chinese-text">預約規則</div>
         <div class="english-text">Reservation Rules</div>
+      </div>
+    </button>
+    <!-- 🔄 新增刷新按鈕 -->
+    <button id="refreshBtn" class="btn-large btn-refresh" onclick="refreshSystem()">
+      <div class="bilingual-text">
+        <div class="chinese-text">刷新設定</div>
+        <div class="english-text">Refresh Settings</div>
       </div>
     </button>
   </div>
@@ -437,6 +465,7 @@ let userData = null, existingReservations = [], selectedDate = null, selectedRou
 let currentYear = new Date().getFullYear(), currentMonth = new Date().getMonth();
 let disabledDates = [];
 let maxCapacity = 45; // 預設值，會從設定檔讀取
+let systemRules = {}; // 儲存完整的系統規則
 
 // ============================ 初始化 ============================
 async function init(){
@@ -463,6 +492,15 @@ async function init(){
     await fetchReservations();
     await fetchDisabledDates();
     await fetchSystemRules(); // 載入系統設定（座位數上限）
+    
+    // 🔄 新增：定期檢查系統設定（每30秒）
+    setInterval(async () => {
+      await fetchSystemRules();
+      // 如果月曆已開啟，重新計算座位數
+      if (selectedDate) {
+        showRoutes();
+      }
+    }, 30000);
     
   } catch (err) {
     console.error('❌ 初始化錯誤:', err);
@@ -622,15 +660,52 @@ async function fetchSystemRules(){
     const res = await fetch(`${WORKER_URL}?mode=getRules`);
     const data = await res.json();
     if (data.status === 'success' && data.current) {
+      systemRules = data.current; // 儲存完整系統規則
       maxCapacity = data.current.seatLimit || 45; // 從設定讀取座位數上限
       console.log('⚙️ 系統設定載入成功，每班次最大座位數:', maxCapacity);
+      console.log('📋 完整系統規則:', systemRules);
     } else {
       console.warn('⚠ 無法取得系統設定，使用預設值 45');
       maxCapacity = 45;
+      systemRules = { seatLimit: 45 };
     }
   } catch (e) {
     console.warn('⚠ 系統設定讀取失敗，使用預設值 45', e);
     maxCapacity = 45;
+    systemRules = { seatLimit: 45 };
+  }
+}
+
+// ============================ 手動刷新系統設定 ============================
+async function refreshSystem(){
+  const refreshBtn = document.getElementById('refreshBtn');
+  const originalText = refreshBtn.innerHTML;
+  
+  // 顯示載入狀態
+  refreshBtn.innerHTML = `
+    <div class="bilingual-text">
+      <div class="chinese-text"><span class="loading-spinner"></span>刷新中...</div>
+      <div class="english-text"><span class="loading-spinner"></span>Refreshing...</div>
+    </div>
+  `;
+  refreshBtn.disabled = true;
+  
+  try {
+    await fetchSystemRules();
+    if (selectedDate) {
+      showRoutes();
+    }
+    
+    // 顯示成功訊息
+    const successMsg = `✅ 系統設定已刷新！\n\n當前每班次座位上限：${maxCapacity}\n未核銷封鎖次數：${systemRules.maxNoShow || 3}\n封鎖週數：${systemRules.banWeeks || 2}\n預約模式：${systemRules.tripMode === 'roundtrip' ? '來回' : '單程'}`;
+    alert(successMsg);
+    
+  } catch (e) {
+    alert('❌ 刷新失敗：' + e.message);
+  } finally {
+    // 恢復按鈕狀態
+    refreshBtn.innerHTML = originalText;
+    refreshBtn.disabled = false;
   }
 }
 
@@ -1099,7 +1174,13 @@ function showRules(){
    Please notify in advance if cancellation is needed
 
 4. 上車時請主動出示預約紀錄
-   Please show your reservation record when boarding`;
+   Please show your reservation record when boarding
+
+5. 系統設定：
+   - 每班次座位上限：${maxCapacity} 人
+   - 未核銷封鎖次數：${systemRules.maxNoShow || 3} 次
+   - 封鎖週數：${systemRules.banWeeks || 2} 週
+   - 預約模式：${systemRules.tripMode === 'roundtrip' ? '來回' : '單程'}`;
   
   alert(rulesContent);
 }
