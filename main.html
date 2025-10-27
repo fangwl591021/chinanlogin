@@ -164,7 +164,7 @@ select {
 }
 
 /* ==================== 按鈕群組 ==================== */
-/* 修改：改為左右排列（2個按鈕） */
+/* 修改：改為同一排 */
 .btn-group {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -977,7 +977,7 @@ async function showRoutes() {
           <div class="chinese-text" style="font-size:13px;">${route.direction}</div>
           <div class="english-text" style="font-size:11px;">${route.directionEn}</div>
         </div>
-        <div style="font-size: 12px; margin-top: 5px; color: ${isFull ? '#f44336' : '#4caf50'}; font-weight:bold;">
+        <div style="font-size: 12px; margin-top: 5px; color: #333; font-weight:bold;">
           ${seatInfo}<br>
           <small style="font-size:10px;opacity:0.8;">${seatInfoEn}</small>
         </div>
@@ -1163,7 +1163,24 @@ function renderReservationInfo() {
   let html = '';
   existingReservations.forEach(reservation => {
     const route = ROUTES[reservation.route];
-    const dateStr = reservation.date.split('T')[0];
+    
+    // 修正：從 reservation.date 正確提取日期
+    let dateStr = reservation.date;
+    if (dateStr.includes('T')) {
+      dateStr = dateStr.split('T')[0];
+    }
+    // 進一步確保日期格式正確
+    const dateParts = dateStr.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (dateParts) {
+      dateStr = `${dateParts[1]}-${dateParts[2]}-${dateParts[3]}`;
+    }
+    
+    // 找出站點的英文名稱
+    const routeStops = STOPS[reservation.route] || [];
+    const fromStopObj = routeStops.find(s => s.chinese === reservation.fromStop);
+    const toStopObj = routeStops.find(s => s.chinese === reservation.toStop);
+    const fromStopEn = fromStopObj ? fromStopObj.english : reservation.fromStop;
+    const toStopEn = toStopObj ? toStopObj.english : reservation.toStop;
     
     html += `
       <div class="resv-card">
@@ -1179,12 +1196,12 @@ function renderReservationInfo() {
         
         <div class="reservation-item">
           <div class="reservation-label">上車 / Boarding:</div>
-          <div class="reservation-value">${reservation.fromStop}</div>
+          <div class="reservation-value">${reservation.fromStop} ${fromStopEn}</div>
         </div>
         
         <div class="reservation-item">
           <div class="reservation-label">下車 / Drop-off:</div>
-          <div class="reservation-value">${reservation.toStop}</div>
+          <div class="reservation-value">${reservation.toStop} ${toStopEn}</div>
         </div>
         
         <div class="reservation-item">
