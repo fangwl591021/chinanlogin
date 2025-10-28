@@ -1338,10 +1338,46 @@ async function cancelReservation(reservationId) {
   }
   
   try {
+    // ✅ 從現有預約中找到對應的預約資料
+    const reservation = existingReservations.find(r => 
+      (r.reservationId === reservationId || r.id === reservationId)
+    );
+    
+    if (!reservation) {
+      console.error('找不到預約資料:', reservationId);
+      alert('❌ 找不到預約資料\n❌ Reservation not found');
+      return;
+    }
+    
+    // 處理日期格式
+    let dateStr = reservation.date;
+    if (typeof dateStr === 'string' && dateStr.includes('T')) {
+      dateStr = dateStr.split('T')[0];
+    }
+    
+    // 提取路線代碼
+    let routeCode = reservation.route;
+    if (routeCode && routeCode.includes('|')) {
+      routeCode = routeCode.split('|')[0].trim();
+    }
+    
+    console.log('📝 準備取消預約:', {
+      reservationId,
+      name: userData.name,
+      date: dateStr,
+      shift: routeCode,
+      route: reservation.route
+    });
+    
+    // ✅ 傳送完整資料（包含 name, date, shift 用於 LINE 通知）
     const data = {
       type: 'cancel',
       reservationId: reservationId,
-      userId: userData.userId
+      userId: userData.userId,
+      name: userData.name,           // ✅ 加入姓名
+      date: dateStr,                 // ✅ 加入日期
+      shift: routeCode,              // ✅ 加入班次
+      route: reservation.route       // ✅ 加入完整路線資訊
     };
     
     const res = await fetch(WORKER_URL, {
