@@ -638,8 +638,13 @@ async function init() {
 }
 
 function renderUser(user) {
+  const avatarImg = user.linePictureUrl 
+    ? `<img src="${user.linePictureUrl}" alt="Avatar" style="width:60px;height:60px;border-radius:50%;margin-bottom:10px;border:3px solid #3c8050;">` 
+    : '';
+  
   document.getElementById('userInfo').innerHTML = `
     <div style="text-align:center">
+      ${avatarImg}
       <div style="font-size:18px;font-weight:bold;color:#333;margin-bottom:5px;">${user.name}</div>
       <div style="font-size:14px;color:#666;">${user.department} | ${user.studentId}</div>
     </div>
