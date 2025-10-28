@@ -650,12 +650,18 @@ async function fetchReservations() {
   try {
     const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
     const data = await res.json();
+    
+    console.log('📥 從 API 收到的原始預約資料:', data);
+    
     if (data.status === 'success' && Array.isArray(data.reservations)) {
       // 修正：處理每筆預約的日期，確保使用本地時區
       existingReservations = data.reservations.map(reservation => {
+        console.log('🔍 處理預約 - 原始日期:', reservation.date, '類型:', typeof reservation.date);
+        
         // 如果日期包含 'T'，提取日期部分
         if (reservation.date && reservation.date.includes('T')) {
           const dateOnly = reservation.date.split('T')[0];
+          console.log('✂️ 分割後的日期:', dateOnly);
           return {
             ...reservation,
             date: dateOnly  // 直接使用 YYYY-MM-DD 格式，不做時區轉換
@@ -663,8 +669,8 @@ async function fetchReservations() {
         }
         return reservation;
       });
-      console.log('📥 預約資料已載入:', existingReservations.length, '筆預約');
-      console.log('📅 預約日期:', existingReservations.map(r => r.date));
+      
+      console.log('📅 處理後的預約日期:', existingReservations.map(r => ({ id: r.reservationId, date: r.date })));
       renderReservationInfo();
     } else {
       existingReservations = [];
@@ -784,12 +790,25 @@ class ReservationValidator {
   }
 
   static hasExistingReservation(userId, dateStr) {
-    const userReservations = existingReservations.filter(
-      res => res.userId === userId && 
-             res.date.split('T')[0] === dateStr && 
-             res.status !== '已取消' && 
-             res.status !== 'cancelled'
-    );
+    const userReservations = existingReservations.filter(res => {
+      // 修正：日期已經在 fetchReservations 處理過了，直接比較
+      let resDate = res.date;
+      // 如果還有 'T'（防禦性處理）
+      if (resDate && resDate.includes('T')) {
+        resDate = resDate.split('T')[0];
+      }
+      
+      const match = res.userId === userId && 
+                    resDate === dateStr && 
+                    res.status !== '已取消' && 
+                    res.status !== 'cancelled';
+      
+      if (match) {
+        console.log('🔍 找到現有預約:', resDate, '比對日期:', dateStr);
+      }
+      
+      return match;
+    });
     return userReservations.length >= RESERVATION_RULES.maxPerDay;
   }
 }
@@ -1022,12 +1041,19 @@ async function showRoutes() {
 
 async function getRouteReservationCount(dateStr, route) {
   try {
-    const count = existingReservations.filter(r => 
-      r.date.split('T')[0] === dateStr && 
-      r.route === route && 
-      r.status !== '已取消' && 
-      r.status !== 'cancelled'
-    ).length;
+    const count = existingReservations.filter(r => {
+      // 修正：日期已經在 fetchReservations 處理過了
+      let resDate = r.date;
+      // 如果還有 'T'（防禦性處理）
+      if (resDate && resDate.includes('T')) {
+        resDate = resDate.split('T')[0];
+      }
+      
+      return resDate === dateStr && 
+             r.route === route && 
+             r.status !== '已取消' && 
+             r.status !== 'cancelled';
+    }).length;
     return count;
   } catch (error) {
     console.error('取得班次人數失敗:', error);
@@ -1115,8 +1141,7 @@ async function submitReservation() {
     
     const route = ROUTES[selectedRoute];
     
-    // 修正：確保日期格式正確
-    console.log('📅 選擇的日期:', selectedDate);
+    console.log('📅 準備預約 - 選擇的日期:', selectedDate);
     
     const data = {
       type: 'reserve',
@@ -1129,7 +1154,7 @@ async function submitReservation() {
       routeName: `${route.name} ${route.direction}`,
       fromStop: fromStop,
       toStop: toStop,
-      date: selectedDate  // 使用正確的日期格式
+      date: selectedDate
     };
     
     console.log('📤 發送預約資料:', data);
@@ -1146,7 +1171,13 @@ async function submitReservation() {
     if (result.status === 'success') {
       alert('✅ 預約成功！\n✅ Booking successful!');
       
+      // 重新載入預約資料
       await fetchReservations();
+      
+      // ✅ 修正：重新渲染月曆（刷新狀態）
+      renderCalendar();
+      
+      // 重置表單
       resetReservationForm();
       
     } else {
@@ -1193,21 +1224,24 @@ function renderReservationInfo() {
   existingReservations.forEach(reservation => {
     const route = ROUTES[reservation.route];
     
-    // 修正：直接使用日期，不做任何轉換
+    // 修正：確保顯示正確的日期
     let dateStr = reservation.date;
-    // 如果還有 'T'，只取前面部分
-    if (dateStr && dateStr.includes('T')) {
+    if (typeof dateStr === 'string' && dateStr.includes('T')) {
       dateStr = dateStr.split('T')[0];
     }
     
-    console.log('📅 顯示預約日期:', dateStr, '原始:', reservation.date);
+    console.log('🔍 預約卡片 - 原始日期:', reservation.date, '顯示日期:', dateStr);
     
     // 找出站點的英文名稱
     const routeStops = STOPS[reservation.route] || [];
     const fromStopObj = routeStops.find(s => s.chinese === reservation.fromStop);
     const toStopObj = routeStops.find(s => s.chinese === reservation.toStop);
-    const fromStopEn = fromStopObj ? fromStopObj.english : reservation.fromStop;
-    const toStopEn = toStopObj ? toStopObj.english : reservation.toStop;
+    
+    // 確保有英文，如果沒找到就用中文
+    const fromStopEn = fromStopObj ? fromStopObj.english : '';
+    const toStopEn = toStopObj ? toStopObj.english : '';
+    
+    console.log('🔍 站點資訊 - 上車:', reservation.fromStop, fromStopEn, '下車:', reservation.toStop, toStopEn);
     
     html += `
       <div class="resv-card">
@@ -1223,12 +1257,12 @@ function renderReservationInfo() {
         
         <div class="reservation-item">
           <div class="reservation-label">上車 / Boarding:</div>
-          <div class="reservation-value">${reservation.fromStop} ${fromStopEn}</div>
+          <div class="reservation-value">${reservation.fromStop}${fromStopEn ? ' ' + fromStopEn : ''}</div>
         </div>
         
         <div class="reservation-item">
           <div class="reservation-label">下車 / Drop-off:</div>
-          <div class="reservation-value">${reservation.toStop} ${toStopEn}</div>
+          <div class="reservation-value">${reservation.toStop}${toStopEn ? ' ' + toStopEn : ''}</div>
         </div>
         
         <div class="reservation-item">
@@ -1275,7 +1309,13 @@ async function cancelReservation(reservationId) {
     
     if (result.status === 'success') {
       alert('✅ 預約已取消\n✅ Reservation cancelled');
+      
+      // 重新載入預約資料
       await fetchReservations();
+      
+      // ✅ 修正：重新渲染月曆（刷新狀態）
+      renderCalendar();
+      
     } else {
       alert('❌ 取消失敗：' + (result.message || '請稍後再試\nPlease try again later'));
     }
