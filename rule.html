@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>穿山甲專車設定管理 v2.7</title>
+<title>穿山甲專車設定管理 v2.8</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -59,6 +59,23 @@ pre {
   font-size: 13px;
   overflow-x: auto;
 }
+.hint {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: -12px;
+  margin-bottom: 16px;
+}
+.section-divider {
+  border-top: 2px solid #e2e8f0;
+  margin: 24px 0;
+  padding-top: 16px;
+}
+.section-title {
+  font-weight: 600;
+  color: #3c8050;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
 </style>
 </head>
 <body>
@@ -75,22 +92,45 @@ pre {
   </div>
 
   <div id="formArea" style="display:none;">
+    
+    <!-- 基礎設定區 -->
+    <div class="section-title">📋 基礎設定</div>
+    
     <label>每班次搭載人數上限</label>
     <input type="number" id="seatLimit" min="1" max="50">
+    <div class="hint">💡 建議：6-8人</div>
 
-    <label>未核銷達幾次後封鎖</label>
-    <input type="number" id="maxNoShow" min="1" max="10">
+    <label>開放預約天數</label>
+    <input type="number" id="advanceBookingDays" min="1" max="60">
+    <div class="hint">💡 例如設定 7 表示只能預約未來 7 天內的車次，避免長期佔位</div>
 
-    <label>封鎖週數</label>
-    <input type="number" id="banWeeks" min="1" max="12">
+    <!-- 預約模式區 -->
+    <div class="section-divider"></div>
+    <div class="section-title">🚗 預約模式設定</div>
 
     <label>預約模式</label>
     <select id="tripMode">
-      <option value="single">單程</option>
-      <option value="roundtrip">來回</option>
+      <option value="single">單程模式（可分別預約去/回程）</option>
+      <option value="roundtrip">來回模式（必須同時預約往返）</option>
     </select>
+    <div class="hint">
+      💡 <strong>單程模式</strong>：乘客可靈活選擇只訂去程或回程，月曆不鎖定<br>
+      💡 <strong>來回模式</strong>：乘客必須同時選擇去程和回程班次
+    </div>
 
-    <p id="lastUpdate" class="text-sm text-gray-500 mb-3"></p>
+    <!-- 違規處理區 -->
+    <div class="section-divider"></div>
+    <div class="section-title">⚠️ 違規處理</div>
+
+    <label>未核銷達幾次後封鎖</label>
+    <input type="number" id="maxNoShow" min="1" max="10">
+    <div class="hint">💡 未搭車且未取消預約視為未核銷</div>
+
+    <label>封鎖週數</label>
+    <input type="number" id="banWeeks" min="1" max="12">
+    <div class="hint">💡 違規後暫停預約的週數</div>
+
+    <p id="lastUpdate" class="text-sm text-gray-500 mb-3 mt-4"></p>
 
     <button id="saveBtn">💾 儲存設定</button>
     <button id="debugBtn" class="mt-2 bg-gray-600 hover:bg-gray-700">🧩 檢視完整設定</button>
@@ -168,6 +208,8 @@ async function loadRules(){
     document.getElementById('maxNoShow').value = r.maxNoShow || 3;
     document.getElementById('banWeeks').value = r.banWeeks || 2;
     document.getElementById('tripMode').value = r.tripMode || 'single';
+    document.getElementById('advanceBookingDays').value = r.advanceBookingDays || 7;
+    
     document.getElementById('lastUpdate').textContent =
       `最後更新：${r.lastUpdate || '無'}　更新者：${r.updatedBy || '未知'}`;
 
@@ -195,6 +237,7 @@ async function saveRules(){
     maxNoShow: parseInt(document.getElementById('maxNoShow').value),
     banWeeks: parseInt(document.getElementById('banWeeks').value),
     tripMode: document.getElementById('tripMode').value,
+    advanceBookingDays: parseInt(document.getElementById('advanceBookingDays').value),
     updatedBy: currentUserId,
     lastUpdate: new Date().toISOString()
   };
