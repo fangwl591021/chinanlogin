@@ -654,20 +654,34 @@ async function fetchReservations() {
     console.log('📥 從 API 收到的原始預約資料:', data);
     
     if (data.status === 'success' && Array.isArray(data.reservations)) {
-      // 修正：處理每筆預約的日期，確保使用本地時區
+      // 修正：處理 Worker 的 UTC 時區問題
       existingReservations = data.reservations.map(reservation => {
         console.log('🔍 處理預約 - 原始日期:', reservation.date, '類型:', typeof reservation.date);
         
-        // 如果日期包含 'T'，提取日期部分
-        if (reservation.date && reservation.date.includes('T')) {
-          const dateOnly = reservation.date.split('T')[0];
-          console.log('✂️ 分割後的日期:', dateOnly);
-          return {
-            ...reservation,
-            date: dateOnly  // 直接使用 YYYY-MM-DD 格式，不做時區轉換
-          };
+        let correctDate = reservation.date;
+        
+        // 如果是 ISO 字符串（包含 T 和 Z）
+        if (reservation.date && typeof reservation.date === 'string' && reservation.date.includes('T')) {
+          // 修正：將 UTC 時間轉換為本地日期
+          const dateObj = new Date(reservation.date);
+          
+          console.log('🕐 Date 物件:', dateObj);
+          console.log('🌏 瀏覽器時區偏移:', dateObj.getTimezoneOffset(), '分鐘');
+          
+          // 取得本地時區的日期部分
+          const year = dateObj.getFullYear();
+          const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+          const day = String(dateObj.getDate()).padStart(2, '0');
+          correctDate = `${year}-${month}-${day}`;
+          
+          console.log('🌏 UTC 轉本地時間:', reservation.date, '→', correctDate);
+          console.log('📊 年:', year, '月:', month, '日:', day);
         }
-        return reservation;
+        
+        return {
+          ...reservation,
+          date: correctDate
+        };
       });
       
       console.log('📅 處理後的預約日期:', existingReservations.map(r => ({ id: r.reservationId, date: r.date })));
