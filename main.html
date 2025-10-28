@@ -164,7 +164,7 @@ select {
 }
 
 /* ==================== 按鈕群組 ==================== */
-/* 修改：改為同一排 */
+/* ==================== 按鈕群組 ==================== */
 .btn-group {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -181,6 +181,7 @@ select {
   font-weight: bold;
   cursor: pointer;
   transition: all 0.2s;
+  width: 100%; /* 確保按鈕填滿網格單元 */
 }
 
 .btn-calendar {
@@ -386,21 +387,21 @@ header .english-text {
     </div>
   </div>
 
-  <!-- 修改：只保留兩個按鈕 -->
-  <div class="btn-group">
-    <button id="calendarBtn" class="btn-large btn-calendar" onclick="toggleCalendar()">
-      <div class="bilingual-text">
-        <div class="chinese-text">📅 關閉月曆</div>
-        <div class="english-text">Close Calendar</div>
-      </div>
-    </button>
-    <button id="ruleBtn" class="btn-large btn-rule" onclick="showRules()">
-      <div class="bilingual-text">
-        <div class="chinese-text">📖 預約規則</div>
-        <div class="english-text">Reservation Rules</div>
-      </div>
-    </button>
-  </div>
+  <!-- 修改：並排按鈕，寬度減半 -->
+<div class="btn-group">
+  <button id="calendarBtn" class="btn-large btn-calendar" onclick="toggleCalendar()">
+    <div class="bilingual-text">
+      <div class="chinese-text">📅 關閉月曆</div>
+      <div class="english-text">Close Calendar</div>
+    </div>
+  </button>
+  <button id="ruleBtn" class="btn-large btn-rule" onclick="showRules()">
+    <div class="bilingual-text">
+      <div class="chinese-text">📖 預約規則</div>
+      <div class="english-text">Reservation Rules</div>
+    </div>
+  </button>
+</div>
 
   <div id="calendarContainer" style="display:block;margin-top:10px;padding:0 16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
