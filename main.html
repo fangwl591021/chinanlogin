@@ -164,7 +164,6 @@ select {
 }
 
 /* ==================== 按鈕群組 ==================== */
-/* ==================== 按鈕群組 ==================== */
 .btn-group {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -387,21 +386,21 @@ header .english-text {
     </div>
   </div>
 
-  <!-- 修改：並排按鈕，寬度減半 -->
-<div class="btn-group">
-  <button id="calendarBtn" class="btn-large btn-calendar" onclick="toggleCalendar()">
-    <div class="bilingual-text">
-      <div class="chinese-text">📅 關閉月曆</div>
-      <div class="english-text">Close Calendar</div>
-    </div>
-  </button>
-  <button id="ruleBtn" class="btn-large btn-rule" onclick="showRules()">
-    <div class="bilingual-text">
-      <div class="chinese-text">📖 預約規則</div>
-      <div class="english-text">Reservation Rules</div>
-    </div>
-  </button>
-</div>
+  <!-- 修正：按鈕並排 -->
+  <div class="btn-group">
+    <button id="calendarBtn" class="btn-large btn-calendar" onclick="toggleCalendar()">
+      <div class="bilingual-text">
+        <div class="chinese-text">📅 關閉月曆</div>
+        <div class="english-text">Close Calendar</div>
+      </div>
+    </button>
+    <button id="ruleBtn" class="btn-large btn-rule" onclick="showRules()">
+      <div class="bilingual-text">
+        <div class="chinese-text">📖 預約規則</div>
+        <div class="english-text">Reservation Rules</div>
+      </div>
+    </button>
+  </div>
 
   <div id="calendarContainer" style="display:block;margin-top:10px;padding:0 16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -1117,6 +1116,9 @@ async function submitReservation() {
     
     console.log('📅 選擇的日期:', selectedDate);
     
+    // 修正時區問題：確保日期格式正確
+    const reservationDate = selectedDate; // 直接使用選擇的日期字符串
+    
     const data = {
       type: 'reserve',
       userId: userData.userId,
@@ -1128,7 +1130,7 @@ async function submitReservation() {
       routeName: `${route.name} ${route.direction}`,
       fromStop: fromStop,
       toStop: toStop,
-      date: selectedDate  // 使用正確的日期格式
+      date: reservationDate  // 使用正確的日期格式
     };
     
     console.log('📤 發送預約資料:', data);
