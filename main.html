@@ -826,6 +826,7 @@ class ReservationValidator {
     return userReservations.length >= RESERVATION_RULES.maxPerDay;
   }
 }
+}
 
 // ============================ 月曆功能 ============================
 function toggleCalendar() {
@@ -1063,8 +1064,14 @@ async function getRouteReservationCount(dateStr, route) {
         resDate = resDate.split('T')[0];
       }
       
+      // 修正：提取路線代碼進行比對
+      let resRoute = r.route;
+      if (resRoute && resRoute.includes('|')) {
+        resRoute = resRoute.split('|')[0].trim();
+      }
+      
       return resDate === dateStr && 
-             r.route === route && 
+             resRoute === route && 
              r.status !== '已取消' && 
              r.status !== 'cancelled';
     }).length;
@@ -1246,12 +1253,22 @@ function renderReservationInfo() {
     
     console.log('🔍 預約卡片 - 原始日期:', reservation.date, '顯示日期:', dateStr);
     
+    // 修正：提取路線代碼（A1, B1, A2, B2）
+    // reservation.route 可能是 "A1" 或 "A1 | 22:00-22:30 暨大→埔里總站"
+    let routeCode = reservation.route;
+    if (routeCode && routeCode.includes('|')) {
+      // 如果包含 '|'，取第一部分並去除空格
+      routeCode = routeCode.split('|')[0].trim();
+    }
+    
+    console.log('🚏 原始路線:', reservation.route, '→ 路線代碼:', routeCode);
+    
     // 找出站點的英文名稱（去除前後空格）
     const fromStopClean = (reservation.fromStop || '').trim();
     const toStopClean = (reservation.toStop || '').trim();
     
-    const routeStops = STOPS[reservation.route] || [];
-    console.log('🚏 班次:', reservation.route, '站點數量:', routeStops.length);
+    const routeStops = STOPS[routeCode] || [];
+    console.log('🚏 班次:', routeCode, '站點數量:', routeStops.length);
     console.log('🚏 查找:', `"${fromStopClean}"`, '→', `"${toStopClean}"`);
     
     const fromStopObj = routeStops.find(s => s.chinese === fromStopClean);
