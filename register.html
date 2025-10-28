@@ -284,12 +284,16 @@ async function checkRegistrationStatus(userId) {
   }
 })();
 
+/*****************************************************
+ * ✅ 修改：註冊函數 - 加上雙重檢查
+ *****************************************************/
 async function registerUser() {
   const name = document.getElementById('name').value.trim();
   const phone = document.getElementById('phone').value.trim();
   const studentId = document.getElementById('studentId').value.trim();
   const department = document.getElementById('department').value;
 
+  // ✅ 基本驗證
   if (!name || !phone || !studentId || !department) {
     alert('⚠️ 請完整填寫所有欄位');
     return;
@@ -305,7 +309,38 @@ async function registerUser() {
     return;
   }
 
-  // 📌 符合 GAS doPost 預期的資料格式
+  // ✅ 註冊前再次確認是否已註冊（雙重保險）
+  try {
+    updateDebugInfo('🔍 最後檢查是否已註冊...');
+    const recheckResult = await checkRegistrationStatus(currentUserId);
+    
+    if (recheckResult.registered) {
+      console.log('⚠️ 用戶已註冊，中止註冊流程');
+      updateDebugInfo('⚠️ 偵測到重複註冊，跳轉到主頁');
+      
+      alert('⚠️ 您已經註冊過了！\n即將跳轉到主頁面...');
+      
+      // 儲存用戶資料
+      if (recheckResult.user) {
+        localStorage.setItem('pangolin_user', JSON.stringify(recheckResult.user));
+      }
+      localStorage.setItem('pangolin_registered', 'true');
+      localStorage.setItem('pangolin_userId', currentUserId);
+      
+      setTimeout(() => {
+        window.location.href = 'main.html';
+      }, 1500);
+      return;
+    }
+    
+    updateDebugInfo('✅ 確認未註冊，繼續註冊流程');
+    
+  } catch (recheckErr) {
+    console.warn('⚠️ 無法再次檢查註冊狀態:', recheckErr);
+    updateDebugInfo('⚠️ 無法確認註冊狀態，但將嘗試註冊');
+  }
+
+  // ✅ 準備註冊資料
   const data = {
     type: 'register',
     userId: currentUserId,
@@ -333,18 +368,6 @@ async function registerUser() {
     console.log('📨 註冊回應原始文字:', text);
     console.log('📊 HTTP 狀態:', res.status);
     
-    if (!res.ok) {
-      let errorMsg = `HTTP ${res.status}: ${res.statusText}`;
-      try {
-        const errorData = JSON.parse(text);
-        if (errorData.error) errorMsg = errorData.error;
-        if (errorData.message) errorMsg += ' - ' + errorData.message;
-      } catch (e) {
-        console.error('❌ 無法解析錯誤回應:', text);
-      }
-      throw new Error(errorMsg);
-    }
-    
     let result = {};
     try {
       result = JSON.parse(text);
@@ -352,19 +375,51 @@ async function registerUser() {
       throw new Error('伺服器回應格式錯誤');
     }
     
-    console.log(`✅ 註冊請求完成,耗時: ${Date.now() - registerStart}ms`);
+    console.log(`✅ 註冊請求完成，耗時: ${Date.now() - registerStart}ms`);
+    console.log('📊 註冊結果:', result);
     
-    // 🟢 處理成功回應
-    if (result.ok === true || result.status === 'success' || result.success === true) {
+    // ✅ 處理重複註冊的回應
+    if (result.code === 'ALREADY_REGISTERED' || 
+        (result.ok === false && result.message && result.message.includes('已註冊'))) {
+      
+      console.log('⚠️ 後端回報：用戶已註冊');
+      updateDebugInfo('⚠️ 帳號已存在，跳轉到主頁');
+      
+      alert('⚠️ 此 LINE 帳號已註冊過！\n\n' + 
+            '姓名：' + (result.user?.name || '未知') + '\n' +
+            '學號：' + (result.user?.studentId || '未知') + '\n\n' +
+            '即將跳轉到主頁面...');
+      
+      // 儲存用戶資料
+      if (result.user) {
+        localStorage.setItem('pangolin_user', JSON.stringify(result.user));
+      }
       localStorage.setItem('pangolin_registered', 'true');
       localStorage.setItem('pangolin_userId', currentUserId);
+      
+      setTimeout(() => {
+        window.location.href = 'main.html';
+      }, 2000);
+      return;
+    }
+    
+    // ✅ 處理成功回應
+    if (result.ok === true || result.status === 'success' || result.success === true) {
+      console.log('✅ 註冊成功');
+      
+      localStorage.setItem('pangolin_registered', 'true');
+      localStorage.setItem('pangolin_userId', currentUserId);
+      
+      if (result.user) {
+        localStorage.setItem('pangolin_user', JSON.stringify(result.user));
+      }
       
       const btn = document.getElementById('registerBtn');
       btn.classList.remove('bg-green-500', 'hover:bg-green-600');
       btn.classList.add('bg-green-600');
       document.getElementById('btnText').textContent = '✅ 註冊成功!';
       
-      updateDebugInfo('✅ 註冊成功,跳轉中...');
+      updateDebugInfo('✅ 註冊成功，跳轉中...');
       
       setTimeout(() => {
         window.location.href = 'main.html';
@@ -372,14 +427,19 @@ async function registerUser() {
       return;
     }
     
+    // ✅ 其他錯誤
     throw new Error(result.error || result.message || '註冊失敗');
     
   } catch (err) {
     console.error('❌ 註冊失敗', err);
     
     let userMessage = err.message;
-    if (err.message.includes('已註冊') || err.message.includes('已存在')) {
-      userMessage = '此帳號已註冊過,請直接使用主功能';
+    
+    // 再次檢查是否為重複註冊錯誤
+    if (userMessage.includes('已註冊') || 
+        userMessage.includes('已存在') || 
+        userMessage.includes('ALREADY_REGISTERED')) {
+      userMessage = '此帳號已註冊過，請直接使用主功能';
       setTimeout(() => {
         window.location.href = 'main.html';
       }, 2000);
@@ -387,6 +447,7 @@ async function registerUser() {
     
     alert('❌ ' + userMessage);
     setButtonLoading(false);
+    updateDebugInfo('❌ ' + userMessage);
   }
 }
 
