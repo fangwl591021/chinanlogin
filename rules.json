@@ -3,35 +3,60 @@
   "maxNoShow": 3,
   "banWeeks": 2,
   "tripMode": "single",
-  "maxPerDay": 1,
+  "maxPerDay": 2,
   "dailyDeadline": "19:00",
   "maxDaysAhead": 7,
   "allowWeekend": true,
-  "routePolicy": "A1+B2 可預約，禁止 A1+B1 或 A2+B2",
+  "routePolicy": "flexible",
+  "routeRules": {
+    "allowSameDayRoundtrip": true,
+    "restrictedCombinations": [],
+    "notes": "單程模式下允許同日預約去程+回程，不限制路線組合"
+  },
   "description": {
     "seatLimit": "每班次可預約人數上限，例：6 代表每班最多6位乘客",
     "maxNoShow": "累積未核銷達此次數即觸發封鎖機制",
     "banWeeks": "封鎖持續週數（自動解除）",
-    "tripMode": "預約模式：single 為單程、roundtrip 為可預約來回",
-    "maxPerDay": "每人每日可預約的最大班次數量",
+    "tripMode": "預約模式：single 為單程（可分別預約去/回程）、roundtrip 為強制來回",
+    "maxPerDay": "每人每日可預約的最大班次數量（單程模式建議設2，來回模式設1）",
     "dailyDeadline": "當日截止預約時間（24h制）",
     "maxDaysAhead": "開放可預約的最遠天數（例如7表示7天內）",
     "allowWeekend": "是否允許週末預約",
-    "routePolicy": "路線限制說明：可預約 A1+B2，禁止 A1+B1 或 A2+B2 連續來回",
+    "routePolicy": "路線政策：flexible(彈性) 或 restricted(限制)",
+    "routeRules": "詳細路線規則，包含是否允許同日往返及限制組合",
     "lastUpdate": "最後一次修改時間（自動生成）",
     "updatedBy": "最後修改者名稱"
   },
   "meta": {
-    "version": "1.2.0",
+    "version": "1.3.0",
     "system": "Pangolin Shuttle",
     "environment": "production",
     "maintainer": "Tony",
     "ruleSource": "GitHub Pages / chinanlogin",
     "linkedWorker": "Cloudflare Worker v3.8",
+    "changelog": [
+      {
+        "version": "1.3.0",
+        "date": "2025-10-28",
+        "changes": [
+          "調整 maxPerDay 為 2，支持單程模式下同日往返",
+          "更新 routePolicy 為 flexible，移除路線限制",
+          "新增 routeRules 物件，詳細定義路線規則",
+          "修正單程模式下月曆鎖死問題"
+        ]
+      },
+      {
+        "version": "1.2.0",
+        "date": "2025-10-21",
+        "changes": [
+          "初始版本設定"
+        ]
+      }
+    ],
     "compatibility": {
-      "adminUI": "v6.4",
-      "ruleEditor": "v2.2",
-      "worker": "v3.8"
+      "adminUI": "v6.4+",
+      "ruleEditor": "v2.8+",
+      "worker": "v3.8+"
     },
     "integration": {
       "gasEndpoint": "AKfycbyORM9maxvd_9xHBijjUPXbqvPtNzys3J4Q0CzcoYgyUUNfLRz4VViJySyrvr9zLzmMvg",
@@ -46,6 +71,6 @@
     },
     "note": "本檔為穿山甲專車系統後端設定檔，Worker 啟動時若 KV 無資料，將自動載入此檔並同步。"
   },
-  "lastUpdate": "2025-10-21T03:00:00.000Z",
+  "lastUpdate": "2025-10-28T04:51:00.000Z",
   "updatedBy": "Tony"
 }
