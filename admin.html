@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車後台 v6.3.5</title>
+<title>穿山甲專車後台 v6.3.6</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -28,6 +28,7 @@ body { font-family:"Noto Sans TC",system-ui,sans-serif;background:#f8fafc;margin
 .status-ok{color:#16a34a;font-weight:bold;}
 .status-cancel{color:#dc2626;font-weight:bold;}
 .status-wait{color:#ca8a04;font-weight:bold;}
+.info-badge{background:#dbeafe;color:#1e40af;padding:4px 12px;border-radius:6px;font-size:12px;display:inline-block;margin-top:8px;}
 </style>
 </head>
 
@@ -128,18 +129,35 @@ body { font-family:"Noto Sans TC",system-ui,sans-serif;background:#f8fafc;margin
     <section id="config" class="section">
       <div class="card">
         <h2 class="section-title">⚙️ 系統設定</h2>
-        <label class="block mb-2">每班次搭載人數上限</label>
+        
+        <label class="block mb-2 font-semibold text-gray-700">每班次搭載人數上限</label>
         <input id="seatLimit" type="number" class="border p-2 w-full mb-3 rounded" />
-        <label class="block mb-2">未核銷達幾次後禁用</label>
+        
+        <label class="block mb-2 font-semibold text-gray-700">未核銷達幾次後禁用</label>
         <input id="maxNoShow" type="number" class="border p-2 w-full mb-3 rounded" />
-        <label class="block mb-2">禁用週數</label>
+        
+        <label class="block mb-2 font-semibold text-gray-700">禁用週數</label>
         <input id="banWeeks" type="number" class="border p-2 w-full mb-3 rounded" />
-        <label class="block mb-2">預約模式</label>
-        <select id="tripMode" class="border p-2 w-full mb-3 rounded">
-          <option value="single">單程</option>
-          <option value="round">可來回</option>
-        </select>
-        <button id="saveRules" class="bg-green-600 text-white font-bold py-2 px-4 rounded w-full">💾 儲存設定</button>
+        
+        <!-- 🆕 新增：預約開放天數 -->
+        <label class="block mb-2 font-semibold text-gray-700">📅 預約開放天數</label>
+        <input id="bookingDaysLimit" type="number" min="1" max="90" class="border p-2 w-full mb-2 rounded" placeholder="例如：5" />
+        <p class="text-sm text-gray-500 mb-3">
+          設定用戶最多可預約未來幾天內的班次（例如填 5 表示只能預約今天起 5 天內的班次）
+        </p>
+        <div id="bookingDaysInfo" class="info-badge">
+          📌 目前開放：今日起 <span id="daysDisplay">-</span> 天內可預約
+        </div>
+        
+        <div class="border-t mt-4 pt-4">
+          <label class="block mb-2 font-semibold text-gray-700">預約模式</label>
+          <select id="tripMode" class="border p-2 w-full mb-3 rounded">
+            <option value="single">單程</option>
+            <option value="round">可來回</option>
+          </select>
+        </div>
+        
+        <button id="saveRules" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full mt-4">💾 儲存設定</button>
         <p id="ruleMeta" class="text-gray-500 text-sm mt-3"></p>
       </div>
     </section>
@@ -216,11 +234,11 @@ async function init(){
       }
     } else {
       console.log('❌ 用戶未註冊或資料不完整');
-      debugMsg = `用戶狀態：${userData.registered ? '已註冊但資料不完整' : '未註冊'}`;
+      debugMsg = `registered: ${userData.registered}\nuser 物件: ${JSON.stringify(userData.user)}`;
     }
 
     if (!isAdmin) {
-      console.log('🚫 用戶無管理員權限，顯示無權限畫面');
+      console.log('❌ 無權限，顯示無權限畫面');
       document.getElementById('loadingScreen').style.display='none';
       document.getElementById('noAuthScreen').style.display='flex';
       document.getElementById('debugInfo').innerHTML = `
@@ -386,6 +404,12 @@ async function loadRules(){
     document.getElementById('maxNoShow').value = r.maxNoShow || '';
     document.getElementById('banWeeks').value = r.banWeeks || '';
     document.getElementById('tripMode').value = r.tripMode || 'single';
+    
+    // 🆕 載入預約開放天數設定
+    const bookingDaysLimit = r.bookingDaysLimit || 30; // 預設30天
+    document.getElementById('bookingDaysLimit').value = bookingDaysLimit;
+    document.getElementById('daysDisplay').textContent = bookingDaysLimit;
+    
     document.getElementById('ruleMeta').textContent = `最後更新：${r.lastUpdate || '未知'}`;
   } catch (e) {
     console.error('載入設定失敗:', e);
@@ -393,12 +417,42 @@ async function loadRules(){
   }
 }
 
+// 🆕 監聽預約開放天數輸入，即時更新顯示
+document.getElementById('bookingDaysLimit').addEventListener('input', function(e) {
+  const days = parseInt(e.target.value) || 0;
+  document.getElementById('daysDisplay').textContent = days;
+  
+  if (days < 1) {
+    e.target.style.borderColor = '#ef4444';
+  } else if (days > 90) {
+    e.target.style.borderColor = '#f59e0b';
+  } else {
+    e.target.style.borderColor = '#d1d5db';
+  }
+});
+
 document.getElementById('saveRules').addEventListener('click', async () => {
+  const bookingDaysLimit = parseInt(document.getElementById('bookingDaysLimit').value);
+  
+  // 🆕 驗證預約開放天數
+  if (!bookingDaysLimit || bookingDaysLimit < 1) {
+    showToast('⚠️ 預約開放天數必須至少為 1 天', 'error');
+    document.getElementById('bookingDaysLimit').focus();
+    return;
+  }
+  
+  if (bookingDaysLimit > 90) {
+    showToast('⚠️ 預約開放天數建議不超過 90 天', 'error');
+    document.getElementById('bookingDaysLimit').focus();
+    return;
+  }
+  
   const body = {
     seatLimit: +document.getElementById('seatLimit').value,
     maxNoShow: +document.getElementById('maxNoShow').value,
     banWeeks: +document.getElementById('banWeeks').value,
-    tripMode: document.getElementById('tripMode').value
+    tripMode: document.getElementById('tripMode').value,
+    bookingDaysLimit: bookingDaysLimit // 🆕 加入預約開放天數
   };
   
   try {
@@ -410,7 +464,7 @@ document.getElementById('saveRules').addEventListener('click', async () => {
     const json = await res.json();
     
     if(json.status === 'success') {
-      showToast('✅ 已成功更新設定');
+      showToast('✅ 已成功更新設定（包含預約開放天數限制）');
       await loadRules();
     } else {
       showToast('❌ 更新失敗', 'error');
