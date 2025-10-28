@@ -1246,16 +1246,25 @@ function renderReservationInfo() {
     
     console.log('🔍 預約卡片 - 原始日期:', reservation.date, '顯示日期:', dateStr);
     
-    // 找出站點的英文名稱
-    const routeStops = STOPS[reservation.route] || [];
-    const fromStopObj = routeStops.find(s => s.chinese === reservation.fromStop);
-    const toStopObj = routeStops.find(s => s.chinese === reservation.toStop);
+    // 找出站點的英文名稱（去除前後空格）
+    const fromStopClean = (reservation.fromStop || '').trim();
+    const toStopClean = (reservation.toStop || '').trim();
     
-    // 確保有英文，如果沒找到就用中文
+    const routeStops = STOPS[reservation.route] || [];
+    console.log('🚏 班次:', reservation.route, '站點數量:', routeStops.length);
+    console.log('🚏 查找:', `"${fromStopClean}"`, '→', `"${toStopClean}"`);
+    
+    const fromStopObj = routeStops.find(s => s.chinese === fromStopClean);
+    const toStopObj = routeStops.find(s => s.chinese === toStopClean);
+    
+    console.log('🔍 找到上車站:', fromStopObj);
+    console.log('🔍 找到下車站:', toStopObj);
+    
+    // 確保有英文
     const fromStopEn = fromStopObj ? fromStopObj.english : '';
     const toStopEn = toStopObj ? toStopObj.english : '';
     
-    console.log('🔍 站點資訊 - 上車:', reservation.fromStop, fromStopEn, '下車:', reservation.toStop, toStopEn);
+    console.log('✅ 最終顯示 - 上車:', fromStopClean, fromStopEn, '下車:', toStopClean, toStopEn);
     
     html += `
       <div class="resv-card">
@@ -1271,12 +1280,12 @@ function renderReservationInfo() {
         
         <div class="reservation-item">
           <div class="reservation-label">上車 / Boarding:</div>
-          <div class="reservation-value">${reservation.fromStop}${fromStopEn ? ' ' + fromStopEn : ''}</div>
+          <div class="reservation-value">${fromStopClean}${fromStopEn ? ' ' + fromStopEn : ''}</div>
         </div>
         
         <div class="reservation-item">
           <div class="reservation-label">下車 / Drop-off:</div>
-          <div class="reservation-value">${reservation.toStop}${toStopEn ? ' ' + toStopEn : ''}</div>
+          <div class="reservation-value">${toStopClean}${toStopEn ? ' ' + toStopEn : ''}</div>
         </div>
         
         <div class="reservation-item">
