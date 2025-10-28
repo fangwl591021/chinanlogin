@@ -639,22 +639,33 @@ class ReservationValidator {
 
   static formatReservationDate(dateStr) {
     // 統一處理預約日期格式，避免時區問題
+    // 永遠不使用 new Date() 來解析日期字符串
+    if (!dateStr) return '';
+    
+    // 如果包含時間戳，取日期部分
     if (dateStr.includes('T')) {
       return dateStr.split('T')[0];
     }
     
+    // 直接提取 YYYY-MM-DD 格式
     const dateMatch = dateStr.match(/(\d{4})-(\d{2})-(\d{2})/);
     if (dateMatch) {
       return `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}`;
     }
     
-    try {
-      const dateObj = new Date(dateStr);
-      return formatDateToLocal(dateObj);
-    } catch (e) {
-      console.warn('無法解析預約日期:', dateStr);
-      return dateStr;
+    // 如果是其他格式（如 2025/10/30），轉換為標準格式
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        const year = parts[0].padStart(4, '0');
+        const month = parts[1].padStart(2, '0');
+        const day = parts[2].padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
     }
+    
+    console.warn('無法解析預約日期:', dateStr);
+    return dateStr;
   }
 }
 
