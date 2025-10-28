@@ -136,6 +136,19 @@ main { flex: 1; padding-bottom: 40px; }
   cursor: not-allowed;
 }
 
+/* 班次按鈕座位資訊 */
+.route-btn .seat-info {
+  color: #333;
+}
+
+.route-btn.selected .seat-info {
+  color: white !important;
+}
+
+.route-btn.selected .seat-info small {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
 /* ==================== 表單元素 ==================== */
 select {
   width: 100%; 
@@ -335,6 +348,11 @@ header .english-text {
   color: white !important;
 }
 
+/* 修正：選中時座位資訊也要變白色 */
+.route-btn.selected div[style*="color"] {
+  color: white !important;
+}
+
 .notice .chinese-text {
   font-size: 14px;
 }
@@ -362,10 +380,9 @@ header .english-text {
 }
 
 /* ==================== 響應式設計 ==================== */
+/* 移除：讓按鈕始終並排顯示 */
 @media (max-width: 600px) {
-  .btn-group {
-    grid-template-columns: 1fr;
-  }
+  /* 保持按鈕並排，不改變佈局 */
 }
 </style>
 </head>
@@ -634,8 +651,20 @@ async function fetchReservations() {
     const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
     const data = await res.json();
     if (data.status === 'success' && Array.isArray(data.reservations)) {
-      existingReservations = data.reservations;
+      // 修正：處理每筆預約的日期，確保使用本地時區
+      existingReservations = data.reservations.map(reservation => {
+        // 如果日期包含 'T'，提取日期部分
+        if (reservation.date && reservation.date.includes('T')) {
+          const dateOnly = reservation.date.split('T')[0];
+          return {
+            ...reservation,
+            date: dateOnly  // 直接使用 YYYY-MM-DD 格式，不做時區轉換
+          };
+        }
+        return reservation;
+      });
       console.log('📥 預約資料已載入:', existingReservations.length, '筆預約');
+      console.log('📅 預約日期:', existingReservations.map(r => r.date));
       renderReservationInfo();
     } else {
       existingReservations = [];
@@ -977,7 +1006,7 @@ async function showRoutes() {
           <div class="chinese-text" style="font-size:13px;">${route.direction}</div>
           <div class="english-text" style="font-size:11px;">${route.directionEn}</div>
         </div>
-        <div style="font-size: 12px; margin-top: 5px; color: #333; font-weight:bold;">
+        <div class="seat-info" style="font-size: 12px; margin-top: 5px; font-weight:bold;">
           ${seatInfo}<br>
           <small style="font-size:10px;opacity:0.8;">${seatInfoEn}</small>
         </div>
@@ -1164,16 +1193,14 @@ function renderReservationInfo() {
   existingReservations.forEach(reservation => {
     const route = ROUTES[reservation.route];
     
-    // 修正：從 reservation.date 正確提取日期
+    // 修正：直接使用日期，不做任何轉換
     let dateStr = reservation.date;
-    if (dateStr.includes('T')) {
+    // 如果還有 'T'，只取前面部分
+    if (dateStr && dateStr.includes('T')) {
       dateStr = dateStr.split('T')[0];
     }
-    // 進一步確保日期格式正確
-    const dateParts = dateStr.match(/(\d{4})-(\d{2})-(\d{2})/);
-    if (dateParts) {
-      dateStr = `${dateParts[1]}-${dateParts[2]}-${dateParts[3]}`;
-    }
+    
+    console.log('📅 顯示預約日期:', dateStr, '原始:', reservation.date);
     
     // 找出站點的英文名稱
     const routeStops = STOPS[reservation.route] || [];
