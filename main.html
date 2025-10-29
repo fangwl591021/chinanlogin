@@ -652,7 +652,7 @@ function renderUser(user) {
   `;
 }
 
-// ✅ 修正：加強日期格式處理和自動更新班次
+// ✅ 修正：使用台灣時區處理日期
 async function fetchReservations() {
   try {
     const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
@@ -664,12 +664,23 @@ async function fetchReservations() {
       existingReservations = data.reservations.map(reservation => {
         let correctDate = reservation.date;
         
-        // ✅ 統一處理日期格式
+        // ✅ 統一處理日期格式 - 使用台灣時區
         if (reservation.date && typeof reservation.date === 'string') {
           if (reservation.date.includes('T')) {
-            correctDate = reservation.date.split('T')[0];
+            // ISO 格式，使用 UTC+8 處理
+            const dateObj = new Date(reservation.date);
+            const taiwanOffset = 8 * 60; // UTC+8 = 480 分鐘
+            const localOffset = dateObj.getTimezoneOffset(); // 本地時區偏移
+            const taiwanDate = new Date(dateObj.getTime() + (taiwanOffset + localOffset) * 60 * 1000);
+            
+            const year = taiwanDate.getFullYear();
+            const month = String(taiwanDate.getMonth() + 1).padStart(2, '0');
+            const day = String(taiwanDate.getDate()).padStart(2, '0');
+            correctDate = `${year}-${month}-${day}`;
           } else if (reservation.date.includes(' ')) {
             correctDate = reservation.date.split(' ')[0];
+          } else {
+            correctDate = reservation.date;
           }
         }
         
@@ -682,6 +693,9 @@ async function fetchReservations() {
       console.log('📅 處理後的預約:', existingReservations);
       
       renderReservationInfo();
+      
+      // ✅ 重新渲染月曆（更新預約數）
+      renderCalendar();
       
       // ✅ 如果當前有選擇日期,重新顯示班次
       if (selectedDate) {
