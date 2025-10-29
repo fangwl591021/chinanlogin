@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>穿山甲專車預約 🚍 v2.7.0</title>
+<title>穿山甲專車預約 🚍 v2.7.1</title>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
 <style>
@@ -82,14 +82,12 @@ main { flex: 1; padding-bottom: 40px; }
   cursor: not-allowed;
 }
 
-/* ✅ 修改：有預約但未額滿的日期改為淺藍色提示，仍可點擊 */
 .calendar-day.has-booking {
   background: #e3f2fd;
   border: 1px solid #90caf9;
   color: #333;
 }
 
-/* ✅ 新增：所有班次都訂滿才鎖定 */
 .calendar-day.all-booked {
   background: #e0e8ff;
   border: 1px solid #b3c6ff;
@@ -122,7 +120,6 @@ main { flex: 1; padding-bottom: 40px; }
 /* ==================== 班次選擇 ==================== */
 .route-section, .stop-selector { padding: 0 16px; margin: 20px 0; }
 
-/* 修改：班次按鈕改為 2x2 網格 */
 .route-buttons { 
   display: grid; 
   grid-template-columns: 1fr 1fr; 
@@ -147,7 +144,6 @@ main { flex: 1; padding-bottom: 40px; }
   cursor: not-allowed;
 }
 
-/* ✅ 新增：已預約的班次樣式 */
 .route-btn.already-booked {
   background: #ffebee;
   border-color: #ef5350;
@@ -155,7 +151,6 @@ main { flex: 1; padding-bottom: 40px; }
   cursor: not-allowed;
 }
 
-/* 班次按鈕座位資訊 */
 .route-btn .seat-info {
   color: #333;
 }
@@ -196,7 +191,6 @@ select {
 }
 
 /* ==================== 按鈕群組 ==================== */
-/* 修改：改為同一排 */
 .btn-group {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -244,7 +238,7 @@ select {
   background: #2d6140;
 }
 
-/* ==================== 預約卡片（按照圖片格式修改） ==================== */
+/* ==================== 預約卡片 ==================== */
 .cancel-btn {
   background: #c62828; 
   color: white; 
@@ -268,7 +262,6 @@ select {
   border: 1px solid #e0e0e0;
 }
 
-/* 修改：預約項目格式按照圖片 */
 .reservation-item {
   padding: 10px 0;
   border-bottom: 1px solid #f0f0f0;
@@ -291,7 +284,6 @@ select {
   font-size: 15px;
 }
 
-/* 狀態標籤 */
 .status-badge {
   display: inline-block;
   padding: 4px 12px;
@@ -367,7 +359,6 @@ header .english-text {
   color: white !important;
 }
 
-/* 修正：選中時座位資訊也要變白色 */
 .route-btn.selected div[style*="color"] {
   color: white !important;
 }
@@ -397,12 +388,6 @@ header .english-text {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-
-/* ==================== 響應式設計 ==================== */
-/* 移除：讓按鈕始終並排顯示 */
-@media (max-width: 600px) {
-  /* 保持按鈕並排，不改變佈局 */
-}
 </style>
 </head>
 
@@ -422,7 +407,6 @@ header .english-text {
     </div>
   </div>
 
-  <!-- 修改：只保留兩個按鈕 -->
   <div class="btn-group">
     <button id="calendarBtn" class="btn-large btn-calendar" onclick="toggleCalendar()">
       <div class="bilingual-text">
@@ -623,7 +607,6 @@ async function init() {
       fetchSystemRules()
     ]);
     
-    // 初始化時立即渲染月曆
     renderCalendar();
     
     setInterval(async () => {
@@ -669,6 +652,7 @@ function renderUser(user) {
   `;
 }
 
+// ✅ 修正：加強日期格式處理和自動更新班次
 async function fetchReservations() {
   try {
     const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
@@ -680,12 +664,13 @@ async function fetchReservations() {
       existingReservations = data.reservations.map(reservation => {
         let correctDate = reservation.date;
         
-        if (reservation.date && typeof reservation.date === 'string' && reservation.date.includes('T')) {
-          const dateObj = new Date(reservation.date);
-          const year = dateObj.getFullYear();
-          const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-          const day = String(dateObj.getDate()).padStart(2, '0');
-          correctDate = `${year}-${month}-${day}`;
+        // ✅ 統一處理日期格式
+        if (reservation.date && typeof reservation.date === 'string') {
+          if (reservation.date.includes('T')) {
+            correctDate = reservation.date.split('T')[0];
+          } else if (reservation.date.includes(' ')) {
+            correctDate = reservation.date.split(' ')[0];
+          }
         }
         
         return {
@@ -695,7 +680,13 @@ async function fetchReservations() {
       });
       
       console.log('📅 處理後的預約:', existingReservations);
+      
       renderReservationInfo();
+      
+      // ✅ 如果當前有選擇日期,重新顯示班次
+      if (selectedDate) {
+        await showRoutes();
+      }
     } else {
       existingReservations = [];
     }
@@ -729,7 +720,6 @@ async function fetchSystemRules() {
       systemRules = data.current;
       maxCapacity = data.current.seatLimit || 45;
       
-      // ✅ 更新預約天數限制
       if (data.current.advanceBookingDays) {
         RESERVATION_RULES.maxDaysAhead = data.current.advanceBookingDays;
       }
@@ -772,684 +762,3 @@ function getDayOfWeek(dateStr) {
 }
 
 // ============================ 預約規則驗證類 ============================
-class ReservationValidator {
-  static isPastDate(dateStr) {
-    const [year, month, day] = dateStr.split('-').map(Number);
-    const selected = new Date(year, month - 1, day);
-    selected.setHours(0, 0, 0, 0);
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    return selected < today;
-  }
-
-  static isNoServiceDate(dateStr) {
-    return disabledDates.includes(dateStr);
-  }
-
-  static isAfterDeadline(dateStr) {
-    if (this.isToday(dateStr)) {
-      const now = new Date();
-      const [deadlineHour, deadlineMinute] = RESERVATION_RULES.dailyDeadline.split(':');
-      const deadline = new Date();
-      deadline.setHours(parseInt(deadlineHour), parseInt(deadlineMinute), 0, 0);
-      return now > deadline;
-    }
-    return false;
-  }
-
-  static isWithinBookingWindow(dateStr) {
-    const [year, month, day] = dateStr.split('-').map(Number);
-    const selected = new Date(year, month - 1, day);
-    selected.setHours(0, 0, 0, 0);
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const maxDate = new Date();
-    maxDate.setDate(today.getDate() + RESERVATION_RULES.maxDaysAhead);
-    maxDate.setHours(23, 59, 59, 999);
-    
-    return selected >= today && selected <= maxDate;
-  }
-
-  static isToday(dateStr) {
-    const today = formatDateToLocal(new Date());
-    return dateStr === today;
-  }
-
-  // ✅ 新增：檢查特定班次是否已預約
-  static hasReservationForRoute(userId, dateStr, routeCode) {
-    const reservation = existingReservations.find(res => {
-      let resDate = res.date;
-      if (resDate && resDate.includes('T')) {
-        resDate = resDate.split('T')[0];
-      }
-      
-      let resRoute = res.route;
-      if (resRoute && resRoute.includes('|')) {
-        resRoute = resRoute.split('|')[0].trim();
-      }
-      
-      return res.userId === userId && 
-             resDate === dateStr && 
-             resRoute === routeCode &&
-             res.status !== '已取消' && 
-             res.status !== 'cancelled';
-    });
-    
-    return !!reservation;
-  }
-
-  // ✅ 新增：取得當天的預約數量
-  static getReservationCount(userId, dateStr) {
-    const reservations = existingReservations.filter(res => {
-      let resDate = res.date;
-      if (resDate && resDate.includes('T')) {
-        resDate = resDate.split('T')[0];
-      }
-      
-      return res.userId === userId && 
-             resDate === dateStr && 
-             res.status !== '已取消' && 
-             res.status !== 'cancelled';
-    });
-    
-    return reservations.length;
-  }
-
-  // ✅ 修改：檢查是否預約了所有 4 個班次
-  static hasBookedAllRoutes(userId, dateStr) {
-    const count = this.getReservationCount(userId, dateStr);
-    return count >= 4; // 4 個班次都訂滿才返回 true
-  }
-}
-
-// ============================ 月曆功能 ============================
-function toggleCalendar() {
-  const calendar = document.getElementById('calendarContainer');
-  const btn = document.getElementById('calendarBtn');
-  const isHidden = window.getComputedStyle(calendar).display === 'none';
-
-  calendar.style.display = isHidden ? 'block' : 'none';
-  btn.innerHTML = isHidden
-    ? '<div class="bilingual-text"><div class="chinese-text">📅 關閉月曆</div><div class="english-text">Close Calendar</div></div>'
-    : '<div class="bilingual-text"><div class="chinese-text">📅 打開月曆</div><div class="english-text">Open Calendar</div></div>';
-
-  if (isHidden) {
-    renderCalendar();
-  }
-}
-
-function renderCalendar() {
-  const cal = document.getElementById('calendar');
-  const title = document.getElementById('calendarTitle');
-  
-  title.innerHTML = `
-    <div class="chinese-text">${currentYear}年 ${currentMonth + 1}月</div>
-    <div class="english-text">${currentYear} ${getMonthName(currentMonth)}</div>
-  `;
-  
-  const firstDay = new Date(currentYear, currentMonth, 1);
-  const lastDay = new Date(currentYear, currentMonth + 1, 0);
-  const prevLastDay = new Date(currentYear, currentMonth, 0);
-  const startWeekday = firstDay.getDay();
-  const daysInMonth = lastDay.getDate();
-  
-  let html = '';
-  
-  ['日', '一', '二', '三', '四', '五', '六'].forEach(d => {
-    const engDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const engDay = engDays[['日', '一', '二', '三', '四', '五', '六'].indexOf(d)];
-    html += `<div class="calendar-header">${d}<br><small style="font-size: 10px;">${engDay}</small></div>`;
-  });
-  
-  for (let i = startWeekday - 1; i >= 0; i--) {
-    const day = prevLastDay.getDate() - i;
-    html += `<div class="calendar-day other-month">${day}</div>`;
-  }
-  
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateObj = new Date(currentYear, currentMonth, day);
-    const dateStr = formatDateToLocal(dateObj);
-    
-    const isPast = ReservationValidator.isPastDate(dateStr);
-    const isNoService = ReservationValidator.isNoServiceDate(dateStr);
-    const isAfterDeadline = ReservationValidator.isAfterDeadline(dateStr);
-    const isWithinWindow = ReservationValidator.isWithinBookingWindow(dateStr);
-    
-    // ✅ 修改：取得當天預約數量
-    const reservationCount = userData ? ReservationValidator.getReservationCount(userData.userId, dateStr) : 0;
-    const allBooked = userData ? ReservationValidator.hasBookedAllRoutes(userData.userId, dateStr) : false;
-    
-    let classes = 'calendar-day';
-    
-    // ✅ 修改：只有預約了所有班次才完全鎖定
-    if (allBooked) {
-      classes += ' all-booked';
-      html += `<div class="${classes}">${day}<br><small style="font-size:10px;">已訂滿(${reservationCount}/4)</small><br><small style="color: #666; font-size: 9px;">All Booked</small></div>`;
-    } else if (isPast) {
-      classes += ' past';
-      html += `<div class="${classes}">${day}<br><small style="font-size:10px;">已過期</small><br><small style="color: #666; font-size: 9px;">Expired</small></div>`;
-    } else if (isNoService) {
-      classes += ' disabled';
-      html += `<div class="${classes}">${day}<br><small style="font-size:10px;">停駛</small><br><small style="color: #666; font-size: 9px;">No Service</small></div>`;
-    } else if (!isWithinWindow) {
-      classes += ' not-open';
-      html += `<div class="${classes}">${day}<br><small style="font-size:10px;">未開放</small><br><small style="color: #666; font-size: 9px;">Not Open</small></div>`;
-    } else if (isAfterDeadline && ReservationValidator.isToday(dateStr)) {
-      classes += ' disabled';
-      html += `<div class="${classes}">${day}<br><small style="font-size:10px;">已截止</small><br><small style="color: #666; font-size: 9px;">Deadline</small></div>`;
-    } else {
-      if (selectedDate === dateStr) {
-        classes += ' selected';
-      }
-      
-      // ✅ 新增：有部分預約但未額滿的標示
-      if (reservationCount > 0) {
-        classes += ' has-booking';
-      }
-      
-      const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
-      if (isWeekend && reservationCount === 0) {
-        classes += ' weekend';
-      }
-      
-      // ✅ 顯示預約數量
-      let dayLabel = day;
-      if (reservationCount > 0) {
-        dayLabel = `${day}<br><small style="font-size:10px;">已訂${reservationCount}班</small><br><small style="color: #666; font-size: 9px;">${reservationCount} booked</small>`;
-      } else if (isWeekend) {
-        dayLabel = `${day}<br><small style="font-size:10px;">週末</small><br><small style="color: #666; font-size: 9px;">Weekend</small>`;
-      }
-      
-      html += `<div class="${classes}" onclick="selectDate('${dateStr}')">${dayLabel}</div>`;
-    }
-  }
-  
-  const remainingDays = 7 - ((startWeekday + daysInMonth) % 7);
-  if (remainingDays < 7) {
-    for (let i = 1; i <= remainingDays; i++) {
-      html += `<div class="calendar-day other-month">${i}</div>`;
-    }
-  }
-  
-  cal.innerHTML = html;
-}
-
-async function changeMonth(delta) {
-  currentMonth += delta;
-  if (currentMonth < 0) {
-    currentMonth = 11;
-    currentYear--;
-  } else if (currentMonth > 11) {
-    currentMonth = 0;
-    currentYear++;
-  }
-  
-  await fetchDisabledDates();
-  renderCalendar();
-}
-
-// ============================ 日期選擇 ============================
-function selectDate(dateStr) {
-  if (!userData) {
-    showError('❌ 系統初始化中，請稍候...<br>❌ System initializing, please wait...');
-    return;
-  }
-
-  const validation = {
-    past: ReservationValidator.isPastDate(dateStr),
-    noService: ReservationValidator.isNoServiceDate(dateStr),
-    withinWindow: ReservationValidator.isWithinBookingWindow(dateStr),
-    afterDeadline: ReservationValidator.isAfterDeadline(dateStr),
-    allBooked: ReservationValidator.hasBookedAllRoutes(userData.userId, dateStr)
-  };
-
-  if (validation.past) {
-    showError('🚫 無法預約過去日期<br>🚫 Cannot book past dates');
-    return;
-  }
-
-  if (validation.noService) {
-    showError('🚫 該日期為停駛日，無法預約<br>🚫 No service on this date');
-    return;
-  }
-
-  if (!validation.withinWindow) {
-    showError(`🚫 只能預約未來 ${RESERVATION_RULES.maxDaysAhead} 天內的班次<br>🚫 Can only book within ${RESERVATION_RULES.maxDaysAhead} days`);
-    return;
-  }
-
-  if (validation.afterDeadline) {
-    showError(`🚫 今日預約已截止（${RESERVATION_RULES.dailyDeadline}）<br>🚫 Today's deadline passed (${RESERVATION_RULES.dailyDeadline})`);
-    return;
-  }
-
-  // ✅ 修改：只有訂滿 4 個班次才提示
-  if (validation.allBooked) {
-    showError(`您已在 ${dateStr} 預約了所有班次（4個）<br>無法再預約更多班次<br><br>You already booked all routes on ${dateStr}<br>Cannot book more`);
-    return;
-  }
-
-  selectedDate = dateStr;
-  
-  renderCalendar();
-  
-  const weekday = getDayOfWeek(dateStr);
-  const reservationCount = ReservationValidator.getReservationCount(userData.userId, dateStr);
-  
-  let message = `✅ 已選擇：${dateStr} (週${weekday.zh})`;
-  if (reservationCount > 0) {
-    message += `<br><small style="font-size:12px;color:#666;">💡 您已預約 ${reservationCount} 個班次，仍可預約其他班次</small>`;
-  }
-  
-  document.getElementById('selectedDate').style.display = 'block';
-  document.getElementById('selectedDate').innerHTML = `
-    <div class="bilingual-text">
-      <div class="chinese-text">${message}</div>
-      <div class="english-text">✅ Selected: ${dateStr} (${weekday.en})${reservationCount > 0 ? ` - ${reservationCount} booked` : ''}</div>
-    </div>
-  `;
-  document.getElementById('errorNotice').style.display = 'none';
-  
-  showRoutes();
-}
-
-function showError(message) {
-  document.getElementById('errorNotice').style.display = 'block';
-  document.getElementById('errorNotice').innerHTML = message;
-  document.getElementById('selectedDate').style.display = 'none';
-  resetSelection();
-}
-
-function resetSelection() {
-  selectedDate = null;
-  selectedRoute = null;
-  document.getElementById('routeSection').style.display = 'none';
-  document.getElementById('fromStopSection').style.display = 'none';
-  document.getElementById('toStopSection').style.display = 'none';
-  document.getElementById('submitBtn').style.display = 'none';
-}
-
-// ============================ 班次選擇 ============================
-async function showRoutes() {
-  document.getElementById('routeSection').style.display = 'block';
-  const container = document.getElementById('routeButtons');
-  
-  let html = '';
-  for (const [routeId, route] of Object.entries(ROUTES)) {
-    const currentCount = await getRouteReservationCount(selectedDate, routeId);
-    const remainingSeats = maxCapacity - currentCount;
-    const isFull = remainingSeats <= 0;
-    
-    // ✅ 檢查用戶是否已預約此班次
-    const alreadyBooked = ReservationValidator.hasReservationForRoute(userData.userId, selectedDate, routeId);
-    
-    let buttonClass = 'route-btn';
-    let seatInfo = '';
-    let seatInfoEn = '';
-    let onclick = `onclick="selectRoute('${routeId}')"`;
-    
-    if (alreadyBooked) {
-      // ✅ 已預約此班次 - 紅色禁用
-      buttonClass += ' already-booked';
-      seatInfo = '✅ 您已預約';
-      seatInfoEn = 'Already Booked';
-      onclick = '';
-    } else if (isFull) {
-      // 班次額滿 - 灰色禁用
-      buttonClass += ' disabled';
-      seatInfo = '❌ 已額滿';
-      seatInfoEn = 'Full';
-      onclick = '';
-    } else {
-      // 可預約
-      seatInfo = `✅ 剩餘 ${remainingSeats} 位`;
-      seatInfoEn = `${remainingSeats} seats left`;
-    }
-    
-    html += `
-      <div class="${buttonClass}" ${onclick}>
-        <div style="font-weight:bold;font-size:16px;margin-bottom:5px;">${route.name}</div>
-        <div class="bilingual-text" style="margin-bottom:5px;">
-          <div class="chinese-text" style="font-size:13px;">${route.direction}</div>
-          <div class="english-text" style="font-size:11px;">${route.directionEn}</div>
-        </div>
-        <div class="seat-info" style="font-size: 12px; margin-top: 5px; font-weight:bold;">
-          ${seatInfo}<br>
-          <small style="font-size:10px;opacity:0.8;">${seatInfoEn}</small>
-        </div>
-      </div>
-    `;
-  }
-  
-  container.innerHTML = html;
-  document.getElementById('fromStopSection').style.display = 'none';
-  document.getElementById('toStopSection').style.display = 'none';
-  document.getElementById('submitBtn').style.display = 'none';
-}
-
-async function getRouteReservationCount(dateStr, route) {
-  try {
-    const count = existingReservations.filter(r => {
-      let resDate = r.date;
-      if (resDate && resDate.includes('T')) {
-        resDate = resDate.split('T')[0];
-      }
-      
-      let resRoute = r.route;
-      if (resRoute && resRoute.includes('|')) {
-        resRoute = resRoute.split('|')[0].trim();
-      }
-      
-      return resDate === dateStr && 
-             resRoute === route && 
-             r.status !== '已取消' && 
-             r.status !== 'cancelled';
-    }).length;
-    return count;
-  } catch (error) {
-    console.error('取得班次人數失敗:', error);
-    return 0;
-  }
-}
-
-function selectRoute(routeId) {
-  selectedRoute = routeId;
-  
-  document.querySelectorAll('.route-btn').forEach(btn => btn.classList.remove('selected'));
-  event.target.closest('.route-btn').classList.add('selected');
-  
-  showStopSelection(routeId);
-}
-
-// ============================ 站點選擇 ============================
-function showStopSelection(routeId) {
-  const stops = STOPS[routeId];
-  
-  document.getElementById('fromStopSection').style.display = 'block';
-  const fromSelect = document.getElementById('fromStop');
-  fromSelect.innerHTML = '<option value="">請選擇上車站 / Please select pick-up stop</option>';
-  stops.forEach(stop => {
-    fromSelect.innerHTML += `<option value="${stop.chinese}">${stop.chinese} / ${stop.english}</option>`;
-  });
-  
-  document.getElementById('toStopSection').style.display = 'none';
-  document.getElementById('submitBtn').style.display = 'none';
-}
-
-function updateToStops() {
-  const fromStop = document.getElementById('fromStop').value;
-  if (!fromStop) {
-    document.getElementById('toStopSection').style.display = 'none';
-    document.getElementById('submitBtn').style.display = 'none';
-    return;
-  }
-  
-  const stops = STOPS[selectedRoute];
-  const fromIndex = stops.findIndex(s => s.chinese === fromStop);
-  
-  document.getElementById('toStopSection').style.display = 'block';
-  const toSelect = document.getElementById('toStop');
-  toSelect.innerHTML = '<option value="">請選擇下車站 / Please select drop-off stop</option>';
-  stops.forEach((stop, index) => {
-    if (index !== fromIndex) {
-      toSelect.innerHTML += `<option value="${stop.chinese}">${stop.chinese} / ${stop.english}</option>`;
-    }
-  });
-  
-  toSelect.onchange = function() {
-    if (this.value) {
-      document.getElementById('submitBtn').style.display = 'block';
-    } else {
-      document.getElementById('submitBtn').style.display = 'none';
-    }
-  };
-}
-
-// ============================ 提交預約 ============================
-async function submitReservation() {
-  const submitBtn = document.getElementById('submitBtn');
-  const fromStop = document.getElementById('fromStop').value;
-  const toStop = document.getElementById('toStop').value;
-  
-  if (!selectedDate || !selectedRoute || !fromStop || !toStop) {
-    alert('請完整填寫所有選項\nPlease complete all selections');
-    return;
-  }
-  
-  if (fromStop === toStop) {
-    alert('上車站與下車站不能相同\nPick-up and drop-off stops cannot be the same');
-    return;
-  }
-  
-  // ✅ 最後再次檢查是否已預約此班次
-  if (ReservationValidator.hasReservationForRoute(userData.userId, selectedDate, selectedRoute)) {
-    alert('❌ 您已預約此班次\n❌ You already booked this route');
-    return;
-  }
-  
-  try {
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = `
-      <div class="bilingual-text">
-        <div class="chinese-text"><span class="loading-spinner"></span>預約中...</div>
-        <div class="english-text"><span class="loading-spinner"></span>Booking...</div>
-      </div>
-    `;
-    
-    const route = ROUTES[selectedRoute];
-    
-    const data = {
-      type: 'reserve',
-      userId: userData.userId,
-      name: userData.name,
-      studentId: userData.studentId,
-      department: userData.department,
-      phone: userData.phone || '',
-      route: selectedRoute,
-      routeName: `${selectedRoute} | ${route.time} ${route.direction}`,
-      fromStop: fromStop,
-      toStop: toStop,
-      date: selectedDate
-    };
-    
-    console.log('📤 發送預約資料:', data);
-    
-    const res = await fetch(WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    
-    const result = await res.json();
-    console.log('📊 預約回應:', result);
-    
-    if (result.status === 'success') {
-      alert('✅ 預約成功！\n✅ Booking successful!');
-      
-      await fetchReservations();
-      renderCalendar();
-      resetReservationForm();
-      
-    } else {
-      alert('❌ 預約失敗：' + (result.message || '請稍後再試\nPlease try again later'));
-    }
-    
-  } catch (error) {
-    console.error('預約錯誤:', error);
-    alert('❌ 預約失敗，請檢查網路連線\n❌ Booking failed, please check network');
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.innerHTML = `
-      <div class="bilingual-text">
-        <div class="chinese-text">送出預約</div>
-        <div class="english-text">Submit Reservation</div>
-      </div>
-    `;
-  }
-}
-
-function resetReservationForm() {
-  selectedDate = null;
-  selectedRoute = null;
-  document.getElementById('selectedDate').style.display = 'none';
-  document.getElementById('routeSection').style.display = 'none';
-  document.getElementById('fromStopSection').style.display = 'none';
-  document.getElementById('toStopSection').style.display = 'none';
-  document.getElementById('submitBtn').style.display = 'none';
-}
-
-// ============================ 預約資料顯示 ============================
-function renderReservationInfo() {
-  const panel = document.getElementById('reservationPanel');
-  const container = document.getElementById('reservationInfo');
-  
-  if (existingReservations.length === 0) {
-    panel.style.display = 'none';
-    return;
-  }
-  
-  panel.style.display = 'block';
-  
-  let html = '';
-  existingReservations.forEach(reservation => {
-    const route = ROUTES[reservation.route];
-    
-    let dateStr = reservation.date;
-    if (typeof dateStr === 'string' && dateStr.includes('T')) {
-      dateStr = dateStr.split('T')[0];
-    }
-    
-    let routeCode = reservation.route;
-    if (routeCode && routeCode.includes('|')) {
-      routeCode = routeCode.split('|')[0].trim();
-    }
-    
-    const fromStopClean = (reservation.fromStop || '').trim();
-    const toStopClean = (reservation.toStop || '').trim();
-    
-    const routeStops = STOPS[routeCode] || [];
-    
-    const fromStopObj = routeStops.find(s => s.chinese === fromStopClean);
-    const toStopObj = routeStops.find(s => s.chinese === toStopClean);
-    
-    const fromStopEn = fromStopObj ? fromStopObj.english : '';
-    const toStopEn = toStopObj ? toStopObj.english : '';
-    
-    html += `
-      <div class="resv-card">
-        <div class="reservation-item">
-          <div class="reservation-label">日期 / Date:</div>
-          <div class="reservation-value">${dateStr}</div>
-        </div>
-        
-        <div class="reservation-item">
-          <div class="reservation-label">班次 / Route:</div>
-          <div class="reservation-value">${reservation.route} | ${route ? route.time : ''} ${route ? route.direction : ''}</div>
-        </div>
-        
-        <div class="reservation-item">
-          <div class="reservation-label">上車 / Boarding:</div>
-          <div class="reservation-value">${fromStopClean}${fromStopEn ? ' ' + fromStopEn : ''}</div>
-        </div>
-        
-        <div class="reservation-item">
-          <div class="reservation-label">下車 / Drop-off:</div>
-          <div class="reservation-value">${toStopClean}${toStopEn ? ' ' + toStopEn : ''}</div>
-        </div>
-        
-        <div class="reservation-item">
-          <div class="reservation-label">狀態 / Status:</div>
-          <div class="reservation-value">
-            <span class="status-badge ${reservation.status === '已取消' ? 'status-cancelled' : 'status-active'}">
-              ${reservation.status === '已取消' ? '已取消' : '已預約'}
-            </span>
-          </div>
-        </div>
-        
-        ${reservation.status !== '已取消' ? `
-          <button class="cancel-btn" onclick="cancelReservation('${reservation.reservationId || reservation.id}')">
-            取消預約<br>Cancel Reservation
-          </button>
-        ` : ''}
-      </div>
-    `;
-  });
-  
-  container.innerHTML = html;
-}
-
-// ============================ 取消預約 ============================
-async function cancelReservation(reservationId) {
-  if (!confirm('確定要取消此預約嗎？\nAre you sure you want to cancel this reservation?')) {
-    return;
-  }
-  
-  try {
-    const reservation = existingReservations.find(r => 
-      (r.reservationId === reservationId || r.id === reservationId)
-    );
-    
-    if (!reservation) {
-      console.error('找不到預約資料:', reservationId);
-      alert('❌ 找不到預約資料\n❌ Reservation not found');
-      return;
-    }
-    
-    let dateStr = reservation.date;
-    if (typeof dateStr === 'string' && dateStr.includes('T')) {
-      dateStr = dateStr.split('T')[0];
-    }
-    
-    let routeCode = reservation.route;
-    if (routeCode && routeCode.includes('|')) {
-      routeCode = routeCode.split('|')[0].trim();
-    }
-    
-    const data = {
-      type: 'cancel',
-      reservationId: reservationId,
-      userId: userData.userId,
-      name: userData.name,
-      date: dateStr,
-      shift: routeCode,
-      route: reservation.route
-    };
-    
-    const res = await fetch(WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    
-    const result = await res.json();
-    
-    if (result.status === 'success') {
-      alert('✅ 預約已取消\n✅ Reservation cancelled');
-      
-      await fetchReservations();
-      renderCalendar();
-      
-    } else {
-      alert('❌ 取消失敗：' + (result.message || '請稍後再試\nPlease try again later'));
-    }
-    
-  } catch (error) {
-    console.error('取消錯誤:', error);
-    alert('❌ 取消失敗，請檢查網路連線\n❌ Cancellation failed, please check network');
-  }
-}
-
-// ============================ 其他功能 ============================
-function showRules() {
-  window.open('https://line.me/R/home/public/post?postId=1176044641970348675', '_blank');
-}
-
-// ============================ 啟動初始化 ============================
-window.addEventListener('load', init);
-</script>
-</body>
-</html>
