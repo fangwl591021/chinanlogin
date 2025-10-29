@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車管理後台 v6.4.1</title>
+<title>穿山甲專車管理後台 v6.5.0</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -19,7 +19,7 @@ body { font-family:"Noto Sans TC",system-ui,sans-serif;background:#f8fafc;margin
 .section{display:none;}
 .section.active{display:block;}
 .card{background:white;border-radius:12px;padding:16px;margin:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
-.section-title{font-weight:800;font-size:18px;color:#14532d;margin-bottom:16px;}
+.section-title{font-weight:800;font-size:18px;color:14532d;margin-bottom:16px;}
 #bottomNav{position:fixed;bottom:0;left:0;width:100%;background:white;border-top:1px solid #ddd;display:flex;justify-content:space-around;z-index:50;}
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:8px;color:white;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,0.2);opacity:0;transition:opacity .3s ease;z-index:999;}
 .toast.show{opacity:1;}
@@ -155,6 +155,56 @@ body { font-family:"Noto Sans TC",system-ui,sans-serif;background:#f8fafc;margin
             <option value="single">單程</option>
             <option value="round">可來回</option>
           </select>
+        </div>
+        
+        <!-- 🧪 測試模式與時間限制 -->
+        <div class="border-t mt-4 pt-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <label class="block font-semibold text-gray-700">🧪 測試模式</label>
+              <p class="text-xs text-gray-500 mt-1">開啟後無任何時間限制，24小時都可預約/取消</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="testMode" class="sr-only peer">
+              <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+            </label>
+          </div>
+          <div id="testModeStatus" class="info-badge mb-3">
+            📌 目前狀態：<span id="testModeText" class="font-bold">正式模式</span>
+          </div>
+          
+          <!-- 時間限制設定（僅在正式模式時生效） -->
+          <div id="timeRestrictions" class="mt-4">
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4">
+              <p class="text-sm text-yellow-800">
+                ⏰ <strong>以下時間限制僅在「正式模式」生效</strong><br>
+                <span class="text-xs">測試模式下無任何限制</span>
+              </p>
+            </div>
+            
+            <label class="block mb-2 font-semibold text-gray-700">⏰ 最晚預約時間（當日班次）</label>
+            <input id="bookingDeadline" type="time" value="19:00" class="border p-2 w-full mb-2 rounded" />
+            <p class="text-xs text-gray-500 mb-3">
+              例如設定 19:00，表示每天 19:00 後無法預約「當天」班次<br>
+              但仍可預約「明天或未來」的班次
+            </p>
+            
+            <label class="block mb-2 font-semibold text-gray-700">⏰ 最晚取消時間（當日預約）</label>
+            <input id="cancelDeadline" type="time" value="18:00" class="border p-2 w-full mb-2 rounded" />
+            <p class="text-xs text-gray-500 mb-3">
+              例如設定 18:00，表示每天 18:00 後無法取消「當天」預約<br>
+              但仍可取消「明天或未來」的預約
+            </p>
+            
+            <div class="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
+              <strong>📌 時間判斷規則：</strong>
+              <ul class="list-disc ml-5 mt-1 space-y-1">
+                <li>使用台灣時間（UTC+8）</li>
+                <li>限制僅針對「當天」的班次/預約</li>
+                <li>「未來日期」的預約/取消不受影響</li>
+              </ul>
+            </div>
+          </div>
         </div>
         
         <button id="saveRules" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full mt-4">💾 儲存設定</button>
@@ -464,10 +514,19 @@ async function loadRules(){
     document.getElementById('banWeeks').value = r.banWeeks || '';
     document.getElementById('tripMode').value = r.tripMode || 'single';
     
-    // ✅ 修正：統一使用 advanceBookingDays
-    const bookingDaysLimit = r.advanceBookingDays || r.bookingDaysLimit || 7; // 支援舊欄位，預設7天
+    // ✅ 預約開放天數
+    const bookingDaysLimit = r.advanceBookingDays || r.bookingDaysLimit || 7;
     document.getElementById('bookingDaysLimit').value = bookingDaysLimit;
     document.getElementById('daysDisplay').textContent = bookingDaysLimit;
+    
+    // ✅ 測試模式
+    const testMode = r.testMode === true || r.testMode === 'true' || r.testMode === 1;
+    document.getElementById('testMode').checked = testMode;
+    updateTestModeUI(testMode);
+    
+    // ✅ 時間限制
+    document.getElementById('bookingDeadline').value = r.bookingDeadline || '19:00';
+    document.getElementById('cancelDeadline').value = r.cancelDeadline || '18:00';
     
     document.getElementById('ruleMeta').textContent = `最後更新：${r.lastUpdate || '未知'}`;
   } catch (e) {
@@ -475,6 +534,34 @@ async function loadRules(){
     showToast('❌ 載入設定失敗', 'error');
   }
 }
+
+// ✅ 更新測試模式 UI
+function updateTestModeUI(isTestMode) {
+  const statusText = document.getElementById('testModeText');
+  const statusBadge = document.getElementById('testModeStatus');
+  const timeRestrictions = document.getElementById('timeRestrictions');
+  
+  if (isTestMode) {
+    statusText.textContent = '測試模式（無限制）';
+    statusText.style.color = '#16a34a';
+    statusBadge.style.background = '#dcfce7';
+    statusBadge.style.color = '#166534';
+    timeRestrictions.style.opacity = '0.5';
+    timeRestrictions.style.pointerEvents = 'none';
+  } else {
+    statusText.textContent = '正式模式（已啟用限制）';
+    statusText.style.color = '#dc2626';
+    statusBadge.style.background = '#fee2e2';
+    statusBadge.style.color = '#991b1b';
+    timeRestrictions.style.opacity = '1';
+    timeRestrictions.style.pointerEvents = 'auto';
+  }
+}
+
+// ✅ 測試模式切換監聽
+document.getElementById('testMode').addEventListener('change', function(e) {
+  updateTestModeUI(e.target.checked);
+});
 
 document.getElementById('bookingDaysLimit').addEventListener('input', function(e) {
   const days = parseInt(e.target.value) || 0;
@@ -510,7 +597,11 @@ document.getElementById('saveRules').addEventListener('click', async () => {
     maxNoShow: +document.getElementById('maxNoShow').value,
     banWeeks: +document.getElementById('banWeeks').value,
     tripMode: document.getElementById('tripMode').value,
-    advanceBookingDays: bookingDaysLimit  // ✅ 修正：統一使用 advanceBookingDays
+    advanceBookingDays: bookingDaysLimit,
+    // ✅ 新增：測試模式與時間限制
+    testMode: document.getElementById('testMode').checked,
+    bookingDeadline: document.getElementById('bookingDeadline').value,
+    cancelDeadline: document.getElementById('cancelDeadline').value
   };
   
   console.log('💾 準備儲存設定:', body);
@@ -526,7 +617,8 @@ document.getElementById('saveRules').addEventListener('click', async () => {
     console.log('📊 儲存回應:', json);
     
     if(json.status === 'success') {
-      showToast(`✅ 設定已更新！預約開放天數: ${bookingDaysLimit} 天`);
+      const modeText = body.testMode ? '測試模式（無限制）' : '正式模式（已啟用時間限制）';
+      showToast(`✅ 設定已更新！${modeText}`);
       await loadRules();
     } else {
       showToast('❌ 更新失敗: ' + (json.message || '未知錯誤'), 'error');
