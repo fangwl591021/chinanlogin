@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車 - 司機核銷系統 v4.1</title>
+<title>穿山甲專車 - 司機核銷系統 v4.2</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Microsoft JhengHei',sans-serif;}
 body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden;}
@@ -27,6 +27,10 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
 .reservation-table{width:100%;border-collapse:collapse;}
 .table-header th{background:#3c8050;color:white;padding:8px;font-size:12px;border:1px solid #2f6842;}
 .table-row td{padding:8px;border:1px solid #ddd;font-size:12px;text-align:center;}
+.stop-cell{font-size:10px;line-height:1.4;padding:6px 4px !important;}
+.stop-cell div:first-child{color:#3c8050;font-weight:600;margin-bottom:2px;}
+.stop-cell div:last-child{color:#666;}
+.table-row.pending{background:#fffbeb;border-left:3px solid #f59e0b;}
 .checkin-btn{background:#3c8050;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:bold;}
 .checkin-btn:hover{background:#2f6842;}
 .checkin-btn:disabled{background:#ccc;cursor:not-allowed;color:#666;}
@@ -53,7 +57,7 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
 <div class="container">
   <div class="header">
     <h1>🚌 穿山甲專車核銷系統</h1>
-    <p>司機簽到核銷作業 v4.1</p>
+    <p>司機簽到核銷作業 v4.2</p>
   </div>
 
   <div class="calendar-section">
@@ -99,8 +103,7 @@ body{background:#f5f6f7;color:#333;line-height:1.6;width:100vw;overflow-x:hidden
           <th>日期</th>
           <th>班次</th>
           <th>姓名</th>
-          <th>上車</th>
-          <th>下車</th>
+          <th>上/下車</th>
           <th>狀態</th>
           <th>核銷</th>
         </tr>
@@ -201,7 +204,6 @@ function formatRouteCode(routeStr) {
 async function loadAllReservations() {
   try {
     hideError();
-    // ✅ 修正：使用 allReservations 模式取得所有預約
     const fetchUrl = `${WORKER_URL}?mode=allReservations`;
     console.log('📡 請求 URL:', fetchUrl);
     
@@ -225,13 +227,12 @@ async function loadAllReservations() {
     const data = await response.json();
     console.log('📊 收到資料:', data);
     
-    // ✅ 改進：處理新的 API 回應格式
     if (data.ok && data.status === 'success' && Array.isArray(data.reservations)) {
       allReservations = data.reservations.map((r,i)=>({
         id: String(r.reservationId || r.id || i+1),
-        rowNumber: r.rowNumber || (i+2), // 用於更新 Google Sheets
-        date: formatDateOnly(r.date || ''),  // 格式化日期
-        route: formatRouteCode(r.route || '-'),  // 格式化路線
+        rowNumber: r.rowNumber || (i+2),
+        date: formatDateOnly(r.date || ''),
+        route: formatRouteCode(r.route || '-'),
         name: r.name || '-',
         fromStop: r.fromStop || '未提供',
         toStop: r.toStop || '未提供',
@@ -259,7 +260,7 @@ async function loadAllReservations() {
 
 function renderEmptyList() {
   const tbody = document.getElementById('reservation-list');
-  tbody.innerHTML = '<tr><td colspan="7" class="no-data">暫無預約紀錄</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6" class="no-data">暫無預約紀錄</td></tr>';
   document.getElementById('checkin-title').textContent = '全部預約列表 (0 筆)';
 }
 
@@ -293,28 +294,59 @@ function renderCalendar() {
 }
 
 function selectDate(date){selectedDate=date;renderCalendar();showReservationsByDate(date);}
+
 function showReservationsByDate(date){
   const tbody=document.getElementById('reservation-list');
   tbody.innerHTML='';
   const filtered=allReservations.filter(r=>r.date.startsWith(date));
   if(filtered.length===0){
-    tbody.innerHTML='<tr><td colspan="7" class="no-data">此日期無預約</td></tr>';
+    tbody.innerHTML='<tr><td colspan="6" class="no-data">此日期無預約</td></tr>';
     document.getElementById('checkin-title').textContent=`${date} 無預約`;
     return;
   }
-  renderReservationRows(filtered, `${date} 預約 (${filtered.length} 筆)`);
+  
+  // ✅ 特定日期也使用相同排序：已預約 → 已搭乘 → 已取消
+  const sorted = [...filtered].sort((a,b)=>{
+    const getPriority = (r) => {
+      if (r.status === '已取消') return 3;
+      if (r.checkin === 'Y' || r.status === '已搭乘') return 2;
+      return 1;
+    };
+    const priorityDiff = getPriority(a) - getPriority(b);
+    if (priorityDiff !== 0) return priorityDiff;
+    
+    const routes = ['A1', 'B1', 'A2', 'B2'];
+    return routes.indexOf(a.route) - routes.indexOf(b.route);
+  });
+  
+  renderReservationRows(sorted, `${date} 預約 (${sorted.length} 筆)`);
 }
 
 function showAllReservations(){
   const tbody=document.getElementById('reservation-list');
   tbody.innerHTML='';
   if(allReservations.length===0){renderEmptyList();return;}
-  const routes=['A1','B1','A2','B2'];
+  
+  // ✅ 改進排序：已預約(待核銷) → 已搭乘 → 已取消
   const sorted=[...allReservations].sort((a,b)=>{
-    const dateCompare=(a.date||'').localeCompare(b.date||'');
-    if(dateCompare!==0)return -dateCompare; // 最新的在前面
-    return routes.indexOf(a.route)-routes.indexOf(b.route);
+    // 1️⃣ 首先按狀態排序
+    const getPriority = (r) => {
+      if (r.status === '已取消') return 3;
+      if (r.checkin === 'Y' || r.status === '已搭乘') return 2;
+      return 1; // 已預約（待核銷）
+    };
+    const priorityDiff = getPriority(a) - getPriority(b);
+    if (priorityDiff !== 0) return priorityDiff;
+    
+    // 2️⃣ 同狀態時，按日期排序（最新在前）
+    const dateCompare = (b.date || '').localeCompare(a.date || '');
+    if (dateCompare !== 0) return dateCompare;
+    
+    // 3️⃣ 同日期時，按班次排序
+    const routes = ['A1', 'B1', 'A2', 'B2'];
+    return routes.indexOf(a.route) - routes.indexOf(b.route);
   });
+  
   renderReservationRows(sorted,`全部預約列表 (${sorted.length} 筆)`);
 }
 
@@ -324,6 +356,7 @@ function renderReservationRows(list,title){
   list.forEach(r=>{
     const checked=r.checkin==='Y'||r.status==='已搭乘';
     const cancelled=r.status==='已取消';
+    const pending=!checked&&!cancelled; // 待核銷
     
     let statusText, statusClass, statusIcon;
     if(checked){
@@ -341,13 +374,12 @@ function renderReservationRows(list,title){
     }
     
     const tr=document.createElement('tr');
-    tr.className='table-row';
+    tr.className='table-row' + (pending ? ' pending' : ''); // ✅ 待核銷項目加上特殊樣式
     tr.innerHTML=`
       <td>${r.date}</td>
       <td><strong>${r.route}</strong></td>
       <td>${r.name}</td>
-      <td style="font-size:11px;">${r.fromStop}</td>
-      <td style="font-size:11px;">${r.toStop}</td>
+      <td class="stop-cell"><div>🚏 ${r.fromStop}</div><div>🏁 ${r.toStop}</div></td>
       <td><span class="${statusClass}">${statusIcon} ${statusText}</span></td>
       <td>${checked||cancelled?'<button class="checkin-btn" disabled>已完成</button>':`<button class="checkin-btn" onclick="confirmCheckin('${r.id}', ${r.rowNumber})">核銷</button>`}</td>`;
     tbody.appendChild(tr);
@@ -358,7 +390,6 @@ function renderReservationRows(list,title){
 async function confirmCheckin(id, rowNumber){
   if(!confirm('確認乘客已上車？'))return;
   try{
-    // ✅ 使用 POST 方法更新核銷狀態
     const url = `${WORKER_URL}`;
     const payload = {
       type: 'checkin',
@@ -384,7 +415,6 @@ async function confirmCheckin(id, rowNumber){
     
     if (data.ok && data.status === 'success') {
       alert('✓ 核銷成功');
-      // 更新本地資料
       const target = allReservations.find(r => r.id === id);
       if (target) {
         target.checkin = 'Y';
