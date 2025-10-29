@@ -1177,7 +1177,7 @@ async function submitReservation() {
       department: userData.department,
       phone: userData.phone || '',
       route: selectedRoute,
-      routeName: `${route.name} ${route.direction}`,
+      routeName: `${selectedRoute} | ${route.time} ${route.direction}`,
       fromStop: fromStop,
       toStop: toStop,
       date: selectedDate
