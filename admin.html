@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車管理後台 v6.4.0</title>
+<title>穿山甲專車管理後台 v6.4.1</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -331,11 +331,28 @@ async function loadReservations() {
       return;
     }
 
-    const order = { A1: 1, A2: 2, B1: 3, B2: 4 };
+    // ✅ 排序規則：當日在上 → 已預約排上面 → 已取消排下面
+    const routeOrder = { A1: 1, A2: 2, B1: 3, B2: 4 };
+    
+    // 狀態優先級：已搭乘(2) > 等待中/已預約(1) > 已取消(0)
+    const getStatusPriority = (status) => {
+      if (!status) return 1;
+      if (status.includes('搭乘')) return 2;
+      if (status.includes('取消')) return 0;
+      return 1; // 預設為已預約/等待中
+    };
+    
     validData.sort((a, b) => {
+      // 1. 先按日期降序（最新的在上面）
       if (a.date < b.date) return 1;
       if (a.date > b.date) return -1;
-      return (order[a.route] || 99) - (order[b.route] || 99);
+      
+      // 2. 相同日期，按狀態排序（已預約 > 已取消）
+      const statusDiff = getStatusPriority(b.status) - getStatusPriority(a.status);
+      if (statusDiff !== 0) return statusDiff;
+      
+      // 3. 相同日期和狀態，按班次排序
+      return (routeOrder[a.route] || 99) - (routeOrder[b.route] || 99);
     });
 
     renderTable(validData);
