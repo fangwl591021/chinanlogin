@@ -652,7 +652,7 @@ function renderUser(user) {
   `;
 }
 
-// ✅ 修正：使用台灣時區處理日期
+// ✅ 修正：使用台灣時區處理日期 (與 Worker 一致)
 async function fetchReservations() {
   try {
     const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
@@ -664,19 +664,24 @@ async function fetchReservations() {
       existingReservations = data.reservations.map(reservation => {
         let correctDate = reservation.date;
         
-        // ✅ 統一處理日期格式 - 使用台灣時區
+        // ✅ 使用台灣時區 (UTC+8) - 與 Worker 保持一致
         if (reservation.date && typeof reservation.date === 'string') {
           if (reservation.date.includes('T')) {
-            // ISO 格式，使用 UTC+8 處理
-            const dateObj = new Date(reservation.date);
-            const taiwanOffset = 8 * 60; // UTC+8 = 480 分鐘
-            const localOffset = dateObj.getTimezoneOffset(); // 本地時區偏移
-            const taiwanDate = new Date(dateObj.getTime() + (taiwanOffset + localOffset) * 60 * 1000);
+            // ISO 格式
+            const utcDate = new Date(reservation.date);
+            // 加上 8 小時 (台灣時區)
+            const taiwanDate = new Date(utcDate.getTime() + (8 * 60 * 60 * 1000));
             
-            const year = taiwanDate.getFullYear();
-            const month = String(taiwanDate.getMonth() + 1).padStart(2, '0');
-            const day = String(taiwanDate.getDate()).padStart(2, '0');
+            const year = taiwanDate.getUTCFullYear();
+            const month = String(taiwanDate.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(taiwanDate.getUTCDate()).padStart(2, '0');
             correctDate = `${year}-${month}-${day}`;
+            
+            console.log('🕐 時區轉換:', {
+              原始: reservation.date,
+              UTC: utcDate.toISOString(),
+              台灣: correctDate
+            });
           } else if (reservation.date.includes(' ')) {
             correctDate = reservation.date.split(' ')[0];
           } else {
@@ -693,11 +698,8 @@ async function fetchReservations() {
       console.log('📅 處理後的預約:', existingReservations);
       
       renderReservationInfo();
-      
-      // ✅ 重新渲染月曆（更新預約數）
       renderCalendar();
       
-      // ✅ 如果當前有選擇日期,重新顯示班次
       if (selectedDate) {
         await showRoutes();
       }
@@ -1122,49 +1124,68 @@ async function showRoutes() {
   document.getElementById('submitBtn').style.display = 'none';
 }
 
-// ✅ 修正：加強除錯日誌
+// ✅ 修正：改用 allReservations 來計算座位數
 async function getRouteReservationCount(dateStr, route) {
   try {
     console.log('🔍 計算班次人數:', { dateStr, route });
-    console.log('📊 現有預約資料:', existingReservations);
     
-    const filtered = existingReservations.filter(r => {
-      let resDate = r.date;
+    // ✅ 改用 API 查詢所有預約來計算座位數
+    const res = await fetch(`${WORKER_URL}?mode=allReservations`);
+    const data = await res.json();
+    
+    if (data.ok && data.status === 'success' && Array.isArray(data.reservations)) {
+      console.log('📊 從 API 取得所有預約:', data.reservations.length, '筆');
       
-      if (resDate && typeof resDate === 'string') {
-        if (resDate.includes('T')) {
-          resDate = resDate.split('T')[0];
-        } else if (resDate.includes(' ')) {
-          resDate = resDate.split(' ')[0];
+      const filtered = data.reservations.filter(r => {
+        let resDate = r.date;
+        
+        // ✅ 使用台灣時區處理日期
+        if (resDate && typeof resDate === 'string') {
+          if (resDate.includes('T')) {
+            const dateObj = new Date(resDate);
+            const taiwanOffset = 8 * 60;
+            const localOffset = dateObj.getTimezoneOffset();
+            const taiwanDate = new Date(dateObj.getTime() + (taiwanOffset + localOffset) * 60 * 1000);
+            
+            const year = taiwanDate.getFullYear();
+            const month = String(taiwanDate.getMonth() + 1).padStart(2, '0');
+            const day = String(taiwanDate.getDate()).padStart(2, '0');
+            resDate = `${year}-${month}-${day}`;
+          } else if (resDate.includes(' ')) {
+            resDate = resDate.split(' ')[0];
+          }
         }
-      }
-      
-      let resRoute = r.route;
-      if (resRoute && typeof resRoute === 'string' && resRoute.includes('|')) {
-        resRoute = resRoute.split('|')[0].trim();
-      }
-      
-      const dateMatch = resDate === dateStr;
-      const routeMatch = resRoute === route;
-      const statusValid = r.status !== '已取消' && r.status !== 'cancelled';
-      
-      console.log('比對:', {
-        resDate,
-        dateStr,
-        dateMatch,
-        resRoute,
-        route,
-        routeMatch,
-        status: r.status,
-        statusValid,
-        match: dateMatch && routeMatch && statusValid
+        
+        let resRoute = r.route;
+        if (resRoute && typeof resRoute === 'string' && resRoute.includes('|')) {
+          resRoute = resRoute.split('|')[0].trim();
+        }
+        
+        const dateMatch = resDate === dateStr;
+        const routeMatch = resRoute === route;
+        const statusValid = r.status !== '已取消' && r.status !== 'cancelled';
+        
+        console.log('比對:', {
+          name: r.name,
+          resDate,
+          dateStr,
+          dateMatch,
+          resRoute,
+          route,
+          routeMatch,
+          status: r.status,
+          statusValid,
+          match: dateMatch && routeMatch && statusValid
+        });
+        
+        return dateMatch && routeMatch && statusValid;
       });
       
-      return dateMatch && routeMatch && statusValid;
-    });
+      console.log(`✅ ${route} 在 ${dateStr} 的預約數:`, filtered.length);
+      return filtered.length;
+    }
     
-    console.log(`✅ ${route} 在 ${dateStr} 的預約數:`, filtered.length);
-    return filtered.length;
+    return 0;
   } catch (error) {
     console.error('❌ 取得班次人數失敗:', error);
     return 0;
@@ -1284,14 +1305,22 @@ async function submitReservation() {
     if (result.status === 'success') {
       alert('✅ 預約成功！\n✅ Booking successful!');
       
-      // ✅ 重新載入預約資料
+      console.log('🔄 開始更新預約資料...');
+      
+      // ✅ 重新載入預約資料（等待完成）
       await fetchReservations();
+      
+      console.log('📊 更新後的預約列表:', existingReservations);
+      
+      // ✅ 等待一下確保資料同步
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // ✅ 重新渲染月曆
       renderCalendar();
       
-      // ✅ 如果還在同一個日期,重新顯示班次(更新座位數)
+      // ✅ 重新顯示班次(更新座位數)
       if (selectedDate) {
+        console.log('🔄 重新顯示班次...');
         await showRoutes();
       }
       
