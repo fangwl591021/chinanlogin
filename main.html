@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>穿山甲專車預約 🚍 v2.7.1</title>
+<title>穿山甲專車預約 🚍 v2.8.0 (優化版)</title>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
 <style>
@@ -565,11 +565,186 @@ let disabledDates = [];
 let maxCapacity = 45;
 let systemRules = {};
 
+// ✨ 快取系統
+const cache = {
+  allReservations: null,
+  timestamp: 0,
+  TTL: 30000,
+  routeStats: new Map()
+};
+
+// ✨ 頁面可見性追蹤
+let isPageVisible = true;
+let pollingInterval = null;
+
+// ✨ 預約索引 Map
+const reservationMap = new Map();
+
 // ============================ 預約規則 ============================
 const RESERVATION_RULES = {
   dailyDeadline: '19:00',
   maxDaysAhead: 7
 };
+
+// ============================ 工具函數 ============================
+
+// ✅ 快取檢查函數
+function isCacheValid() {
+  return cache.allReservations !== null && (Date.now() - cache.timestamp < cache.TTL);
+}
+
+// ✅ 清除快取
+function clearCache() {
+  console.log('🗑️ 清除快取');
+  cache.allReservations = null;
+  cache.timestamp = 0;
+  cache.routeStats.clear();
+}
+
+// ✅ 統一的日期正規化函數
+function normalizeDate(dateStr) {
+  if (!dateStr) return '';
+  
+  if (typeof dateStr === 'string') {
+    if (dateStr.includes('T')) {
+      const utcDate = new Date(dateStr);
+      const taiwanDate = new Date(utcDate.getTime() + (8 * 60 * 60 * 1000));
+      
+      const year = taiwanDate.getUTCFullYear();
+      const month = String(taiwanDate.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(taiwanDate.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } else if (dateStr.includes(' ')) {
+      return dateStr.split(' ')[0];
+    }
+  }
+  
+  return dateStr;
+}
+
+// ✅ 統一的班次正規化函數
+function normalizeRoute(routeStr) {
+  if (!routeStr) return '';
+  
+  if (typeof routeStr === 'string' && routeStr.includes('|')) {
+    return routeStr.split('|')[0].trim();
+  }
+  
+  return routeStr;
+}
+
+// ✅ 建立預約索引 Map
+function buildReservationMap(reservations) {
+  reservationMap.clear();
+  
+  reservations.forEach(r => {
+    if (r.status === '已取消' || r.status === 'cancelled') {
+      return;
+    }
+    
+    const date = normalizeDate(r.date);
+    const route = normalizeRoute(r.route);
+    
+    const userDateKey = `${r.userId}-${date}`;
+    reservationMap.set(userDateKey, (reservationMap.get(userDateKey) || 0) + 1);
+    
+    const userDateRouteKey = `${r.userId}-${date}-${route}`;
+    reservationMap.set(userDateRouteKey, true);
+    
+    const dateRouteKey = `${date}-${route}`;
+    reservationMap.set(dateRouteKey, (reservationMap.get(dateRouteKey) || 0) + 1);
+  });
+  
+  console.log('📊 預約索引已建立:', reservationMap.size, '筆');
+}
+
+// ✅ 統一的 API 快取函數
+async function fetchAllReservationsOnce() {
+  if (isCacheValid()) {
+    console.log('🎯 使用快取資料 (剩餘', Math.round((cache.TTL - (Date.now() - cache.timestamp)) / 1000), '秒)');
+    return cache.allReservations;
+  }
+  
+  console.log('🔄 快取失效，重新抓取資料...');
+  
+  try {
+    const res = await fetch(`${WORKER_URL}?mode=allReservations`);
+    const data = await res.json();
+    
+    if (data.ok && data.status === 'success' && Array.isArray(data.reservations)) {
+      console.log('📥 從 API 取得所有預約:', data.reservations.length, '筆');
+      
+      cache.allReservations = data.reservations;
+      cache.timestamp = Date.now();
+      
+      buildReservationMap(data.reservations);
+      
+      return data.reservations;
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('❌ 取得預約資料失敗:', error);
+    return [];
+  }
+}
+
+// ✅ 批次計算所有班次統計
+async function calculateAllRouteStats(dateStr) {
+  const cacheKey = `stats-${dateStr}`;
+  
+  if (cache.routeStats.has(cacheKey) && isCacheValid()) {
+    console.log('🎯 使用班次統計快取');
+    return cache.routeStats.get(cacheKey);
+  }
+  
+  console.log('📊 計算班次統計:', dateStr);
+  
+  const allReservations = await fetchAllReservationsOnce();
+  const stats = {};
+  
+  for (const routeId of ['A1', 'A2', 'B1', 'B2']) {
+    const dateRouteKey = `${dateStr}-${routeId}`;
+    const count = reservationMap.get(dateRouteKey) || 0;
+    
+    stats[routeId] = {
+      currentCount: count,
+      remainingSeats: maxCapacity - count,
+      isFull: count >= maxCapacity
+    };
+    
+    console.log(`  ${routeId}: ${count}/${maxCapacity} (剩${stats[routeId].remainingSeats})`);
+  }
+  
+  cache.routeStats.set(cacheKey, stats);
+  
+  return stats;
+}
+
+// ✅ 啟動智能輪詢
+function startPolling() {
+  if (pollingInterval) clearInterval(pollingInterval);
+  
+  console.log('⏰ 啟動智能輪詢 (60秒間隔)');
+  
+  pollingInterval = setInterval(async () => {
+    if (isPageVisible && selectedDate) {
+      console.log('🔄 自動更新班次資料...');
+      await fetchSystemRules();
+      clearCache();
+      await showRoutes();
+    } else {
+      console.log('⏸️ 頁面不可見或未選擇日期，跳過更新');
+    }
+  }, 60000);
+}
+
+// ✅ 快速刷新
+async function refreshRoutes() {
+  console.log('🔄 快速刷新班次...');
+  clearCache();
+  await showRoutes();
+}
 
 // ============================ 初始化 ============================
 async function init() {
@@ -609,13 +784,6 @@ async function init() {
     
     renderCalendar();
     
-    setInterval(async () => {
-      await fetchSystemRules();
-      if (selectedDate) {
-        showRoutes();
-      }
-    }, 30000);
-    
     console.log('🎉 系統初始化完成');
     
   } catch (error) {
@@ -636,6 +804,19 @@ async function init() {
       </div>
     `;
   }
+  
+  // ✅ 頁面可見性監聽
+  document.addEventListener('visibilitychange', () => {
+    isPageVisible = !document.hidden;
+    console.log(isPageVisible ? '👁️ 頁面可見' : '🙈 頁面隱藏');
+    
+    if (isPageVisible && selectedDate) {
+      refreshRoutes();
+    }
+  });
+
+  // ✅ 啟動智能輪詢
+  startPolling();
 }
 
 function renderUser(user) {
@@ -652,7 +833,7 @@ function renderUser(user) {
   `;
 }
 
-// ✅ 修正：使用台灣時區處理日期 (與 Worker 一致)
+// ✅ 優化後的 fetchReservations
 async function fetchReservations() {
   try {
     const res = await fetch(`${WORKER_URL}?mode=reservations&userId=${userData.userId}`);
@@ -661,44 +842,17 @@ async function fetchReservations() {
     console.log('📥 從 API 收到的原始預約資料:', data);
     
     if (data.status === 'success' && Array.isArray(data.reservations)) {
-      existingReservations = data.reservations.map(reservation => {
-        let correctDate = reservation.date;
-        
-        // ✅ 使用台灣時區 (UTC+8) - 與 Worker 保持一致
-        if (reservation.date && typeof reservation.date === 'string') {
-          if (reservation.date.includes('T')) {
-            // ISO 格式
-            const utcDate = new Date(reservation.date);
-            // 加上 8 小時 (台灣時區)
-            const taiwanDate = new Date(utcDate.getTime() + (8 * 60 * 60 * 1000));
-            
-            const year = taiwanDate.getUTCFullYear();
-            const month = String(taiwanDate.getUTCMonth() + 1).padStart(2, '0');
-            const day = String(taiwanDate.getUTCDate()).padStart(2, '0');
-            correctDate = `${year}-${month}-${day}`;
-            
-            console.log('🕐 時區轉換:', {
-              原始: reservation.date,
-              UTC: utcDate.toISOString(),
-              台灣: correctDate
-            });
-          } else if (reservation.date.includes(' ')) {
-            correctDate = reservation.date.split(' ')[0];
-          } else {
-            correctDate = reservation.date;
-          }
-        }
-        
-        return {
-          ...reservation,
-          date: correctDate
-        };
-      });
+      existingReservations = data.reservations.map(reservation => ({
+        ...reservation,
+        date: normalizeDate(reservation.date)
+      }));
       
       console.log('📅 處理後的預約:', existingReservations);
       
       renderReservationInfo();
       renderCalendar();
+      
+      clearCache();
       
       if (selectedDate) {
         await showRoutes();
@@ -825,41 +979,13 @@ class ReservationValidator {
   }
 
   static hasReservationForRoute(userId, dateStr, routeCode) {
-    const reservation = existingReservations.find(res => {
-      let resDate = res.date;
-      if (resDate && resDate.includes('T')) {
-        resDate = resDate.split('T')[0];
-      }
-      
-      let resRoute = res.route;
-      if (resRoute && resRoute.includes('|')) {
-        resRoute = resRoute.split('|')[0].trim();
-      }
-      
-      return res.userId === userId && 
-             resDate === dateStr && 
-             resRoute === routeCode &&
-             res.status !== '已取消' && 
-             res.status !== 'cancelled';
-    });
-    
-    return !!reservation;
+    const userDateRouteKey = `${userId}-${dateStr}-${routeCode}`;
+    return reservationMap.has(userDateRouteKey);
   }
 
   static getReservationCount(userId, dateStr) {
-    const reservations = existingReservations.filter(res => {
-      let resDate = res.date;
-      if (resDate && resDate.includes('T')) {
-        resDate = resDate.split('T')[0];
-      }
-      
-      return res.userId === userId && 
-             resDate === dateStr && 
-             res.status !== '已取消' && 
-             res.status !== 'cancelled';
-    });
-    
-    return reservations.length;
+    const userDateKey = `${userId}-${dateStr}`;
+    return reservationMap.get(userDateKey) || 0;
   }
 
   static hasBookedAllRoutes(userId, dateStr) {
@@ -1071,27 +1197,26 @@ function resetSelection() {
 }
 
 // ============================ 班次選擇 ============================
+// ✅ 完全優化的 showRoutes
 async function showRoutes() {
   try {
-    console.log('🚌 開始顯示班次選擇');
+    console.log('🚌 顯示班次選擇 (優化版)');
     
     document.getElementById('routeSection').style.display = 'block';
     const container = document.getElementById('routeButtons');
     
-    // 顯示載入中
     container.innerHTML = '<div style="text-align:center;padding:20px;color:#666;">🔄 載入班次資料中...</div>';
+    
+    // ✅ 批次計算所有班次統計（只呼叫一次 API）
+    const stats = await calculateAllRouteStats(selectedDate);
     
     let html = '';
     for (const [routeId, route] of Object.entries(ROUTES)) {
-      console.log(`📊 處理班次: ${routeId}`);
+      const { currentCount, remainingSeats, isFull } = stats[routeId];
       
-      const currentCount = await getRouteReservationCount(selectedDate, routeId);
-      const remainingSeats = maxCapacity - currentCount;
-      const isFull = remainingSeats <= 0;
-      
-      console.log(`${routeId} 統計:`, { currentCount, remainingSeats, isFull, maxCapacity });
-      
-      const alreadyBooked = ReservationValidator.hasReservationForRoute(userData.userId, selectedDate, routeId);
+      // ✅ 使用 Map 快速檢查是否已預約（O(1)）
+      const userDateRouteKey = `${userData.userId}-${selectedDate}-${routeId}`;
+      const alreadyBooked = reservationMap.has(userDateRouteKey);
       
       let buttonClass = 'route-btn';
       let seatInfo = '';
@@ -1147,70 +1272,6 @@ async function showRoutes() {
         </button>
       </div>
     `;
-  }
-}
-
-// ✅ 修正：使用 allReservations 並套用台灣時區
-async function getRouteReservationCount(dateStr, route) {
-  try {
-    console.log('🔍 計算班次人數:', { dateStr, route });
-    
-    // ✅ 使用 allReservations 取得所有預約
-    const res = await fetch(`${WORKER_URL}?mode=allReservations`);
-    const data = await res.json();
-    
-    if (data.ok && data.status === 'success' && Array.isArray(data.reservations)) {
-      console.log('📊 從 API 取得所有預約:', data.reservations.length, '筆');
-      
-      const filtered = data.reservations.filter(r => {
-        let resDate = r.date;
-        
-        // ✅ 使用台灣時區 (UTC+8) - 與 fetchReservations 一致
-        if (resDate && typeof resDate === 'string') {
-          if (resDate.includes('T')) {
-            const utcDate = new Date(resDate);
-            const taiwanDate = new Date(utcDate.getTime() + (8 * 60 * 60 * 1000));
-            
-            const year = taiwanDate.getUTCFullYear();
-            const month = String(taiwanDate.getUTCMonth() + 1).padStart(2, '0');
-            const day = String(taiwanDate.getUTCDate()).padStart(2, '0');
-            resDate = `${year}-${month}-${day}`;
-          } else if (resDate.includes(' ')) {
-            resDate = resDate.split(' ')[0];
-          }
-        }
-        
-        let resRoute = r.route;
-        if (resRoute && typeof resRoute === 'string' && resRoute.includes('|')) {
-          resRoute = resRoute.split('|')[0].trim();
-        }
-        
-        const dateMatch = resDate === dateStr;
-        const routeMatch = resRoute === route;
-        const statusValid = r.status !== '已取消' && r.status !== 'cancelled';
-        
-        if (dateMatch && routeMatch) {
-          console.log('✓ 找到匹配預約:', {
-            name: r.name,
-            原始日期: r.date,
-            處理後: resDate,
-            班次: resRoute,
-            狀態: r.status,
-            有效: statusValid
-          });
-        }
-        
-        return dateMatch && routeMatch && statusValid;
-      });
-      
-      console.log(`✅ ${route} 在 ${dateStr} 的預約數:`, filtered.length);
-      return filtered.length;
-    }
-    
-    return 0;
-  } catch (error) {
-    console.error('❌ 取得班次人數失敗:', error);
-    return 0;
   }
 }
 
@@ -1329,18 +1390,19 @@ async function submitReservation() {
       
       console.log('🔄 開始更新預約資料...');
       
-      // ✅ 重新載入預約資料（等待完成）
+      // ✅ 清除快取
+      clearCache();
+      
+      // 重新載入預約資料
       await fetchReservations();
       
-      console.log('📊 更新後的預約列表:', existingReservations);
-      
-      // ✅ 等待一下確保資料同步
+      // 等待一下確保資料同步
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // ✅ 重新渲染月曆
+      // 重新渲染月曆
       renderCalendar();
       
-      // ✅ 重新顯示班次(更新座位數)
+      // 重新顯示班次
       if (selectedDate) {
         console.log('🔄 重新顯示班次...');
         await showRoutes();
@@ -1508,13 +1570,16 @@ async function cancelReservation(reservationId) {
     if (result.status === 'success') {
       alert('✅ 預約已取消\n✅ Reservation cancelled');
       
-      // ✅ 重新載入預約資料
+      // ✅ 清除快取
+      clearCache();
+      
+      // 重新載入預約資料
       await fetchReservations();
       
-      // ✅ 重新渲染月曆
+      // 重新渲染月曆
       renderCalendar();
       
-      // ✅ 如果還在檢視同一個日期,重新顯示班次(更新座位數)
+      // 如果還在檢視同一個日期,重新顯示班次
       if (selectedDate === dateStr) {
         await showRoutes();
       }
