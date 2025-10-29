@@ -1072,64 +1072,90 @@ function resetSelection() {
 
 // ============================ 班次選擇 ============================
 async function showRoutes() {
-  document.getElementById('routeSection').style.display = 'block';
-  const container = document.getElementById('routeButtons');
-  
-  let html = '';
-  for (const [routeId, route] of Object.entries(ROUTES)) {
-    const currentCount = await getRouteReservationCount(selectedDate, routeId);
-    const remainingSeats = maxCapacity - currentCount;
-    const isFull = remainingSeats <= 0;
+  try {
+    console.log('🚌 開始顯示班次選擇');
     
-    const alreadyBooked = ReservationValidator.hasReservationForRoute(userData.userId, selectedDate, routeId);
+    document.getElementById('routeSection').style.display = 'block';
+    const container = document.getElementById('routeButtons');
     
-    let buttonClass = 'route-btn';
-    let seatInfo = '';
-    let seatInfoEn = '';
-    let onclick = `onclick="selectRoute('${routeId}')"`;
+    // 顯示載入中
+    container.innerHTML = '<div style="text-align:center;padding:20px;color:#666;">🔄 載入班次資料中...</div>';
     
-    if (alreadyBooked) {
-      buttonClass += ' already-booked';
-      seatInfo = '✅ 您已預約';
-      seatInfoEn = 'Already Booked';
-      onclick = '';
-    } else if (isFull) {
-      buttonClass += ' disabled';
-      seatInfo = '❌ 已額滿';
-      seatInfoEn = 'Full';
-      onclick = '';
-    } else {
-      seatInfo = `✅ 剩餘 ${remainingSeats} 位`;
-      seatInfoEn = `${remainingSeats} seats left`;
+    let html = '';
+    for (const [routeId, route] of Object.entries(ROUTES)) {
+      console.log(`📊 處理班次: ${routeId}`);
+      
+      const currentCount = await getRouteReservationCount(selectedDate, routeId);
+      const remainingSeats = maxCapacity - currentCount;
+      const isFull = remainingSeats <= 0;
+      
+      console.log(`${routeId} 統計:`, { currentCount, remainingSeats, isFull, maxCapacity });
+      
+      const alreadyBooked = ReservationValidator.hasReservationForRoute(userData.userId, selectedDate, routeId);
+      
+      let buttonClass = 'route-btn';
+      let seatInfo = '';
+      let seatInfoEn = '';
+      let onclick = `onclick="selectRoute('${routeId}')"`;
+      
+      if (alreadyBooked) {
+        buttonClass += ' already-booked';
+        seatInfo = '✅ 您已預約';
+        seatInfoEn = 'Already Booked';
+        onclick = '';
+      } else if (isFull) {
+        buttonClass += ' disabled';
+        seatInfo = '❌ 已額滿';
+        seatInfoEn = 'Full';
+        onclick = '';
+      } else {
+        seatInfo = `✅ 剩餘 ${remainingSeats} 位`;
+        seatInfoEn = `${remainingSeats} seats left`;
+      }
+      
+      html += `
+        <div class="${buttonClass}" ${onclick}>
+          <div style="font-weight:bold;font-size:16px;margin-bottom:5px;">${route.name}</div>
+          <div class="bilingual-text" style="margin-bottom:5px;">
+            <div class="chinese-text" style="font-size:13px;">${route.direction}</div>
+            <div class="english-text" style="font-size:11px;">${route.directionEn}</div>
+          </div>
+          <div class="seat-info" style="font-size: 12px; margin-top: 5px; font-weight:bold;">
+            ${seatInfo}<br>
+            <small style="font-size:10px;opacity:0.8;">${seatInfoEn}</small>
+          </div>
+        </div>
+      `;
     }
     
-    html += `
-      <div class="${buttonClass}" ${onclick}>
-        <div style="font-weight:bold;font-size:16px;margin-bottom:5px;">${route.name}</div>
-        <div class="bilingual-text" style="margin-bottom:5px;">
-          <div class="chinese-text" style="font-size:13px;">${route.direction}</div>
-          <div class="english-text" style="font-size:11px;">${route.directionEn}</div>
-        </div>
-        <div class="seat-info" style="font-size: 12px; margin-top: 5px; font-weight:bold;">
-          ${seatInfo}<br>
-          <small style="font-size:10px;opacity:0.8;">${seatInfoEn}</small>
-        </div>
+    container.innerHTML = html;
+    console.log('✅ 班次顯示完成');
+    
+    document.getElementById('fromStopSection').style.display = 'none';
+    document.getElementById('toStopSection').style.display = 'none';
+    document.getElementById('submitBtn').style.display = 'none';
+    
+  } catch (error) {
+    console.error('❌ 顯示班次時發生錯誤:', error);
+    const container = document.getElementById('routeButtons');
+    container.innerHTML = `
+      <div style="text-align:center;padding:20px;color:#c62828;">
+        <div>❌ 載入班次失敗</div>
+        <div style="font-size:12px;margin-top:8px;">${error.message}</div>
+        <button onclick="showRoutes()" style="margin-top:10px;padding:8px 16px;background:#3c8050;color:white;border:none;border-radius:6px;cursor:pointer;">
+          重試
+        </button>
       </div>
     `;
   }
-  
-  container.innerHTML = html;
-  document.getElementById('fromStopSection').style.display = 'none';
-  document.getElementById('toStopSection').style.display = 'none';
-  document.getElementById('submitBtn').style.display = 'none';
 }
 
-// ✅ 修正：改用 allReservations 來計算座位數
+// ✅ 修正：使用 allReservations 並套用台灣時區
 async function getRouteReservationCount(dateStr, route) {
   try {
     console.log('🔍 計算班次人數:', { dateStr, route });
     
-    // ✅ 改用 API 查詢所有預約來計算座位數
+    // ✅ 使用 allReservations 取得所有預約
     const res = await fetch(`${WORKER_URL}?mode=allReservations`);
     const data = await res.json();
     
@@ -1139,17 +1165,15 @@ async function getRouteReservationCount(dateStr, route) {
       const filtered = data.reservations.filter(r => {
         let resDate = r.date;
         
-        // ✅ 使用台灣時區處理日期
+        // ✅ 使用台灣時區 (UTC+8) - 與 fetchReservations 一致
         if (resDate && typeof resDate === 'string') {
           if (resDate.includes('T')) {
-            const dateObj = new Date(resDate);
-            const taiwanOffset = 8 * 60;
-            const localOffset = dateObj.getTimezoneOffset();
-            const taiwanDate = new Date(dateObj.getTime() + (taiwanOffset + localOffset) * 60 * 1000);
+            const utcDate = new Date(resDate);
+            const taiwanDate = new Date(utcDate.getTime() + (8 * 60 * 60 * 1000));
             
-            const year = taiwanDate.getFullYear();
-            const month = String(taiwanDate.getMonth() + 1).padStart(2, '0');
-            const day = String(taiwanDate.getDate()).padStart(2, '0');
+            const year = taiwanDate.getUTCFullYear();
+            const month = String(taiwanDate.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(taiwanDate.getUTCDate()).padStart(2, '0');
             resDate = `${year}-${month}-${day}`;
           } else if (resDate.includes(' ')) {
             resDate = resDate.split(' ')[0];
@@ -1165,18 +1189,16 @@ async function getRouteReservationCount(dateStr, route) {
         const routeMatch = resRoute === route;
         const statusValid = r.status !== '已取消' && r.status !== 'cancelled';
         
-        console.log('比對:', {
-          name: r.name,
-          resDate,
-          dateStr,
-          dateMatch,
-          resRoute,
-          route,
-          routeMatch,
-          status: r.status,
-          statusValid,
-          match: dateMatch && routeMatch && statusValid
-        });
+        if (dateMatch && routeMatch) {
+          console.log('✓ 找到匹配預約:', {
+            name: r.name,
+            原始日期: r.date,
+            處理後: resDate,
+            班次: resRoute,
+            狀態: r.status,
+            有效: statusValid
+          });
+        }
         
         return dateMatch && routeMatch && statusValid;
       });
