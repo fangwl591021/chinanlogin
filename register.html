@@ -10,15 +10,20 @@
     .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
     @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
     .hidden { display: none !important; }
+    .slide-up { animation: slideUp 0.4s ease-out forwards; }
+    @keyframes slideUp { from {transform: translateY(20px); opacity: 0;} to {transform: translateY(0); opacity: 1;} }
   </style>
 </head>
 <body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen flex items-center justify-center p-4">
 
   <!-- 🟢 開場 LOGO + Loading -->
   <div id="splash" class="flex flex-col items-center justify-center w-full h-screen fade-in">
-    <img src="https://voom-obs.line-scdn.net/h9F1A8P9IemhZVGlmbgJ9EXBscUdzUyB6TF1OS3pRTx9KU3t5WyddDVVgUxJAbmB5TxZCDkheWAV0bSB2YDhsTEFkYQZdfXc_TAVZSVJkYlFdeA/L1080x1920" 
-     width="400" 
-     style="height: auto;">
+    <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 slide-up">
+      <img src="https://voom-obs.line-scdn.net/h9F1A8P9IemhZVGlmbgJ9EXBscUdzUyB6TF1OS3pRTx9KU3t5WyddDVVgUxJAbmB5TxZCDkheWAV0bSB2YDhsTEFkYQZdfXc_TAVZSVJkYlFdeA/L1080x1920" 
+           width="300" 
+           style="height: auto;"
+           class="mx-auto">
+    </div>
     <div class="flex items-center space-x-2 text-green-700 font-semibold text-lg mt-4">
       <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
       <span>登入中,請稍候...</span>
@@ -40,67 +45,66 @@
       <input id="studentId" type="text" placeholder="學號" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none transition-all duration-200">
       
       <select id="department" class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-400 focus:outline-none transition-all duration-200">
-  <option value="">請選擇科系 / Please select your department</option>
+        <option value="">請選擇科系 / Please select your department</option>
 
-  <optgroup label="人文學院 - College of Humanities">
-    <option value="CCL">中文系 (Department of Chinese Language and Literature) - CCL</option>
-    <option value="FLL">外文系 (Department of Foreign Languages and Literature) - FLL</option>
-    <option value="SPSW">社工系 (Department of Social Policy and Social Work) - SPSW</option>
-    <option value="PAP">公行系 (Department of Public Administration and Policy) - PAP</option>
-    <option value="CNHIS">歷史系 (Department of History) - CNHIS</option>
-    <option value="SAS">東南亞系 (Department of Southeast Asian Studies) - SAS</option>
-    <option value="EDUCA">原民專班 (Indigenous Special Program) - EDUCA</option>
-  </optgroup>
+        <optgroup label="人文學院 - College of Humanities">
+          <option value="CCL">中文系 (Department of Chinese Language and Literature) - CCL</option>
+          <option value="FLL">外文系 (Department of Foreign Languages and Literature) - FLL</option>
+          <option value="SPSW">社工系 (Department of Social Policy and Social Work) - SPSW</option>
+          <option value="PAP">公行系 (Department of Public Administration and Policy) - PAP</option>
+          <option value="CNHIS">歷史系 (Department of History) - CNHIS</option>
+          <option value="SAS">東南亞系 (Department of Southeast Asian Studies) - SAS</option>
+          <option value="EDUCA">原民專班 (Indigenous Special Program) - EDUCA</option>
+        </optgroup>
 
-  <optgroup label="管理學院 - College of Management">
-    <option value="IBS">國企系 (Department of International Business) - IBS</option>
-    <option value="ECON">經濟系 (Department of Economics) - ECON</option>
-    <option value="DOF">財金系 (Department of Finance) - DOF</option>
-    <option value="IM">資管系 (Department of Information Management) - IM</option>
-    <option value="TLHM">觀餐系 (Department of Tourism, Leisure, and Hospitality Management) - TLHM</option>
-    <option value="IPCM">管院學士班 (Interdisciplinary Program of College of Management) - IPCM</option>
-  </optgroup>
+        <optgroup label="管理學院 - College of Management">
+          <option value="IBS">國企系 (Department of International Business) - IBS</option>
+          <option value="ECON">經濟系 (Department of Economics) - ECON</option>
+          <option value="DOF">財金系 (Department of Finance) - DOF</option>
+          <option value="IM">資管系 (Department of Information Management) - IM</option>
+          <option value="TLHM">觀餐系 (Department of Tourism, Leisure, and Hospitality Management) - TLHM</option>
+          <option value="IPCM">管院學士班 (Interdisciplinary Program of College of Management) - IPCM</option>
+        </optgroup>
 
-  <optgroup label="科技學院 - College of Science and Technology">
-    <option value="CSIE">資工系 (Department of Computer Science and Information Engineering) - CSIE</option>
-    <option value="CE">土木系 (Department of Civil Engineering) - CE</option>
-    <option value="EE">電機系 (Department of Electrical Engineering) - EE</option>
-    <option value="AC">應化系 (Department of Applied Chemistry) - AC</option>
-    <option value="AMOE">應材系 (Department of Applied Materials and Optoelectronic Engineering) - AMOE</option>
-    <option value="IPCST">科院學士班 (Interdisciplinary Program of College of Science and Technology) - IPCST</option>
-  </optgroup>
+        <optgroup label="科技學院 - College of Science and Technology">
+          <option value="CSIE">資工系 (Department of Computer Science and Information Engineering) - CSIE</option>
+          <option value="CE">土木系 (Department of Civil Engineering) - CE</option>
+          <option value="EE">電機系 (Department of Electrical Engineering) - EE</option>
+          <option value="AC">應化系 (Department of Applied Chemistry) - AC</option>
+          <option value="AMOE">應材系 (Department of Applied Materials and Optoelectronic Engineering) - AMOE</option>
+          <option value="IPCST">科院學士班 (Interdisciplinary Program of College of Science and Technology) - IPCST</option>
+        </optgroup>
 
-  <optgroup label="教育學院 - College of Education">
-    <option value="ICE">國際文教系 (Department of International and Comparative Education) - ICE</option>
-    <option value="EPA">教政系 (Department of Educational Policy and Administration) - EPA</option>
-    <option value="CPHSD">諮人系 (Department of Counseling Psychology and Human Resource Development) - CPHSD</option>
-  </optgroup>
+        <optgroup label="教育學院 - College of Education">
+          <option value="ICE">國際文教系 (Department of International and Comparative Education) - ICE</option>
+          <option value="EPA">教政系 (Department of Educational Policy and Administration) - EPA</option>
+          <option value="CPHSD">諮人系 (Department of Counseling Psychology and Human Resource Development) - CPHSD</option>
+        </optgroup>
 
-  <optgroup label="水沙連學院 - College of Shu-Shalian">
-    <option value="UPCS">水沙連學院學士班 (Undergraduate Program in the College of Shuishalian) - UPCS</option>
-  </optgroup>
+        <optgroup label="水沙連學院 - College of Shu-Shalian">
+          <option value="UPCS">水沙連學院學士班 (Undergraduate Program in the College of Shuishalian) - UPCS</option>
+        </optgroup>
 
-  <optgroup label="護理暨健康福祉學院 - College of Nursing and Health Sciences">
-    <option value="DoN">護理學系 (Department of Nursing) - DoN</option>
-  </optgroup>
+        <optgroup label="護理暨健康福祉學院 - College of Nursing and Health Sciences">
+          <option value="DoN">護理學系 (Department of Nursing) - DoN</option>
+        </optgroup>
 
-  <optgroup label="碩博士學位學程 - Master's & Doctoral Programs">
-    <option value="CCISM">文創社會行銷碩士 (Cultural and Creative Social Marketing M.A.) - CCISM</option>
-    <option value="LTC">長期照顧經營管理碩士 (Long-term Care Management M.A.) - LTC</option>
-    <option value="BAITIA">商管及資訊科技創新應用全英碩士 (Business & IT Innovation M.A.) - BAITIA</option>
-    <option value="EIP">新興產業策略與發展碩博士 (Emerging Industry Policy M.A./Ph.D.) - EIP</option>
-    <option value="MDRDF">區域發展重點產業碩士 (Regional Development and Industry M.A.) - MDRDF</option>
-    <option value="EMBA">經營管理碩士 (Executive MBA) - EMBA</option>
-    <option value="AIANDR">人工智慧與機器人碩士 (AI and Robotics M.A.) - AIANDR</option>
-    <option value="MHC">心理健康與諮詢碩士 (Mental Health & Counseling M.A.) - MHC</option>
-    <option value="CIT">課程教學與科技研究所 (Curriculum & Instruction Technology Institute) - CIT</option>
-    <option value="DOCS">終身學習與人力資源發展碩士 (Lifelong Learning & HRD M.A.) - DOCS</option>
-    <option value="CED">國際文教管理人才博士 (Cultural Education Doctoral Program) - CED</option>
-    <option value="RRCG">地方創生與跨域治理碩士 (Regional Revitalization & Governance M.A.) - RRCG</option>
-    <option value="TCASL">華語文教學碩士學位學程 (Teaching Chinese as a Second Language M.A.) - TCASL</option>
-  </optgroup>
-</select>
-
+        <optgroup label="碩博士學位學程 - Master's & Doctoral Programs">
+          <option value="CCISM">文創社會行銷碩士 (Cultural and Creative Social Marketing M.A.) - CCISM</option>
+          <option value="LTC">長期照顧經營管理碩士 (Long-term Care Management M.A.) - LTC</option>
+          <option value="BAITIA">商管及資訊科技創新應用全英碩士 (Business & IT Innovation M.A.) - BAITIA</option>
+          <option value="EIP">新興產業策略與發展碩博士 (Emerging Industry Policy M.A./Ph.D.) - EIP</option>
+          <option value="MDRDF">區域發展重點產業碩士 (Regional Development and Industry M.A.) - MDRDF</option>
+          <option value="EMBA">經營管理碩士 (Executive MBA) - EMBA</option>
+          <option value="AIANDR">人工智慧與機器人碩士 (AI and Robotics M.A.) - AIANDR</option>
+          <option value="MHC">心理健康與諮詢碩士 (Mental Health & Counseling M.A.) - MHC</option>
+          <option value="CIT">課程教學與科技研究所 (Curriculum & Instruction Technology Institute) - CIT</option>
+          <option value="DOCS">終身學習與人力資源發展碩士 (Lifelong Learning & HRD M.A.) - DOCS</option>
+          <option value="CED">國際文教管理人才博士 (Cultural Education Doctoral Program) - CED</option>
+          <option value="RRCG">地方創生與跨域治理碩士 (Regional Revitalization & Governance M.A.) - RRCG</option>
+          <option value="TCASL">華語文教學碩士學位學程 (Teaching Chinese as a Second Language M.A.) - TCASL</option>
+        </optgroup>
+      </select>
 
       <button id="registerBtn" onclick="registerUser()" class="w-full bg-green-500 text-white py-2 rounded-lg font-bold text-lg hover:bg-green-600 transition-all duration-200 active:scale-95">
         <span id="btnText">立即註冊</span>
@@ -112,12 +116,30 @@
     </div>
   </div>
 
+  <!-- 🔴 錯誤提示頁面 -->
+  <div id="errorPage" class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm hidden fade-in text-center">
+    <div class="text-red-500 text-4xl mb-4">⚠️</div>
+    <h2 class="text-lg font-bold text-gray-800 mb-2" id="errorTitle">系統提示</h2>
+    <p class="text-gray-600 mb-4 whitespace-pre-line" id="errorMessage"></p>
+    <div class="space-y-2">
+      <button onclick="window.location.reload()" class="w-full bg-blue-500 text-white py-2 rounded-lg font-bold hover:bg-blue-600 transition-all">
+        重新整理頁面
+      </button>
+      <button onclick="retryInitialization()" class="w-full bg-green-500 text-white py-2 rounded-lg font-bold hover:bg-green-600 transition-all">
+        重新嘗試連線
+      </button>
+    </div>
+    <div id="errorDebug" class="mt-4 text-xs text-gray-400 text-left"></div>
+  </div>
+
 <script>
 // ⚙️ 使用 Cloudflare Worker 作為代理(解決 CORS 問題)
 const WORKER_URL = 'https://delicate-math-7e61.fangwl591021.workers.dev/';
 
 let currentUserId = null;
 let startTime = Date.now();
+let retryCount = 0;
+const MAX_RETRY_COUNT = 3;
 
 function updateDebugInfo(msg) {
   const debug = document.getElementById('debugInfo');
@@ -135,9 +157,18 @@ function showForm() {
   }
 }
 
-function showError(message) {
+function showError(title, message, debugInfo = '') {
   document.getElementById('splash').classList.add('hidden');
-  alert('⚠️ ' + message);
+  document.getElementById('registerForm').classList.add('hidden');
+  
+  document.getElementById('errorTitle').textContent = title;
+  document.getElementById('errorMessage').textContent = message;
+  
+  if (debugInfo) {
+    document.getElementById('errorDebug').innerHTML = debugInfo;
+  }
+  
+  document.getElementById('errorPage').classList.remove('hidden');
 }
 
 function setButtonLoading(loading) {
@@ -155,6 +186,62 @@ function setButtonLoading(loading) {
     btnText.classList.remove('hidden');
     spinner.classList.add('hidden');
     btn.classList.remove('opacity-75');
+  }
+}
+
+// 🔄 重試初始化
+async function retryInitialization() {
+  retryCount = 0;
+  document.getElementById('errorPage').classList.add('hidden');
+  document.getElementById('splash').classList.remove('hidden');
+  await init();
+}
+
+// 🔧 改進的 LIFF 初始化函數
+async function initLiffWithRetry(maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      updateDebugInfo(`嘗試初始化 LIFF (第 ${attempt} 次)...`);
+      
+      await liff.init({ 
+        liffId: "2006590746-KJodGOda"
+      });
+      
+      updateDebugInfo(`✅ LIFF 初始化成功: ${Date.now() - startTime}ms`);
+      return true;
+      
+    } catch (error) {
+      console.error(`LIFF 初始化失敗 (第 ${attempt} 次):`, error);
+      updateDebugInfo(`❌ LIFF 初始化失敗: ${error.message}`);
+      
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      
+      // 等待一段時間後重試
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+}
+
+// 🔑 令牌刷新函數
+async function refreshLiffToken() {
+  try {
+    updateDebugInfo('嘗試刷新 LIFF 令牌...');
+    
+    // 先登出再重新登入
+    if (liff.isLoggedIn()) {
+      liff.logout();
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    
+    // 重新登入
+    liff.login();
+    return true;
+  } catch (error) {
+    console.error('刷新令牌失敗:', error);
+    updateDebugInfo('❌ 刷新令牌失敗: ' + error.message);
+    return false;
   }
 }
 
@@ -228,29 +315,59 @@ async function checkRegistrationStatus(userId) {
   }
 }
 
+// 🚀 主初始化函數
 (async function init() {
   try {
+    if (retryCount >= MAX_RETRY_COUNT) {
+      showError(
+        '連線失敗', 
+        '已超過最大重試次數，請檢查網路連線後重新整理頁面。',
+        `重試次數: ${retryCount}/${MAX_RETRY_COUNT}`
+      );
+      return;
+    }
+    
+    retryCount++;
     startTime = Date.now();
     
-    updateDebugInfo('初始化 LIFF...');
-    
-    const liffInit = await liff.init({ liffId: "2006590746-KJodGOda" });
-    updateDebugInfo(`LIFF 初始化完成: ${Date.now() - startTime}ms`);
-    
+    updateDebugInfo('開始初始化應用...');
+
+    // 1. 初始化 LIFF (帶重試機制)
+    await initLiffWithRetry(3);
+
+    // 2. 檢查登入狀態
     if (!liff.isLoggedIn()) {
       updateDebugInfo('使用者未登入,跳轉到 LINE 登入...');
       liff.login();
       return;
     }
 
-    const profile = await liff.getProfile();
+    // 3. 獲取用戶資料
+    let profile;
+    try {
+      profile = await liff.getProfile();
+    } catch (profileError) {
+      if (profileError.message.includes('token') || profileError.message.includes('expired')) {
+        updateDebugInfo('🔑 令牌可能已過期，嘗試刷新...');
+        const refreshSuccess = await refreshLiffToken();
+        if (!refreshSuccess) {
+          throw new Error('令牌刷新失敗，請重新整理頁面');
+        }
+        return;
+      }
+      throw profileError;
+    }
+    
     currentUserId = profile.userId;
     updateDebugInfo(`✅ 獲取用戶ID: ${currentUserId.substring(0, 20)}...`);
 
-    // 測試 Worker 連接
-    await testWorkerConnection();
+    // 4. 測試 Worker 連接
+    const workerConnected = await testWorkerConnection();
+    if (!workerConnected) {
+      throw new Error('無法連接到伺服器，請檢查網路連線');
+    }
 
-    // 🔑 檢查是否已註冊 - 使用修正後的函數
+    // 5. 檢查註冊狀態
     const checkStart = Date.now();
     updateDebugInfo(`檢查註冊狀態中...`);
     
@@ -262,7 +379,7 @@ async function checkRegistrationStatus(userId) {
       updateDebugInfo(`✅ 已註冊用戶: ${checkResult.user?.name || '未知'}`);
       updateDebugInfo('跳轉到主頁面...');
       
-      // 儲存用戶資訊到 localStorage
+      // 儲存用戶資訊
       if (checkResult.user) {
         localStorage.setItem('pangolin_user', JSON.stringify(checkResult.user));
       }
@@ -280,7 +397,24 @@ async function checkRegistrationStatus(userId) {
   } catch (err) {
     console.error('❌ 初始化錯誤', err);
     updateDebugInfo(`❌ 錯誤: ${err.message}`);
-    showError('系統發生錯誤,請稍後再試\n\n' + err.message);
+    
+    // 更友好的錯誤提示
+    let userTitle = '系統發生錯誤';
+    let userMessage = '請稍後再試';
+    let debugInfo = `錯誤詳情: ${err.message}\n重試次數: ${retryCount}/${MAX_RETRY_COUNT}`;
+    
+    if (err.message.includes('token') || err.message.includes('expired')) {
+      userTitle = '登入憑證已過期';
+      userMessage = '請重新整理頁面或重新進入應用程式';
+    } else if (err.message.includes('network') || err.message.includes('Network')) {
+      userTitle = '網路連線問題';
+      userMessage = '請檢查網路連線後重試';
+    } else if (err.message.includes('LIFF')) {
+      userTitle = 'LINE 初始化失敗';
+      userMessage = '請確保在 LINE 應用程式中開啟此服務';
+    }
+    
+    showError(userTitle, userMessage, debugInfo);
   }
 })();
 
@@ -459,7 +593,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('name').value = '測試學生';
         document.getElementById('phone').value = '0912345678';
         document.getElementById('studentId').value = 'D1234567';
-        document.getElementById('department').value = 'cs';
+        document.getElementById('department').value = 'CSIE';
         updateDebugInfo('🧪 開發模式:已填入測試資料');
       }
     }, 1000);
