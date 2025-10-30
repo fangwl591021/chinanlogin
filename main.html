@@ -947,6 +947,7 @@ async function init() {
     
   } catch (error) {
     console.error('💥 初始化錯誤:', error);
+    clearTimeout(timeout);
     hideLoading();
     document.getElementById('userInfo').innerHTML = `
       <div style="color: red; text-align: center;">
