@@ -164,12 +164,37 @@ main { flex: 1; padding-bottom: 40px; }
 }
 
 /* ==================== 表單元素 ==================== */
+/* ✅ 加大選擇欄位高度 */
 select {
   width: 100%; 
-  padding: 12px; 
+  padding: 16px; 
   border: 1px solid #ccc;
   border-radius: 6px; 
   margin-top: 8px;
+  font-size: 16px; /* 加大字體 */
+  height: 60px; /* 固定高度 */
+  min-height: 60px; /* 最小高度 */
+  line-height: 1.4;
+}
+
+/* ✅ 站點選擇區域樣式 */
+.stop-selector-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.stop-selector-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.stop-selector-label {
+  font-weight: bold;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #333;
 }
 
 .submit-btn {
@@ -442,24 +467,34 @@ header .english-text {
     <div id="routeButtons" class="route-buttons"></div>
   </div>
 
-  <div id="fromStopSection" class="stop-selector" style="display:none">
+  <!-- ✅ 修改：合併上下車站選擇為一個區域，使用網格佈局 -->
+  <div id="stopSelectionSection" class="stop-selector" style="display:none">
     <h3 class="bilingual-text">
-      <div class="chinese-text">請選擇上車站</div>
-      <div class="english-text">Please Select Pick-up Stop</div>
+      <div class="chinese-text">請選擇上下車站點</div>
+      <div class="english-text">Please Select Pick-up & Drop-off Stops</div>
     </h3>
-    <select id="fromStop" onchange="updateToStops()">
-      <option value="">請先選擇班次</option>
-    </select>
-  </div>
-
-  <div id="toStopSection" class="stop-selector" style="display:none">
-    <h3 class="bilingual-text">
-      <div class="chinese-text">請選擇下車站</div>
-      <div class="english-text">Please Select Drop-off Stop</div>
-    </h3>
-    <select id="toStop">
-      <option value="">請先選擇上車站</option>
-    </select>
+    
+    <div class="stop-selector-grid">
+      <div class="stop-selector-item">
+        <div class="stop-selector-label bilingual-text">
+          <div class="chinese-text">上車站</div>
+          <div class="english-text">Pick-up Stop</div>
+        </div>
+        <select id="fromStop" onchange="updateToStops()">
+          <option value="">請選擇上車站</option>
+        </select>
+      </div>
+      
+      <div class="stop-selector-item">
+        <div class="stop-selector-label bilingual-text">
+          <div class="chinese-text">下車站</div>
+          <div class="english-text">Drop-off Stop</div>
+        </div>
+        <select id="toStop">
+          <option value="">請先選擇上車站</option>
+        </select>
+      </div>
+    </div>
   </div>
 
   <button id="submitBtn" class="submit-btn" onclick="submitReservation()" style="display:none">
@@ -1191,8 +1226,7 @@ function resetSelection() {
   selectedDate = null;
   selectedRoute = null;
   document.getElementById('routeSection').style.display = 'none';
-  document.getElementById('fromStopSection').style.display = 'none';
-  document.getElementById('toStopSection').style.display = 'none';
+  document.getElementById('stopSelectionSection').style.display = 'none';
   document.getElementById('submitBtn').style.display = 'none';
 }
 
@@ -1256,8 +1290,7 @@ async function showRoutes() {
     container.innerHTML = html;
     console.log('✅ 班次顯示完成');
     
-    document.getElementById('fromStopSection').style.display = 'none';
-    document.getElementById('toStopSection').style.display = 'none';
+    document.getElementById('stopSelectionSection').style.display = 'none';
     document.getElementById('submitBtn').style.display = 'none';
     
   } catch (error) {
@@ -1285,24 +1318,35 @@ function selectRoute(routeId) {
 }
 
 // ============================ 站點選擇 ============================
+// ✅ 修改：同時顯示上下車站選擇
 function showStopSelection(routeId) {
   const stops = STOPS[routeId];
   
-  document.getElementById('fromStopSection').style.display = 'block';
+  document.getElementById('stopSelectionSection').style.display = 'block';
+  
+  // 上車站選擇
   const fromSelect = document.getElementById('fromStop');
-  fromSelect.innerHTML = '<option value="">請選擇上車站 / Please select pick-up stop</option>';
+  fromSelect.innerHTML = '<option value="">請選擇上車站</option>';
   stops.forEach(stop => {
     fromSelect.innerHTML += `<option value="${stop.chinese}">${stop.chinese} / ${stop.english}</option>`;
   });
   
-  document.getElementById('toStopSection').style.display = 'none';
+  // 下車站選擇
+  const toSelect = document.getElementById('toStop');
+  toSelect.innerHTML = '<option value="">請先選擇上車站</option>';
+  toSelect.disabled = true;
+  
   document.getElementById('submitBtn').style.display = 'none';
 }
 
+// ✅ 修改：更新下車站選項
 function updateToStops() {
   const fromStop = document.getElementById('fromStop').value;
+  const toSelect = document.getElementById('toStop');
+  
   if (!fromStop) {
-    document.getElementById('toStopSection').style.display = 'none';
+    toSelect.innerHTML = '<option value="">請先選擇上車站</option>';
+    toSelect.disabled = true;
     document.getElementById('submitBtn').style.display = 'none';
     return;
   }
@@ -1310,15 +1354,16 @@ function updateToStops() {
   const stops = STOPS[selectedRoute];
   const fromIndex = stops.findIndex(s => s.chinese === fromStop);
   
-  document.getElementById('toStopSection').style.display = 'block';
-  const toSelect = document.getElementById('toStop');
-  toSelect.innerHTML = '<option value="">請選擇下車站 / Please select drop-off stop</option>';
+  toSelect.innerHTML = '<option value="">請選擇下車站</option>';
   stops.forEach((stop, index) => {
     if (index !== fromIndex) {
       toSelect.innerHTML += `<option value="${stop.chinese}">${stop.chinese} / ${stop.english}</option>`;
     }
   });
   
+  toSelect.disabled = false;
+  
+  // 當上下車站都選擇後顯示提交按鈕
   toSelect.onchange = function() {
     if (this.value) {
       document.getElementById('submitBtn').style.display = 'block';
@@ -1410,8 +1455,7 @@ async function submitReservation() {
       
       // 清空表單選擇
       selectedRoute = null;
-      document.getElementById('fromStopSection').style.display = 'none';
-      document.getElementById('toStopSection').style.display = 'none';
+      document.getElementById('stopSelectionSection').style.display = 'none';
       document.getElementById('submitBtn').style.display = 'none';
       
     } else {
@@ -1437,8 +1481,7 @@ function resetReservationForm() {
   selectedRoute = null;
   document.getElementById('selectedDate').style.display = 'none';
   document.getElementById('routeSection').style.display = 'none';
-  document.getElementById('fromStopSection').style.display = 'none';
-  document.getElementById('toStopSection').style.display = 'none';
+  document.getElementById('stopSelectionSection').style.display = 'none';
   document.getElementById('submitBtn').style.display = 'none';
 }
 
