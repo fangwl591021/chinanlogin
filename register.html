@@ -140,6 +140,7 @@ let currentUserId = null;
 let startTime = Date.now();
 let retryCount = 0;
 const MAX_RETRY_COUNT = 3;
+let isRegistering = false; // ✅ 新增：防止重複註冊的標誌
 
 function updateDebugInfo(msg) {
   const debug = document.getElementById('debugInfo');
@@ -419,9 +420,18 @@ async function checkRegistrationStatus(userId) {
 })();
 
 /*****************************************************
- * ✅ 修改：註冊函數 - 加上雙重檢查
+ * ✅ 修改：註冊函數 - 防止重複提交
  *****************************************************/
 async function registerUser() {
+  // ✅ 防止重複提交
+  if (isRegistering) {
+    console.log('⏳ 註冊進行中，跳過重複請求');
+    return;
+  }
+  
+  isRegistering = true;
+  setButtonLoading(true);
+  
   const name = document.getElementById('name').value.trim();
   const phone = document.getElementById('phone').value.trim();
   const studentId = document.getElementById('studentId').value.trim();
@@ -430,65 +440,39 @@ async function registerUser() {
   // ✅ 基本驗證
   if (!name || !phone || !studentId || !department) {
     alert('⚠️ 請完整填寫所有欄位');
+    isRegistering = false;
+    setButtonLoading(false);
     return;
   }
 
   if (phone.length < 7) {
     alert('⚠️ 請輸入有效的電話號碼');
+    isRegistering = false;
+    setButtonLoading(false);
     return;
   }
 
   if (studentId.length < 3) {
     alert('⚠️ 請輸入有效的學號');
+    isRegistering = false;
+    setButtonLoading(false);
     return;
   }
 
-  // ✅ 註冊前再次確認是否已註冊（雙重保險）
   try {
-    updateDebugInfo('🔍 最後檢查是否已註冊...');
-    const recheckResult = await checkRegistrationStatus(currentUserId);
-    
-    if (recheckResult.registered) {
-      console.log('⚠️ 用戶已註冊，中止註冊流程');
-      updateDebugInfo('⚠️ 偵測到重複註冊，跳轉到主頁');
-      
-      alert('⚠️ 您已經註冊過了！\n即將跳轉到主頁面...');
-      
-      // 儲存用戶資料
-      if (recheckResult.user) {
-        localStorage.setItem('pangolin_user', JSON.stringify(recheckResult.user));
-      }
-      localStorage.setItem('pangolin_registered', 'true');
-      localStorage.setItem('pangolin_userId', currentUserId);
-      
-      setTimeout(() => {
-        window.location.href = 'main.html';
-      }, 1500);
-      return;
-    }
-    
-    updateDebugInfo('✅ 確認未註冊，繼續註冊流程');
-    
-  } catch (recheckErr) {
-    console.warn('⚠️ 無法再次檢查註冊狀態:', recheckErr);
-    updateDebugInfo('⚠️ 無法確認註冊狀態，但將嘗試註冊');
-  }
+    // ✅ 準備註冊資料
+    const data = {
+      type: 'register',
+      userId: currentUserId,
+      name,
+      phone,
+      studentId,
+      department,
+      timestamp: new Date().toISOString()
+    };
 
-  // ✅ 準備註冊資料
-  const data = {
-    type: 'register',
-    userId: currentUserId,
-    name,
-    phone,
-    studentId,
-    department,
-    timestamp: new Date().toISOString()
-  };
+    console.log('📤 發送註冊資料:', data);
 
-  console.log('📤 發送註冊資料:', data);
-  setButtonLoading(true);
-
-  try {
     const registerStart = Date.now();
     
     // 使用 Worker 發送註冊請求
@@ -580,8 +564,11 @@ async function registerUser() {
     }
     
     alert('❌ ' + userMessage);
-    setButtonLoading(false);
     updateDebugInfo('❌ ' + userMessage);
+  } finally {
+    // ✅ 確保無論成功或失敗都重置狀態
+    isRegistering = false;
+    setButtonLoading(false);
   }
 }
 
