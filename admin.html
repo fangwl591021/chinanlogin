@@ -573,8 +573,74 @@ async function loadRules(){
     updateTestModeUI(testMode);
     
     // ✅ 時間限制
-    document.getElementById('bookingDeadline').value = r.bookingDeadline || '19:00';
-    document.getElementById('cancelDeadline').value = r.cancelDeadline || '18:00';
+    const bookingDeadline = r.bookingDeadline || '19:00';
+    const cancelDeadline = r.cancelDeadline || '18:00';
+    
+    console.log('⏰ 從 API 讀取的時間:', { bookingDeadline, cancelDeadline });
+    console.log('⏰ 時間類型:', { 
+      bookingType: typeof bookingDeadline, 
+      cancelType: typeof cancelDeadline 
+    });
+    
+    // ✅ 增強版：確保格式為 HH:MM，支援 ISO 8601 格式
+    const formatTime = (time, defaultTime = '19:00') => {
+      if (!time) return defaultTime;
+      const timeStr = String(time).trim();
+      
+      // 1. 如果格式正確（HH:MM），直接使用
+      if (/^\d{2}:\d{2}$/.test(timeStr)) return timeStr;
+      
+      // 2. 如果只有一位數小時，補 0
+      if (/^\d:\d{2}$/.test(timeStr)) return '0' + timeStr;
+      
+      // 3. ✅ 處理 ISO 8601 格式（例如：1899-12-30T10:00:00.000Z）
+      if (timeStr.includes('T')) {
+        try {
+          const date = new Date(timeStr);
+          if (!isNaN(date.getTime())) {
+            const hours = String(date.getUTCHours()).padStart(2, '0');
+            const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+            console.log(`🔄 ISO 格式轉換: ${timeStr} → ${hours}:${minutes}`);
+            return `${hours}:${minutes}`;
+          }
+        } catch (e) {
+          console.warn('⚠️ ISO 格式解析失敗:', e);
+        }
+      }
+      
+      // 4. ✅ 處理只有時間的 ISO 格式（例如：T10:00:00）
+      if (timeStr.match(/T?(\d{1,2}):(\d{2})/)) {
+        const match = timeStr.match(/T?(\d{1,2}):(\d{2})/);
+        const hours = match[1].padStart(2, '0');
+        const minutes = match[2];
+        return `${hours}:${minutes}`;
+      }
+      
+      // 5. 其他情況，返回預設值
+      console.warn(`⚠️ 無法識別的時間格式: ${timeStr}，使用預設值: ${defaultTime}`);
+      return defaultTime;
+    };
+    
+    const formattedBooking = formatTime(bookingDeadline);
+    const formattedCancel = formatTime(cancelDeadline);
+    
+    console.log('⏰ 格式化後的時間:', { formattedBooking, formattedCancel });
+    
+    document.getElementById('bookingDeadline').value = formattedBooking;
+    document.getElementById('cancelDeadline').value = formattedCancel;
+    
+    // 驗證是否設置成功
+    setTimeout(() => {
+      const actualBooking = document.getElementById('bookingDeadline').value;
+      const actualCancel = document.getElementById('cancelDeadline').value;
+      console.log('✅ 實際顯示的時間欄位值:', { actualBooking, actualCancel });
+      
+      if (!actualBooking || !actualCancel) {
+        console.warn('⚠️ 時間欄位未正確設置，嘗試重新設置');
+        document.getElementById('bookingDeadline').value = formattedBooking;
+        document.getElementById('cancelDeadline').value = formattedCancel;
+      }
+    }, 100);
     
     document.getElementById('ruleMeta').textContent = `最後更新：${r.lastUpdate || '未知'}`;
   } catch (e) {
@@ -653,6 +719,12 @@ document.getElementById('saveRules').addEventListener('click', async () => {
   };
   
   console.log('💾 準備儲存設定:', body);
+  console.log('⏰ 時間欄位值:', {
+    bookingDeadline: body.bookingDeadline,
+    cancelDeadline: body.cancelDeadline,
+    bookingEmpty: !body.bookingDeadline,
+    cancelEmpty: !body.cancelDeadline
+  });
   
   try {
     const res = await fetch(`${WORKER_URL}?mode=updateRules`, {
