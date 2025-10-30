@@ -252,7 +252,20 @@ async function init(){
     let checkRes = await fetch(checkUrl);
     console.log('📡 check 回應狀態:', checkRes.status);
     
-    let userData = await checkRes.json();
+    // ✅ 先獲取原始文本
+    const text = await checkRes.text();
+    console.log('📄 check 原始回應（前 500 字元）:', text.substring(0, 500));
+    
+    // ✅ 嘗試解析 JSON
+    let userData;
+    try {
+      userData = JSON.parse(text);
+    } catch (parseErr) {
+      console.error('❌ JSON 解析失敗:', parseErr);
+      console.error('📄 完整回應:', text);
+      throw new Error(`API 返回格式錯誤：${text.substring(0, 200)}`);
+    }
+    
     console.log('🎯 check 結果:', userData);
 
     let isAdmin = false;
@@ -333,11 +346,19 @@ function showToast(msg,type='success'){
 async function loadDashboardStats(){
   try{
     const res=await fetch(`${WORKER_URL}?mode=dashboard`);
-    const data=await res.json();
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseErr) {
+      console.error('❌ Dashboard JSON 解析失敗:', parseErr);
+      console.error('📄 原始回應:', text.substring(0, 200));
+      throw parseErr;
+    }
     document.getElementById('todayCount').textContent=data.dashboard?.todayCount||'-';
     document.getElementById('cancelCount').textContent=data.dashboard?.cancelCount||'-';
     document.getElementById('checkinCount').textContent=data.dashboard?.checkinCount||'-';
-  }catch(e){console.warn('統計資料載入失敗');}
+  }catch(e){console.warn('統計資料載入失敗:', e);}
 }
 
 async function loadReservations() {
@@ -348,8 +369,22 @@ async function loadReservations() {
     console.log('🚀 開始載入預約資料...');
     const res = await fetch(`${WORKER_URL}?mode=allReservations`);
     console.log('✅ 請求完成，狀態:', res.status);
+    console.log('📋 Content-Type:', res.headers.get('content-type'));
     
-    const json = await res.json();
+    // ✅ 先獲取原始文本
+    const text = await res.text();
+    console.log('📄 原始回應（前 500 字元）:', text.substring(0, 500));
+    
+    // ✅ 嘗試解析 JSON
+    let json;
+    try {
+      json = JSON.parse(text);
+    } catch (parseErr) {
+      console.error('❌ JSON 解析失敗:', parseErr);
+      console.error('📄 完整回應:', text);
+      throw new Error(`API 返回格式錯誤：${text.substring(0, 200)}`);
+    }
+    
     console.log('📊 收到回應:', json);
 
     if (!res.ok || json.status === 'error' || !json.ok) {
@@ -506,7 +541,20 @@ document.getElementById('search').addEventListener('input', e => {
 async function loadRules(){
   try {
     const res = await fetch(`${WORKER_URL}?mode=getRules`);
-    const json = await res.json();
+    
+    // ✅ 先獲取原始文本
+    const text = await res.text();
+    console.log('📄 getRules 原始回應（前 500 字元）:', text.substring(0, 500));
+    
+    // ✅ 嘗試解析 JSON
+    let json;
+    try {
+      json = JSON.parse(text);
+    } catch (parseErr) {
+      console.error('❌ JSON 解析失敗:', parseErr);
+      throw new Error(`API 返回格式錯誤：${text.substring(0, 200)}`);
+    }
+    
     const r = json.current || {};
     
     document.getElementById('seatLimit').value = r.seatLimit || '';
@@ -612,7 +660,19 @@ document.getElementById('saveRules').addEventListener('click', async () => {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(body)
     });
-    const json = await res.json();
+    
+    // ✅ 先獲取原始文本
+    const text = await res.text();
+    console.log('📄 updateRules 原始回應（前 500 字元）:', text.substring(0, 500));
+    
+    // ✅ 嘗試解析 JSON
+    let json;
+    try {
+      json = JSON.parse(text);
+    } catch (parseErr) {
+      console.error('❌ JSON 解析失敗:', parseErr);
+      throw new Error(`API 返回格式錯誤：${text.substring(0, 200)}`);
+    }
     
     console.log('📊 儲存回應:', json);
     
