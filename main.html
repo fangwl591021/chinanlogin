@@ -30,102 +30,6 @@ header {
 }
 main { flex: 1; padding-bottom: 40px; }
 
-/* ==================== 🎨 Loading 畫面樣式 ==================== */
-#loadingOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, #f5f6f7 0%, #e8f5e9 100%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  transition: opacity 0.5s ease, visibility 0.5s ease;
-}
-
-#loadingOverlay.hidden {
-  opacity: 0;
-  visibility: hidden;
-}
-
-.loading-container {
-  text-align: center;
-  animation: fadeInUp 0.6s ease-out;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.loading-icon {
-  font-size: 64px;
-  margin-bottom: 20px;
-  animation: bounce 1.5s ease-in-out infinite;
-}
-
-@keyframes bounce {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-15px);
-  }
-}
-
-.loading-spinner {
-  display: inline-block;
-  width: 50px;
-  height: 50px;
-  border: 5px solid rgba(60, 128, 80, 0.2);
-  border-radius: 50%;
-  border-top-color: #3c8050;
-  animation: spin 1s linear infinite;
-  margin: 20px 0;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.loading-text {
-  font-size: 18px;
-  font-weight: bold;
-  color: #3c8050;
-  margin-top: 15px;
-}
-
-.loading-subtext {
-  font-size: 14px;
-  color: #666;
-  margin-top: 8px;
-}
-
-.loading-dots {
-  display: inline-block;
-}
-
-.loading-dots::after {
-  content: '';
-  animation: dots 1.5s steps(4, end) infinite;
-}
-
-@keyframes dots {
-  0%, 20% { content: ''; }
-  40% { content: '.'; }
-  60% { content: '..'; }
-  80%, 100% { content: '...'; }
-}
-
 /* ==================== 通知框 ==================== */
 .notice { padding: 10px 16px; margin: 10px 16px; border-radius: 6px; }
 .notice.success { background: #e8f5e9; color: #2e7d32; border: 1px solid #81c784; }
@@ -260,18 +164,20 @@ main { flex: 1; padding-bottom: 40px; }
 }
 
 /* ==================== 表單元素 ==================== */
+/* ✅ 加大選擇欄位高度 */
 select {
   width: 100%; 
   padding: 16px; 
   border: 1px solid #ccc;
   border-radius: 6px; 
   margin-top: 8px;
-  font-size: 16px;
-  height: 60px;
-  min-height: 60px;
+  font-size: 16px; /* 加大字體 */
+  height: 60px; /* 固定高度 */
+  min-height: 60px; /* 最小高度 */
   line-height: 1.4;
 }
 
+/* ✅ 站點選擇區域樣式 */
 .stop-selector-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -492,7 +398,7 @@ header .english-text {
 }
 
 /* ==================== 載入動畫 ==================== */
-.btn-loading-spinner {
+.loading-spinner {
   display: inline-block;
   width: 20px;
   height: 20px;
@@ -503,24 +409,14 @@ header .english-text {
   margin-right: 8px;
   vertical-align: middle;
 }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 </style>
 </head>
 
 <body>
-<!-- 🎨 Loading 畫面 -->
-<div id="loadingOverlay">
-  <div class="loading-container">
-    <div class="loading-icon">🚌</div>
-    <div class="loading-spinner"></div>
-    <div class="loading-text">
-      系統載入中<span class="loading-dots"></span>
-    </div>
-    <div class="loading-subtext">
-      Loading System<span class="loading-dots"></span>
-    </div>
-  </div>
-</div>
-
 <header>
   <div class="bilingual-text">
     <div class="chinese-text">穿山甲專車預約</div>
@@ -529,8 +425,11 @@ header .english-text {
 </header>
 
 <main>
-  <div id="userInfo" style="padding:16px; opacity: 0; transition: opacity 0.5s ease;">
-    <!-- 用戶資訊將在這裡顯示 -->
+  <div id="userInfo" style="padding:16px">
+    <div class="bilingual-text">
+      <div class="chinese-text">⏳ 系統初始化中...</div>
+      <div class="english-text">⏳ System Initializing...</div>
+    </div>
   </div>
 
   <div class="btn-group">
@@ -568,6 +467,7 @@ header .english-text {
     <div id="routeButtons" class="route-buttons"></div>
   </div>
 
+  <!-- ✅ 修改：合併上下車站選擇為一個區域，使用網格佈局 -->
   <div id="stopSelectionSection" class="stop-selector" style="display:none">
     <h3 class="bilingual-text">
       <div class="chinese-text">請選擇上下車站點</div>
@@ -720,27 +620,6 @@ const RESERVATION_RULES = {
   dailyDeadline: '19:00',
   maxDaysAhead: 7
 };
-
-// ============================ 🎨 Loading 控制函數 ============================
-function hideLoading() {
-  const overlay = document.getElementById('loadingOverlay');
-  const userInfo = document.getElementById('userInfo');
-  
-  setTimeout(() => {
-    overlay.classList.add('hidden');
-    userInfo.style.opacity = '1';
-  }, 300);
-  
-  setTimeout(() => {
-    overlay.style.display = 'none';
-  }, 800);
-}
-
-function showLoading() {
-  const overlay = document.getElementById('loadingOverlay');
-  overlay.style.display = 'flex';
-  overlay.classList.remove('hidden');
-}
 
 // ============================ 工具函數 ============================
 
@@ -940,15 +819,10 @@ async function init() {
     
     renderCalendar();
     
-    // ✅ 隱藏 Loading 畫面
-    hideLoading();
-    
     console.log('🎉 系統初始化完成');
     
   } catch (error) {
     console.error('💥 初始化錯誤:', error);
-    clearTimeout(timeout);
-    hideLoading();
     document.getElementById('userInfo').innerHTML = `
       <div style="color: red; text-align: center;">
         <div class="bilingual-text">
@@ -964,7 +838,6 @@ async function init() {
         </button>
       </div>
     `;
-    document.getElementById('userInfo').style.opacity = '1';
   }
   
   // ✅ 頁面可見性監聽
@@ -1358,6 +1231,7 @@ function resetSelection() {
 }
 
 // ============================ 班次選擇 ============================
+// ✅ 完全優化的 showRoutes
 async function showRoutes() {
   try {
     console.log('🚌 顯示班次選擇 (優化版)');
@@ -1365,14 +1239,16 @@ async function showRoutes() {
     document.getElementById('routeSection').style.display = 'block';
     const container = document.getElementById('routeButtons');
     
-    container.innerHTML = '<div style="text-align:center;padding:20px;color:#666;">🔄 載入班次資料中...</div>`;
+    container.innerHTML = '<div style="text-align:center;padding:20px;color:#666;">🔄 載入班次資料中...</div>';
     
+    // ✅ 批次計算所有班次統計（只呼叫一次 API）
     const stats = await calculateAllRouteStats(selectedDate);
     
     let html = '';
     for (const [routeId, route] of Object.entries(ROUTES)) {
       const { currentCount, remainingSeats, isFull } = stats[routeId];
       
+      // ✅ 使用 Map 快速檢查是否已預約（O(1)）
       const userDateRouteKey = `${userData.userId}-${selectedDate}-${routeId}`;
       const alreadyBooked = reservationMap.has(userDateRouteKey);
       
@@ -1442,17 +1318,20 @@ function selectRoute(routeId) {
 }
 
 // ============================ 站點選擇 ============================
+// ✅ 修改：同時顯示上下車站選擇
 function showStopSelection(routeId) {
   const stops = STOPS[routeId];
   
   document.getElementById('stopSelectionSection').style.display = 'block';
   
+  // 上車站選擇
   const fromSelect = document.getElementById('fromStop');
   fromSelect.innerHTML = '<option value="">請選擇上車站</option>';
   stops.forEach(stop => {
     fromSelect.innerHTML += `<option value="${stop.chinese}">${stop.chinese} / ${stop.english}</option>`;
   });
   
+  // 下車站選擇
   const toSelect = document.getElementById('toStop');
   toSelect.innerHTML = '<option value="">請先選擇上車站</option>';
   toSelect.disabled = true;
@@ -1460,6 +1339,7 @@ function showStopSelection(routeId) {
   document.getElementById('submitBtn').style.display = 'none';
 }
 
+// ✅ 修改：更新下車站選項
 function updateToStops() {
   const fromStop = document.getElementById('fromStop').value;
   const toSelect = document.getElementById('toStop');
@@ -1483,6 +1363,7 @@ function updateToStops() {
   
   toSelect.disabled = false;
   
+  // 當上下車站都選擇後顯示提交按鈕
   toSelect.onchange = function() {
     if (this.value) {
       document.getElementById('submitBtn').style.display = 'block';
@@ -1517,8 +1398,8 @@ async function submitReservation() {
     submitBtn.disabled = true;
     submitBtn.innerHTML = `
       <div class="bilingual-text">
-        <div class="chinese-text"><span class="btn-loading-spinner"></span>預約中...</div>
-        <div class="english-text"><span class="btn-loading-spinner"></span>Booking...</div>
+        <div class="chinese-text"><span class="loading-spinner"></span>預約中...</div>
+        <div class="english-text"><span class="loading-spinner"></span>Booking...</div>
       </div>
     `;
     
@@ -1554,19 +1435,25 @@ async function submitReservation() {
       
       console.log('🔄 開始更新預約資料...');
       
+      // ✅ 清除快取
       clearCache();
       
+      // 重新載入預約資料
       await fetchReservations();
       
+      // 等待一下確保資料同步
       await new Promise(resolve => setTimeout(resolve, 500));
       
+      // 重新渲染月曆
       renderCalendar();
       
+      // 重新顯示班次
       if (selectedDate) {
         console.log('🔄 重新顯示班次...');
         await showRoutes();
       }
       
+      // 清空表單選擇
       selectedRoute = null;
       document.getElementById('stopSelectionSection').style.display = 'none';
       document.getElementById('submitBtn').style.display = 'none';
@@ -1726,12 +1613,16 @@ async function cancelReservation(reservationId) {
     if (result.status === 'success') {
       alert('✅ 預約已取消\n✅ Reservation cancelled');
       
+      // ✅ 清除快取
       clearCache();
       
+      // 重新載入預約資料
       await fetchReservations();
       
+      // 重新渲染月曆
       renderCalendar();
       
+      // 如果還在檢視同一個日期,重新顯示班次
       if (selectedDate === dateStr) {
         await showRoutes();
       }
