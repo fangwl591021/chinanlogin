@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>穿山甲專車管理後台 v6.5.0</title>
+<title>穿山甲專車管理後台 v6.5.1 (修正版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -11,7 +11,7 @@ body { font-family:"Noto Sans TC",system-ui,sans-serif;background:#f8fafc;margin
 #loadingScreen,#loginScreen,#noAuthScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#f8fafc;flex-direction:column;text-align:center;}
 #loginScreen,#noAuthScreen{display:none;}
 #app{display:none;}
-#topBar{position:sticky;top:0;background:#3c8050;color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;}
+#topBar{position:sticky;top:0;background:#3c8050;color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;z-index:100;}
 #userInfo{display:flex;align-items:center;gap:10px;}
 #userPicture{width:40px;height:40px;border-radius:50%;border:2px solid white;}
 .nav-btn{flex:1;padding:10px 0;text-align:center;font-size:12px;font-weight:600;cursor:pointer;color:#666;}
@@ -29,6 +29,11 @@ body { font-family:"Noto Sans TC",system-ui,sans-serif;background:#f8fafc;margin
 .status-cancel{color:#dc2626;font-weight:bold;}
 .status-wait{color:#ca8a04;font-weight:bold;}
 .info-badge{background:#dbeafe;color:#1e40af;padding:4px 12px;border-radius:6px;font-size:12px;display:inline-block;margin-top:8px;}
+/* ✅ 新增：重新整理按鈕樣式 */
+.refresh-btn{background:#3c8050;color:white;padding:8px 16px;border-radius:6px;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;border:none;transition:all 0.2s;}
+.refresh-btn:hover{background:#2d6040;transform:scale(1.05);}
+.refresh-btn:active{transform:scale(0.95);}
+.refresh-btn.loading{opacity:0.6;pointer-events:none;}
 </style>
 </head>
 
@@ -87,9 +92,17 @@ body { font-family:"Noto Sans TC",system-ui,sans-serif;background:#f8fafc;margin
     <!-- 🧾 查詢 -->
     <section id="query" class="section">
       <div class="card">
-        <h2 class="section-title">🧾 預約查詢</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h2 class="section-title" style="margin-bottom:0;">🧾 預約查詢</h2>
+          <!-- ✅ 新增：重新整理按鈕 -->
+          <button id="refreshBtn" class="refresh-btn">
+            <span id="refreshIcon">🔄</span>
+            <span id="refreshText">重新整理</span>
+          </button>
+        </div>
         <input type="text" id="search" placeholder="搜尋姓名、班次或日期..." 
                class="border border-gray-300 rounded-md p-2 w-full mb-3">
+        <div id="lastUpdateTime" class="text-xs text-gray-500 mb-2"></div>
         <div id="tableContainer" style="overflow-x:auto;">
           <table class="min-w-full text-sm">
             <thead class="bg-green-700 text-white sticky top-0">
@@ -228,6 +241,7 @@ body { font-family:"Noto Sans TC",system-ui,sans-serif;background:#f8fafc;margin
 const WORKER_URL='https://delicate-math-7e61.fangwl591021.workers.dev/';
 const LIFF_ID = '2006590746-wgL4l54z'; // ADMIN 後台專用 LIFF ID
 let allData=[];
+let lastLoadTime = null; // ✅ 記錄最後載入時間
 
 async function init(){
   try{
@@ -249,14 +263,15 @@ async function init(){
     let checkUrl = `${WORKER_URL}?mode=check&userId=${profile.userId}`;
     console.log('📡 請求 URL:', checkUrl);
     
-    let checkRes = await fetch(checkUrl);
+    let checkRes = await fetch(checkUrl, {
+      cache: 'no-store',  // ✅ 防止快取
+      headers: {'Cache-Control': 'no-cache'}
+    });
     console.log('📡 check 回應狀態:', checkRes.status);
     
-    // ✅ 先獲取原始文本
     const text = await checkRes.text();
     console.log('📄 check 原始回應（前 500 字元）:', text.substring(0, 500));
     
-    // ✅ 嘗試解析 JSON
     let userData;
     try {
       userData = JSON.parse(text);
@@ -320,11 +335,10 @@ async function init(){
     document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
     document.getElementById('dashboard').classList.add('active');
 
-    setTimeout(async()=>{
-      await loadReservations();
-      await loadRules();
-      await loadDashboardStats();
-    },1500);
+    // ✅ 立即載入資料，不延遲
+    await loadDashboardStats();
+    await loadRules();
+    // 注意：不在這裡載入預約資料，等用戶切換到查詢頁面時才載入
 
   }catch(e){
     console.error('❌ 初始化錯誤:', e);
@@ -345,7 +359,11 @@ function showToast(msg,type='success'){
 
 async function loadDashboardStats(){
   try{
-    const res=await fetch(`${WORKER_URL}?mode=dashboard`);
+    const timestamp = new Date().getTime();
+    const res=await fetch(`${WORKER_URL}?mode=dashboard&_t=${timestamp}`, {
+      cache: 'no-store',
+      headers: {'Cache-Control': 'no-cache'}
+    });
     const text = await res.text();
     let data;
     try {
@@ -361,21 +379,43 @@ async function loadDashboardStats(){
   }catch(e){console.warn('統計資料載入失敗:', e);}
 }
 
-async function loadReservations() {
+// ✅ 修正版：強制不使用快取
+async function loadReservations(showLoading = true) {
   const tbody = document.getElementById('tbl');
-  tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">🔄 查詢中...</td></tr>`;
+  const refreshBtn = document.getElementById('refreshBtn');
+  const refreshIcon = document.getElementById('refreshIcon');
+  const refreshText = document.getElementById('refreshText');
+  
+  if (showLoading) {
+    tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">🔄 查詢中...</td></tr>`;
+    if (refreshBtn) {
+      refreshBtn.classList.add('loading');
+      refreshIcon.style.animation = 'spin 1s linear infinite';
+      refreshText.textContent = '載入中...';
+    }
+  }
 
   try {
     console.log('🚀 開始載入預約資料...');
-    const res = await fetch(`${WORKER_URL}?mode=allReservations`);
+    
+    // ✅ 加入時間戳防止快取
+    const timestamp = new Date().getTime();
+    const res = await fetch(`${WORKER_URL}?mode=allReservations&_t=${timestamp}`, {
+      method: 'GET',
+      cache: 'no-store',  // 強制不使用快取
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
+    
     console.log('✅ 請求完成，狀態:', res.status);
     console.log('📋 Content-Type:', res.headers.get('content-type'));
     
-    // ✅ 先獲取原始文本
     const text = await res.text();
     console.log('📄 原始回應（前 500 字元）:', text.substring(0, 500));
     
-    // ✅ 嘗試解析 JSON
     let json;
     try {
       json = JSON.parse(text);
@@ -397,8 +437,13 @@ async function loadReservations() {
       throw new Error('資料格式錯誤');
     }
 
+    // ✅ 更新最後載入時間
+    lastLoadTime = new Date();
+    updateLastLoadTime();
+
     if (list.length === 0) {
       tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">目前沒有預約資料</td></tr>`;
+      showToast('✅ 已更新（無資料）');
       return;
     }
 
@@ -413,83 +458,101 @@ async function loadReservations() {
 
     if (validData.length === 0) {
       tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">目前沒有有效的預約資料</td></tr>`;
+      showToast('✅ 已更新（無有效資料）');
       return;
     }
 
-    // ✅ 排序規則：當日在上 → 已預約排上面 → 已取消排下面
+    // 排序規則
     const routeOrder = { A1: 1, A2: 2, B1: 3, B2: 4 };
     
-    // 狀態優先級：已搭乘(2) > 等待中/已預約(1) > 已取消(0)
     const getStatusPriority = (status) => {
       if (!status) return 1;
       if (status.includes('搭乘')) return 2;
       if (status.includes('取消')) return 0;
-      return 1; // 預設為已預約/等待中
+      return 1;
     };
     
     validData.sort((a, b) => {
-      // 1. 先按日期降序（最新的在上面）
       if (a.date < b.date) return 1;
       if (a.date > b.date) return -1;
       
-      // 2. 相同日期，按狀態排序（已預約 > 已取消）
       const statusDiff = getStatusPriority(b.status) - getStatusPriority(a.status);
       if (statusDiff !== 0) return statusDiff;
       
-      // 3. 相同日期和狀態，按班次排序
       return (routeOrder[a.route] || 99) - (routeOrder[b.route] || 99);
     });
 
     renderTable(validData);
     allData = validData;
-    showToast(`✅ 載入 ${validData.length} 筆預約資料`);
+    showToast(`✅ 已更新 ${validData.length} 筆預約資料`);
     
   } catch (e) {
     console.error('❌ 後台查詢錯誤', e);
     tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">❌ 查詢失敗：${e.message}</td></tr>`;
     showToast('❌ 載入預約資料失敗', 'error');
+  } finally {
+    // ✅ 恢復按鈕狀態
+    if (refreshBtn) {
+      refreshBtn.classList.remove('loading');
+      refreshIcon.style.animation = '';
+      refreshText.textContent = '重新整理';
+    }
   }
 }
 
-// ✅ 格式化日期顯示 (優化版)
+// ✅ 新增：更新最後載入時間顯示
+function updateLastLoadTime() {
+  const timeDisplay = document.getElementById('lastUpdateTime');
+  if (lastLoadTime) {
+    const now = new Date();
+    const diff = Math.floor((now - lastLoadTime) / 1000); // 秒數
+    
+    let timeText;
+    if (diff < 60) {
+      timeText = `${diff} 秒前更新`;
+    } else if (diff < 3600) {
+      timeText = `${Math.floor(diff / 60)} 分鐘前更新`;
+    } else {
+      timeText = lastLoadTime.toLocaleTimeString('zh-TW');
+    }
+    
+    timeDisplay.textContent = `📡 ${timeText}`;
+    timeDisplay.style.color = diff < 120 ? '#16a34a' : '#6b7280';
+  }
+}
+
+// ✅ 格式化日期顯示
 function formatDate(dateStr) {
   if (!dateStr) return '-';
   
   try {
-    // 處理各種日期格式
     let date;
     
-    // 如果已經是簡短格式 (YYYY-MM-DD)，直接加上星期
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
       date = new Date(dateStr + 'T00:00:00');
     }
-    // 如果包含 GMT 或 ISO 格式
     else if (dateStr.includes('GMT') || dateStr.includes('T')) {
       date = new Date(dateStr);
     }
-    // 其他格式
     else {
       date = new Date(dateStr);
     }
     
-    // 檢查日期是否有效
     if (isNaN(date.getTime())) {
       console.warn('無法解析日期:', dateStr);
-      return dateStr; // 如果無法解析，返回原始字串
+      return dateStr;
     }
     
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     
-    // 取得星期幾
     const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
     const weekday = weekdays[date.getDay()];
     
     return `${year}-${month}-${day} (${weekday})`;
   } catch (e) {
     console.warn('日期格式化失敗:', dateStr, e);
-    // 如果格式化失敗，嘗試簡單處理
     if (dateStr.includes('GMT')) {
       return dateStr.split(' GMT')[0].substring(0, 15);
     }
@@ -540,13 +603,15 @@ document.getElementById('search').addEventListener('input', e => {
 
 async function loadRules(){
   try {
-    const res = await fetch(`${WORKER_URL}?mode=getRules`);
+    const timestamp = new Date().getTime();
+    const res = await fetch(`${WORKER_URL}?mode=getRules&_t=${timestamp}`, {
+      cache: 'no-store',
+      headers: {'Cache-Control': 'no-cache'}
+    });
     
-    // ✅ 先獲取原始文本
     const text = await res.text();
     console.log('📄 getRules 原始回應（前 500 字元）:', text.substring(0, 500));
     
-    // ✅ 嘗試解析 JSON
     let json;
     try {
       json = JSON.parse(text);
@@ -562,45 +627,30 @@ async function loadRules(){
     document.getElementById('banWeeks').value = r.banWeeks || '';
     document.getElementById('tripMode').value = r.tripMode || 'single';
     
-    // ✅ 預約開放天數
     const bookingDaysLimit = r.advanceBookingDays || r.bookingDaysLimit || 7;
     document.getElementById('bookingDaysLimit').value = bookingDaysLimit;
     document.getElementById('daysDisplay').textContent = bookingDaysLimit;
     
-    // ✅ 測試模式
     const testMode = r.testMode === true || r.testMode === 'true' || r.testMode === 1;
     document.getElementById('testMode').checked = testMode;
     updateTestModeUI(testMode);
     
-    // ✅ 時間限制
     const bookingDeadline = r.bookingDeadline || '19:00';
     const cancelDeadline = r.cancelDeadline || '18:00';
     
-    console.log('⏰ 從 API 讀取的時間:', { bookingDeadline, cancelDeadline });
-    console.log('⏰ 時間類型:', { 
-      bookingType: typeof bookingDeadline, 
-      cancelType: typeof cancelDeadline 
-    });
-    
-    // ✅ 增強版：確保格式為 HH:MM，支援 ISO 8601 格式
     const formatTime = (time, defaultTime = '19:00') => {
       if (!time) return defaultTime;
       const timeStr = String(time).trim();
       
-      // 1. 如果格式正確（HH:MM），直接使用
       if (/^\d{2}:\d{2}$/.test(timeStr)) return timeStr;
-      
-      // 2. 如果只有一位數小時，補 0
       if (/^\d:\d{2}$/.test(timeStr)) return '0' + timeStr;
       
-      // 3. ✅ 處理 ISO 8601 格式（例如：1899-12-30T10:00:00.000Z）
       if (timeStr.includes('T')) {
         try {
           const date = new Date(timeStr);
           if (!isNaN(date.getTime())) {
             const hours = String(date.getUTCHours()).padStart(2, '0');
             const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-            console.log(`🔄 ISO 格式轉換: ${timeStr} → ${hours}:${minutes}`);
             return `${hours}:${minutes}`;
           }
         } catch (e) {
@@ -608,7 +658,6 @@ async function loadRules(){
         }
       }
       
-      // 4. ✅ 處理只有時間的 ISO 格式（例如：T10:00:00）
       if (timeStr.match(/T?(\d{1,2}):(\d{2})/)) {
         const match = timeStr.match(/T?(\d{1,2}):(\d{2})/);
         const hours = match[1].padStart(2, '0');
@@ -616,31 +665,14 @@ async function loadRules(){
         return `${hours}:${minutes}`;
       }
       
-      // 5. 其他情況，返回預設值
-      console.warn(`⚠️ 無法識別的時間格式: ${timeStr}，使用預設值: ${defaultTime}`);
       return defaultTime;
     };
     
     const formattedBooking = formatTime(bookingDeadline);
     const formattedCancel = formatTime(cancelDeadline);
     
-    console.log('⏰ 格式化後的時間:', { formattedBooking, formattedCancel });
-    
     document.getElementById('bookingDeadline').value = formattedBooking;
     document.getElementById('cancelDeadline').value = formattedCancel;
-    
-    // 驗證是否設置成功
-    setTimeout(() => {
-      const actualBooking = document.getElementById('bookingDeadline').value;
-      const actualCancel = document.getElementById('cancelDeadline').value;
-      console.log('✅ 實際顯示的時間欄位值:', { actualBooking, actualCancel });
-      
-      if (!actualBooking || !actualCancel) {
-        console.warn('⚠️ 時間欄位未正確設置，嘗試重新設置');
-        document.getElementById('bookingDeadline').value = formattedBooking;
-        document.getElementById('cancelDeadline').value = formattedCancel;
-      }
-    }, 100);
     
     document.getElementById('ruleMeta').textContent = `最後更新：${r.lastUpdate || '未知'}`;
   } catch (e) {
@@ -649,7 +681,6 @@ async function loadRules(){
   }
 }
 
-// ✅ 更新測試模式 UI
 function updateTestModeUI(isTestMode) {
   const statusText = document.getElementById('testModeText');
   const statusBadge = document.getElementById('testModeStatus');
@@ -672,7 +703,6 @@ function updateTestModeUI(isTestMode) {
   }
 }
 
-// ✅ 測試模式切換監聽
 document.getElementById('testMode').addEventListener('change', function(e) {
   updateTestModeUI(e.target.checked);
 });
@@ -693,7 +723,6 @@ document.getElementById('bookingDaysLimit').addEventListener('input', function(e
 document.getElementById('saveRules').addEventListener('click', async () => {
   const bookingDaysLimit = parseInt(document.getElementById('bookingDaysLimit').value);
   
-  // 驗證預約開放天數
   if (!bookingDaysLimit || bookingDaysLimit < 1) {
     showToast('⚠️ 預約開放天數必須至少為 1 天', 'error');
     document.getElementById('bookingDaysLimit').focus();
@@ -712,19 +741,10 @@ document.getElementById('saveRules').addEventListener('click', async () => {
     banWeeks: +document.getElementById('banWeeks').value,
     tripMode: document.getElementById('tripMode').value,
     advanceBookingDays: bookingDaysLimit,
-    // ✅ 新增：測試模式與時間限制
     testMode: document.getElementById('testMode').checked,
     bookingDeadline: document.getElementById('bookingDeadline').value,
     cancelDeadline: document.getElementById('cancelDeadline').value
   };
-  
-  console.log('💾 準備儲存設定:', body);
-  console.log('⏰ 時間欄位值:', {
-    bookingDeadline: body.bookingDeadline,
-    cancelDeadline: body.cancelDeadline,
-    bookingEmpty: !body.bookingDeadline,
-    cancelEmpty: !body.cancelDeadline
-  });
   
   try {
     const res = await fetch(`${WORKER_URL}?mode=updateRules`, {
@@ -733,11 +753,8 @@ document.getElementById('saveRules').addEventListener('click', async () => {
       body: JSON.stringify(body)
     });
     
-    // ✅ 先獲取原始文本
     const text = await res.text();
-    console.log('📄 updateRules 原始回應（前 500 字元）:', text.substring(0, 500));
     
-    // ✅ 嘗試解析 JSON
     let json;
     try {
       json = JSON.parse(text);
@@ -745,8 +762,6 @@ document.getElementById('saveRules').addEventListener('click', async () => {
       console.error('❌ JSON 解析失敗:', parseErr);
       throw new Error(`API 返回格式錯誤：${text.substring(0, 200)}`);
     }
-    
-    console.log('📊 儲存回應:', json);
     
     if(json.status === 'success') {
       const modeText = body.testMode ? '測試模式（無限制）' : '正式模式（已啟用時間限制）';
@@ -761,13 +776,25 @@ document.getElementById('saveRules').addEventListener('click', async () => {
   }
 });
 
+// ✅ 新增：重新整理按鈕事件
+document.getElementById('refreshBtn').addEventListener('click', async () => {
+  console.log('🔄 手動重新整理資料');
+  await loadReservations(true);
+});
+
 function setupNav(){
   document.querySelectorAll('.nav-btn').forEach(btn=>{
-    btn.addEventListener('click',()=>{
+    btn.addEventListener('click', async ()=>{
       document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
       document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
       document.getElementById(btn.dataset.sec).classList.add('active');
+      
+      // ✅ 當切換到查詢頁面時，自動載入最新資料
+      if(btn.dataset.sec === 'query') {
+        console.log('📊 切換到查詢頁面，載入最新資料');
+        await loadReservations(true);
+      }
     });
   });
   
@@ -775,6 +802,23 @@ function setupNav(){
     liff.openWindow({url:'https://liff.line.me/2006590746-G7B12a1K',external:false});
   });
 }
+
+// ✅ 新增：每隔 60 秒自動更新時間顯示
+setInterval(() => {
+  if (lastLoadTime) {
+    updateLastLoadTime();
+  }
+}, 60000); // 每 60 秒更新一次
+
+// 新增 CSS animation for refresh icon
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+`;
+document.head.appendChild(style);
 
 init();
 </script>
