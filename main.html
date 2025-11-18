@@ -1318,7 +1318,7 @@ function selectRoute(routeId) {
 }
 
 // ============================ 站點選擇 ============================
-// ✅ 修改：同時顯示上下車站選擇
+// ✅ 修正：按照路線方向限制站點選擇
 function showStopSelection(routeId) {
   const stops = STOPS[routeId];
   
@@ -1327,7 +1327,11 @@ function showStopSelection(routeId) {
   // 上車站選擇
   const fromSelect = document.getElementById('fromStop');
   fromSelect.innerHTML = '<option value="">請選擇上車站</option>';
-  stops.forEach(stop => {
+  
+  // 根據路線方向，上車站只能選擇前半段站點（不能直接選終點站）
+  const selectableFromStops = stops.slice(0, -1); // 排除最後一站
+  
+  selectableFromStops.forEach(stop => {
     fromSelect.innerHTML += `<option value="${stop.chinese}">${stop.chinese} / ${stop.english}</option>`;
   });
   
@@ -1339,7 +1343,7 @@ function showStopSelection(routeId) {
   document.getElementById('submitBtn').style.display = 'none';
 }
 
-// ✅ 修改：更新下車站選項
+// ✅ 修正：下車站只能選擇在上車站之後的站點
 function updateToStops() {
   const fromStop = document.getElementById('fromStop').value;
   const toSelect = document.getElementById('toStop');
@@ -1354,14 +1358,26 @@ function updateToStops() {
   const stops = STOPS[selectedRoute];
   const fromIndex = stops.findIndex(s => s.chinese === fromStop);
   
-  toSelect.innerHTML = '<option value="">請選擇下車站</option>';
-  stops.forEach((stop, index) => {
-    if (index !== fromIndex) {
-      toSelect.innerHTML += `<option value="${stop.chinese}">${stop.chinese} / ${stop.english}</option>`;
-    }
-  });
+  if (fromIndex === -1) {
+    toSelect.innerHTML = '<option value="">站點資料錯誤</option>';
+    toSelect.disabled = true;
+    return;
+  }
   
-  toSelect.disabled = false;
+  toSelect.innerHTML = '<option value="">請選擇下車站</option>';
+  
+  // 下車站只能選擇在上車站之後的站點（排除上車站本身和之前的站點）
+  const availableToStops = stops.slice(fromIndex + 1);
+  
+  if (availableToStops.length === 0) {
+    toSelect.innerHTML = '<option value="">無可用下車站</option>';
+    toSelect.disabled = true;
+  } else {
+    availableToStops.forEach(stop => {
+      toSelect.innerHTML += `<option value="${stop.chinese}">${stop.chinese} / ${stop.english}</option>`;
+    });
+    toSelect.disabled = false;
+  }
   
   // 當上下車站都選擇後顯示提交按鈕
   toSelect.onchange = function() {
@@ -1381,6 +1397,21 @@ async function submitReservation() {
   
   if (!selectedDate || !selectedRoute || !fromStop || !toStop) {
     alert('請完整填寫所有選項\nPlease complete all selections');
+    return;
+  }
+  
+  // ✅ 額外驗證：確保下車站在上車站之後
+  const stops = STOPS[selectedRoute];
+  const fromIndex = stops.findIndex(s => s.chinese === fromStop);
+  const toIndex = stops.findIndex(s => s.chinese === toStop);
+  
+  if (fromIndex === -1 || toIndex === -1) {
+    alert('站點選擇錯誤，請重新選擇\nStop selection error, please reselect');
+    return;
+  }
+  
+  if (toIndex <= fromIndex) {
+    alert('下車站必須在上車站之後\nDrop-off stop must be after pick-up stop');
     return;
   }
   
