@@ -461,8 +461,9 @@ async function loadReservations(showLoading = true) {
     };
     
     validData.sort((a, b) => {
-      if (a.date < b.date) return 1;
+      // 日期比較：最新的排在最前面
       if (a.date > b.date) return -1;
+      if (a.date < b.date) return 1;
       
       const statusDiff = getStatusPriority(b.status) - getStatusPriority(a.status);
       if (statusDiff !== 0) return statusDiff;
