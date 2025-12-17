@@ -375,7 +375,7 @@ async function loadDashboardStats(){
   }catch(e){console.warn('統計資料載入失敗:', e);}
 }
 
-// ✅ 修正版：強制不使用快取
+// ✅ 修正版：正確排序（最近的在上方）
 async function loadReservations(showLoading = true) {
   const tbody = document.getElementById('tbl');
   const refreshBtn = document.getElementById('refreshBtn');
@@ -399,23 +399,21 @@ async function loadReservations(showLoading = true) {
     const res = await fetch(`${WORKER_URL}?mode=allReservations&_t=${timestamp}`);
     
     console.log('✅ 請求完成，狀態:', res.status);
-    console.log('📋 Content-Type:', res.headers.get('content-type'));
     
     const text = await res.text();
-    console.log('📄 原始回應（前 500 字元）:', text.substring(0, 500));
+    console.log('📄 原始回應（前 200 字元）:', text.substring(0, 200));
     
     let json;
     try {
       json = JSON.parse(text);
     } catch (parseErr) {
       console.error('❌ JSON 解析失敗:', parseErr);
-      console.error('📄 完整回應:', text);
       throw new Error(`API 返回格式錯誤：${text.substring(0, 200)}`);
     }
     
-    console.log('📊 收到回應:', json);
+    console.log('📊 收到回應狀態:', json.ok, '筆數:', json.reservations?.length);
 
-    if (!res.ok || json.status === 'error' || !json.ok) {
+    if (!res.ok || !json.ok) {
       throw new Error(json.message || json.error || 'Worker 回應錯誤');
     }
 
@@ -435,6 +433,7 @@ async function loadReservations(showLoading = true) {
       return;
     }
 
+    // 提取需要的欄位
     const data = list.map(r => ({
       date: r.date || '',
       route: r.route || '',
@@ -450,30 +449,45 @@ async function loadReservations(showLoading = true) {
       return;
     }
 
-    // 排序規則
-    const routeOrder = { A1: 1, A2: 2, B1: 3, B2: 4 };
+    // ==================== 修正的排序邏輯 ====================
+    // 排序規則 - 修正版
+const routeOrder = { A1: 1, A2: 2, B1: 3, B2: 4 };
+
+const getStatusPriority = (status) => {
+  if (!status) return 1;
+  if (status.includes('搭乘') || status.includes('checkin')) return 2;  // 已搭乘優先顯示
+  if (status.includes('取消') || status.includes('cancel')) return 0;  // 已取消最後顯示
+  return 1;  // 已預約中等
+};
+
+validData.sort((a, b) => {
+  // 1. 首先按日期排序（最新的在最上面）
+  const dateA = new Date(a.date);
+  const dateB = new Date(b.date);
+  
+  if (dateA > dateB) return -1;  // a 比 b 新，a 排在前面
+  if (dateA < dateB) return 1;   // a 比 b 舊，a 排在後面
+  
+  // 2. 日期相同時，按狀態排序
+  const statusDiff = getStatusPriority(b.status) - getStatusPriority(a.status);
+  if (statusDiff !== 0) return statusDiff;
+  
+  // 3. 狀態相同時，按班次排序（A1 → A2 → B1 → B2）
+  const routeA = routeOrder[a.route] || 99;
+  const routeB = routeOrder[b.route] || 99;
+  
+  return routeA - routeB;
+});
     
-    const getStatusPriority = (status) => {
-      if (!status) return 1;
-      if (status.includes('搭乘')) return 2;
-      if (status.includes('取消')) return 0;
-      return 1;
-    };
-    
-    validData.sort((a, b) => {
-      // 日期比較：最新的排在最前面
-      if (a.date > b.date) return -1;
-      if (a.date < b.date) return 1;
-      
-      const statusDiff = getStatusPriority(b.status) - getStatusPriority(a.status);
-      if (statusDiff !== 0) return statusDiff;
-      
-      return (routeOrder[a.route] || 99) - (routeOrder[b.route] || 99);
+    console.log('📊 排序後的前5筆資料:');
+    validData.slice(0, 5).forEach((item, i) => {
+      console.log(`  ${i+1}. ${item.date} | ${item.route} | ${item.name} | ${item.status}`);
     });
+    // ==================== 排序邏輯結束 ====================
 
     renderTable(validData);
     allData = validData;
-    showToast(`✅ 已更新 ${validData.length} 筆預約資料`);
+    showToast(`✅ 已更新 ${validData.length} 筆預約資料（最近的排在最上方）`);
     
   } catch (e) {
     console.error('❌ 後台查詢錯誤', e);
